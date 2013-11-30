@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2009 by Matteo Franchin                                    *
+ * Copyright (C) 2009-2013 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -20,15 +20,20 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "mem.h"
-#include "ast.h"
-#include "print.h"
-#include "srcpos.h"
+#include <box/mem.h>
+#include <box/print.h>
+#include <box/srcpos.h>
 
-/** Used for generic parsing of tree
+#include <box/ast_priv.h>
+
+
+/**
+ * Used for generic parsing of tree
  * (to destroy or print the tree, for example)
  */
-int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]) {
+int ASTNode_Get_Subnodes(ASTNode *node,
+                         ASTNode **subnodes[AST_MAX_NUM_SUBNODES])
+{
   switch(node->type) {
   case ASTNODETYPE_ERROR:
     return 0;
@@ -211,7 +216,7 @@ ASTNode *ASTNode_New(ASTNodeType t) {
           **subnode[AST_MAX_NUM_SUBNODES];
   int i, num_subnodes;
 
-  node = Box_Mem_Alloc(sizeof(ASTNode));
+  node = (ASTNode *) Box_Mem_Alloc(sizeof(ASTNode));
   assert(node != NULL);
 
   node->type = t;
@@ -252,7 +257,7 @@ void ASTNode_Set_Error(ASTNode *node) {
 
 /* Used to draw a tree using the characters | \ and - */
 typedef struct __IndentStr {
-  const char *this;
+  const char *str;
   struct __IndentStr *next;
 } IndentStr;
 
@@ -280,9 +285,9 @@ static const char *branch_end  = "  ";
 
 static void Indent_Print(FILE *out, IndentStr *indent) {
   for(; indent != NULL; indent = indent->next) {
-    fprintf(out, "%s", indent->this);
-    if (indent->this == branch_last)
-      indent->this = branch_end;
+    fprintf(out, "%s", indent->str);
+    if (indent->str == branch_last)
+      indent->str = branch_end;
   }
 }
 
@@ -305,13 +310,13 @@ static void My_Node_Print(FILE *out, ASTNode *node, IndentStr *indent) {
 
   if (num_subnodes > 0) {
     IndentStr new_indent;
-    new_indent.this = branch_down;
+    new_indent.str = branch_down;
     Indent_Push(indent, & new_indent);
 
     for(i = 0; i < num_subnodes; i++) {
       ASTNode *child = *subnode[i];
       if (i == num_subnodes - 1)
-        new_indent.this = branch_last;
+        new_indent.str = branch_last;
       My_Node_Print(out, child, indent);
     }
 
@@ -321,7 +326,7 @@ static void My_Node_Print(FILE *out, ASTNode *node, IndentStr *indent) {
 
 void ASTNode_Print(FILE *out, ASTNode *node) {
   IndentStr indent;
-  indent.this = "";
+  indent.str = "";
   indent.next = NULL;
   My_Node_Print(out, node, & indent);
 }
@@ -712,5 +717,96 @@ ASTNode *ASTNodeRaiseType_New(ASTNode *type) {
   ASTNode *node;
   node = ASTNode_New(ASTNODETYPE_RAISETYPE);
   node->attr.raise_type.type = type;
+  return node;
+}
+
+
+
+
+
+
+
+void BoxAST_Init(BoxAST *ast)
+{
+  BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
+  ast->root = NULL;
+}
+
+void BoxAST_Finish(BoxAST *ast)
+{
+  BoxAllocPool_Finish(& ast->pool);
+}
+
+BoxAST *BoxAST_Create(void)
+{
+  BoxAST *ast = (BoxAST *) Box_Mem_Alloc(sizeof(BoxAST));
+  if (ast)
+    BoxAST_Init(ast);
+  return ast;
+}
+
+void BoxAST_Destroy(BoxAST *ast)
+{
+  if (ast) {
+    BoxAST_Finish(ast);
+    Box_Mem_Free(ast);
+  }
+}
+
+static uint32_t My_Get_Node_Size(BoxASTNodeType type) {
+
+#define BOXASTNODE_DEF(NODE, Node) \
+  case BOXASTNODETYPE_##NODE: return (uint32_t) sizeof(BoxASTNode##Node);
+
+  switch (type) {
+#include "astnodes.h"
+  default:
+    return 0;
+  }
+
+#undef BOXASTNODE_DEF
+
+}
+
+void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
+{
+  uint32_t node_size = My_Get_Node_Size(type);
+  if (node_size) {
+    BoxASTNode *node = BoxAllocPool_Alloc(& ast->pool, 10);
+    node->type = type;
+    return node;
+  }
+  return NULL;
+}
+
+BoxBool BoxASTNode_Set_Src(BoxASTNode *node, BoxSrcIdx begin, BoxSrcIdx end)
+{
+  if (node) {
+    if (begin & end) {
+      node->src.begin = begin;
+      node->src.end = end;
+      return BOXBOOL_TRUE;
+    }
+    node->src.begin = 0;
+  }
+  return BOXBOOL_FALSE;
+}
+
+BoxASTNode *BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm,
+                              BoxSrc *src)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_IMM);
+  if (node) {
+    BoxASTNodeImm *imm_node = (BoxASTNodeImm *) node;
+    imm_node->type = imm_type;
+    switch (imm_type) {
+    case BOXASTIMMTYPE_CHAR: imm_node->imm.c = *((BoxChar *) imm); break;
+    case BOXASTIMMTYPE_INT:  imm_node->imm.i = *((BoxInt *) imm); break;
+    case BOXASTIMMTYPE_REAL: imm_node->imm.r = *((BoxReal *) imm); break;
+    default:
+      abort();
+    }
+  }
+  node->src = *src;
   return node;
 }

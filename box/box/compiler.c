@@ -30,7 +30,7 @@
 #include "operator.h"
 #include "namespace.h"
 #include "messages.h"
-#include "parserh.h"
+#include "parser.h"
 #include "combs.h"
 #include "vmsymstuff.h"
 
@@ -201,7 +201,7 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
     main = & dummy_cn;
 
   compiler = BoxCmp_Create(target_vm);
-  program_node = Parser_Parse(file, file_name, setup_file_name, paths);
+  program_node = Box_Parse_FILE(file, file_name, setup_file_name, paths);
   BoxCmp_Compile(compiler, program_node);
   ASTNode_Destroy(program_node);
   *main = BoxVMCode_Install(& compiler->main_proc);

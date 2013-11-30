@@ -26,27 +26,27 @@
 #include "defaults.h"
 #include "mem.h"
 #include "messages.h"
-#include "tokenizer.h"
 #include "srcpos.h"
 #include "ast.h"
-#include "parserh.h"
+#include "parser.h"
 #include "paths.h"
 
-static int yyparse(BoxLex *box_lexer, ASTNode **program_node);
-static void yyerror(BoxLex *box_lexer, ASTNode **program_node, char *s);
+static int yyparse(BoxParser *bp);
+static void yyerror(BoxParser *bp, char *s);
 static void My_Syntax_Error();
 
 #define SRC(ast_node, node_src) \
   do {(ast_node)->src = (node_src);} while(0)
 
-/* Trick to induce yyparse to call BoxLex_Next_Token rather than yylex. */
-#define yylex BoxLex_Next_Token
+/* Trick to induce yyparse to call BoxParser_Get_Next_Token rather than
+ * yylex.
+ */
+#define yylex BoxParser_Get_Next_Token
 
 %}
 
-%parse-param {BoxLex *bl}
-%lex-param   {BoxLex *bl}
-%parse-param {ASTNode **program_node}
+%parse-param {BoxParser *bl}
+%lex-param   {BoxParser *bl}
 
 /* Possible types for the nodes of the tree */
 %union {
@@ -57,14 +57,17 @@ static void My_Syntax_Error();
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;
   ASTNodePtr    Node;
+  BoxASTNodePtr NewNode;
   ASTTypeMemb   TypeMemb;
   ASTSep        Sep;
   ASTSelfLevel  SelfLevel;
-  int           TMod
+  int           TMod;
 }
 
 %code requires {
-  /** Redefine YYLTYPE so that it contains an extra member, file_name */
+  /* Redefine YYLTYPE so that we use our - more efficient - representation
+   * for positions (serial positions rather than file-name/line/column).
+   */
   #define YYLTYPE BoxSrc
 
   #define YYLLOC_DEFAULT(Current, Rhs, N)                       \
@@ -203,7 +206,7 @@ expr_list_sep:
 
 opt_ident:
                                  {$$ = NULL;}
-  | TOK_IDENTIFIER               {$$ = $1;}
+  | TOK_IDENTIFIER               {$$ = NULL;}
   ;
 
 expr_list_memb:
@@ -402,59 +405,55 @@ statement_list:
   ;
 
 program:
-    statement_list               {*program_node = $1;}
+    statement_list               {/**ast = $1;*/}
   ;
 
 %%
 
 /* error function */
-static void yyerror(BoxLex *box_lexer, ASTNode **program_node, char* s) {
+static void yyerror(BoxParser *bp, char* s)
+{
   /* Do nothing, as - at the moment - we report error in error action */
 }
 
-static void My_Syntax_Error(YYLTYPE *src, char *s) {
+static void My_Syntax_Error(YYLTYPE *src, char *s)
+{
   BoxSrc *prev_src_of_err;
   prev_src_of_err = Msg_Set_Src(src);
-  if (s == NULL)
-    MSG_ERROR("Syntax error.");
-  else
+  if (s)
     MSG_ERROR("%s", s);
+  else
+    MSG_ERROR("Syntax error.");
   (void) Msg_Set_Src(prev_src_of_err);
 }
 
-ASTNode *Parser_Parse(FILE *in, const char *in_name,
-                      const char *auto_include, BoxPaths *paths) {
-  ASTNode *program_node = NULL;
-  BoxTask parse_error;
-  BoxSrcName *file_names = NULL;
-  BoxLex *box_lexer;
+BoxAST *Box_Parse_FILE(FILE *in, const char *in_name,
+                       const char *auto_include, BoxPaths *paths)
+{
+  BoxAST *ast = NULL;
+  BoxBool no_errors = BOXBOOL_TRUE;
+  BoxParser *parser;
 
-  box_lexer = BoxLex_Create(paths);
-  assert(box_lexer != NULL);
+  parser = BoxParser_Create(paths);
+  assert(parser);
 
-  in_name = (in_name != NULL) ? in_name : "<stdin>";
-  in = (in != NULL) ? in : stdin;
-  parse_error = BoxLex_Begin_Include_FILE(box_lexer, in, in_name);
+  in_name = (in_name) ? in_name : "<stdin>";
+  in = (in) ? in : stdin;
+  no_errors = BoxParser_Begin_Include_FILE(parser, in, in_name);
 
-  if (auto_include != NULL && parse_error == BOXTASK_OK)
-    parse_error = BoxLex_Begin_Include(box_lexer, auto_include);
+  if (auto_include && no_errors)
+    no_errors = BoxParser_Begin_Include(parser, auto_include);
 
-  if (parse_error == BOXTASK_OK)
-    parse_error = yyparse(box_lexer, & program_node);
+  if (no_errors)
+    no_errors = !yyparse(parser);
 
-  file_names = BoxLex_Destroy(box_lexer);
+  ast = BoxParser_Destroy(parser);
+  if (no_errors && ast)
+    return ast;
 
-  if (parse_error == BOXTASK_OK && program_node) {
-    assert(program_node->type == ASTNODETYPE_BOX);
-    program_node->attr.box.file_names = file_names;
-    return program_node;
+  if (!no_errors)
+    MSG_ERROR("Parse error at end of input.");
 
-  } else {
-    if (parse_error == BOXTASK_FAILURE)
-      MSG_ERROR("Parse error at end of input.");
-
-    ASTNode_Destroy(program_node);
-    BoxSrcName_Destroy(file_names);
-    return NULL;
-  }
+  BoxAST_Destroy(ast);
+  return NULL;
 }

@@ -37,7 +37,7 @@ static const char *current_file_name = NULL;
 
 static void My_Update_Context(BoxSrc *current) {
   if (current != NULL) {
-    const char *new_file_name = current->begin.file_name;
+    const char *new_file_name = "unknown"; //current->begin.file_name;
 
     if (new_file_name != current_file_name) {
       if (current_file_name != NULL)

@@ -24,18 +24,20 @@
  * A nice description...
  */
 
-#ifndef _AST_H
-#  define _AST_H
+#ifndef _BOX_AST_H
+#  define _BOX_AST_H
 
 #  include <stdio.h>
 #  include <stdlib.h>
+#  include <stdint.h>
 
 #  include <box/types.h>
+#  include <box/allocpool.h>
 #  include <box/srcpos.h>
 
 #  define AST_MAX_NUM_SUBNODES 4
 
-typedef struct __ASTNode ASTNode;
+typedef struct ASTNode_struct ASTNode;
 
 /** Possible types of nodes in the AST */
 typedef enum {
@@ -65,7 +67,6 @@ typedef enum {
   ASTNODETYPE_MEMBERTYPE,
   ASTNODETYPE_RAISETYPE,
   ASTNODETYPE_SPECTYPE
-
 } ASTNodeType;
 
 /**Separator between statements */
@@ -74,19 +75,33 @@ typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} ASTSep;
 /** Integer number which identifies the scope of a variable or a type */
 typedef int ASTScope;
 
+/**
+ * @brief Union of all the immediate types.
+ */
+typedef union {
+  BoxChar c;
+  BoxInt  i;
+  BoxReal r;
+} BoxASTImm;
+
+/**
+ * @brief Type of immediate.
+ */
+typedef enum {
+  BOXASTIMMTYPE_CHAR,
+  BOXASTIMMTYPE_INT,
+  BOXASTIMMTYPE_REAL
+} BoxASTImmType;
+
+/* TEMPORARY: for compatibility. */
+#define ASTConst BoxASTImm
+
 /** Type of constants */
 typedef enum {
   ASTCONSTTYPE_CHAR,
   ASTCONSTTYPE_INT,
   ASTCONSTTYPE_REAL
 } ASTConstType;
-
-/** Union large enough to contain a value of any constant type */
-typedef union {
-  BoxChar c;
-  BoxInt  i;
-  BoxReal r;
-} ASTConst;
 
 /** Unary operators */
 typedef enum {
@@ -259,17 +274,16 @@ typedef struct {
 
 /** Node for $, $$, $$$, etc. */
 typedef struct {
-  ASTSelfLevel
-           level;
+  ASTSelfLevel level;
 } ASTNodeSelfGet;
 
 /** Node for procedure definition/declaration */
 typedef struct {
+  BoxCombType combine;
   ASTNode     *child_type,
               *parent_type,
               *c_name,
               *implem;
-  BoxCombType combine;
 } ASTNodeProcDef;
 
 /** Node for type definition */
@@ -303,17 +317,14 @@ typedef struct {
 } ASTNodeSpecType;
 
 /** Node finaliser (used only for few nodes) */
-typedef void (*ASTNodeFinaliser)(ASTNode *node);
+typedef void (*ASTNodeFinalizer)(ASTNode *node);
 
 /** Structure describing one node in the AST */
-struct __ASTNode {
-  ASTNodeType         type;      /**< Node type */
-  ASTNodeFinaliser    finaliser; /**< Destructor for node */
+struct ASTNode_struct {
+  ASTNodeFinalizer    finaliser; /**< Destructor for node */
   BoxSrc              src;       /**< Position in the source*/
-  /* ^^^ this last entry doubles the size of ASTNode
-   *     (from 24 bytes to 48 on 32 bit machine)
-   *     We should use linear positions!
-   */
+  ASTNodeType         type;      /**< Node type */
+
   union {
     ASTNodeTypeName   typenm;
     ASTNodeTypeTag    typetag;
@@ -416,4 +427,85 @@ ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type);
 ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb);
 ASTNode *ASTNodeRaiseType_New(ASTNode *type);
 
-#endif /* _AST_H */
+
+
+
+/**
+ * @brief Possible types of nodes in the AST.
+ */
+typedef enum {
+#  define BOXASTNODE_DEF(NODE, Node) BOXASTNODETYPE_##NODE,
+#  include <box/astnodes.h>
+#  undef BOXASTNODE_DEF
+} BoxASTNodeType;
+
+/**
+ * @brief Head of every AST node.
+ *
+ * AST nodes have all the type #BoxASTNode, but can have different content and
+ * different size. All AST nodes however begin with the same common structure,
+ * which tells the node type and the piece of source code the node is
+ * representing. This information is stored in the BoxASTNode_struct structure.
+ */
+typedef struct BoxASTNode_struct {
+  BoxASTNodeType type;
+  BoxSrc         src;
+} BoxASTNode;
+
+typedef BoxASTNode *BoxASTNodePtr;
+
+/* Define all nodes types. */
+#  include <box/astnodes.h>
+
+/**
+ * @brief Box Compiler's Abstract Syntax Tree object.
+ */
+typedef struct BoxAST_struct BoxAST;
+
+/**
+ * @brief Create a new abstract syntax tree.
+ */
+BOXEXPORT BoxAST *
+BoxAST_Create(void);
+
+/**
+ * @brief Destroy an abstract syntax tree created with BoxAST_Create().
+ */
+BOXEXPORT void
+BoxAST_Destroy(BoxAST *ast);
+
+/**
+ * @brief Create a new immediate node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm, BoxSrc *src);
+
+#if 0
+/**
+ * @brief Create a new type identifier.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Type(BoxAST *ast, const char *name, uint32_t name_length);
+
+/**
+ * @brief Create a new variable identifier.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Var(BoxAST *ast, const char *name, uint32_t name_length);
+
+/**
+ * @brief Create a new unary operation.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Un_Op(BoxAST *ast, BoxASTUnOp op, BoxASTNode *operand);
+
+/**
+ * @brief Create a new binary operation.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Bin_Op(BoxAST *ast,
+                     BoxASTNode *left, BoxASTBinOp op, BoxASTNode *right);
+
+#endif
+
+#endif /* _BOX_AST_H */
