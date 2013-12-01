@@ -69,8 +69,10 @@ typedef enum {
   ASTNODETYPE_SPECTYPE
 } ASTNodeType;
 
-/**Separator between statements */
-typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} ASTSep;
+/**
+ * @brief Separator between statements.
+ */
+typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} BoxASTSep;
 
 /** Integer number which identifies the scope of a variable or a type */
 typedef int ASTScope;
@@ -93,9 +95,6 @@ typedef enum {
   BOXASTIMMTYPE_REAL
 } BoxASTImmType;
 
-/* TEMPORARY: for compatibility. */
-#define ASTConst BoxASTImm
-
 /** Type of constants */
 typedef enum {
   ASTCONSTTYPE_CHAR,
@@ -113,7 +112,7 @@ typedef enum {
   ASTUNOP_RDEC,
   ASTUNOP_NOT,
   ASTUNOP_BNOT
-} ASTUnOp;
+} BoxASTUnOp;
 
 #define ASTUNOP__NUM_OPS (ASTUNOP_BNOT + 1)
 
@@ -149,7 +148,13 @@ typedef enum {
   ASTBINOP_ABAND,
   ASTBINOP_ABXOR,
   ASTBINOP_ABOR
-} ASTBinOp;
+} BoxASTBinOp;
+
+/* TEMPORARY: for compatibility. */
+#define ASTConst BoxASTImm
+#define ASTSep BoxASTSep
+#define ASTBinOp BoxASTBinOp
+#define ASTUnOp BoxASTUnOp
 
 #define ASTBINOP__NUM_OPS (ASTBINOP_ABOR + 1)
 
@@ -454,6 +459,20 @@ typedef struct BoxASTNode_struct {
 
 typedef BoxASTNode *BoxASTNodePtr;
 
+/**
+ * @brief Beginning of every AST node.
+ *
+ * Every AST node must be a structure beginning with this macro. For example,
+ * @code
+ * typedef struct BoxASTNodeXXX {
+ *   BOXASTNODEHEAD
+ *   // More stuff here ...
+ * }
+ * @endcode
+ */
+#define BOXASTNODEHEAD \
+  BoxASTNode head;
+
 /* Define all nodes types. */
 #  include <box/astnodes.h>
 
@@ -475,10 +494,56 @@ BOXEXPORT void
 BoxAST_Destroy(BoxAST *ast);
 
 /**
+ * @brief Get the root node of the tree.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Get_Root(BoxAST *ast);
+
+/**
+ * @brief Set the root node of the tree.
+ */
+BOXEXPORT void
+BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root);
+
+/**
  * @brief Create a new immediate node.
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm, BoxSrc *src);
+
+/**
+ * @brief Get the type of an AST node.
+ */
+#define BoxASTNode_Get_Type(ast) ((ast)->type)
+
+/**
+ * @brief  Get a string representation of the given node type.
+ */
+BOXEXPORT const char *
+BoxASTNodeType_To_Str(BoxASTNodeType type);
+
+/**
+ * @brief Create the first statement of statement list.
+ *
+ * @param ast The parent AST object.
+ * @param val The value of the statement.
+ * @return Return the new statement object.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val);
+
+/**
+ * @brief Append a statement to the given one.
+ *
+ * @param ast The parent AST object.
+ * @param prev_stmt The statement target of the append operation.
+ * @param sep The statement separator.
+ * @param val The value of the statement to be appended.
+ * @return The new statement object.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt, BoxASTSep sep,
+                        BoxASTNode *val);
 
 #if 0
 /**

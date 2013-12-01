@@ -68,10 +68,10 @@ BoxAST *BoxParser_Destroy(BoxParser *bp)
   BoxHT_Finish(& bp->provided_features);
   BoxArr_Finish(& bp->include_list);
   BoxArr_Finish(& bp->macro_content);
+
+  BoxSrcName_Destroy(bp->fnames); // <-- TODO: fix this
+
   Box_Mem_Free(bp);
-
-  BoxSrcName_Destroy(bp->fnames); // <-- return to this
-
   return ast;
 }
 
@@ -119,4 +119,9 @@ BoxBool BoxParser_Begin_Include(BoxParser *bl, const char *fn)
   }
 
   return BOXBOOL_FALSE;
+}
+
+BoxAST *BoxParser_Get_AST(BoxParser *bp)
+{
+  return bp->ast;
 }

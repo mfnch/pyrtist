@@ -35,7 +35,7 @@
 
 struct BoxParser_struct {
   BoxPaths    *paths;            /**< Paths used to search for files */
-  void        *scanner;          /**< The Lex scanner */
+  yyscan_t    scanner;           /**< The Lex scanner */
   BoxAST      *ast;              /**< The Abstract Syntax Tree */
   BoxSrcName  *fnames;           /**< File names referred by BoxSrcPos
                                       objects */

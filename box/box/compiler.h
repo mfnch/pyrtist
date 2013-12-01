@@ -59,9 +59,9 @@ BoxCmp_Steal_VM(BoxCmp *c);
  */
 BOXEXPORT BoxVM *
 Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
-			    FILE *file, const char *file_name,
-			    const char *setup_file_name,
-			    BoxPaths *paths);
+                            FILE *file, const char *file_name,
+                            const char *setup_file_name,
+                            BoxPaths *paths);
 
 /**
  * @brief Compile from the give abstract syntax tree.
@@ -70,6 +70,6 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
  * @param program Abstract syntax tree of the program to compile.
  */
 BOXEXPORT void
-BoxCmp_Compile(BoxCmp *c, ASTNode *program);
+BoxCmp_Compile(BoxCmp *c, BoxAST *ast);
 
 #endif /* _BOX_COMPILER_H */

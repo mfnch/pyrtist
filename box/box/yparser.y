@@ -31,12 +31,10 @@
 #include "parser.h"
 #include "paths.h"
 
-static int yyparse(BoxParser *bp);
-static void yyerror(BoxParser *bp, char *s);
-static void My_Syntax_Error();
 
-#define SRC(ast_node, node_src) \
-  do {(ast_node)->src = (node_src);} while(0)
+static int yyparse(BoxParser *parser, BoxAST *ast);
+static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
+static void My_Syntax_Error();
 
 /* Trick to induce yyparse to call BoxParser_Get_Next_Token rather than
  * yylex.
@@ -45,8 +43,9 @@ static void My_Syntax_Error();
 
 %}
 
-%parse-param {BoxParser *bl}
-%lex-param   {BoxParser *bl}
+%parse-param {BoxParser *parser}
+%lex-param   {BoxParser *parser}
+%parse-param {BoxAST *ast}
 
 /* Possible types for the nodes of the tree */
 %union {
@@ -112,9 +111,10 @@ static void My_Syntax_Error();
 %type <Node> string_concat type name prim_expr postfix_expr opt_postfix_expr
 %type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
-%type <Node> land_expr lor_expr assign_expr comb_expr expr statement
-%type <Node> statement_list actions opt_actions restrs opt_restrs opt_comb_def
+%type <Node> land_expr lor_expr assign_expr comb_expr expr
+%type <Node> actions opt_actions restrs opt_restrs opt_comb_def
 %type <Node> opt_c_name comb_parent
+%type <NewNode> statement statement_list
 
 
 /* Starting rule */
@@ -335,7 +335,7 @@ assign_expr:
   ;
 
 comb_expr:
-    assign_expr                  {$$ = NULL;}
+    assign_expr                  {$$ = $1;}
   | assign_expr TOK_COMBINE opt_restrs comb_parent opt_c_name opt_comb_def
                                  {$$ = NULL;}
    ;
@@ -389,29 +389,29 @@ comb_parent:
 /* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
-  | expr                         {$$ = NULL;}
+  | expr                         {$$ = (BoxASTNode *) $1;}
   | '\\' expr                    {$$ = NULL;}
   | '[' statement_list ']'       {$$ = NULL;}
-  | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
-                                  SRC($$, @$);
+  | error sep                    {$$ = NULL;
+                                  /*ASTNodeStatement_New(ASTNodeError_New());
                                   My_Syntax_Error(& @$, NULL);
                                   assert(yychar == YYEMPTY); yychar = (int) ',';
-                                  yyerrok;}
+                                  yyerrok;*/}
   ;
 
 statement_list:
-    statement                    {$$ = NULL;}
-  | statement_list sep statement {$$ = NULL;}
+    statement                    {$$ = BoxAST_Create_Statement(ast, $1);}
+  | statement_list sep statement {$$ = BoxAST_Append_Statement(ast, $1, $2, $3);}
   ;
 
 program:
-    statement_list               {/**ast = $1;*/}
+    statement_list               {BoxAST_Set_Root(ast, $1);}
   ;
 
 %%
 
 /* error function */
-static void yyerror(BoxParser *bp, char* s)
+static void yyerror(BoxParser *bp, BoxAST *ast, char* s)
 {
   /* Do nothing, as - at the moment - we report error in error action */
 }
@@ -445,7 +445,7 @@ BoxAST *Box_Parse_FILE(FILE *in, const char *in_name,
     no_errors = BoxParser_Begin_Include(parser, auto_include);
 
   if (no_errors)
-    no_errors = !yyparse(parser);
+    no_errors = !yyparse(parser, BoxParser_Get_AST(parser));
 
   ast = BoxParser_Destroy(parser);
   if (no_errors && ast)

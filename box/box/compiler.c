@@ -75,7 +75,8 @@ typedef struct {
  * them whenever needed, but we do it here and just return new references
  * to them whenever it is needed, with the hope to improve performance.
  */
-static void My_Init_Const_Values(BoxCmp *c) {
+static void My_Init_Const_Values(BoxCmp *c)
+{
   Value_Init(& c->value.error, & c->main_proc);
   Value_Init(& c->value.void_val, & c->main_proc);
   Value_Setup_As_Void(& c->value.void_val);
@@ -94,7 +95,8 @@ static void My_Init_Const_Values(BoxCmp *c) {
   Value_Setup_As_Temp(& c->value.pause, Box_Get_Core_Type(BOXTYPEID_PAUSE));
 }
 
-void My_Finish_Const_Values(BoxCmp *c) {
+void My_Finish_Const_Values(BoxCmp *c)
+{
   Value_Unlink(& c->value.error);
   Value_Unlink(& c->value.void_val);
   Value_Unlink(& c->value.create);
@@ -105,7 +107,8 @@ void My_Finish_Const_Values(BoxCmp *c) {
 /** Return a new error value (actually a new reference to it,
  * see My_Init_Const_Values)
  */
-Value *My_Value_New_Error(BoxCmp *c) {
+Value *My_Value_New_Error(BoxCmp *c)
+{
 #if DONT_CACHE_CONST_VALUES == 1
   return Value_New(c->cur_proc);
 #else
@@ -114,10 +117,12 @@ Value *My_Value_New_Error(BoxCmp *c) {
 #endif
 }
 
+#if 0
 /* We may optimize this later, by just passing a reference to a Value
  * object which is created once for all at the beginning!
  */
-static Value *My_Get_Void_Value(BoxCmp *c) {
+static Value *My_Get_Void_Value(BoxCmp *c)
+{
 #if DONT_CACHE_CONST_VALUES == 1
   Value *v = Value_New(c->cur_proc);
   Value_Setup_As_Void(v);
@@ -127,8 +132,10 @@ static Value *My_Get_Void_Value(BoxCmp *c) {
   return & c->value.void_val;
 #endif
 }
+#endif
 
-void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
+void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
+{
   c->attr.own_vm = (target_vm == NULL);
   c->vm = (target_vm != NULL) ? target_vm : BoxVM_Create();
 
@@ -150,7 +157,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   BoxSrcPos_Init(& c->src_pos, NULL);
 }
 
-void BoxCmp_Finish(BoxCmp *c) {
+void BoxCmp_Finish(BoxCmp *c)
+{
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   My_Finish_Const_Values(c);
@@ -166,19 +174,22 @@ void BoxCmp_Finish(BoxCmp *c) {
     BoxVM_Destroy(c->vm);
 }
 
-BoxCmp *BoxCmp_Create(BoxVM *target_vm) {
+BoxCmp *BoxCmp_Create(BoxVM *target_vm)
+{
   BoxCmp *c = Box_Mem_Alloc(sizeof(BoxCmp));
   if (c)
     BoxCmp_Init(c, target_vm);
   return c;
 }
 
-void BoxCmp_Destroy(BoxCmp *c) {
+void BoxCmp_Destroy(BoxCmp *c)
+{
   BoxCmp_Finish(c);
   Box_Mem_Free(c);
 }
 
-BoxVM *BoxCmp_Steal_VM(BoxCmp *c) {
+BoxVM *BoxCmp_Steal_VM(BoxCmp *c)
+{
   BoxVM *vm = c->vm;
   c->attr.own_vm = 0;
   c->vm = 0;
@@ -191,8 +202,9 @@ BoxVM *BoxCmp_Steal_VM(BoxCmp *c) {
 BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                                    FILE *file, const char *file_name,
                                    const char *setup_file_name,
-                                   BoxPaths *paths) {
-  ASTNode *program_node;
+                                   BoxPaths *paths)
+{
+  BoxAST *ast;
   BoxCmp *compiler;
   BoxVM *vm;
   BoxVMCallNum dummy_cn;
@@ -201,16 +213,17 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
     main = & dummy_cn;
 
   compiler = BoxCmp_Create(target_vm);
-  program_node = Box_Parse_FILE(file, file_name, setup_file_name, paths);
-  BoxCmp_Compile(compiler, program_node);
-  ASTNode_Destroy(program_node);
+  ast = Box_Parse_FILE(file, file_name, setup_file_name, paths);
+  BoxCmp_Compile(compiler, ast);
+  BoxAST_Destroy(ast);
   *main = BoxVMCode_Install(& compiler->main_proc);
   vm = BoxCmp_Steal_VM(compiler);
   BoxCmp_Destroy(compiler);
   return vm;
 }
 
-void BoxCmp_Remove_Any(BoxCmp *c, int num_items_to_remove) {
+void BoxCmp_Remove_Any(BoxCmp *c, int num_items_to_remove)
+{
   int i;
   for(i = 0; i < num_items_to_remove; i++) {
     StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
@@ -226,7 +239,8 @@ void BoxCmp_Remove_Any(BoxCmp *c, int num_items_to_remove) {
  * a binary operation where one of the two arguments is an error returns
  * silently an error into the stack.
  */
-void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
+void BoxCmp_Push_Error(BoxCmp *c, int num_errors)
+{
   int i;
   for(i = 0; i < num_errors; i++) {
     StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
@@ -241,7 +255,8 @@ void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
  * of these entries have errors, then removes all of them from the stack,
  * push the given number of errors and return 1.
  */
-int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
+int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push)
+{
   BoxInt n = BoxArr_Num_Items(& c->stack), i;
   int no_err = 1;
 
@@ -275,7 +290,8 @@ int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
  * to it.
  * REFERENCES: v: -1;
  */
-void BoxCmp_Push_Value(BoxCmp *c, Value *v) {
+void BoxCmp_Push_Value(BoxCmp *c, Value *v)
+{
   if (v != NULL) {
     StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
     si->type = STACKITEM_VALUE;
@@ -290,7 +306,8 @@ void BoxCmp_Push_Value(BoxCmp *c, Value *v) {
  * the corresponding reference.
  * REFERENCES: return: new;
  */
-Value *BoxCmp_Pop_Value(BoxCmp *c) {
+Value *BoxCmp_Pop_Value(BoxCmp *c)
+{
   StackItem *si = BoxArr_Last_Item_Ptr(& c->stack);
   Value *v;
 
@@ -311,7 +328,8 @@ Value *BoxCmp_Pop_Value(BoxCmp *c) {
   }
 }
 
-Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
+Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos)
+{
   BoxInt n = BoxArr_Num_Items(& c->stack);
   StackItem *si = BoxArr_Item_Ptr(& c->stack, n - pos);
   switch(si->type) {
@@ -328,7 +346,9 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
   }
 }
 
-static void My_Compile_Any(BoxCmp *c, ASTNode *node);
+static void My_Compile_Any(BoxCmp *c, BoxASTNode *node);
+static void My_Compile_Statement(BoxCmp *c, BoxASTNode *stmt);
+#if 0
 static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
@@ -352,28 +372,30 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
 static void My_Compile_SpecType(BoxCmp *c, ASTNode *n);
 static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n);
 static void My_Compile_Raise(BoxCmp *c, ASTNode *n);
+#endif
 
-void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
-  if (!program)
+void BoxCmp_Compile(BoxCmp *c, BoxAST *ast)
+{
+  BoxASTNode *root;
+
+  if (!ast)
     return;
 
-  My_Compile_Any(c, program);
+  root = BoxAST_Get_Root(ast);
+  if (!root)
+    return;
+
+  My_Compile_Any(c, root);
   BoxCmp_Remove_Any(c, 1);
 }
 
-static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
-  BoxSrc *prev_src_of_err = Msg_Set_Src(& node->src);
-  BoxSrcPos *new_src_pos = & node->src.end;
-
-  /* Output line information to current procedure */
-  if (/*c->src_pos.file_name != NULL && */ new_src_pos->line != 0 &&
-      (new_src_pos->file_name != c->src_pos.file_name
-       || new_src_pos->line != c->src_pos.line)) {
-    BoxVMCode_Associate_Source(c->cur_proc, new_src_pos);
-    c->src_pos = *new_src_pos;
-  }
-
-  switch(node->type) {
+static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeType node_type = BoxASTNode_Get_Type(node);
+  switch (node_type) {
+  case BOXASTNODETYPE_STATEMENT:
+    My_Compile_Statement(c, node); break;
+#if 0
   case ASTNODETYPE_ERROR:
     My_Compile_Error(c, node); break;
   case ASTNODETYPE_TYPENAME:
@@ -418,19 +440,30 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_SpecType(c, node); break;
   case ASTNODETYPE_RAISETYPE:
     My_Compile_RaiseType(c, node); break;
+#endif
   default:
-    printf("Compilation of node is not implemented, yet!\n");
+    printf("Compilation of node %s (%d) is not implemented, yet!\n",
+           BoxASTNodeType_To_Str(node_type), (int) node_type);
     break;
   }
-
-  (void) Msg_Set_Src(prev_src_of_err);
 }
 
-static void My_Compile_Error(BoxCmp *c, ASTNode *node) {
+static void My_Compile_Statement(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeStatement *last_stmt = (BoxASTNodeStatement *) node, *stmt;
+  for (stmt = last_stmt->next; stmt != last_stmt; stmt = stmt->next) {
+    printf("statement %s\n", BoxASTNodeType_To_Str(stmt->value->type));
+  }
+}
+
+#if 0
+static void My_Compile_Error(BoxCmp *c, ASTNode *node)
+{
   BoxCmp_Push_Value(c, Value_New(c->cur_proc));
 }
 
-static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
+static void My_Compile_TypeName(BoxCmp *c, ASTNode *n)
+{
   Value *v;
   char *type_name = n->attr.var.name;
   NmspFloor f;
@@ -454,7 +487,8 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
   }
 }
 
-static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
+static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n)
+{
   Value *v;
 
   assert(n->type == ASTNODETYPE_TYPETAG);
@@ -1456,3 +1490,4 @@ static void My_Compile_Raise(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_operand);
 
 }
+#endif

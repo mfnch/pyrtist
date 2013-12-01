@@ -110,4 +110,10 @@ BoxParser_End_Include(BoxParser *bp);
 BOXEXPORT BoxBool
 BoxParser_Was_Provided(BoxParser *bp, const char *feature, int length);
 
+/**
+ * @brief Get the abstract syntax tree associated with the given parser.
+ */
+BOXEXPORT BoxAST *
+BoxParser_Get_AST(BoxParser *bp);
+
 #endif /* _BOX_PARSER_H */

@@ -737,6 +737,7 @@ void BoxAST_Finish(BoxAST *ast)
   BoxAllocPool_Finish(& ast->pool);
 }
 
+/* Create a new abstract syntax tree. */
 BoxAST *BoxAST_Create(void)
 {
   BoxAST *ast = (BoxAST *) Box_Mem_Alloc(sizeof(BoxAST));
@@ -745,6 +746,7 @@ BoxAST *BoxAST_Create(void)
   return ast;
 }
 
+/* Destroy an abstract syntax tree created with BoxAST_Create(). */
 void BoxAST_Destroy(BoxAST *ast)
 {
   if (ast) {
@@ -753,10 +755,25 @@ void BoxAST_Destroy(BoxAST *ast)
   }
 }
 
-static uint32_t My_Get_Node_Size(BoxASTNodeType type) {
+/* Set the root node of the tree. */
+BoxASTNode *BoxAST_Get_Root(BoxAST *ast)
+{
+  return ast->root;
+}
 
-#define BOXASTNODE_DEF(NODE, Node) \
-  case BOXASTNODETYPE_##NODE: return (uint32_t) sizeof(BoxASTNode##Node);
+/* Set the root node of the tree. */
+void BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root)
+{
+  ast->root = root;
+}
+
+/* Get size and alignment for the given node type. */
+static uint32_t My_Get_Node_Size(BoxASTNodeType type, uint32_t *alignment)
+{
+#define BOXASTNODE_DEF(NODE, Node)               \
+  case BOXASTNODETYPE_##NODE:                    \
+    *alignment = __alignof__(BoxASTNode##Node);  \
+    return (uint32_t) sizeof(BoxASTNode##Node);
 
   switch (type) {
 #include "astnodes.h"
@@ -765,15 +782,32 @@ static uint32_t My_Get_Node_Size(BoxASTNodeType type) {
   }
 
 #undef BOXASTNODE_DEF
+}
 
+/* Get a string representation of the given node type. */
+const char *BoxASTNodeType_To_Str(BoxASTNodeType type)
+{
+#define BOXASTNODE_DEF(NODE, Node) \
+  case BOXASTNODETYPE_##NODE: return #Node;
+
+  switch (type) {
+#include "astnodes.h"
+  default:
+    return "Unknown-AST-node";
+  }
+
+#undef BOXASTNODE_DEF
 }
 
 void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
 {
-  uint32_t node_size = My_Get_Node_Size(type);
+  uint32_t node_alignment;
+  uint32_t node_size = My_Get_Node_Size(type, & node_alignment);
   if (node_size) {
-    BoxASTNode *node = BoxAllocPool_Alloc(& ast->pool, 10);
-    node->type = type;
+    BoxASTNode *node =
+      BoxAllocPool_Alloc_Aligned(& ast->pool, node_size, node_alignment);
+    if (node)
+      node->type = type;
     return node;
   }
   return NULL;
@@ -798,6 +832,7 @@ BoxASTNode *BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm,
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_IMM);
   if (node) {
     BoxASTNodeImm *imm_node = (BoxASTNodeImm *) node;
+    node->src = *src;
     imm_node->type = imm_type;
     switch (imm_type) {
     case BOXASTIMMTYPE_CHAR: imm_node->imm.c = *((BoxChar *) imm); break;
@@ -807,6 +842,34 @@ BoxASTNode *BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm,
       abort();
     }
   }
-  node->src = *src;
+  return node;
+}
+
+/* Create the first statement of statement list. */
+BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
+  if (node) {
+    BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node;
+    stmt->value = val;
+    stmt->next = stmt;
+    stmt->sep = 0;
+  }
+  return node;
+}
+
+/* Append a statement to the given one. */
+BoxASTNode *BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
+                                    BoxASTSep sep, BoxASTNode *stmt_val)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
+  if (node) {
+    BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node,
+                        *prev_stmt = (BoxASTNodeStatement *) prev_stmt_node;
+    stmt->value = stmt_val;
+    stmt->next = prev_stmt->next;
+    stmt->sep = sep;
+    prev_stmt->next = stmt;
+  }
   return node;
 }

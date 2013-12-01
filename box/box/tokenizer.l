@@ -69,7 +69,7 @@ static void My_Fix_Pos(yyscan_t scanner);
   My_Fix_Pos(yyscanner)
 
 #define MY_NODE(nodeType, args...) \
-  BoxAST_Create_##nodeType(& yyextra->ast, args, & yyextra->src)
+  BoxAST_Create_##nodeType(yyextra->ast, args, & yyextra->src)
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
