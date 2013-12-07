@@ -72,7 +72,12 @@ typedef enum {
 /**
  * @brief Separator between statements.
  */
-typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} BoxASTSep;
+typedef enum {
+  BOXASTSEP_VOID=0,
+  BOXASTSEP_PAUSE,
+  ASTSEP_VOID=BOXASTSEP_VOID,
+  ASTSEP_PAUSE=BOXASTSEP_PAUSE
+} BoxASTSep;
 
 /** Integer number which identifies the scope of a variable or a type */
 typedef int ASTScope;
@@ -445,33 +450,42 @@ typedef enum {
 } BoxASTNodeType;
 
 /**
- * @brief Head of every AST node.
+ * @brief Generic AST node.
  *
- * AST nodes have all the type #BoxASTNode, but can have different content and
- * different size. All AST nodes however begin with the same common structure,
- * which tells the node type and the piece of source code the node is
- * representing. This information is stored in the BoxASTNode_struct structure.
+ * AST nodes have type names starting with BoxASTNode (e.g. #BoxASTNodeIntImm)
+ * and can all be safely cast to a generic AST node.
+ * All AST nodes do indeed begin with the same common header structure, which
+ * tells the type of the node and the piece of source code the node is
+ * representing. See #BOXASTNODEHEAD for more information.
  */
 typedef struct BoxASTNode_struct {
   BoxASTNodeType type;
   BoxSrc         src;
 } BoxASTNode;
 
-typedef BoxASTNode *BoxASTNodePtr;
-
 /**
  * @brief Beginning of every AST node.
  *
- * Every AST node must be a structure beginning with this macro. For example,
+ * The C standard guarantees that the pointer to a structure is always the
+ * pointer to its first member. We therefore demand that every AST node is
+ * declared similarly to,
  * @code
  * typedef struct BoxASTNodeXXX {
  *   BOXASTNODEHEAD
  *   // More stuff here ...
  * }
  * @endcode
+ * This guarantees that every AST nodes can be safely cast to a generic
+ * #BoxASTNode node.
  */
 #define BOXASTNODEHEAD \
   BoxASTNode head;
+
+/**
+ * @brief Pointer to an AST node.
+ */
+typedef BoxASTNode *BoxASTNodePtr;
+
 
 /* Define all nodes types. */
 #  include <box/astnodes.h>
@@ -506,10 +520,22 @@ BOXEXPORT void
 BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root);
 
 /**
- * @brief Create a new immediate node.
+ * @brief Create an char immediate node.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm, BoxSrc *src);
+BoxAST_Create_CharImm(BoxAST *ast, BoxSrc *src, BoxChar value);
+
+/**
+ * @brief Create an integer immediate node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_IntImm(BoxAST *ast, BoxSrc *src, BoxInt value);
+
+/**
+ * @brief Create an real immediate node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value);
 
 /**
  * @brief Get the type of an AST node.
@@ -544,6 +570,17 @@ BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val);
 BOXEXPORT BoxASTNode *
 BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt, BoxASTSep sep,
                         BoxASTNode *val);
+
+/**
+ * @brief Create a box node.
+ *
+ * @param ast The parent AST object.
+ * @param parent The value to which the box refers.
+ * @param last_stmt The last statement for the box.
+ * @return The new box node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent, BoxASTNode *last_stmt);
 
 #if 0
 /**

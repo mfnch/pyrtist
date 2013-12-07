@@ -69,7 +69,7 @@ static void My_Fix_Pos(yyscan_t scanner);
   My_Fix_Pos(yyscanner)
 
 #define MY_NODE(nodeType, args...) \
-  BoxAST_Create_##nodeType(yyextra->ast, args, & yyextra->src)
+  BoxAST_Create_##nodeType(yyextra->ast, & yyextra->src, args)
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
@@ -261,7 +261,7 @@ include BEGIN(include);
   err = Box_Str_To_Int(yytext, yyleng, & val);
   if (err)
     MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(Imm, BOXASTIMMTYPE_INT, & val);
+  yylval.NewNode = MY_NODE(IntImm, val);
   return TOK_CONSTANT;
  }
 
@@ -273,7 +273,7 @@ include BEGIN(include);
   err = Box_Hex_Str_To_Int(yytext + 2, yyleng - 2, & val);
   if (err)
     MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(Imm, BOXASTIMMTYPE_INT, & val);
+  yylval.NewNode = MY_NODE(IntImm, val);
   return TOK_CONSTANT;
  }
 
@@ -285,7 +285,7 @@ include BEGIN(include);
   err = Box_Str_To_Real(yytext, yyleng, & val);
   if (err)
     MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(Imm, ASTCONSTTYPE_REAL, & val);
+  yylval.NewNode = MY_NODE(RealImm, val);
   return TOK_CONSTANT;
  }
 

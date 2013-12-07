@@ -47,7 +47,8 @@ void Box_Print_Finish(void) {
  *   ES:
  *       msg = print("%S", Box_Mem_Strdup("allocated string"));
  */
-const char *Box_Print(const char *fmt, ...) {
+const char *Box_VA_Print(const char *fmt, va_list ap)
+{
   static int buf_size = 0;
   unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1,
     do_long = 0;
@@ -59,7 +60,6 @@ const char *Box_Print(const char *fmt, ...) {
   BoxUInt size;
   int substring_size;
   char aux_buf[128], *substring = "?";
-  va_list ap;
 
   if (!msg) {
     buf_size = BOX_PRINT_BUF_SIZE;
@@ -78,7 +78,6 @@ const char *Box_Print(const char *fmt, ...) {
   o = msg;
   size = 0;
   substring_size = 0;
-  va_start(ap, fmt);
   while(do_continue) {
     if (do_read) {
       cr = *(i++);
@@ -266,11 +265,20 @@ const char *Box_Print(const char *fmt, ...) {
       ++size;
     }
   }
-  va_end(ap);
   return msg;
 
 print_error:
   return "Box_Print: unexpected error!";
+}
+
+const char *Box_Print(const char *fmt, ...)
+{
+  va_list ap;
+  const char *retval;
+  va_start(ap, fmt);
+  retval = Box_VA_Print(fmt, ap);
+  va_end(ap);
+  return retval;
 }
 
 #if 0

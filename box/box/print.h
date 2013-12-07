@@ -43,7 +43,7 @@ BOXEXPORT void
 Box_Print_Finish(void);
 
 /**
- * @brief An improved version of sprintf used internally by the compiler.
+ * @brief An tweaked version of sprintf used internally by the compiler.
  *
  * An improved version of sprintf, with a number of desirable features:
  *
@@ -67,6 +67,15 @@ Box_Print_Finish(void);
  */
 BOXEXPORT const char *
 Box_Print(const char *fmt, ...);
+
+/**
+ * @brief Non-variadic version of Box_Print().
+ *
+ * This function is equivalent to Box_Print(), except that it is called with a
+ * va_list instead of a variable number of arguments.
+ */
+BOXEXPORT const char *
+Box_VA_Print(const char *fmt, va_list ap);
 
 #  define printdup(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 #  define Box_SPrintF(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))

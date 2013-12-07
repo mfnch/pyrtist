@@ -58,7 +58,7 @@ static void My_Syntax_Error();
   ASTNodePtr    Node;
   BoxASTNodePtr NewNode;
   ASTTypeMemb   TypeMemb;
-  ASTSep        Sep;
+  BoxASTSep     Sep;
   ASTSelfLevel  SelfLevel;
   int           TMod;
 }
@@ -134,8 +134,8 @@ void_seps:
   ;
 
 sep:
-    void_sep                  {$$ = ASTSEP_VOID;}
-  | ';'                       {$$ = ASTSEP_PAUSE;}
+    void_sep                  {$$ = BOXASTSEP_VOID;}
+  | ';'                       {$$ = BOXASTSEP_PAUSE;}
   ;
 
 /******************************** OPERATORS ********************************/
@@ -401,11 +401,13 @@ statement:
 
 statement_list:
     statement                    {$$ = BoxAST_Create_Statement(ast, $1);}
-  | statement_list sep statement {$$ = BoxAST_Append_Statement(ast, $1, $2, $3);}
+  | statement_list sep statement
+                                {$$ = BoxAST_Append_Statement(ast, $1, $2, $3);}
   ;
 
 program:
-    statement_list               {BoxAST_Set_Root(ast, $1);}
+    statement_list
+                       {BoxAST_Set_Root(ast, BoxAST_Create_Box(ast, NULL, $1));}
   ;
 
 %%

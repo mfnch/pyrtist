@@ -723,7 +723,14 @@ ASTNode *ASTNodeRaiseType_New(ASTNode *type) {
 
 
 
+#define MY_COPY_SRC(dst, src)                   \
+  do {BoxASTNode *src_node = (src);             \
+      if (src_node) *(dst) = *src_node;         \
+      else BoxSrc_Init(dst);} while(0)
 
+#define MY_PROPAGATE_SRC(container, fst, lst)           \
+  do {(container)->src.begin = (fst)->src.begin;        \
+      (container)->src.end = (lst)->src.end;} while(0)
 
 
 void BoxAST_Init(BoxAST *ast)
@@ -826,21 +833,32 @@ BoxBool BoxASTNode_Set_Src(BoxASTNode *node, BoxSrcIdx begin, BoxSrcIdx end)
   return BOXBOOL_FALSE;
 }
 
-BoxASTNode *BoxAST_Create_Imm(BoxAST *ast, BoxASTImmType imm_type, void *imm,
-                              BoxSrc *src)
+BoxASTNode *BoxAST_Create_CharImm(BoxAST *ast, BoxSrc *src, BoxChar value)
 {
-  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_IMM);
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_CHAR_IMM);
   if (node) {
-    BoxASTNodeImm *imm_node = (BoxASTNodeImm *) node;
     node->src = *src;
-    imm_node->type = imm_type;
-    switch (imm_type) {
-    case BOXASTIMMTYPE_CHAR: imm_node->imm.c = *((BoxChar *) imm); break;
-    case BOXASTIMMTYPE_INT:  imm_node->imm.i = *((BoxInt *) imm); break;
-    case BOXASTIMMTYPE_REAL: imm_node->imm.r = *((BoxReal *) imm); break;
-    default:
-      abort();
-    }
+    ((BoxASTNodeCharImm *) node)->value = value;
+  }
+  return node;
+}
+
+BoxASTNode *BoxAST_Create_IntImm(BoxAST *ast, BoxSrc *src, BoxInt value)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_INT_IMM);
+  if (node) {
+    node->src = *src;
+    ((BoxASTNodeIntImm *) node)->value = value;
+  }
+  return node;
+}
+
+BoxASTNode *BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_REAL_IMM);
+  if (node) {
+    node->src = *src;
+    ((BoxASTNodeRealImm *) node)->value = value;
   }
   return node;
 }
@@ -862,14 +880,45 @@ BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
 BoxASTNode *BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
                                     BoxASTSep sep, BoxASTNode *stmt_val)
 {
-  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
-  if (node) {
-    BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node,
+  BoxASTNode *stmt_node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
+  if (stmt_node) {
+    BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) stmt_node,
                         *prev_stmt = (BoxASTNodeStatement *) prev_stmt_node;
+    //MY_COPY_SRC(node, stmt_val);
     stmt->value = stmt_val;
     stmt->next = prev_stmt->next;
     stmt->sep = sep;
     prev_stmt->next = stmt;
+  }
+  return stmt_node;
+}
+
+/* Create a box node. */
+BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
+                              BoxASTNode *last_stmt_node)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_BOX);
+  if (node) {
+    BoxASTNodeBox *box = (BoxASTNodeBox *) node;
+    BoxASTNodeStatement *last_stmt;
+
+    assert(BoxASTNode_Get_Type(last_stmt_node) == BOXASTNODETYPE_STATEMENT);
+    last_stmt = (BoxASTNodeStatement *) last_stmt_node;
+    box->parent = parent;
+    box->first_stmt = last_stmt->next;
+    MY_PROPAGATE_SRC(node, (parent) ? parent : (BoxASTNode *) box->first_stmt,
+                     last_stmt_node);
+    last_stmt->next = NULL;
+
+#if 0
+#define BOXASTNODE_DEF(NODE, Node)                                      \
+    printf("%s size=%zu, alignment=%zu\n",                              \
+           #Node, sizeof(BoxASTNode##Node),                             \
+           __alignof__(BoxASTNode##Node));
+#include "astnodes.h"
+#undef BOXASTNODE_DEF
+#endif
+
   }
   return node;
 }
