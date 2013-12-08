@@ -23,8 +23,7 @@
  *
  * This file provides the function print, which is a simplified version
  * of the function sprintf, but offers a number of advantages over it.
- * Memory is managed automatically, the Name data type is supported
- * with the specified %N, string deallocation is allowed with %~s.
+ * Memory is managed automatically, string deallocation is allowed with %~s.
  */
 
 #ifndef _BOX_PRINT_H
@@ -56,8 +55,7 @@ Box_Print_Finish(void);
  * // No need to call the free(...) function. The user mustn't do it!
  * @endcode
  *
- * - has additional format specifiers to handle objects like #BoxName or
- *   #BoxType.
+ * - has additional format specifiers to handle #BoxType objects.
  *
  * - has %~s to print a string and deallocate it with free(...).
  *

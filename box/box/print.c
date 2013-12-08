@@ -39,11 +39,7 @@ void Box_Print_Finish(void) {
  *   specifier to write substrings. Usage is as follows:
  *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
  *       (* No need to call the free(...) function. The user mustn't do it! *)
- * - has %N to handle the BoxName data type.
- *   ES:
- *       BoxName my_name = {15, "Matteo Franchin"};
- *       msg = print("My name is %N, nice to meet you!", & my_name);
- * - has %~s, %~N to print a string and deallocate it with free(...).
+ * - has %~s to print a string and deallocate it with free(...).
  *   ES:
  *       msg = print("%S", Box_Mem_Strdup("allocated string"));
  */
@@ -179,18 +175,6 @@ const char *Box_VA_Print(const char *fmt, va_list ap)
           state = STATE_SUBSTRING;
           break;
         }
-      case 'N':
-        {
-          BoxName *nm = va_arg(ap, BoxName *);
-          do_read = 0;
-          substring = "(null)";
-          if (nm && nm->text) {
-            substring = nm->text;
-            substring_size = nm->length;
-          }
-          state = STATE_SUBSTRING;
-          break;
-        }
       case 'T':
         {
           BoxType *t = va_arg(ap, BoxType *);
@@ -283,12 +267,11 @@ const char *Box_Print(const char *fmt, ...)
 
 #if 0
 int main(void) {
-  BoxName my_name = {15, "Matteo Franchin"};
   const char *msg;
   msg = Box_Print("Don't worry! I can include '%s' even if "
-                  "I don't know its length!\nI can also print my name: %N!\n"
-                  "Or a number. Such as %d or %f!\n",
-                  "this string", & my_name, 123, 3.1415926);
+                  "I don't know its length!\nI can also print "
+                  "a number. Such as %d or %f!\n",
+                  "this string", 123, 3.1415926);
   printf("%s", msg);
   msg = Box_Print("This is a NUL string '%s'. No seg-fault ;-)\n", NULL);
   printf("%s", msg);

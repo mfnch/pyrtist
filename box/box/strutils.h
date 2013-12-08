@@ -109,12 +109,6 @@ BOXEXPORT const char *
 Box_Expand_Escaped_Str(const char *s, size_t s_length,
                        char **out, size_t *out_length);
 
-BoxName *BoxName_Empty(void);
-char *BoxName_To_Str(BoxName *n);
-void BoxName_From_Str(BoxName *dest, char *src);
-void BoxName_Free(BoxName *n);
-BoxName *BoxName_Dup(BoxName *n);
-BoxTask BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args);
 void *Box_Mem_Dup(const void *src, unsigned int length);
 
 /** Similar to Box_Mem_Dup, but allocate extra space in the destination */
@@ -124,8 +118,5 @@ void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size);
  * supposed to be NUL-terminated.
  */
 int Box_CStr_Ends_With(const char *src, const char *end);
-
-#define BoxName_Cat_And_Free(nm, nm1, nm2) \
-  BoxName_Cat(nm, nm1, nm2, 1)
 
 #endif /* _BOX_STRUTILS_H */
