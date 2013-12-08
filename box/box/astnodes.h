@@ -30,6 +30,16 @@ typedef struct BoxASTNodeRealImm_struct {
 } BoxASTNodeRealImm;
 #endif
 
+/* Node used to represent string immediates. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(STR_IMM, StrImm)
+#else
+typedef struct BoxASTNodeStrImm_struct {
+  BOXASTNODEHEAD
+  char                *str;
+} BoxASTNodeStrImm;
+#endif
+
 /* Node used to represent statement lists. */
 #ifdef BOXASTNODE_DEF
 BOXASTNODE_DEF(STATEMENT, Statement)

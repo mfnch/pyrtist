@@ -89,20 +89,27 @@ Box_Str_To_Real(const char *s, size_t s_length, BoxReal *out);
  *
  * @param s Input escaped string.
  * @param s_length Length of input string @p s.
- * @param out Where the output character is put.
- * @return Whether the operation succeeded.
+ * @param out Where the output character is stored.
+ * @return @c NULL on success, otherwise a string containing the error message.
  */
-BOXEXPORT BoxTask
-Box_Reduce_Esc_Char(const char *s, size_t l, char *out);
+BOXEXPORT const char *
+Box_Expand_Escaped_Char(const char *s, size_t s_length, char *out);
 
-/** Reads the string 's' (with length 'l') and returns a string where the
- * escaped sequences are replaced by the corresponding characters.
- * The length of this new string is put into '*new_length'.
+/**
+ * @brief Expand the given escaped string.
+ *
+ * @param s The given input string.
+ * @param s_length The length of the input string.
+ * @param out Where to store the output string (allocated with Box_Mem_Alloc()).
+ * @param out_length Where to store the length of the output string.
+ * @return @c NULL on success, otherwise return a string containing the error
+ *   message.
  */
-char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length);
+BOXEXPORT const char *
+Box_Expand_Escaped_Str(const char *s, size_t s_length,
+                       char **out, size_t *out_length);
 
 BoxName *BoxName_Empty(void);
-const char *BoxName_Str(BoxName *n);
 char *BoxName_To_Str(BoxName *n);
 void BoxName_From_Str(BoxName *dest, char *src);
 void BoxName_Free(BoxName *n);

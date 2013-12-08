@@ -239,19 +239,16 @@ include BEGIN(include);
 "(;)"  {yylval.TTag = BOXTYPEID_PAUSE; return TOK_TTAG;}
 
  /* Number of type Char */
-'([^'\n]|\\')' {
-  ASTConst c;
-  if (Box_Reduce_Esc_Char(yytext+1, yyleng-2, (char *) & c.c) != BOXTASK_OK) {
-    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
-    ASTNode_Set_Error(yylval.Node);
-  } else
-    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
+'(\\'|[^'\n]+)' {
+  char val = '?';
+  const char *err;
+
+  err = Box_Expand_Escaped_Char(yytext + 1, yyleng - 2, & val);
+  if (err)
+    MSG_ERROR("%s.", err);
+  yylval.NewNode = MY_NODE(CharImm, val);
   return TOK_CONSTANT;
  }
-
- /* Type modifiers */
-"'"  {yylval.TMod = 1; return TOK_TMOD;}
-"''" {yylval.TMod = 2; return TOK_TMOD;}
 
  /* Integer number */
 {DIGIT}+ {
@@ -291,10 +288,16 @@ include BEGIN(include);
 
  /* String */
 {STRING} {
-  size_t length;
-  char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
-  yylval.Node = ASTNodeString_New(s, length);
-  Box_Mem_Free(s);
+  char *out = NULL;
+  size_t out_length = 0;
+  const char *err;
+
+  err = Box_Expand_Escaped_Str(yytext + 1, yyleng - 2, & out, & out_length);
+  if (err)
+    MSG_ERROR("%s.", err);
+
+  yylval.NewNode = MY_NODE(StrImm, out, out_length);
+  Box_Mem_Free(out);
   return TOK_STRING;
  }
 

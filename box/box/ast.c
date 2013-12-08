@@ -863,6 +863,18 @@ BoxASTNode *BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value)
   return node;
 }
 
+BoxASTNode *BoxAST_Create_StrImm(BoxAST *ast, BoxSrc *src,
+                                 const char *str, uint32_t str_length)
+{
+  char *str_copy = BoxAllocPool_Str_NDup(& ast->pool, str, str_length);
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STR_IMM);
+  if (node && str_copy) {
+    node->src = *src;
+    ((BoxASTNodeStrImm *) node)->str = str_copy;
+  }
+  return node;
+}
+
 /* Create the first statement of statement list. */
 BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
 {

@@ -152,188 +152,188 @@ char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start) {
 /* DESCRIPTION: This function reads one octal digit, whose ASCII code
  *  is in the character-constant c. In case of errors it sets *status = 1.
  */
-unsigned char oct_digit(unsigned char c, int *status) {
-  if ( (c >= '0') && (c <= '7') ) return c - '0';
-  *status |= 1;
-  return '\0';
+int Box_Oct_Digit_To_Int(char digit) {
+  return (digit >= '0' && digit <= '7') ? (int) (digit - '0') : -1;
 }
 
-/* DESCRIPTION: This function reads one hexadecimal digit, whose ASCII code
- *  is in the character-constant c. In case of errors it sets *status = 1.
- */
-unsigned char hex_digit(unsigned char c, int *status) {
-  c = tolower(c);
-  if (c >= '0' && c <= '9') return c - '0';
-   else if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
-  *status |= 1;
-  return '\0';
-}
-
-/* DESCRIPTION: This function reads the first (simple or escaped) character
- *  of the string s, whose length is l. It returns the lenght of the read
- *  character in *f (1 if it was a simple character, 1 to 4 if it was
- *  an escaped character). The function returns also the read character in *c
- *  (whose value is suitably translated into one single byte).
- * NOTE: This function is used by Str_ToChar and by Str_ToString.
- */
-static BoxTask My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c)
+/** Return the hex digit (a char) corresponding to the given int value. */
+char Box_Hex_Digit_From_Int(int v)
 {
-  BoxName nm = {l, (char *) s};
+  switch(v) {
+  case 0: return '0';
+  case 1: return '1';
+  case 2: return '2';
+  case 3: return '3';
+  case 4: return '4';
+  case 5: return '5';
+  case 6: return '6';
+  case 7: return '7';
+  case 8: return '8';
+  case 9: return '9';
+  case 10: return 'a';
+  case 11: return 'b';
+  case 12: return 'c';
+  case 13: return 'd';
+  case 14: return 'e';
+  case 15: return 'f';
+  default: return '?';
+  }
+}
 
-  if (l < 1)
-    goto err_empty;
+/* Expand the given escaped character. */
+static const char *My_Expand_Escaped_Char(const char *s, size_t s_length,
+                                          size_t *consumed_chars, char *out)
+{
+//static BoxTask My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c)
+  char cur_char;
+
+  if (s_length < 1)
+    return "Empty character";
 
   if (s[0] != '\\') {
-    *c = s[0];
-    *f = 1;
-    return BOXTASK_OK;
+    *out = s[0];
+    *consumed_chars = 1;
+    return NULL;
+  }
 
-  } else {
-    register unsigned char s1 = s[1];
+  if (s_length < 2)
+    return "Uncomplete escape sequence";
 
-    if (l < 2)
-      goto err_miss;
+  cur_char = s[1];
+  if (cur_char == 'x') {
+    int value;
 
-    if (s1 == 'x') {
-      register unsigned char d, d2;
-      int err = 0;
+    if (s_length < 3)
+      return "Unexpected end in \\x escape sequence";
 
-      if (l < 3)
-        goto err_miss;
+    value = Box_Hex_Digit_To_Int(s[2]);
+    if (value < 0)
+      return "Invalid \\x escape sequence";
 
-      d = hex_digit(s[2], & err);
-      if (err)
-        goto err_hex_digit;
-
-      if (l > 3) {
-        d2 = hex_digit(s[3], & err);
-        if (!err) {
-          *f = 3;
-          *c = (d << 4) | d2;
-          return BOXTASK_OK;
-        }
-      }
-      *f = 2;
-      *c = d;
-      return BOXTASK_OK;
-
-    } else if (s1 >= '0' && s1 <= '9') {
-      register unsigned int d, d2;
-      int err = 0;
-
-      d = oct_digit(s1, & err);
-      if (err)
-        goto err_oct_digit;
-
-      if (l > 2) {
-        d2 = oct_digit(s[2], & err);
-        if (!err) {
-          d = (d << 3) | d2;
-          if (l > 3) {
-            d2 = oct_digit(s[3], & err);
-            if (!err) {
-              *f = 4;
-              *c = d = (d << 3) | d2;
-              if (d <= 255)
-                return BOXTASK_OK;
-              goto err_overflow;
-            }
-          }
-          *f = 3;
-          *c = d;
-          return BOXTASK_OK;
-        }
-      }
-      *f = 2;
-      *c = d;
-      return BOXTASK_OK;
-
-    } else {
-      *f = 2;
-      switch(s1) {
-       case 'a':  *c = '\a'; return BOXTASK_OK;
-       case 'b':  *c = '\b'; return BOXTASK_OK;
-       case 'f':  *c = '\f'; return BOXTASK_OK;
-       case 'n':  *c = '\n'; return BOXTASK_OK;
-       case 'r':  *c = '\r'; return BOXTASK_OK;
-       case 't':  *c = '\t'; return BOXTASK_OK;
-       case 'v':  *c = '\v'; return BOXTASK_OK;
-       case '\\': *c = '\\'; return BOXTASK_OK;
-       case '\?': *c = '\?'; return BOXTASK_OK;
-       case '\'': *c = '\''; return BOXTASK_OK;
-       case '\"': *c = '\"'; return BOXTASK_OK;
-       default:
-         MSG_ERROR("'%N' <- Wrong escape sequence.", & nm);
-         return BOXTASK_FAILURE;
+    if (s_length > 3) {
+      int low_digit = Box_Hex_Digit_To_Int(s[3]);
+      if (low_digit >= 0) {
+        *out = (value << 4) | low_digit;
+        *consumed_chars = 4;
+        return NULL;
       }
     }
+
+    *out = value;
+    *consumed_chars = 3;
+    return NULL;
   }
 
-err_empty:
-  MSG_ERROR("'' <- Missing character.");
-  return BOXTASK_FAILURE;
+  if (cur_char >= '0' && cur_char <= '9') {
+    int value = Box_Oct_Digit_To_Int(cur_char);
 
-err_miss:
-  MSG_ERROR("'%N' <- Unexpected end for the escape sequence.", & nm);
-  return BOXTASK_FAILURE;
+    if (s_length >= 3) {
+      int mid_digit = Box_Oct_Digit_To_Int(s[2]);
 
-err_hex_digit:
-  nm.length = 3;
-  MSG_ERROR("'%N' <- Wrong hexadecimal digit.", & nm);
-  return BOXTASK_FAILURE;
+      if (mid_digit >= 0) {
+        value = (value << 3) | mid_digit;
 
-err_oct_digit:
-  nm.length = 2;
-  MSG_ERROR("'%N' <- Wrong octal digit", & nm);
-  return BOXTASK_FAILURE;
+        if (s_length > 3) {
+          int low_digit = Box_Oct_Digit_To_Int(s[2]);
+          if (low_digit >= 0) {
+            value = (value << 3) | low_digit;
+            if (value > 0xff)
+              return "Octal number exceeds maximum value in escape sequence";
+            *out = value;
+            *consumed_chars = 4;
+            return NULL;
+          }
+        }
 
-err_overflow:
-  nm.length = 4;
-  MSG_ERROR("'%N' <- This octal number is greater than 255.", & nm);
-  return BOXTASK_FAILURE;
+        *out = value;
+        *consumed_chars = 3;
+        return NULL;
+      }
+    }
+
+    *out = value;
+    *consumed_chars = 2;
+    return NULL;
+  }
+
+  switch (cur_char) {
+  case 'a':  *out = '\a'; break;
+  case 'b':  *out = '\b'; break;
+  case 'f':  *out = '\f'; break;
+  case 'n':  *out = '\n'; break;
+  case 'r':  *out = '\r'; break;
+  case 't':  *out = '\t'; break;
+  case 'v':  *out = '\v'; break;
+  case '\\': *out = '\\'; break;
+  case '\?': *out = '\?'; break;
+  case '\'': *out = '\''; break;
+  case '\"': *out = '\"'; break;
+  default:
+    return "Unrecognized escape sequence.";
+  }
+
+  *consumed_chars = 2;
+  return NULL;
 }
 
-/* DESCRIPTION: This function scans the string s (whose length is l)
- *  and converts it into a Char.
- */
-BoxTask Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
-  size_t f;
+/* Expand the given escaped character. */
+const char *Box_Expand_Escaped_Char(const char *s, size_t s_length, char *out)
+{
+  size_t consumed_chars;
+  char my_out;
+  const char *err =
+    My_Expand_Escaped_Char(s, s_length, & consumed_chars, & my_out);
 
-  if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
-    return BOXTASK_FAILURE;
+  if (err)
+    return err;
 
-  if (f == l)
-    return BOXTASK_OK;
+  if (consumed_chars != s_length)
+    return "Escaped sequence contains too many characters";
 
-  else {
-    BoxName nm = {l, (char *) s};
-    MSG_ERROR("'%N' <- Too many characters.", & nm);
-    return BOXTASK_FAILURE;
-  }
+  *out = my_out;
+  return NULL;
 }
 
-/* DESCRIPTION: This function scans the C-type string s (whose length is l)
- *  and converts it into a string (array of char), which will be copied
- *  into out (this function uses malloc to allocate the string of output).
- */
-char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
-  size_t f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
-  char *c, *out;
+/* Expand the given escaped string */
+const char *Box_Expand_Escaped_Str(const char *s, size_t s_length,
+                                   char **out, size_t *out_length)
+{
+  /* We can here assume that the out string is always smaller than the input
+   * string: expansion always reduces the size of the string!
+   */
+  char *dst = (char *) Box_Mem_Alloc(s_length + 1);
+  char *d = dst;
+  size_t d_length = 0, consumed_chars = 0;
 
-  c = out = (char *) Box_Mem_Alloc(l + 1);
-  while (l > 0) {
-    if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
-      return NULL;
-    ++c;
-    ++nl;
-    s += f;
-    l -= f;
+  for (; s_length > consumed_chars;
+       s_length -= consumed_chars, s += consumed_chars) {
+    char expanded_char = s[0];
+
+    if (expanded_char == '\\') {
+      const char *err =
+        My_Expand_Escaped_Char(s, s_length, & consumed_chars, & expanded_char);
+      if (err) {
+        Box_Mem_Free(dst);
+        return err;
+      }
+    } else
+      consumed_chars = 1;
+
+    /* Write destination string and advance write position. */
+    *(d++) = expanded_char;
+    d_length++;
   }
 
-  *c = '\0';
-  if (new_length != NULL)
-    *new_length = nl;
-  return out;
+  *d = '\0';
+  if (out_length)
+    *out_length = d_length;
+
+  if (out)
+    *out = dst;
+  else
+    Box_Mem_Free(dst);
+
+  return NULL;
 }
 
 /* Return the numerical value of a character when interpreted as hex. */
@@ -379,30 +379,6 @@ int Box_Hex_Digit_To_Int(char digit)
   case 'e': return 14;
   case 'f': return 15;
   default: return -1;
-  }
-}
-
-/** Return the hex digit (a char) corresponding to the given int value. */
-char Box_Hex_Digit_From_Int(int v)
-{
-  switch(v) {
-  case 0: return '0';
-  case 1: return '1';
-  case 2: return '2';
-  case 3: return '3';
-  case 4: return '4';
-  case 5: return '5';
-  case 6: return '6';
-  case 7: return '7';
-  case 8: return '8';
-  case 9: return '9';
-  case 10: return 'a';
-  case 11: return 'b';
-  case 12: return 'c';
-  case 13: return 'd';
-  case 14: return 'e';
-  case 15: return 'f';
-  default: return '?';
   }
 }
 
@@ -475,24 +451,6 @@ const char *Box_Str_To_Real(const char *s, size_t s_length, BoxReal *out)
  */
 BoxName *BoxName_Empty(void) {
   static BoxName nm = {(BoxUInt) 0, (char *) NULL}; return & nm;
-}
-
-/* This function converts the string corresponding to the structure of type
- * BoxName into a normal C-string (NUL-terminated).
- * The string is allocated by this function, but should not be freed directly
- * by the user. For this purpose call: (void) BoxName_Str((Name) {0, NULL}).
- * After the user calls 'BoxName_Str' he must use the string, before the next
- * call to this same function is made. For this reason the statement:
- *   printf("Two BoxName-s: '%s' and '%s'\n", BoxName_Str(nm1), BoxName_Str(nm2));
- * I S   W R O N G!!!
- */
-const char *BoxName_Str(BoxName *n) {
-  static char *asciiz = NULL;
-  Box_Mem_Free(asciiz);
-  if (n->length == 0) return "";
-  asciiz = (char *) Box_Mem_Alloc(n->length + 1);
-  asciiz[n->length] = '\0';
-  return strncpy(asciiz, n->text, n->length);
 }
 
 /* This function converts the string corresponding to the structure of type

@@ -420,6 +420,14 @@ static void My_Compile_RealImm(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
+static void My_Compile_StrImm(BoxCmp *c, BoxASTNode *node)
+{
+  Value *v = Value_Create(c->cur_proc);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_STR_IMM);
+  Value_Setup_As_String(v, ((BoxASTNodeStrImm *) node)->str);
+  BoxCmp_Push_Value(c, v);
+}
+
 #if 0
 static void My_Compile_Error(BoxCmp *c, ASTNode *node)
 {
@@ -751,15 +759,6 @@ static void My_Compile_Box(BoxCmp *c, BoxASTNode *node)
 }
 
 #if 0
-static void My_Compile_String(BoxCmp *c, ASTNode *node) {
-  Value *v_str;
-
-  assert(node->type == ASTNODETYPE_STRING);
-
-  v_str = Value_New(c->cur_proc);
-  Value_Setup_As_String(v_str, node->attr.string.str);
-  BoxCmp_Push_Value(c, v_str);
-}
 
 static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   Value *v;

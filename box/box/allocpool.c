@@ -200,6 +200,20 @@ void *BoxAllocPool_Alloc_Aligned(BoxAllocPool *pool, uint32_t size,
   return My_Try_Alloc(sp, size, alignment);
 }
 
+/* Copy a string in the allocation pool. */
+char *BoxAllocPool_Str_NDup(BoxAllocPool *pool, const char *str,
+                            uint32_t str_length)
+{
+  char *str_copy = (char *) BoxAllocPool_Alloc_Aligned(pool, str_length + 1, 1);
+  if (str_copy) {
+    if (str_length)
+      (void) memcpy(str_copy, str, str_length);
+    str_copy[str_length] = '\0';
+    return str_copy;
+  }
+  return NULL;
+}
+
 void BoxAllocPool_Print_Stats(BoxAllocPool *pool, FILE *out)
 {
   int i;

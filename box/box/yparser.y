@@ -60,7 +60,6 @@ static void My_Syntax_Error();
   ASTTypeMemb   TypeMemb;
   BoxASTSep     Sep;
   ASTSelfLevel  SelfLevel;
-  int           TMod;
 }
 
 %code requires {
@@ -89,7 +88,6 @@ static void My_Syntax_Error();
 /* List of tokens that have semantical values */
 %token <Combine> TOK_COMBINE
 %token <TTag> TOK_TTAG
-%token <TMod> TOK_TMOD
 
 /* List of simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR

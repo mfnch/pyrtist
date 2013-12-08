@@ -81,6 +81,18 @@ BoxAllocPool_Alloc_Aligned(BoxAllocPool *pool, uint32_t size,
                            unsigned int alignment);
 
 /**
+ * @brief Copy a string in the allocation pool.
+ *
+ * @param pool The allocation pool.
+ * @param str The string to copy.
+ * @param str_length The length of the string to copy.
+ * @return A NUL-terminated string in the allocation pool or @c NULL if the
+ *   allocation failed.
+ */
+BOXEXPORT char *
+BoxAllocPool_Str_NDup(BoxAllocPool *pool, const char *str, uint32_t str_length);
+
+/**
  * @brief Print statistics about the pool (debugging function).
  *
  * @param pool The allocation pool.

@@ -538,6 +538,13 @@ BOXEXPORT BoxASTNode *
 BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value);
 
 /**
+ * @brief Create an string immediate node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_StrImm(BoxAST *ast, BoxSrc *src,
+                     const char *str, uint32_t str_length);
+
+/**
  * @brief Get the type of an AST node.
  */
 #define BoxASTNode_Get_Type(ast) ((ast)->type)
