@@ -29,94 +29,10 @@
 #include "mem.h"
 #include "strutils.h"
 
-/* DESCRIZIONE: Questa funzione confronta due stringhe senza distinguere
- *  tra maiuscole e minuscole e restituisce Succesfull se le stringhe
- *  sono uguali, BOXTASK_FAILURE se sono differenti
- */
-BoxTask Str_Eq(char *a, char *b) {
-  while (*a != '\0') {
-    if ( tolower(*(a++)) != tolower(*(b++)) )
-      return BOXTASK_FAILURE;
-  }
-  if (*b == '\0') return BOXTASK_OK;
-  return BOXTASK_FAILURE;
-}
 
-/* DESCRIZIONE: Controlla se la prima stringa (s1 di lunghezza l1)
- *  coincide con la seconda (s2 di lunghezza l2).
- * NOTA: La seconda stringa deve essere scritta con caratteri minuscoli,
- *  mentre nella prima possono essere presenti indifferentemente lettere
- *  minuscole o maiuscole; in questo modo l'uguaglianza viene stabilita
- *  a meno di differenze maiuscolo/minuscolo. Se le due stringhe coincidono
- *  restituisce BOXTASK_OK, altrimenti restituisce BOXTASK_FAILURE.
- */
-BoxTask Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
-  if (l1 != l2) return BOXTASK_FAILURE;
-
-  for (; l1 > 0; l1--)
-    if (tolower(*(s1++)) != *(s2++)) return BOXTASK_FAILURE;
-
-  return BOXTASK_OK;
-}
-
-/* DESCRIZIONE: Controlla se la prima stringa (s1 di lunghezza l1)
- *  coincide con la seconda (s2 di lunghezza l2).
- * NOTA: Distingue maiuscole da minuscole.
- */
-BoxTask Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
-  if (l1 != l2) return BOXTASK_FAILURE;
-  for (; l1 > 0; l1--)
-    if ( *(s1++) != *(s2++) ) return BOXTASK_FAILURE;
-  return BOXTASK_OK;
-}
-
-/* DESCRIZIONE: Copia in minuscolo la stringa s (di lunghezza leng)
- *  e crea cosi' una nuova stringa di cui restituisce il puntatore.
- * NOTA: Restituisce NULL se non c'e' abbastanza memoria per creare
- *  la nuova stringa.
- */
-char *Str_DupLow(char *s, BoxUInt leng)
+static char *My_Str_Cut(const char *s, BoxUInt leng, BoxUInt maxleng,
+                        BoxInt start)
 {
-  char *ns, *nc;
-  ns = (char *) Box_Mem_Alloc(leng);
-  for (nc = ns; leng > 0; leng--) *(nc++) = tolower(*(s++));
-  return ns;
-}
-
-/* DESCRIZIONE: Copia la stringa s (di lunghezza leng) e crea una stringa
- *  asciiz, cioe' terminante con '\0'.
- * NOTA: Restituisce NULL se non c'e' abbastanza memoria per creare
- *  la nuova stringa.
- */
-char *Str_Dup(const char *s, BoxUInt leng) {
-  char *ns, *nc;
-
-  if (s == NULL || leng < 1)
-    return (char *) Box_Mem_Strdup("");
-  ns = (char *) Box_Mem_Alloc(leng + 1);
-  for (nc = ns; leng > 0; leng--) *(nc++) = *(s++);
-  *nc = '\0';
-  return ns;
-}
-
-/* DESCRIZIONE: Taglia la stringa s, qualora la sua lunghezza superi maxleng.
- *  Se ad esempio s = "questa stringa e' troppo lunga" e maxleng = 20,
- *  Str_Cut restituira' "quest...troppo lunga" (start = 25).
- *  start specifica quale parte della stringa deve essere tagliata, in modo
- *  da farla stare in maxleng caratteri.
- *  start va da 0 a 100: indica la posizione (in percentuale) da dove iniziare
- *  a tagliare la stringa.
- * NOTA: In ogni caso la stringa restituita viene allocata da Str_Cut
- *  e sara' quindi necessario eventualmente usare free(...) per eliminarla.
- */
-char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start) {
-  return Str__Cut(s, strlen(s), maxleng, start);
-}
-
-/* DESCRIZIONE: Come Str_Cut, ma la lunghezza della stringa viene specificata
- *  direttamente attraverso il parametro leng.
- */
-char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start) {
   if ( leng <= maxleng )
     return Box_Mem_Strdup(s);
 
@@ -149,10 +65,17 @@ char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start) {
   }
 }
 
+/* Return an abbreviation of the input string. */
+char *Box_Abbrev_Str(const char *s, size_t max_length, int start_percent)
+{
+  return My_Str_Cut(s, strlen(s), max_length, start_percent);
+}
+
 /* DESCRIPTION: This function reads one octal digit, whose ASCII code
  *  is in the character-constant c. In case of errors it sets *status = 1.
  */
-int Box_Oct_Digit_To_Int(char digit) {
+int Box_Oct_Digit_To_Int(char digit)
+{
   return (digit >= '0' && digit <= '7') ? (int) (digit - '0') : -1;
 }
 
@@ -446,16 +369,20 @@ const char *Box_Str_To_Real(const char *s, size_t s_length, BoxReal *out)
   return "Error while parsing Real number";
 }
 
-void *Box_Mem_Dup(const void *src, unsigned int length) {
+void *Box_Mem_Dup(const void *src, unsigned int length)
+{
   void *copy;
-  if (length < 1) return NULL;
+  if (length < 1)
+    return NULL;
   copy = (void *) Box_Mem_Alloc(length);
-  memcpy(copy, src, length);
+  if (copy && src)
+    memcpy(copy, src, length);
   return copy;
 }
 
 /** Similar to Box_Mem_Dup, but allocate extra space */
-void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size) {
+void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size)
+{
   void *copy;
   assert(dest_size >= src_size && src_size >= 0);
   if (dest_size < 1) return NULL;
@@ -465,7 +392,8 @@ void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size) {
   return copy;
 }
 
-int Box_CStr_Ends_With(const char *src, const char *end) {
+int Box_CStr_Ends_With(const char *src, const char *end)
+{
   size_t l_src = strlen(src), l_end = strlen(end);
   if (l_src < l_end)
     return 0;

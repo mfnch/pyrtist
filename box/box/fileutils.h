@@ -17,23 +17,29 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file fileutils.h
+/**
+ * @file fileutils.h
  * @brief Some utilities for searching files (used just by the compiler).
  */
 
-#ifndef _FILEUTILS_H
-#  define _FILEUTILS_H
+#ifndef _BOX_FILEUTILS_H
+#  define _BOX_FILEUTILS_H
 
 #  include <box/types.h>
 #  include <box/list.h>
 
-BOXEXPORT int Box_File_Exist(const char *file_name);
 
-BOXEXPORT void Box_Find_Files_In_Dirs(BoxList **found_files,
-                                      const char *file_name,
-                                      BoxList *prefixes, BoxList *suffixes);
+BOXEXPORT int
+Box_File_Exist(const char *file_name);
 
-/** Search a file with the given name (file_name) combining together all the
+BOXEXPORT void
+Box_Find_Files_In_Dirs(BoxList **found_files, const char *file_name,
+                       BoxList *prefixes, BoxList *suffixes);
+
+/**
+ * @brief Search a file in the given directories.
+ *
+ * Search a file with the given name (file_name) combining together all the
  * given prefixes and suffixes. Note that the function only returns the first
  * found file, searching sequentially in the provided directories and
  * considering sequentially the given extensions. The order of the element of
@@ -43,16 +49,18 @@ BOXEXPORT void Box_Find_Files_In_Dirs(BoxList **found_files,
  * @param prefixes the directories (or prefixes) to consider
  * @param suffixes the extensions (or suffixes) to consider
  */
-BOXEXPORT void Box_Find_File_In_Dirs(char **found_file, const char *file_name,
-                                     BoxList *prefixes, BoxList *suffixes);
+BOXEXPORT void
+Box_Find_File_In_Dirs(char **found_file, const char *file_name,
+                      BoxList *prefixes, BoxList *suffixes);
 
 /**
- * Similar to Box_Find_File_In_Dirs, but search only inside one directory.
+ * Similar to Box_Find_File_In_Dirs(), but search only inside one directory.
  * This is why this function only takes a string (prefix) rather than a
  * BoxList (prefixes).
  */
-BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
-                                    const char *prefix, BoxList *suffixes);
+BOXEXPORT void
+Box_Find_File_In_Dir(char **found_file, const char *file_name,
+                     const char *prefix, BoxList *suffixes);
 
 /**
  * Split the given path in 'full_path' into its directory component,
@@ -61,6 +69,7 @@ BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
  * returns NULL. If 'dir' or 'file' are null, the corresponding string
  * is not allocated/returned. Examples:
  *
+ * @code
  *  Box_Split_Path(dir, file, "/dira/dirb/file.ext") -->
  *     *dir = Box_Mem_Strdup("/dira/dirb/"); *file = Box_Mem_Strdup("file.ext");
  *
@@ -68,22 +77,27 @@ BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
  *                       *dir = Box_Mem_Strdup("/"); *file = Box_Mem_Strdup("");
  *
  *  Box_Split_Path(dir, file, "") --> *dir = NULL; *file = Box_Mem_Strdup("");
+ * @endcode
  */
-BOXEXPORT void Box_Split_Path(char **dir, char **file, const char *full_path);
+BOXEXPORT void
+Box_Split_Path(char **dir, char **file, const char *full_path);
 
 /**
+ * @brief Return a platform-dependent version of the given path.
+ *
  * This functions transforms the input Unix path in a way that it can be
  * understood in the current platform. In particular, when running on Windows
  * this function transforms slashes to backslashes.
- * @param srcpath A string allocated with Box_Mem_Alloc containing the source
+ * @param srcpath A string allocated with Box_Mem_Alloc() containing the source
  *   path in Unix style.
  * @return This function tries to do a in-place transformation of the source
  *   string. When possible, it just returns srcpath. If this is not possible,
  *   then a new string is allocated and returned, while the original srcpath
- *   is freed with Box_Mem_Free. In other words, the user passes allocation
+ *   is freed with Box_Mem_Free(). In other words, the user passes allocation
  *   responsibility for the source string and receives allocation
  *   responsibility for the returned string.
  */
-BOXEXPORT char *Box_Normalize_Path(char *unix_path);
+BOXEXPORT char *
+Box_Normalize_Path(char *unix_path);
 
 #endif

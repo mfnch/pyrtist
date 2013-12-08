@@ -111,7 +111,7 @@ void *Box_Mem_Realloc(void *ptr, size_t size) {
 char *Box_Mem_Strdup(const char *s) {
   size_t sl = strlen(s) + 1;
   char *sd = Box_Mem_Alloc(sl);
-  if (sd == (char *) NULL)
+  if (sd)
     Box_Mem_Exit("strdup failed!");
   (void) memcpy(sd, s, sl);
   return sd;

@@ -137,16 +137,17 @@ BoxTask BoxList_Item_Get(BoxList *l, void **item, BoxUInt index) {
 
 void BoxList_Append_Strings(BoxList *l, const char *strings, char separator) {
   const char *s = strings, *string = s;
-  BoxUInt length = 0;
-  while(1) {
-    register char c = *s;
+  size_t length = 0;
+  while (1) {
+    char c = *s;
     if (c == '\0') {
-      if (length > 0) BoxList_Append_With_Size(l, string, length+1);
+      if (length)
+        BoxList_Append_With_Size(l, string, length + 1);
       return;
     } else if (c == separator) {
-      if (length > 0) {
-        char *s_copy = Str_Dup(string, length);
-        BoxList_Append_With_Size(l, s_copy, length+1);
+      if (length) {
+        char *s_copy = Box_Mem_Strndup(string, length);
+        BoxList_Append_With_Size(l, s_copy, length + 1);
         Box_Mem_Free(s_copy);
       }
       string = ++s;

@@ -167,7 +167,7 @@ My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
         char *call_name, *trunc_name;
 
         call_name = (p->desc) ? p->desc : p->name;
-        trunc_name = (call_name) ? Str_Cut(call_name, 40, 85) : NULL;
+        trunc_name = (call_name) ? Box_Abbrev_Str(call_name, 40, 85) : NULL;
         fprintf(output, " ('%.40s')", (trunc_name) ? trunc_name : "?");
         Box_Mem_Free(trunc_name);
       }
@@ -182,7 +182,7 @@ My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
       if (type) {
         char *type_repr = BoxType_Get_Repr(type);
         if (type_repr) {
-          char *trunc_type_repr = Str_Cut(type_repr, 40, 85);
+          char *trunc_type_repr = Box_Abbrev_Str(type_repr, 40, 85);
 
           if (trunc_type_repr) {
             Box_Mem_Free(type_repr);

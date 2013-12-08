@@ -459,8 +459,8 @@ typedef enum {
  * representing. See #BOXASTNODEHEAD for more information.
  */
 typedef struct BoxASTNode_struct {
-  BoxASTNodeType type;
   BoxSrc         src;
+  BoxASTNodeType type;
 } BoxASTNode;
 
 /**

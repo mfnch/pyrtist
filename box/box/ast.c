@@ -922,7 +922,7 @@ BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
                      last_stmt_node);
     last_stmt->next = NULL;
 
-#if 0
+#if 1
 #define BOXASTNODE_DEF(NODE, Node)                                      \
     printf("%s size=%zu, alignment=%zu\n",                              \
            #Node, sizeof(BoxASTNode##Node),                             \

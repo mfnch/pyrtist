@@ -141,7 +141,7 @@ include BEGIN(include);
   * are not allowed inside an include line.
   */
 <include>{STRING} {
-  char *f = Box_Normalize_Path(Str_Dup(yytext+1, yyleng-2));
+  char *f = Box_Normalize_Path(Box_Mem_Strndup(yytext + 1, yyleng - 2));
 
   BEGIN(INITIAL);
 

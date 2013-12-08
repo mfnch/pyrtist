@@ -32,13 +32,23 @@
 
 #  include <box/types.h>
 
-BoxTask Str_Eq(char *a, char *b);
-BoxTask Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
-BoxTask Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
-char *Str_DupLow(char *s, BoxUInt leng);
-char *Str_Dup(const char *s, BoxUInt leng);
-char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start);
-char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start);
+/**
+ * @brief Return an abbreviation of the input string.
+ *
+ * Abbreviate a string when its length is above a provided maximum value.
+ * Abbreviation is performed by dropping characters and replacing them with
+ * "...".
+ *
+ * @param s Input null-terminated string.
+ * @param max_length Maximum length at which abbreviation is triggered.
+ * @param start_percent Position (in percentage) at which characters should
+ *   be omitted in order to achieve the abbreviation. <= 0 means that leading
+ *   characters should be dropped. >= 100 means that trailing characters should
+ *   be dropped.
+ * @return A null-terminated string not larger than @p max_length characters.
+ */
+BOXEXPORT char *
+Box_Abbrev_Str(const char *s, size_t max_length, int start_percent);
 
 /**
  * @brief Return the numerical value of a character when interpreted as hex.
@@ -109,14 +119,17 @@ BOXEXPORT const char *
 Box_Expand_Escaped_Str(const char *s, size_t s_length,
                        char **out, size_t *out_length);
 
-void *Box_Mem_Dup(const void *src, unsigned int length);
+BOXEXPORT void *
+Box_Mem_Dup(const void *src, unsigned int length);
 
-/** Similar to Box_Mem_Dup, but allocate extra space in the destination */
-void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size);
-
-/** Returns whether the string 'src' ends with 'end'. Both strings are
- * supposed to be NUL-terminated.
+/**
+ * @brief Check whether a given string terminates with another given string.
+ *
+ * @param src Input string.
+ * @param term Termination string.
+ * @return Whether @p src terminates with @p term.
  */
-int Box_CStr_Ends_With(const char *src, const char *end);
+BOXEXPORT int
+Box_CStr_Ends_With(const char *src, const char *term);
 
 #endif /* _BOX_STRUTILS_H */
