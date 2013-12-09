@@ -109,12 +109,13 @@ void *Box_Mem_Realloc(void *ptr, size_t size) {
 }
 
 char *Box_Mem_Strdup(const char *s) {
-  size_t sl = strlen(s) + 1;
-  char *sd = Box_Mem_Alloc(sl);
-  if (sd)
-    Box_Mem_Exit("strdup failed!");
-  (void) memcpy(sd, s, sl);
-  return sd;
+  size_t s_length = strlen(s) + 1;
+  char *s_copy = Box_Mem_Alloc(s_length);
+  if (!s_copy)
+    return NULL;
+
+  (void) memcpy(s_copy, s, s_length);
+  return s_copy;
 }
 
 char *Box_Mem_Strndup(const char *s, size_t length) {
