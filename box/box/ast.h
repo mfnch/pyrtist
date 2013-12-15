@@ -589,6 +589,13 @@ BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt, BoxASTSep sep,
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent, BoxASTNode *last_stmt);
 
+/**
+ * @brief Create a type/variable identifier node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Idfr(BoxAST *ast, BoxSrc *src,
+                   const char *name, uint32_t name_length);
+
 #if 0
 /**
  * @brief Create a new type identifier.

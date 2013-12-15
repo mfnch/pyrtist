@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <box/mem.h>
 #include <box/print.h>
@@ -456,7 +457,7 @@ static void ASTNodeString_Finaliser(ASTNode *node) {
 
 ASTNode *ASTNodeString_New(const char *str, size_t str_len) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_STRING);
-  node->attr.string.str = 
+  node->attr.string.str =
     Box_Mem_Str_Merge_With_Len(str, str_len, NULL, 0);
   node->finaliser = ASTNodeString_Finaliser;
   return node;
@@ -737,6 +738,15 @@ void BoxAST_Init(BoxAST *ast)
 {
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
+
+#if 0
+#define BOXASTNODE_DEF(NODE, Node)                                      \
+    printf("%s size=%zu, alignment=%zu\n",                              \
+           #Node, sizeof(BoxASTNode##Node),                             \
+           __alignof__(BoxASTNode##Node));
+#include "astnodes.h"
+#undef BOXASTNODE_DEF
+#endif
 }
 
 void BoxAST_Finish(BoxAST *ast)
@@ -817,6 +827,30 @@ void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
       node->type = type;
     return node;
   }
+  return NULL;
+}
+
+/* Create a variable-size node. */
+void *BoxAST_Create_Var_Node(BoxAST *ast, BoxASTNodeType type,
+                             uint32_t extra_size, void **extra)
+{
+  uint32_t node_alignment;
+  uint32_t head_size = My_Get_Node_Size(type, & node_alignment);
+  if (head_size) {
+    uint32_t node_size = head_size + extra_size;
+    BoxASTNode *node;
+
+    assert(head_size && extra_size);
+    node = BoxAllocPool_Alloc_Aligned(& ast->pool, node_size,
+                                      node_alignment);
+    if (node) {
+      node->type = type;
+      if (extra)
+        *extra = (void *) ((char *) node + node_size);
+      return node;
+    }
+  }
+
   return NULL;
 }
 
@@ -921,16 +955,25 @@ BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
     MY_PROPAGATE_SRC(node, (parent) ? parent : (BoxASTNode *) box->first_stmt,
                      last_stmt_node);
     last_stmt->next = NULL;
-
-#if 1
-#define BOXASTNODE_DEF(NODE, Node)                                      \
-    printf("%s size=%zu, alignment=%zu\n",                              \
-           #Node, sizeof(BoxASTNode##Node),                             \
-           __alignof__(BoxASTNode##Node));
-#include "astnodes.h"
-#undef BOXASTNODE_DEF
-#endif
-
   }
+  return node;
+}
+
+/* Create a type/variable identifier node. */
+BoxASTNode *BoxAST_Create_Idfr(BoxAST *ast, BoxSrc *src,
+                               const char *name, uint32_t name_length)
+{
+  uint32_t extra_size = name_length + 1;
+  BoxASTNode *node;
+
+  assert(extra_size > 1);
+  node = BoxAST_Create_Var_Node(ast, BOXASTNODETYPE_IDFR,
+                                extra_size, NULL);
+  if (node) {
+    BoxASTNodeIdfr *idfr = (BoxASTNodeIdfr *) node;
+    memcpy(& idfr->name[0], name, name_length);
+    idfr->name[name_length] = '\0';
+  }
+
   return node;
 }

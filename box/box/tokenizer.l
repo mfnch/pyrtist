@@ -314,7 +314,7 @@ Else {
 
  /* Type name */
 {UNAME} {
-  yylval.String = Box_Mem_Strndup(yytext, yyleng);
+  yylval.NewNode = MY_NODE(Idfr, yytext, yyleng);
   return TOK_TYPE_IDENT;
  }
 

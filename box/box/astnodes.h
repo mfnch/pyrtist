@@ -63,3 +63,13 @@ typedef struct BoxASTNodeBox_struct {
   BoxASTNodeStatement *first_stmt;
 } BoxASTNodeBox;
 #endif
+
+/* Node used to represent variable and type identifiers. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(IDFR, Idfr)
+#else
+typedef struct BoxASTNodeIdfr_struct {
+  BOXASTNODEHEAD
+  char                name[];
+} BoxASTNodeIdfr;
+#endif

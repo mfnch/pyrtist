@@ -55,7 +55,7 @@ static void My_Syntax_Error();
   ASTScope      Scope;
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;
-  ASTNodePtr    Node;
+  BoxASTNodePtr Node;
   BoxASTNodePtr NewNode;
   ASTTypeMemb   TypeMemb;
   BoxASTSep     Sep;
@@ -98,7 +98,8 @@ static void My_Syntax_Error();
 %token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <String> TOK_IDENTIFIER TOK_TYPE_IDENT TOK_KEYWORD
+%token <Node> TOK_TYPE_IDENT
+%token <String> TOK_IDENTIFIER TOK_KEYWORD
 %token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
@@ -112,7 +113,7 @@ static void My_Syntax_Error();
 %type <Node> land_expr lor_expr assign_expr comb_expr expr
 %type <Node> actions opt_actions restrs opt_restrs opt_comb_def
 %type <Node> opt_c_name comb_parent
-%type <NewNode> statement statement_list
+%type <Node> statement statement_list
 
 
 /* Starting rule */
@@ -226,12 +227,12 @@ string_concat:
   ;
 
 type:
-    TOK_TYPE_IDENT               {$$ = NULL;}
+    TOK_TYPE_IDENT               {$$ = $1;}
   | type ':' TOK_TYPE_IDENT      {$$ = NULL;}
   ;
 
 name:
-    type                         {$$ = NULL;}
+    type                         {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = NULL;}
   | type ':' TOK_IDENTIFIER      {$$ = NULL;}
   ;
@@ -241,7 +242,7 @@ prim_expr:
   | TOK_TTAG                     {$$ = NULL;}
   | TOK_KEYWORD                  {$$ = NULL;}
   | string_concat                {$$ = $1;}
-  | name                         {$$ = NULL;}
+  | name                         {$$ = $1;}
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
   | TOK_SELF                     {$$ = NULL;}
@@ -252,7 +253,7 @@ postfix_expr:
     prim_expr                    {$$ = $1;}
   | postfix_expr '(' expr ')'    {$$ = NULL;}
   | postfix_expr '[' statement_list ']'
-                                 {$$ = NULL;}
+                                 {$$ = BoxAST_Create_Box(ast, $1, $3);}
   | opt_postfix_expr '.' TOK_IDENTIFIER
                                  {$$ = NULL;}
   | opt_postfix_expr '.' TOK_TYPE_IDENT
@@ -339,7 +340,7 @@ comb_expr:
    ;
 
 expr:
-    comb_expr             {$$ = $1;}
+    comb_expr                    {$$ = $1;}
   ;
 
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
@@ -374,7 +375,7 @@ opt_c_name:
 opt_comb_def:
                                  {$$ = NULL;}
   | '?'                          {$$ = NULL;}
-  | '[' statement_list ']'       {$$ = NULL;}
+  | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);}
   ;
 
 comb_parent:
@@ -389,7 +390,7 @@ statement:
                                  {$$ = NULL;}
   | expr                         {$$ = (BoxASTNode *) $1;}
   | '\\' expr                    {$$ = NULL;}
-  | '[' statement_list ']'       {$$ = NULL;}
+  | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);;}
   | error sep                    {$$ = NULL;
                                   /*ASTNodeStatement_New(ASTNodeError_New());
                                   My_Syntax_Error(& @$, NULL);

@@ -433,24 +433,24 @@ static void My_Compile_Error(BoxCmp *c, ASTNode *node)
 {
   BoxCmp_Push_Value(c, Value_New(c->cur_proc));
 }
+#endif
 
-static void My_Compile_TypeName(BoxCmp *c, ASTNode *n)
+static void My_Compile_Idfr(BoxCmp *c, BoxASTNode *node)
 {
   Value *v;
-  char *type_name = n->attr.var.name;
+  char *type_name = & ((BoxASTNodeIdfr *) node)->name[0];
   NmspFloor f;
 
-  assert(n->type == ASTNODETYPE_TYPENAME);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IDFR);
 
   f = NMSPFLOOR_DEFAULT;
   v = Namespace_Get_Value(& c->ns, f, type_name);
   if (v) {
     /* We return a copy, not the original! */
-    Value *v_copy = Value_New(c->cur_proc);
+    Value *v_copy = Value_Create(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_copy, v);
     Value_Unlink(v);
     BoxCmp_Push_Value(c, v_copy);
-
   } else {
     v = Value_Create(c->cur_proc);
     Value_Setup_As_Type_Name(v, type_name);
@@ -459,6 +459,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n)
   }
 }
 
+#if 0
 static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n)
 {
   Value *v;

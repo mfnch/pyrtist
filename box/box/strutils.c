@@ -226,21 +226,21 @@ const char *Box_Expand_Escaped_Str(const char *s, size_t s_length,
    */
   char *dst = (char *) Box_Mem_Alloc(s_length + 1);
   char *d = dst;
-  size_t d_length = 0, consumed_chars = 0;
+  size_t d_length = 0, s_pos;
 
-  for (; s_length > consumed_chars;
-       s_length -= consumed_chars, s += consumed_chars) {
-    char expanded_char = s[0];
+  for (s_pos = 0; s_pos < s_length; s_pos++) {
+    char expanded_char = s[s_pos];
 
     if (expanded_char == '\\') {
-      const char *err =
-        My_Expand_Escaped_Char(s, s_length, & consumed_chars, & expanded_char);
-      if (err) {
+      size_t consumed_chs;
+      const char *err = My_Expand_Escaped_Char(& s[s_pos], s_length - s_pos,
+                                               & consumed_chs, & expanded_char);
+      if (err || !consumed_chs) {
         Box_Mem_Free(dst);
         return err;
       }
-    } else
-      consumed_chars = 1;
+      s_pos += consumed_chs - 1;
+    }
 
     /* Write destination string and advance write position. */
     *(d++) = expanded_char;
