@@ -42,15 +42,15 @@ typedef struct ASTNode_struct ASTNode;
 /** Possible types of nodes in the AST */
 typedef enum {
   ASTNODETYPE_ERROR,
-  ASTNODETYPE_TYPENAME,
+  ASTNODETYPE_TYPENAME,  //
   ASTNODETYPE_TYPETAG,
   ASTNODETYPE_SUBTYPE,
   ASTNODETYPE_INSTANCE,
-  ASTNODETYPE_BOX,
-  ASTNODETYPE_STATEMENT,
-  ASTNODETYPE_CONST,
-  ASTNODETYPE_STRING,
-  ASTNODETYPE_VAR,
+  ASTNODETYPE_BOX,       //
+  ASTNODETYPE_STATEMENT, //
+  ASTNODETYPE_CONST,     //
+  ASTNODETYPE_STRING,    //
+  ASTNODETYPE_VAR,       //
   ASTNODETYPE_IGNORE,
   ASTNODETYPE_UNOP,
   ASTNODETYPE_BINOP,
@@ -109,50 +109,50 @@ typedef enum {
 
 /** Unary operators */
 typedef enum {
-  ASTUNOP_PLUS,
-  ASTUNOP_NEG,
-  ASTUNOP_LINC,
-  ASTUNOP_LDEC,
-  ASTUNOP_RINC,
-  ASTUNOP_RDEC,
-  ASTUNOP_NOT,
-  ASTUNOP_BNOT
+  BOXASTUNOP_PLUS,
+  BOXASTUNOP_NEG,
+  BOXASTUNOP_LINC,
+  BOXASTUNOP_LDEC,
+  BOXASTUNOP_RINC,
+  BOXASTUNOP_RDEC,
+  BOXASTUNOP_NOT,
+  BOXASTUNOP_BNOT,
+  BOXASTUNOP_NUM_OPS
 } BoxASTUnOp;
-
-#define ASTUNOP__NUM_OPS (ASTUNOP_BNOT + 1)
 
 /** Binary operators */
 typedef enum {
-  ASTBINOP_ADD=0,
-  ASTBINOP_SUB,
-  ASTBINOP_MUL,
-  ASTBINOP_DIV,
-  ASTBINOP_REM,
-  ASTBINOP_POW,
-  ASTBINOP_SHL,
-  ASTBINOP_SHR,
-  ASTBINOP_EQ,
-  ASTBINOP_NE,
-  ASTBINOP_LT,
-  ASTBINOP_LE,
-  ASTBINOP_GT,
-  ASTBINOP_GE,
-  ASTBINOP_BAND,
-  ASTBINOP_BXOR,
-  ASTBINOP_BOR,
-  ASTBINOP_LAND,
-  ASTBINOP_LOR,
-  ASTBINOP_ASSIGN,
-  ASTBINOP_APLUS,
-  ASTBINOP_AMINUS,
-  ASTBINOP_ATIMES,
-  ASTBINOP_AREM,
-  ASTBINOP_ADIV,
-  ASTBINOP_ASHL,
-  ASTBINOP_ASHR,
-  ASTBINOP_ABAND,
-  ASTBINOP_ABXOR,
-  ASTBINOP_ABOR
+  BOXASTBINOP_ADD=0,
+  BOXASTBINOP_SUB,
+  BOXASTBINOP_MUL,
+  BOXASTBINOP_DIV,
+  BOXASTBINOP_REM,
+  BOXASTBINOP_POW,
+  BOXASTBINOP_SHL,
+  BOXASTBINOP_SHR,
+  BOXASTBINOP_EQ,
+  BOXASTBINOP_NE,
+  BOXASTBINOP_LT,
+  BOXASTBINOP_LE,
+  BOXASTBINOP_GT,
+  BOXASTBINOP_GE,
+  BOXASTBINOP_BAND,
+  BOXASTBINOP_BXOR,
+  BOXASTBINOP_BOR,
+  BOXASTBINOP_LAND,
+  BOXASTBINOP_LOR,
+  BOXASTBINOP_ASSIGN,
+  BOXASTBINOP_APLUS,
+  BOXASTBINOP_AMINUS,
+  BOXASTBINOP_ATIMES,
+  BOXASTBINOP_AREM,
+  BOXASTBINOP_ADIV,
+  BOXASTBINOP_ASHL,
+  BOXASTBINOP_ASHR,
+  BOXASTBINOP_ABAND,
+  BOXASTBINOP_ABXOR,
+  BOXASTBINOP_ABOR,
+  BOXASTBINOP_NUM_OPS
 } BoxASTBinOp;
 
 /* TEMPORARY: for compatibility. */
@@ -160,8 +160,6 @@ typedef enum {
 #define ASTSep BoxASTSep
 #define ASTBinOp BoxASTBinOp
 #define ASTUnOp BoxASTUnOp
-
-#define ASTBINOP__NUM_OPS (ASTBINOP_ABOR + 1)
 
 /** Integer indicating the self level: 0 --> $, 1 --> $$, 2 --> $$$, etc. */
 typedef BoxInt ASTSelfLevel;
@@ -439,6 +437,15 @@ ASTNode *ASTNodeRaiseType_New(ASTNode *type);
 
 
 
+/**
+ * @brief Common attribute for AST nodes.
+ */
+enum BoxASTNodeAttr {
+  BOXASTNODEATTR_ERR     = 0x1, /**< The node contains an error. */
+  BOXASTNODEATTR_TYPE    = 0x2, /**< The node represents a type. */
+  BOXASTNODEATTR_ALL     = 0x3, /**< All attributes or-ed together. */
+  BOXASTNODEATTR_DEFAULT = 0x0, /**< Init value for the attributes. */
+};
 
 /**
  * @brief Possible types of nodes in the AST.
@@ -460,15 +467,43 @@ typedef enum {
  */
 typedef struct BoxASTNode_struct {
   BoxSrc         src;
-  BoxASTNodeType type;
+  uint8_t        type;
+  uint8_t        attr;
 } BoxASTNode;
+
+/**
+ * @brief Get the attributes mask of an AST node.
+ */
+#define BoxASTNode_Get_Attr_Mask(ast) ((ast)->attr)
+
+/**
+ * @brief Set the attributes mask of an AST node (does an or operation).
+ */
+#define BoxASTNode_Set_Attr_Mask(ast, val) do{(ast)->attr = (val);} while(0)
+
+/**
+ * @brief Set the attributes mask of an AST node (does an or operation).
+ */
+#define BoxASTNode_Set_Attr(ast, clr, set) \
+  do {(ast)->attr = ((ast)->attr & ~((uint8_t) clr)) \
+                  | (uint8_t) (set);} while(0)
+
+/**
+ * @brief Get the type of an AST node.
+ */
+#define BoxASTNode_Get_Type(ast) ((ast)->type)
+
+/**
+ * @brief Set the type of an AST node.
+ */
+#define BoxASTNode_Set_Type(ast, val) do{(ast)->type = (val);} while(0)
 
 /**
  * @brief Beginning of every AST node.
  *
  * The C standard guarantees that the pointer to a structure is always the
  * pointer to its first member. We therefore demand that every AST node is
- * declared similarly to,
+ * declared like this:
  * @code
  * typedef struct BoxASTNodeXXX {
  *   BOXASTNODEHEAD
@@ -545,11 +580,6 @@ BoxAST_Create_StrImm(BoxAST *ast, BoxSrc *src,
                      const char *str, uint32_t str_length);
 
 /**
- * @brief Get the type of an AST node.
- */
-#define BoxASTNode_Get_Type(ast) ((ast)->type)
-
-/**
  * @brief  Get a string representation of the given node type.
  */
 BOXEXPORT const char *
@@ -590,11 +620,24 @@ BOXEXPORT BoxASTNode *
 BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent, BoxASTNode *last_stmt);
 
 /**
- * @brief Create a type/variable identifier node.
+ * @brief Create a type identifier node.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_Idfr(BoxAST *ast, BoxSrc *src,
-                   const char *name, uint32_t name_length);
+BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
+                       const char *name, uint32_t name_length);
+
+/**
+ * @brief Create a type identifier node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
+                      const char *name, uint32_t name_length);
+
+/**
+ * @brief Create an ignore node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value);
 
 #if 0
 /**

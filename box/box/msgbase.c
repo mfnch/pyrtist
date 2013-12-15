@@ -38,20 +38,25 @@
 BoxTask Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level) {
   MsgStack *ms;
   BoxUInt i;
+
   *ms_ptr = ms = (MsgStack *) malloc(sizeof(MsgStack));
-  if (ms == (MsgStack *) NULL) return BOXTASK_FAILURE;
+  if (!ms)
+    return BOXTASK_FAILURE;
+
   ms->show_level = show_level;
   ms->last_shown = 0;
-  ms->filter = ms->default_filter = (MsgFilter) NULL;
+  ms->filter = ms->default_filter = NULL;
   ms->flush = 0;
   ms->out = stderr;
   BoxArr_Init(& ms->msgs, sizeof(Msg), MSG_TYPICAL_NUM_MSGS);
 
   num_levels = num_levels > 0 ? num_levels : 1;
   ms->level = (BoxUInt *) malloc(num_levels*sizeof(BoxUInt));
-  if (ms->level == (BoxUInt *) NULL) return BOXTASK_FAILURE;
+  if (!ms->level)
+    return BOXTASK_FAILURE;
   ms->num_levels = num_levels;
-  for(i=0; i<num_levels; i++) ms->level[i] = 0;
+  for(i = 0; i < num_levels; i++)
+    ms->level[i] = 0;
   return BOXTASK_OK;
 }
 

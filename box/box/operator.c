@@ -156,13 +156,13 @@ void Operator_Del_Opn(Operator *opr, Operation *opn) {
 
 /** Get the Operator object corresponding to the given ASTBinOp constant. */
 Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op) {
-  assert(bin_op >= 0 && bin_op < ASTBINOP__NUM_OPS);
+  assert(bin_op >= 0 && bin_op < BOXASTBINOP_NUM_OPS);
   return & c->bin_ops[bin_op];
 }
 
 /** Get the Operator object corresponding to the given ASTUnOp constant. */
 Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op) {
-  assert(un_op >= 0 && un_op < ASTUNOP__NUM_OPS);
+  assert(un_op >= 0 && un_op < BOXASTUNOP_NUM_OPS);
   return & c->un_ops[un_op];
 }
 
@@ -170,7 +170,7 @@ Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op) {
 void BoxCmp_Init__Operators(BoxCmp *c) {
   int i;
 
-  for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
+  for(i = 0; i < BOXASTUNOP_NUM_OPS; i++) {
     OprAttr attr;
     Operator *opr = BoxCmp_UnOp_Get(c, i);
     Operator_Init(opr, c, ASTUnOp_To_String(i));
@@ -179,7 +179,7 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
   }
 
-  for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
+  for(i = 0; i < BOXASTBINOP_NUM_OPS; i++) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
     Operator_Init(opr, c, ASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
@@ -194,10 +194,10 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
 void BoxCmp_Finish__Operators(BoxCmp *c) {
   int i;
 
-  for(i = 0; i < ASTUNOP__NUM_OPS; i++)
+  for(i = 0; i < BOXASTUNOP_NUM_OPS; i++)
     Operator_Finish(BoxCmp_UnOp_Get(c, i));
 
-  for(i = 0; i < ASTBINOP__NUM_OPS; i++)
+  for(i = 0; i < BOXASTBINOP_NUM_OPS; i++)
     Operator_Finish(BoxCmp_BinOp_Get(c, i));
 
   Operator_Finish(& c->convert);

@@ -153,22 +153,23 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
 
 const char *ASTUnOp_To_String(ASTUnOp op) {
   switch(op) {
-  case ASTUNOP_PLUS: return "+";
-  case ASTUNOP_NEG: return "-";
-  case ASTUNOP_LINC: return "++";
-  case ASTUNOP_LDEC: return "--";
-  case ASTUNOP_RINC: return "++";
-  case ASTUNOP_RDEC: return "--";
-  case ASTUNOP_NOT: return "!";
-  case ASTUNOP_BNOT: return "~";
+  case BOXASTUNOP_PLUS: return "+";
+  case BOXASTUNOP_NEG: return "-";
+  case BOXASTUNOP_LINC: return "++";
+  case BOXASTUNOP_LDEC: return "--";
+  case BOXASTUNOP_RINC: return "++";
+  case BOXASTUNOP_RDEC: return "--";
+  case BOXASTUNOP_NOT: return "!";
+  case BOXASTUNOP_BNOT: return "~";
+  default: break;
   }
   return "?";
 }
 
 int ASTUnOp_Is_Right(ASTUnOp op) {
  switch(op) {
- case ASTUNOP_RINC:
- case ASTUNOP_RDEC:
+ case BOXASTUNOP_RINC:
+ case BOXASTUNOP_RDEC:
    return 1;
  default:
    return 0;
@@ -178,36 +179,37 @@ int ASTUnOp_Is_Right(ASTUnOp op) {
 
 const char *ASTBinOp_To_String(ASTBinOp op) {
   switch(op) {
-  case ASTBINOP_ADD: return "+";
-  case ASTBINOP_SUB: return "-";
-  case ASTBINOP_MUL: return "*";
-  case ASTBINOP_DIV: return "/";
-  case ASTBINOP_REM: return "%";
-  case ASTBINOP_POW: return "**";
-  case ASTBINOP_SHL: return "<<";
-  case ASTBINOP_SHR: return ">>";
-  case ASTBINOP_EQ: return "==";
-  case ASTBINOP_NE: return "!=";
-  case ASTBINOP_LT: return "<";
-  case ASTBINOP_LE: return "<=";
-  case ASTBINOP_GT: return ">";
-  case ASTBINOP_GE: return ">=";
-  case ASTBINOP_BAND: return "&";
-  case ASTBINOP_BXOR: return "^";
-  case ASTBINOP_BOR: return "|";
-  case ASTBINOP_LAND: return "&&";
-  case ASTBINOP_LOR: return "||";
-  case ASTBINOP_ASSIGN: return "=";
-  case ASTBINOP_APLUS: return "+=";
-  case ASTBINOP_AMINUS: return "-=";
-  case ASTBINOP_ATIMES: return "*=";
-  case ASTBINOP_AREM: return "%=";
-  case ASTBINOP_ADIV: return "/=";
-  case ASTBINOP_ASHL: return "<<=";
-  case ASTBINOP_ASHR: return ">>=";
-  case ASTBINOP_ABAND: return "&=";
-  case ASTBINOP_ABXOR: return "^=";
-  case ASTBINOP_ABOR: return "|=";
+  case BOXASTBINOP_ADD: return "+";
+  case BOXASTBINOP_SUB: return "-";
+  case BOXASTBINOP_MUL: return "*";
+  case BOXASTBINOP_DIV: return "/";
+  case BOXASTBINOP_REM: return "%";
+  case BOXASTBINOP_POW: return "**";
+  case BOXASTBINOP_SHL: return "<<";
+  case BOXASTBINOP_SHR: return ">>";
+  case BOXASTBINOP_EQ: return "==";
+  case BOXASTBINOP_NE: return "!=";
+  case BOXASTBINOP_LT: return "<";
+  case BOXASTBINOP_LE: return "<=";
+  case BOXASTBINOP_GT: return ">";
+  case BOXASTBINOP_GE: return ">=";
+  case BOXASTBINOP_BAND: return "&";
+  case BOXASTBINOP_BXOR: return "^";
+  case BOXASTBINOP_BOR: return "|";
+  case BOXASTBINOP_LAND: return "&&";
+  case BOXASTBINOP_LOR: return "||";
+  case BOXASTBINOP_ASSIGN: return "=";
+  case BOXASTBINOP_APLUS: return "+=";
+  case BOXASTBINOP_AMINUS: return "-=";
+  case BOXASTBINOP_ATIMES: return "*=";
+  case BOXASTBINOP_AREM: return "%=";
+  case BOXASTBINOP_ADIV: return "/=";
+  case BOXASTBINOP_ASHL: return "<<=";
+  case BOXASTBINOP_ASHR: return ">>=";
+  case BOXASTBINOP_ABAND: return "&=";
+  case BOXASTBINOP_ABXOR: return "^=";
+  case BOXASTBINOP_ABOR: return "|=";
+  default: break;
   }
   return "?";
 }
@@ -724,10 +726,10 @@ ASTNode *ASTNodeRaiseType_New(ASTNode *type) {
 
 
 
-#define MY_COPY_SRC(dst, src)                   \
-  do {BoxASTNode *src_node = (src);             \
-      if (src_node) *(dst) = *src_node;         \
-      else BoxSrc_Init(dst);} while(0)
+#define MY_COPY_SRC(lhs, rhs)                     \
+  do {BoxASTNode *src_node = (rhs);               \
+      if (src_node) lhs->src = src_node->src;     \
+      else BoxSrc_Init(& lhs->src);} while(0)
 
 #define MY_PROPAGATE_SRC(container, fst, lst)           \
   do {(container)->src.begin = (fst)->src.begin;        \
@@ -739,7 +741,7 @@ void BoxAST_Init(BoxAST *ast)
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
 
-#if 0
+#if 1
 #define BOXASTNODE_DEF(NODE, Node)                                      \
     printf("%s size=%zu, alignment=%zu\n",                              \
            #Node, sizeof(BoxASTNode##Node),                             \
@@ -823,9 +825,11 @@ void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
   if (node_size) {
     BoxASTNode *node =
       BoxAllocPool_Alloc_Aligned(& ast->pool, node_size, node_alignment);
-    if (node)
-      node->type = type;
-    return node;
+    if (node) {
+      BoxASTNode_Set_Type(node, type);
+      BoxASTNode_Set_Attr_Mask(node, BOXASTNODEATTR_DEFAULT);
+      return node;
+    }
   }
   return NULL;
 }
@@ -844,7 +848,8 @@ void *BoxAST_Create_Var_Node(BoxAST *ast, BoxASTNodeType type,
     node = BoxAllocPool_Alloc_Aligned(& ast->pool, node_size,
                                       node_alignment);
     if (node) {
-      node->type = type;
+      BoxASTNode_Set_Type(node, type);
+      BoxASTNode_Set_Attr_Mask(node, BOXASTNODEATTR_DEFAULT);
       if (extra)
         *extra = (void *) ((char *) node + node_size);
       return node;
@@ -915,6 +920,7 @@ BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
   if (node) {
     BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node;
+    node->src = val->src;
     stmt->value = val;
     stmt->next = stmt;
     stmt->sep = 0;
@@ -930,7 +936,7 @@ BoxASTNode *BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
   if (stmt_node) {
     BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) stmt_node,
                         *prev_stmt = (BoxASTNodeStatement *) prev_stmt_node;
-    //MY_COPY_SRC(node, stmt_val);
+    MY_COPY_SRC(stmt_node, stmt_val);
     stmt->value = stmt_val;
     stmt->next = prev_stmt->next;
     stmt->sep = sep;
@@ -959,21 +965,54 @@ BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
   return node;
 }
 
-/* Create a type/variable identifier node. */
-BoxASTNode *BoxAST_Create_Idfr(BoxAST *ast, BoxSrc *src,
-                               const char *name, uint32_t name_length)
+/* Create a type identifier node. */
+BoxASTNode *BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
+                                   const char *name, uint32_t name_length)
 {
   uint32_t extra_size = name_length + 1;
   BoxASTNode *node;
 
   assert(extra_size > 1);
-  node = BoxAST_Create_Var_Node(ast, BOXASTNODETYPE_IDFR,
+  node = BoxAST_Create_Var_Node(ast, BOXASTNODETYPE_TYPE_IDFR,
                                 extra_size, NULL);
   if (node) {
-    BoxASTNodeIdfr *idfr = (BoxASTNodeIdfr *) node;
+    BoxASTNodeTypeIdfr *idfr = (BoxASTNodeTypeIdfr *) node;
+    node->src = *src;
     memcpy(& idfr->name[0], name, name_length);
     idfr->name[name_length] = '\0';
   }
 
+  return node;
+}
+
+/* Create a type/variable identifier node. */
+BoxASTNode *BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
+                                  const char *name, uint32_t name_length)
+{
+  uint32_t extra_size = name_length + 1;
+  BoxASTNode *node;
+
+  assert(extra_size > 1);
+  node = BoxAST_Create_Var_Node(ast, BOXASTNODETYPE_VAR_IDFR,
+                                extra_size, NULL);
+  if (node) {
+    BoxASTNodeVarIdfr *idfr = (BoxASTNodeVarIdfr *) node;
+    node->src = *src;
+    memcpy(& idfr->name[0], name, name_length);
+    idfr->name[name_length] = '\0';
+  }
+
+  return node;
+}
+
+/* Create an ignore node. */
+BoxASTNode *BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_IGNORE);
+  if (node) {
+    BoxASTNodeIgnore *ignore = (BoxASTNodeIgnore *) node;
+    node->src = value->src;
+    ignore->value = value;
+  }
   return node;
 }

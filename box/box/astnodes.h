@@ -64,12 +64,32 @@ typedef struct BoxASTNodeBox_struct {
 } BoxASTNodeBox;
 #endif
 
-/* Node used to represent variable and type identifiers. */
+/* Node used to represent type identifiers. */
 #ifdef BOXASTNODE_DEF
-BOXASTNODE_DEF(IDFR, Idfr)
+BOXASTNODE_DEF(TYPE_IDFR, TypeIdfr)
 #else
-typedef struct BoxASTNodeIdfr_struct {
+typedef struct BoxASTNodeTypeIdfr_struct {
   BOXASTNODEHEAD
   char                name[];
-} BoxASTNodeIdfr;
+} BoxASTNodeTypeIdfr;
+#endif
+
+/* Node used to represent variable identifiers. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(VAR_IDFR, VarIdfr)
+#else
+typedef struct BoxASTNodeVarIdfr_struct {
+  BOXASTNODEHEAD
+  char                name[];
+} BoxASTNodeVarIdfr;
+#endif
+
+/* Node used to mark an expression as ignorable. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(IGNORE, Ignore)
+#else
+typedef struct BoxASTNodeIgnore_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *value;
+} BoxASTNodeIgnore;
 #endif

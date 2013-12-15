@@ -53,8 +53,8 @@ struct BoxCmp_struct {
   BoxVMCode  main_proc, /**< Main procedure in the module */
              *cur_proc; /**< Procedure on which we are working now */
   Operator   convert,   /**< Conversion operator */
-             bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
-             un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
+             bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
+             un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
   BoxSrcPos  src_pos;   /**< Recent position in source while parsing AST */
   struct {
     Value      error,     /**< Error value */

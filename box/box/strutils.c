@@ -120,7 +120,7 @@ static const char *My_Expand_Escaped_Char(const char *s, size_t s_length,
   }
 
   if (s_length < 2)
-    return "Uncomplete escape sequence";
+    return "Incomplete escape sequence";
 
   cur_char = s[1];
   if (cur_char == 'x') {

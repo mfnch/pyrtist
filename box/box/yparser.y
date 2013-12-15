@@ -34,7 +34,7 @@
 
 static int yyparse(BoxParser *parser, BoxAST *ast);
 static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
-static void My_Syntax_Error();
+//static void My_Syntax_Error(BoxSrc *src, char *s);
 
 /* Trick to induce yyparse to call BoxParser_Get_Next_Token rather than
  * yylex.
@@ -98,8 +98,8 @@ static void My_Syntax_Error();
 %token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <Node> TOK_TYPE_IDENT
-%token <String> TOK_IDENTIFIER TOK_KEYWORD
+%token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR
+%token <String> TOK_KEYWORD
 %token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
@@ -139,60 +139,60 @@ sep:
 
 /******************************** OPERATORS ********************************/
 un_op:
-    '+'                       {$$ = ASTUNOP_PLUS;}
-  | '-'                       {$$ = ASTUNOP_NEG;}
-  | '!'                       {$$ = ASTUNOP_NOT;}
-  | TOK_INC                   {$$ = ASTUNOP_LINC;}
-  | TOK_DEC                   {$$ = ASTUNOP_LDEC;}
-  | '~'                       {$$ = ASTUNOP_BNOT;}
+    '+'                       {$$ = BOXASTUNOP_PLUS;}
+  | '-'                       {$$ = BOXASTUNOP_NEG;}
+  | '!'                       {$$ = BOXASTUNOP_NOT;}
+  | TOK_INC                   {$$ = BOXASTUNOP_LINC;}
+  | TOK_DEC                   {$$ = BOXASTUNOP_LDEC;}
+  | '~'                       {$$ = BOXASTUNOP_BNOT;}
   ;
 
 post_op:
-    TOK_INC                   {$$ = ASTUNOP_RINC;}
-  | TOK_DEC                   {$$ = ASTUNOP_RDEC;}
+    TOK_INC                   {$$ = BOXASTUNOP_RINC;}
+  | TOK_DEC                   {$$ = BOXASTUNOP_RDEC;}
   ;
 
 add_op:
-    '+'                       {$$ = ASTBINOP_ADD;}
-  | '-'                       {$$ = ASTBINOP_SUB;}
+    '+'                       {$$ = BOXASTBINOP_ADD;}
+  | '-'                       {$$ = BOXASTBINOP_SUB;}
   ;
 
 mul_op:
-    '*'                       {$$ = ASTBINOP_MUL;}
-  | '/'                       {$$ = ASTBINOP_DIV;}
-  | '%'                       {$$ = ASTBINOP_REM;}
+    '*'                       {$$ = BOXASTBINOP_MUL;}
+  | '/'                       {$$ = BOXASTBINOP_DIV;}
+  | '%'                       {$$ = BOXASTBINOP_REM;}
   ;
 
 shift_op:
-    TOK_SHL                   {$$ = ASTBINOP_SHL;}
-  | TOK_SHR                   {$$ = ASTBINOP_SHR;}
+    TOK_SHL                   {$$ = BOXASTBINOP_SHL;}
+  | TOK_SHR                   {$$ = BOXASTBINOP_SHR;}
   ;
 
 eq_op:
-    TOK_EQ                    {$$ = ASTBINOP_EQ;}
-  | TOK_NE                    {$$ = ASTBINOP_NE;}
+    TOK_EQ                    {$$ = BOXASTBINOP_EQ;}
+  | TOK_NE                    {$$ = BOXASTBINOP_NE;}
   ;
 
 cmp_op:
-    '<'                       {$$ = ASTBINOP_LT;}
-  | TOK_LE                    {$$ = ASTBINOP_LE;}
-  | '>'                       {$$ = ASTBINOP_GT;}
-  | TOK_GE                    {$$ = ASTBINOP_GE;}
+    '<'                       {$$ = BOXASTBINOP_LT;}
+  | TOK_LE                    {$$ = BOXASTBINOP_LE;}
+  | '>'                       {$$ = BOXASTBINOP_GT;}
+  | TOK_GE                    {$$ = BOXASTBINOP_GE;}
   ;
 
 assign_op:
-    '='                       {$$ = ASTBINOP_ASSIGN;}
-  | TOK_DEFINE                {$$ = ASTBINOP_ASSIGN;}
-  | TOK_APLUS                 {$$ = ASTBINOP_APLUS;}
-  | TOK_AMINUS                {$$ = ASTBINOP_AMINUS;}
-  | TOK_ATIMES                {$$ = ASTBINOP_ATIMES;}
-  | TOK_AREM                  {$$ = ASTBINOP_AREM;}
-  | TOK_ADIV                  {$$ = ASTBINOP_ADIV;}
-  | TOK_ASHL                  {$$ = ASTBINOP_ASHL;}
-  | TOK_ASHR                  {$$ = ASTBINOP_ASHR;}
-  | TOK_ABAND                 {$$ = ASTBINOP_ABAND;}
-  | TOK_ABXOR                 {$$ = ASTBINOP_ABXOR;}
-  | TOK_ABOR                  {$$ = ASTBINOP_ABOR;}
+    '='                       {$$ = BOXASTBINOP_ASSIGN;}
+  | TOK_DEFINE                {$$ = BOXASTBINOP_ASSIGN;}
+  | TOK_APLUS                 {$$ = BOXASTBINOP_APLUS;}
+  | TOK_AMINUS                {$$ = BOXASTBINOP_AMINUS;}
+  | TOK_ATIMES                {$$ = BOXASTBINOP_ATIMES;}
+  | TOK_AREM                  {$$ = BOXASTBINOP_AREM;}
+  | TOK_ADIV                  {$$ = BOXASTBINOP_ADIV;}
+  | TOK_ASHL                  {$$ = BOXASTBINOP_ASHL;}
+  | TOK_ASHR                  {$$ = BOXASTBINOP_ASHR;}
+  | TOK_ABAND                 {$$ = BOXASTBINOP_ABAND;}
+  | TOK_ABXOR                 {$$ = BOXASTBINOP_ABXOR;}
+  | TOK_ABOR                  {$$ = BOXASTBINOP_ABOR;}
   ;
 
 /******************************* STRUCTURES ********************************/
@@ -205,7 +205,7 @@ expr_list_sep:
 
 opt_ident:
                                  {$$ = NULL;}
-  | TOK_IDENTIFIER               {$$ = NULL;}
+  | TOK_VAR_IDFR                 {$$ = NULL;}
   ;
 
 expr_list_memb:
@@ -227,14 +227,14 @@ string_concat:
   ;
 
 type:
-    TOK_TYPE_IDENT               {$$ = $1;}
-  | type ':' TOK_TYPE_IDENT      {$$ = NULL;}
+    TOK_TYPE_IDFR                {$$ = $1;}
+  | type ':' TOK_TYPE_IDFR       {$$ = NULL;}
   ;
 
 name:
     type                         {$$ = $1;}
-  | TOK_IDENTIFIER               {$$ = NULL;}
-  | type ':' TOK_IDENTIFIER      {$$ = NULL;}
+  | TOK_VAR_IDFR                 {$$ = $1;}
+  | type ':' TOK_VAR_IDFR        {$$ = NULL;}
   ;
 
 prim_expr:
@@ -254,9 +254,9 @@ postfix_expr:
   | postfix_expr '(' expr ')'    {$$ = NULL;}
   | postfix_expr '[' statement_list ']'
                                  {$$ = BoxAST_Create_Box(ast, $1, $3);}
-  | opt_postfix_expr '.' TOK_IDENTIFIER
+  | opt_postfix_expr '.' TOK_VAR_IDFR
                                  {$$ = NULL;}
-  | opt_postfix_expr '.' TOK_TYPE_IDENT
+  | opt_postfix_expr '.' TOK_TYPE_IDFR
                                  {$$ = NULL;}
   | postfix_expr post_op         {$$ = NULL;}
   ;
@@ -379,8 +379,8 @@ opt_comb_def:
   ;
 
 comb_parent:
-    TOK_TYPE_IDENT               {$$ = NULL;}
-  | comb_parent '.' TOK_TYPE_IDENT
+    TOK_TYPE_IDFR                {$$ = NULL;}
+  | comb_parent '.' TOK_TYPE_IDFR
                                  {$$ = NULL;}
   ;
 
@@ -388,8 +388,8 @@ comb_parent:
 /* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
-  | expr                         {$$ = (BoxASTNode *) $1;}
-  | '\\' expr                    {$$ = NULL;}
+  | expr                         {$$ = $1;}
+  | '\\' expr                    {$$ = BoxAST_Create_Ignore(ast, $2);}
   | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);;}
   | error sep                    {$$ = NULL;
                                   /*ASTNodeStatement_New(ASTNodeError_New());

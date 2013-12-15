@@ -105,7 +105,7 @@ BoxParser_End_Include(BoxParser *bp);
  * return 0 (and does remember the string for the next time the function
  * is called). If the feature was seen before, then return 1.
  * NOTE: This function is called in the 'provide' directive.
- * @return 1 if the feature was found, 0 otherwise.
+ * @return whether the feature was found.
  */
 BOXEXPORT BoxBool
 BoxParser_Was_Provided(BoxParser *bp, const char *feature, int length);
@@ -115,5 +115,29 @@ BoxParser_Was_Provided(BoxParser *bp, const char *feature, int length);
  */
 BOXEXPORT BoxAST *
 BoxParser_Get_AST(BoxParser *bp);
+
+/**
+ * @brief Report an error (not related to a particular token).
+ *
+ * @param bp Parser object.
+ * @param fmt Format string.
+ * @param ... Arguments corresponding to the format string.
+ */
+BOXEXPORT void
+BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...);
+
+/**
+ * @brief Report an error while scanning a token.
+ *
+ * This function assumes the error refers to the token which is currently
+ * being scanned. The error message will indeed be extended with the location
+ * of the current token.
+ *
+ * @param bp Parser object.
+ * @param fmt Format string.
+ * @param ... Arguments corresponding to the format string.
+ */
+BOXEXPORT void
+BoxParser_Log_Tok_Err(BoxParser *bp, const char *fmt, ...);
 
 #endif /* _BOX_PARSER_H */

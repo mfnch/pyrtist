@@ -71,6 +71,14 @@ static void My_Fix_Pos(yyscan_t scanner);
 #define MY_NODE(nodeType, args...) \
   BoxAST_Create_##nodeType(yyextra->ast, & yyextra->src, args)
 
+/* Generic error reporting. */
+#define MY_ERR(args...) \
+  BoxParser_Log_Err(yyextra, args)
+
+/* Token-related error reporting. */
+#define MY_TOK_ERR(args...) \
+  BoxParser_Log_Tok_Err(yyextra, args)
+
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
 
@@ -122,7 +130,7 @@ STRING   ["]([^"\n]|\\\")*["]
 }
 
 <comment><<EOF>> {
-  MSG_ERROR("File ended inside a comment.");
+  MY_ERR("File ended inside a comment.");
   BEGIN(INITIAL);
   yyterminate();
 }
@@ -245,8 +253,8 @@ include BEGIN(include);
 
   err = Box_Expand_Escaped_Char(yytext + 1, yyleng - 2, & val);
   if (err)
-    MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(CharImm, val);
+    MY_TOK_ERR("%s.", err);
+  yylval.Node = MY_NODE(CharImm, val);
   return TOK_CONSTANT;
  }
 
@@ -257,8 +265,8 @@ include BEGIN(include);
 
   err = Box_Str_To_Int(yytext, yyleng, & val);
   if (err)
-    MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(IntImm, val);
+    MY_TOK_ERR("%s.", err);
+  yylval.Node = MY_NODE(IntImm, val);
   return TOK_CONSTANT;
  }
 
@@ -269,8 +277,8 @@ include BEGIN(include);
 
   err = Box_Hex_Str_To_Int(yytext + 2, yyleng - 2, & val);
   if (err)
-    MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(IntImm, val);
+    MY_TOK_ERR("%s.", err);
+  yylval.Node = MY_NODE(IntImm, val);
   return TOK_CONSTANT;
  }
 
@@ -281,8 +289,8 @@ include BEGIN(include);
 
   err = Box_Str_To_Real(yytext, yyleng, & val);
   if (err)
-    MSG_ERROR("%s.", err);
-  yylval.NewNode = MY_NODE(RealImm, val);
+    MY_TOK_ERR("%s.", err);
+  yylval.Node = MY_NODE(RealImm, val);
   return TOK_CONSTANT;
  }
 
@@ -294,9 +302,9 @@ include BEGIN(include);
 
   err = Box_Expand_Escaped_Str(yytext + 1, yyleng - 2, & out, & out_length);
   if (err)
-    MSG_ERROR("%s.", err);
+    MY_TOK_ERR("%s.", err);
 
-  yylval.NewNode = MY_NODE(StrImm, out, out_length);
+  yylval.Node = MY_NODE(StrImm, out, out_length);
   Box_Mem_Free(out);
   return TOK_STRING;
  }
@@ -308,14 +316,15 @@ Else {
 
  /* Variable name */
 {LNAME} {
-  yylval.String = Box_Mem_Strndup(yytext, yyleng);
-  return TOK_IDENTIFIER;
+  yylval.Node = MY_NODE(VarIdfr, yytext, yyleng);
+  return TOK_VAR_IDFR;
  }
 
  /* Type name */
 {UNAME} {
-  yylval.NewNode = MY_NODE(Idfr, yytext, yyleng);
-  return TOK_TYPE_IDENT;
+  yylval.Node = MY_NODE(TypeIdfr, yytext, yyleng);
+  BoxASTNode_Set_Attr(yylval.Node, 0, BOXASTNODEATTR_TYPE);
+  return TOK_TYPE_IDFR;
  }
 
  /* Everything which is not recognised is passed character by character to the
@@ -343,7 +352,8 @@ BoxBool BoxParser_Begin_Include_FILE(BoxParser *bl, FILE *f, const char *fn)
   MyIncludeData *cur;
 
   if (include_level >= bl->max_include_level) {
-    MSG_ERROR("Cannot include \"%s\": too many files included!", fn);
+    BoxParser_Log_Err(bl, "Cannot include \"%s\": too many files included!",
+                      fn);
     return BOXBOOL_FALSE;
   }
 

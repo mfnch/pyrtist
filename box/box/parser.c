@@ -125,3 +125,27 @@ BoxAST *BoxParser_Get_AST(BoxParser *bp)
 {
   return bp->ast;
 }
+
+/* Report an error (not related to a particular token). */
+void BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...)
+{
+  va_list ap;
+  char *msg;
+  va_start(ap, fmt);
+  msg = Box_Mem_Strdup(Box_VA_Print(fmt, ap));
+  MSG_ERROR("%s", msg);
+  Box_Mem_Free(msg);
+  va_end(ap);
+}
+
+/* Report an error while scanning a token. */
+void BoxParser_Log_Tok_Err(BoxParser *bp, const char *fmt, ...)
+{
+  va_list ap;
+  char *msg;
+  va_start(ap, fmt);
+  msg = Box_Mem_Strdup(Box_VA_Print(fmt, ap));
+  MSG_ERROR("(%d-%d): %s", bp->src.begin, bp->src.end, msg);
+  Box_Mem_Free(msg);
+  va_end(ap);
+}

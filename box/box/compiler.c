@@ -435,14 +435,15 @@ static void My_Compile_Error(BoxCmp *c, ASTNode *node)
 }
 #endif
 
-static void My_Compile_Idfr(BoxCmp *c, BoxASTNode *node)
+static void My_Compile_TypeIdfr(BoxCmp *c, BoxASTNode *node)
 {
   Value *v;
-  char *type_name = & ((BoxASTNodeIdfr *) node)->name[0];
+  char *type_name;
   NmspFloor f;
 
-  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IDFR);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_TYPE_IDFR);
 
+  type_name = & ((BoxASTNodeTypeIdfr *) node)->name[0];
   f = NMSPFLOOR_DEFAULT;
   v = Namespace_Get_Value(& c->ns, f, type_name);
   if (v) {
@@ -759,62 +760,43 @@ static void My_Compile_Box(BoxCmp *c, BoxASTNode *node)
   My_Compile_Box_Generic(c, node, NULL, NULL);
 }
 
-#if 0
-
-static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
+static void My_Compile_VarIdfr(BoxCmp *c, BoxASTNode *node)
+{
   Value *v;
-  char *item_name = n->attr.var.name;
+  char *item_name;
 
-  assert(n->type == ASTNODETYPE_VAR);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_VAR_IDFR);
 
+  item_name = & ((BoxASTNodeVarIdfr *) node)->name[0];
   v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
-  if (v != NULL) {
+  if (v) {
     /* We just return a copy of the Value object corresponding to the
      * variable
      */
-    Value *v_copy = Value_New(c->cur_proc);
+    Value *v_copy = Value_Create(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_copy, v);
     BoxCmp_Push_Value(c, v_copy);
     Value_Unlink(v);
-
   } else {
-    v = Value_New(c->cur_proc);
+    v = Value_Create(c->cur_proc);
     Value_Setup_As_Var_Name(v, item_name);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name, v);
     BoxCmp_Push_Value(c, v);
   }
 }
 
-static void My_Compile_Ignore(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node) {
   Value *operand;
 
-  assert(n->type == ASTNODETYPE_IGNORE);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IGNORE);
 
   /* Compile operand and get it from the stack */
-  My_Compile_Any(c, n->attr.ignore.expr);
+  My_Compile_Any(c, ((BoxASTNodeIgnore *) node)->value);
   operand = BoxCmp_Get_Value(c, 0);
-
-  Value_Set_Ignorable(operand, n->attr.ignore.ignore);
+  Value_Set_Ignorable(operand, 1);
 }
 
-static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
-  Value *v;
-  assert(n->type == ASTNODETYPE_CONST);
-  v = Value_New(c->cur_proc);
-  switch(n->attr.constant.type) {
-  case ASTCONSTTYPE_CHAR:
-    Value_Setup_As_Imm_Char(v, n->attr.constant.value.c);
-    break;
-  case ASTCONSTTYPE_INT:
-    Value_Setup_As_Imm_Int(v, n->attr.constant.value.i);
-    break;
-  case ASTCONSTTYPE_REAL:
-    Value_Setup_As_Imm_Real(v, n->attr.constant.value.r);
-    break;
-  }
-  BoxCmp_Push_Value(c, v);
-}
-
+#if 0
 static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
   Value *operand, *v_result = NULL;
 
