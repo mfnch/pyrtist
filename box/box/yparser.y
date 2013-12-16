@@ -53,8 +53,8 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
   BoxTypeId     TTag;
   BoxCombType   Combine;
   ASTScope      Scope;
-  ASTUnOp       UnaryOperator;
-  ASTBinOp      BinaryOperator;
+  BoxASTUnOp    UnaryOperator;
+  BoxASTBinOp   BinaryOperator;
   BoxASTNodePtr Node;
   BoxASTNodePtr NewNode;
   ASTTypeMemb   TypeMemb;
@@ -91,7 +91,7 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 
 /* List of simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
-%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE TOK_LOR TOK_LAND
+%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 %token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
 %token TOK_ABOR TOK_ASHL TOK_ASHR TOK_DEFINE
 %token TOK_POW
@@ -101,6 +101,7 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 %token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR
 %token <String> TOK_KEYWORD
 %token <Node> TOK_CONSTANT TOK_STRING
+%token <BinaryOperator> TOK_LAND TOK_LOR
 
 /* List of nodes with semantical value */
 %type <Sep> sep
@@ -279,12 +280,12 @@ pow_expr:
 
 mul_expr:
     pow_expr                     {$$ = $1;}
-  | mul_expr mul_op pow_expr     {$$ = NULL;}
+  | mul_expr mul_op pow_expr     {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 add_expr:
     mul_expr                     {$$ = $1;}
-  | add_expr add_op mul_expr     {$$ = NULL;}
+  | add_expr add_op mul_expr     {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 shift_expr:
@@ -294,12 +295,12 @@ shift_expr:
 
 cmp_expr:
     shift_expr                   {$$ = $1;}
-  | cmp_expr cmp_op shift_expr   {$$ = NULL;}
+  | cmp_expr cmp_op shift_expr   {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 eq_expr:
     cmp_expr                     {$$ = $1;}
-  | eq_expr eq_op cmp_expr       {$$ = NULL;}
+  | eq_expr eq_op cmp_expr       {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 band_expr:
@@ -319,18 +320,18 @@ bor_expr:
 
 land_expr:
     bor_expr                     {$$ = $1;}
-  | land_expr TOK_LAND bor_expr  {$$ = NULL;}
+  | land_expr TOK_LAND bor_expr  {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 lor_expr:
     land_expr                    {$$ = $1;}
-  | lor_expr TOK_LOR land_expr   {$$ = NULL;}
+  | lor_expr TOK_LOR land_expr   {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 assign_expr:
     lor_expr                     {$$ = $1;}
-  | lor_expr assign_op  assign_expr
-                                 {$$ = NULL;}
+  | lor_expr assign_op assign_expr
+                                 {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 comb_expr:

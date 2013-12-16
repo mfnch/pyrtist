@@ -639,32 +639,17 @@ BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value);
 
-#if 0
-/**
- * @brief Create a new type identifier.
- */
-BOXEXPORT BoxASTNode *
-BoxAST_Create_Type(BoxAST *ast, const char *name, uint32_t name_length);
-
-/**
- * @brief Create a new variable identifier.
- */
-BOXEXPORT BoxASTNode *
-BoxAST_Create_Var(BoxAST *ast, const char *name, uint32_t name_length);
-
 /**
  * @brief Create a new unary operation.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_Un_Op(BoxAST *ast, BoxASTUnOp op, BoxASTNode *operand);
+BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *operand);
 
 /**
  * @brief Create a new binary operation.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_Bin_Op(BoxAST *ast,
-                     BoxASTNode *left, BoxASTBinOp op, BoxASTNode *right);
-
-#endif
+BoxAST_Create_BinOp(BoxAST *ast,
+                    BoxASTNode *left, BoxASTBinOp op, BoxASTNode *right);
 
 #endif /* _BOX_AST_H */

@@ -102,7 +102,6 @@ extern YYLTYPE yylloc;
  */
 #define YY_DECL static int yylex (yyscan_t yyscanner)
 
-
 %}
 
 SPACES   [ \t]*
@@ -224,8 +223,8 @@ include BEGIN(include);
 "<="  {return TOK_LE;}
 ">="  {return TOK_GE;}
 
-"&&"  {return TOK_LAND;}
-"||"  {return TOK_LOR;}
+"&&"  {yylval.BinaryOperator = BOXASTBINOP_LAND; return TOK_LAND;}
+"||"  {yylval.BinaryOperator = BOXASTBINOP_LOR; return TOK_LOR;}
 
  /* Other operators */
 "**"  {return TOK_POW;}

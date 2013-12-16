@@ -785,7 +785,8 @@ static void My_Compile_VarIdfr(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node) {
+static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node)
+{
   Value *operand;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IGNORE);
@@ -796,20 +797,20 @@ static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node) {
   Value_Set_Ignorable(operand, 1);
 }
 
-#if 0
-static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
+static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
+{
   Value *operand, *v_result = NULL;
 
-  assert(n->type == ASTNODETYPE_UNOP);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_UN_OP);
 
   /* Compile operand and get it from the stack */
-  My_Compile_Any(c, n->attr.un_op.expr);
+  My_Compile_Any(c, ((BoxASTNodeUnOp *) node)->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
   operand = BoxCmp_Pop_Value(c);
   if (Value_Want_Value(operand))
-    v_result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
+    v_result = BoxCmp_Opr_Emit_UnOp(c, ((BoxASTNodeUnOp *) node)->op, operand);
   else
     Value_Unlink(operand);
 
@@ -870,26 +871,27 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
   }
 }
 
-static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
-  assert(n->type == ASTNODETYPE_BINOP);
+static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeBinOp *bin_op_node = (BoxASTNodeBinOp *) node;
 
-  My_Compile_Any(c, n->attr.bin_op.left);
-  My_Compile_Any(c, n->attr.bin_op.right);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_BIN_OP);
+
+  My_Compile_Any(c, bin_op_node->lhs);
+  My_Compile_Any(c, bin_op_node->rhs);
   if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1))
     return;
-
   else {
     Value *left, *right, *result = NULL;
-    ASTBinOp op;
+    BoxASTBinOp op;
 
     /* Get values from stack */
     right = BoxCmp_Pop_Value(c);
     left  = BoxCmp_Pop_Value(c);
 
-    op = n->attr.bin_op.operation;
-    if (op == ASTBINOP_ASSIGN) {
+    op = bin_op_node->op;
+    if (op == BOXASTBINOP_ASSIGN) {
       result = My_Compile_Assignment(c, left, right);
-
     } else {
       if (Value_Want_Value(left) & Value_Want_Value(right))
         /* NOTE: ^^^ We use & rather than &&*/
@@ -904,6 +906,7 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   }
 }
 
+#if 0
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   int i, num_members;
   ASTNode *member;

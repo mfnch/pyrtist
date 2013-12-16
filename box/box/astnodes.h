@@ -93,3 +93,25 @@ typedef struct BoxASTNodeIgnore_struct {
   BoxASTNode          *value;
 } BoxASTNodeIgnore;
 #endif
+
+/* Node used to represent an unary operation. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(UN_OP, UnOp)
+#else
+typedef struct BoxASTNodeUnOp_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *value;
+  BoxASTUnOp          op;
+} BoxASTNodeUnOp;
+#endif
+
+/* Node used to represent a binary operation. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(BIN_OP, BinOp)
+#else
+typedef struct BoxASTNodeBinOp_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *lhs, *rhs;
+  BoxASTBinOp         op;
+} BoxASTNodeBinOp;
+#endif

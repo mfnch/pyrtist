@@ -920,7 +920,8 @@ BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
   if (node) {
     BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node;
-    node->src = val->src;
+    if (val)
+      node->src = val->src;
     stmt->value = val;
     stmt->next = stmt;
     stmt->sep = 0;
@@ -1013,6 +1014,32 @@ BoxASTNode *BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
     BoxASTNodeIgnore *ignore = (BoxASTNodeIgnore *) node;
     node->src = value->src;
     ignore->value = value;
+  }
+  return node;
+}
+
+/* Create a new unary operation. */
+BoxASTNode *BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_UN_OP);
+  if (node) {
+    BoxASTNodeUnOp *un_op = (BoxASTNodeUnOp *) node;
+    un_op->value = value;
+    un_op->op = op;
+  }
+  return node;
+}
+
+/* Create a new binary operation. */
+BoxASTNode *BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
+                                BoxASTBinOp op, BoxASTNode *rhs)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_BIN_OP);
+  if (node) {
+    BoxASTNodeBinOp *bin_op = (BoxASTNodeBinOp *) node;
+    bin_op->lhs = lhs;
+    bin_op->rhs = rhs;
+    bin_op->op = op;
   }
   return node;
 }
