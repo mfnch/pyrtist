@@ -115,3 +115,28 @@ typedef struct BoxASTNodeBinOp_struct {
   BoxASTBinOp         op;
 } BoxASTNodeBinOp;
 #endif
+
+/* Compound member. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(MEMBER, Member)
+#else
+typedef struct BoxASTNodeMember_struct BoxASTNodeMember;
+struct BoxASTNodeMember_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *expr, *name;
+  BoxASTNodeMember    *next;
+};
+#endif
+
+/* Node used to represent a simple-parenthesis/structure/species. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(COMPOUND, Compound)
+#else
+typedef struct BoxASTNodeCompound_struct {
+  BOXASTNODEHEAD
+  BoxASTNodeMember    *memb;
+  BoxSrc              sep_src;
+  uint8_t             sep;
+  uint8_t             kind;
+} BoxASTNodeCompound;
+#endif

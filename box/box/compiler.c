@@ -518,29 +518,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
   } else
     BoxCmp_Push_Error(c, 1);
 }
-#endif
 
-static void My_Compile_Statement(BoxCmp *c, BoxASTNode *stmt_node)
-{
-  BoxASTNodeStatement *stmt;
-
-  assert(BoxASTNode_Get_Type(stmt_node) == BOXASTNODETYPE_STATEMENT);
-  stmt = (BoxASTNodeStatement *) stmt_node;
-
-  if (stmt->sep == BOXASTSEP_PAUSE) {
-    Value_Link(& c->value.pause);
-    BoxCmp_Push_Value(c, & c->value.pause);
-  }
-
-  if (stmt->value)
-    My_Compile_Any(c, stmt->value);
-  else {
-    Value *v_void = My_Get_Void_Value(c);
-    BoxCmp_Push_Value(c, v_void);
-  }
-}
-
-#if 0
 static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
   assert(instance->type == ASTNODETYPE_INSTANCE);
 
@@ -554,6 +532,16 @@ static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
   }
 }
 #endif
+
+static void My_Compile_Statement(BoxCmp *c, BoxASTNode *s)
+{
+  abort();
+}
+
+static void My_Compile_Member(BoxCmp *c, BoxASTNode *s)
+{
+  abort();
+}
 
 typedef enum {
   MYBOXSTATE_INITIAL,
@@ -662,8 +650,28 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     /* Set the source position to the current statement */
     //Msg_Set_Src(& s->head.src);
 
-    My_Compile_Statement(c, (BoxASTNode *) s);
-    stmt_val = BoxCmp_Pop_Value(c);
+    if (s->sep == BOXASTSEP_PAUSE && !parent_is_err) {
+      BoxTask emit_task;
+      Value *v_pause = & c->value.pause;
+      Value_Link(v_pause);
+      v_pause = Value_Emit_Call(parent, v_pause, & emit_task);
+
+      if (v_pause) {
+        assert(emit_task == BOXTASK_FAILURE);
+        MSG_WARNING("Don't know how to use '%T' expressions inside "
+                    "a '%T' box.", v_pause->type, parent->type);
+        Value_Unlink(v_pause);
+        v_pause = NULL; /* To prevent double unlink */
+      }
+      Value_Unlink(v_pause);
+    }
+
+    if (s->value) {
+      My_Compile_Any(c, s->value);
+      stmt_val = BoxCmp_Pop_Value(c);
+    } else
+      stmt_val = My_Get_Void_Value(c);
+
 
     if (!(parent_is_err || Value_Is_Ignorable(stmt_val))) {
       if (Value_Want_Has_Type(stmt_val)) {
@@ -907,68 +915,6 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
 }
 
 #if 0
-static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
-  int i, num_members;
-  ASTNode *member;
-  BoxType *t_struc;
-  Value *v_struc;
-  ValueStrucIter vsi;
-  int no_err;
-
-  assert(n->type == ASTNODETYPE_STRUC);
-
-  /* Compile the members, check their types and leave them on the stack */
-  num_members = 0;
-  no_err = 1;
-  for(member = n->attr.struc.first_member;
-      member != NULL;
-      member = member->attr.member.next) {
-    Value *v_member;
-
-    assert(member->type == ASTNODETYPE_MEMBER);
-
-    My_Compile_Any(c, member->attr.member.expr);
-    v_member = BoxCmp_Get_Value(c, 0);
-
-    no_err &= Value_Want_Value(v_member);
-
-    ++num_members;
-  }
-
-  /* Check for errors */
-  if (!no_err) {
-    BoxCmp_Remove_Any(c, num_members);
-    BoxCmp_Push_Error(c, 1);
-    return;
-  }
-
-  /* built the type for the structure */
-  i = num_members;
-  t_struc = BoxType_Create_Structure();
-  for(member = n->attr.struc.first_member; member;
-      member = member->attr.member.next) {
-    Value *v_member = BoxCmp_Get_Value(c, --i);
-    BoxType_Add_Member_To_Structure(t_struc, v_member->type,
-                                    member->attr.member.name);
-  }
-
-  /* create and populate the structure */
-  v_struc = Value_New(c->cur_proc);
-  Value_Setup_As_Temp(v_struc, t_struc);
-
-  for(ValueStrucIter_Init(& vsi, v_struc, c->cur_proc);
-      vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
-    Value *v_member = BoxCmp_Get_Value(c, num_members - vsi.index - 1);
-    Value_Link(v_member);
-    Value_Move_Content(& vsi.v_member, v_member);
-  }
-
-  ValueStrucIter_Finish(& vsi);
-
-  BoxCmp_Remove_Any(c, num_members);
-  BoxCmp_Push_Value(c, v_struc);
-}
-
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   Value *v_struc, *v_memb = NULL;
   ASTNode *n_struc;
@@ -1300,48 +1246,103 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
   BoxCmp_Push_Value(c, v_named_type);
 }
+#endif
 
-static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
+{
+  int i, num_members;
+  BoxASTNodeMember *memb;
+  BoxType *t_struc;
+  Value *v_struc;
+  ValueStrucIter vsi;
+  int no_err;
+
+  /* Compile the members, check their types and leave them on the stack */
+  num_members = 0;
+  no_err = 1;
+  for(memb = compound->memb; memb; memb = memb->next, num_members++) {
+    Value *v_member;
+
+    assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
+    assert(memb->expr);
+
+    My_Compile_Any(c, memb->expr);
+    v_member = BoxCmp_Get_Value(c, 0);
+    no_err &= Value_Want_Value(v_member);
+  }
+
+  /* Check for errors */
+  if (!no_err) {
+    BoxCmp_Remove_Any(c, num_members);
+    BoxCmp_Push_Error(c, 1);
+    return;
+  }
+
+  /* built the type for the structure */
+  i = num_members;
+  t_struc = BoxType_Create_Structure();
+  for(memb = compound->memb; memb; memb = memb->next) {
+    Value *v_member = BoxCmp_Get_Value(c, --i);
+    BoxType_Add_Member_To_Structure(t_struc, v_member->type, /*name*/ NULL);
+  }
+
+  /* create and populate the structure */
+  v_struc = Value_Create(c->cur_proc);
+  Value_Setup_As_Temp(v_struc, t_struc);
+
+  for(ValueStrucIter_Init(& vsi, v_struc, c->cur_proc);
+      vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
+    Value *v_member = BoxCmp_Get_Value(c, num_members - vsi.index - 1);
+    Value_Link(v_member);
+    Value_Move_Content(& vsi.v_member, v_member);
+  }
+
+  ValueStrucIter_Finish(& vsi);
+
+  BoxCmp_Remove_Any(c, num_members);
+  BoxCmp_Push_Value(c, v_struc);
+}
+
+static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
+{
   int err;
-  ASTNode *member;
+  BoxASTNodeMember *memb;
   BoxType *previous_type = NULL, *struc_type;
   Value *v_struc_type;
-
-  assert(n->type == ASTNODETYPE_STRUCTYPE);
 
   /* Create a new structure type */
   struc_type = BoxType_Create_Structure();
 
   /* Compile the members, check their types and leave them on the stack */
   err = 0;
-  for(member = n->attr.struc_type.first_member; member;
-      member = member->attr.member_type.next) {
-    char *member_name = member->attr.member_type.name;
+  for (memb = compound->memb; memb; memb = memb->next) {
+    char *memb_name;
 
-    assert(member->type == ASTNODETYPE_MEMBERTYPE);
+    assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
+    assert(BoxASTNode_Get_Type(memb->name) == BOXASTNODETYPE_VAR_IDFR);
 
-    if (member->attr.member_type.type) {
+    memb_name = ((BoxASTNodeVarIdfr *) memb->name)->name;
+
+    if (memb->expr) {
       Value *v_type;
-      My_Compile_Any(c, member->attr.member_type.type);
+      My_Compile_Any(c, memb->expr);
       v_type = BoxCmp_Pop_Value(c);
       if (Value_Want_Has_Type(v_type))
         previous_type = v_type->type;
       else
         err = 1;
       Value_Unlink(v_type);
-    } else {
-      assert(member);
     }
 
     if (previous_type && !err) {
       /* Check for duplicate structure members */
-      if (member_name) {
-        if (BoxType_Find_Structure_Member(struc_type, member_name))
+      if (memb_name) {
+        if (BoxType_Find_Structure_Member(struc_type, memb_name))
           MSG_ERROR("Duplicate member '%s' in structure type definition.",
-                    member_name);
+                    memb_name);
       }
 
-      BoxType_Add_Member_To_Structure(struc_type, previous_type, member_name);
+      BoxType_Add_Member_To_Structure(struc_type, previous_type, memb_name);
     }
   }
 
@@ -1349,34 +1350,30 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   if (err) {
     BoxCmp_Push_Error(c, 1);
     return;
-
-  } else {
-    v_struc_type = Value_Create(c->cur_proc);
-    Value_Setup_As_Type(v_struc_type, struc_type);
-    (void) BoxType_Unlink(struc_type);
-    BoxCmp_Push_Value(c, v_struc_type);
   }
+
+  v_struc_type = Value_Create(c->cur_proc);
+  Value_Setup_As_Type(v_struc_type, struc_type);
+  (void) BoxType_Unlink(struc_type);
+  BoxCmp_Push_Value(c, v_struc_type);
 }
 
-static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Species_Type(BoxCmp *c, BoxASTNodeCompound *compound)
+{
   BoxType *spec_type;
   Value *v_spec_type;
-  ASTNode *member;
-
-  assert(n->type == ASTNODETYPE_SPECTYPE);
+  BoxASTNodeMember *memb;
 
   /* Create a new species type */
   spec_type = BoxType_Create_Species();
 
-  for(member = n->attr.spec_type.first_member; member;
-      member = member->attr.member_type.next) {
+  for(memb = compound->memb; memb; memb = memb->next) {
     Value *v_type;
 
-    assert(member->type == ASTNODETYPE_MEMBERTYPE);
-    assert(member->attr.member_type.name == NULL
-           && member->attr.member_type.type != NULL);
+    assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER
+           && !memb->name);
 
-    My_Compile_Any(c, member->attr.member_type.type);
+    My_Compile_Any(c, memb->expr);
     v_type = BoxCmp_Pop_Value(c);
 
     if (Value_Want_Has_Type(v_type)) {
@@ -1395,6 +1392,33 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_spec_type);
 }
 
+static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
+{
+  BoxASTNodeCompound *compound;
+
+  assert(BoxASTNode_Get_Type(compound_node) == BOXASTNODETYPE_COMPOUND);
+  compound = (BoxASTNodeCompound *) compound_node;
+
+  switch (compound->kind) {
+  case BOXASTCOMPOUNDKIND_IDENTITY:
+    My_Compile_Any(c, compound->memb->expr);
+    return;
+  case BOXASTCOMPOUNDKIND_SPECIES:
+    My_Compile_Species_Type(c, compound);
+    return;
+  case BOXASTCOMPOUNDKIND_STRUCT:
+    if (BoxASTNode_Is_Type(compound_node))
+      My_Compile_Struct_Type(c, compound);
+    else
+      My_Compile_Struct_Value(c, compound);
+    return;
+  default:
+    printf("Unexpected compound kind %d", (int) compound->kind);
+    abort();
+  }
+}
+
+#if 0
 static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
   Value *v_type, *v_inc_type = NULL;
 

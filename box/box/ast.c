@@ -726,14 +726,18 @@ ASTNode *ASTNodeRaiseType_New(ASTNode *type) {
 
 
 
-#define MY_COPY_SRC(lhs, rhs)                     \
-  do {BoxASTNode *src_node = (rhs);               \
-      if (src_node) lhs->src = src_node->src;     \
-      else BoxSrc_Init(& lhs->src);} while(0)
+#define MY_COPY_SRC(lhs, rhs)                   \
+  do {BoxASTNode *src_node = (rhs);             \
+    if (src_node) lhs->src = src_node->src;     \
+    else BoxSrc_Init(& lhs->src);} while(0)
 
 #define MY_PROPAGATE_SRC(container, fst, lst)           \
   do {(container)->src.begin = (fst)->src.begin;        \
       (container)->src.end = (lst)->src.end;} while(0)
+
+#define MY_PROPAGATE_TYPE(dst, src)                             \
+  BoxASTNode_Set_Attr((dst), 0,                                 \
+    (BoxASTNode_Get_Attr_Mask(src) & BOXASTNODEATTR_TYPE))
 
 
 void BoxAST_Init(BoxAST *ast)
@@ -1042,4 +1046,194 @@ BoxASTNode *BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
     bin_op->op = op;
   }
   return node;
+}
+
+/* Create a new structure/species.
+ * NOTE: a compound expression is able to represent structure values/types and
+ *   species types. Having one single AST node to represent such a variety of
+ *   language constructs does shift the burden of detecting illegal usage of
+ *   these construct here below. The functions below are indeed in charge of
+ *   carrying out some checks that normally would be done during parsing. This
+ *   is the price to pay for extra flexibility in the grammar...
+ */
+BoxASTNode *BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_COMPOUND);
+  if (node) {
+    BoxASTNodeCompound *spec = (BoxASTNodeCompound *) node;
+    spec->kind = BOXASTCOMPOUNDKIND_UNDET;
+    spec->sep = BOXASTSEP_VOID;
+    spec->memb = NULL;
+    if (memb)
+      return BoxAST_Append_Member(ast, node, BOXASTSEP_VOID, NULL, memb);
+  }
+  return node;
+}
+
+/* Create a new structure/species member. */
+BoxASTNode *BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr,
+                                 BoxASTNode *name)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_MEMBER);
+  if (node) {
+    ((BoxASTNodeMember *) node)->expr = expr;
+    ((BoxASTNodeMember *) node)->name = name;
+  }
+  return node;
+}
+
+/* For now... */
+#define BoxAST_Log(src, start_node, end_node, args...) \
+  do {printf("Error: "); printf(args); printf("\n");} while(0)
+
+#define BoxASTNode_Mark_Err(stuff)
+
+/* Append a member to an expression list. */
+BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
+                                 BoxASTSep sep, BoxSrc *sep_src,
+                                 BoxASTNode *memb_node)
+{
+  BoxASTNodeCompound *compound;
+  BoxASTNodeMember *memb;
+
+  if (!compound_node)
+    return NULL;
+
+  assert(BoxASTNode_Get_Type(compound_node) == BOXASTNODETYPE_COMPOUND);
+  compound = (BoxASTNodeCompound *) compound_node;
+
+  /* The code below contracts a list of consecutive separators. */
+  if (sep != BOXASTSEP_VOID) {
+    assert(sep == BOXASTSEP_ARROW);
+    if (compound->sep != BOXASTSEP_VOID)
+      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+                 "Duplicate separator in compound expression");
+    compound->sep = sep;
+    compound->sep_src = (sep_src) ? *sep_src : ((BoxSrc) {0, 0});
+  }
+
+  if (!memb_node)
+    return compound_node;
+
+  assert(BoxASTNode_Get_Type(memb_node) == BOXASTNODETYPE_MEMBER);
+  memb = (BoxASTNodeMember *) memb_node;
+
+  /* Change the "parse" state and check for errors with separators. */
+  switch (compound->kind) {
+  case BOXASTCOMPOUNDKIND_UNDET:
+    compound->kind = BOXASTCOMPOUNDKIND_IDENTITY;
+    break;
+  case BOXASTCOMPOUNDKIND_IDENTITY:
+    compound->kind = ((compound->sep == BOXASTSEP_VOID) ?
+                      BOXASTCOMPOUNDKIND_STRUCT : BOXASTCOMPOUNDKIND_SPECIES);
+    break;
+  case BOXASTCOMPOUNDKIND_SPECIES:
+    if (compound->sep != BOXASTSEP_ARROW) {
+      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+                 "Invalid separator in species definition");
+      //BoxASTNode_Mark_Err(compound_node);
+    }
+    break;
+  case BOXASTCOMPOUNDKIND_STRUCT:
+    if (compound->sep != BOXASTSEP_VOID) {
+      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+                 "Invalid separator in structure");
+      //BoxASTNode_Mark_Err(compound_node);
+    }
+    break;
+  default:
+    abort();
+  }
+
+  /* Add the member to the compound. Here compound->memb (when != NULL) points
+   * to the last member of the compound and compound->memb->next points to the
+   * first member.
+   */
+  if (compound->memb) {
+    memb->next = compound->memb->next;
+    compound->memb->next = memb;
+    compound->memb = memb;
+  } else {
+    compound->memb = memb;
+    memb->next = memb;
+  }
+
+  compound->sep = BOXASTSEP_VOID;
+  return compound_node;
+}
+
+/* Perform final checks on a compound node. */
+BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
+{
+  BoxASTNodeCompound *compound;
+  BoxASTNodeMember *memb;
+
+  if (!compound_node)
+    return NULL;
+
+  assert(BoxASTNode_Get_Type(compound_node) == BOXASTNODETYPE_COMPOUND);
+  compound = (BoxASTNodeCompound *) compound_node;
+
+  memb = compound->memb;
+  assert(!memb
+         || BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
+
+  switch (compound->kind) {
+  case BOXASTCOMPOUNDKIND_UNDET:
+    BoxAST_Log(NULL, NULL, BOXLOG_ERROR, "Empty parentheses");
+    break;
+  case BOXASTCOMPOUNDKIND_IDENTITY:
+    if (memb->name)
+      BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
+                 "Spurious member name, but this is not a structure. Hint: "
+                 "Structures must contain at least one separator");
+    MY_PROPAGATE_TYPE(compound_node, memb->expr);
+    break;
+  case BOXASTCOMPOUNDKIND_SPECIES:
+    assert(compound->memb);
+    compound->memb = memb->next; /* First member. */
+    memb->next = NULL;           /* NULL terminate. */
+    for (memb = compound->memb; memb; memb = memb->next) {
+      if (memb->name)
+        BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
+                   "Unexpected member name in species");
+      if (!BoxASTNode_Is_Type(memb->expr))
+        BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
+                   "Unexpected expression in species");
+    }
+    BoxASTNode_Set_Attr(compound_node, 0, BOXASTNODEATTR_TYPE);
+    break;
+  case BOXASTCOMPOUNDKIND_STRUCT:
+    compound->memb = memb->next; /* First member. */
+    memb->next = NULL;           /* NULL terminate. */
+    MY_PROPAGATE_TYPE(compound_node, compound->memb->expr);
+    if (BoxASTNode_Is_Type((BoxASTNode *) compound->memb->expr)) {
+      for (memb = compound->memb; memb; memb = memb->next) {
+        if (memb->name) {
+          if (!BoxASTNode_Is_Type(memb->expr))
+            BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
+                       "Invalid expression in structure");
+        } else if (!BoxASTNode_Is_Type(memb->expr)) {
+          if (BoxASTNode_Get_Type(memb->expr) == BOXASTNODETYPE_VAR_IDFR) {
+            memb->name = memb->expr;
+            memb->expr = NULL;
+          } else
+            BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
+                       "Invalid expression in structure");
+        }
+      }
+    } else {
+      for (memb = compound->memb; memb; memb = memb->next) {
+        if (memb->name)
+          BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
+                     "Spurious member name in structure");
+        if (BoxASTNode_Is_Type(memb->expr))
+          BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
+                     "Unexpected type expression in structure");
+      }
+    }
+    break;
+  }
+
+  return compound_node;
 }

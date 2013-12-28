@@ -75,6 +75,7 @@ typedef enum {
 typedef enum {
   BOXASTSEP_VOID=0,
   BOXASTSEP_PAUSE,
+  BOXASTSEP_ARROW,
   ASTSEP_VOID=BOXASTSEP_VOID,
   ASTSEP_PAUSE=BOXASTSEP_PAUSE
 } BoxASTSep;
@@ -489,6 +490,12 @@ typedef struct BoxASTNode_struct {
                   | (uint8_t) (set);} while(0)
 
 /**
+ * @brief Whether the node is a type expression.
+ */
+#define BoxASTNode_Is_Type(ast) \
+  ((BoxASTNode_Get_Attr_Mask((ast)) & BOXASTNODEATTR_TYPE) != 0)
+
+/**
  * @brief Get the type of an AST node.
  */
 #define BoxASTNode_Get_Type(ast) ((ast)->type)
@@ -651,5 +658,40 @@ BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *operand);
 BOXEXPORT BoxASTNode *
 BoxAST_Create_BinOp(BoxAST *ast,
                     BoxASTNode *left, BoxASTBinOp op, BoxASTNode *right);
+
+/**
+ * @brief Create a new member (to be appended to a compound).
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name);
+
+/**
+ * @brief Create a new structure/species.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb);
+
+/**
+ * @brief Append a member to a structure/species.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Append_Member(BoxAST *ast, BoxASTNode *list, BoxASTSep sep,
+                     BoxSrc *sep_src, BoxASTNode *memb);
+
+/**
+ * @brief Kinds of compounds.
+ */
+enum BoxASTCompoundKind_enum {
+  BOXASTCOMPOUNDKIND_UNDET,
+  BOXASTCOMPOUNDKIND_IDENTITY,
+  BOXASTCOMPOUNDKIND_SPECIES,
+  BOXASTCOMPOUNDKIND_STRUCT
+};
+
+/**
+ * @brief Perform final checks and adjustments on a compound node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Close_Compound(BoxASTNode *compound_node);
 
 #endif /* _BOX_AST_H */

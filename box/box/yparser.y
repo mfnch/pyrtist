@@ -104,10 +104,10 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 %token <BinaryOperator> TOK_LAND TOK_LOR
 
 /* List of nodes with semantical value */
-%type <Sep> sep
+%type <Sep> sep compound_sep
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
-%type <Node> expr_list expr_list_memb opt_ident
+%type <Node> compound compound_memb opt_ident
 %type <Node> string_concat type name prim_expr postfix_expr opt_postfix_expr
 %type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
@@ -198,26 +198,27 @@ assign_op:
 
 /******************************* STRUCTURES ********************************/
 
-expr_list_sep:
-    ','
-  | TOK_NEWLINE
-  | TOK_TO
+compound_sep:
+    ','                          {$$ = BOXASTSEP_VOID;}
+  | TOK_NEWLINE                  {$$ = BOXASTSEP_VOID;}
+  | TOK_TO                       {$$ = BOXASTSEP_ARROW;}
   ;
 
 opt_ident:
                                  {$$ = NULL;}
-  | TOK_VAR_IDFR                 {$$ = NULL;}
+  | TOK_VAR_IDFR                 {$$ = $1;}
   ;
 
-expr_list_memb:
+compound_memb:
                                  {$$ = NULL;}
-  |  expr opt_ident              {$$ = $1;}
+  |  expr opt_ident              {$$ = BoxAST_Create_Member(ast, $1, $2);}
   ;
 
-expr_list:
-    expr_list_memb               {$$ = NULL;}
-  | expr_list expr_list_sep expr_list_memb
-                                 {$$ = $3;}
+compound:
+    compound_memb                {$$ = BoxAST_Create_Compound(ast, $1);}
+  | compound compound_sep compound_memb
+                                 {$$ = BoxAST_Append_Member(ast, $1, $2, 0,
+                                                            $3);}
   ;
 
 /******************************* ARITHMETICS *******************************/
@@ -247,7 +248,7 @@ prim_expr:
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
   | TOK_SELF                     {$$ = NULL;}
-  | '(' expr_list ')'            {$$ = $2;}
+  | '(' compound ')'             {$$ = BoxAST_Close_Compound($2);}
   ;
 
 postfix_expr:
@@ -393,6 +394,7 @@ statement:
   | '\\' expr                    {$$ = BoxAST_Create_Ignore(ast, $2);}
   | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);;}
   | error sep                    {$$ = NULL;
+                                  printf("Syntax error!!!\n");
                                   /*ASTNodeStatement_New(ASTNodeError_New());
                                   My_Syntax_Error(& @$, NULL);
                                   assert(yychar == YYEMPTY); yychar = (int) ',';
