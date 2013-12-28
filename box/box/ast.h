@@ -672,6 +672,16 @@ BOXEXPORT BoxASTNode *
 BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name);
 
 /**
+ * @brief Kinds of compounds.
+ */
+enum BoxASTCompoundKind_enum {
+  BOXASTCOMPOUNDKIND_UNDET,
+  BOXASTCOMPOUNDKIND_IDENTITY,
+  BOXASTCOMPOUNDKIND_SPECIES,
+  BOXASTCOMPOUNDKIND_STRUCT
+};
+
+/**
  * @brief Create a new structure/species.
  */
 BOXEXPORT BoxASTNode *
@@ -685,19 +695,15 @@ BoxAST_Append_Member(BoxAST *ast, BoxASTNode *list, BoxASTSep sep,
                      BoxSrc *sep_src, BoxASTNode *memb);
 
 /**
- * @brief Kinds of compounds.
- */
-enum BoxASTCompoundKind_enum {
-  BOXASTCOMPOUNDKIND_UNDET,
-  BOXASTCOMPOUNDKIND_IDENTITY,
-  BOXASTCOMPOUNDKIND_SPECIES,
-  BOXASTCOMPOUNDKIND_STRUCT
-};
-
-/**
  * @brief Perform final checks and adjustments on a compound node.
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Close_Compound(BoxASTNode *compound_node);
+
+/**
+ * @brief Get a member from a structure value.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *name);
 
 #endif /* _BOX_AST_H */

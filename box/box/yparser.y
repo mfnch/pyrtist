@@ -257,7 +257,7 @@ postfix_expr:
   | postfix_expr '[' statement_list ']'
                                  {$$ = BoxAST_Create_Box(ast, $1, $3);}
   | opt_postfix_expr '.' TOK_VAR_IDFR
-                                 {$$ = NULL;}
+                                 {$$ = BoxAST_Create_Get(ast, $1, $3);}
   | opt_postfix_expr '.' TOK_TYPE_IDFR
                                  {$$ = NULL;}
   | postfix_expr post_op         {$$ = NULL;}

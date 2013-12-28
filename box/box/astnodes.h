@@ -150,3 +150,14 @@ typedef struct BoxASTNodeCompound_struct {
   uint8_t             kind;
 } BoxASTNodeCompound;
 #endif
+
+/* Node used to express a member access. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(GET_MEMBER, GetMember)
+#else
+typedef struct BoxASTNodeGet_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *parent;
+  BoxASTNodeVarIdfr   *name;
+} BoxASTNodeGet;
+#endif
