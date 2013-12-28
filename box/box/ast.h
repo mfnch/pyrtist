@@ -704,6 +704,6 @@ BoxAST_Close_Compound(BoxASTNode *compound_node);
  * @brief Get a member from a structure value.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *name);
+BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name);
 
 #endif /* _BOX_AST_H */

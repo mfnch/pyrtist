@@ -1248,3 +1248,15 @@ BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
 
   return compound_node;
 }
+
+/* Create a new binary operation. */
+BoxASTNode *BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent,
+                              BoxASTNode *member_name)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_GET);
+  if (node) {
+    ((BoxASTNodeGet *) node)->parent = parent;
+    ((BoxASTNodeGet *) node)->name = member_name;
+  }
+  return node;
+}

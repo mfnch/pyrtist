@@ -153,7 +153,7 @@ typedef struct BoxASTNodeCompound_struct {
 
 /* Node used to express a member access. */
 #ifdef BOXASTNODE_DEF
-BOXASTNODE_DEF(GET_MEMBER, GetMember)
+BOXASTNODE_DEF(GET, Get)
 #else
 typedef struct BoxASTNodeGet_struct {
   BOXASTNODEHEAD

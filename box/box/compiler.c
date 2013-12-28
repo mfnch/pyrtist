@@ -914,41 +914,42 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-#if 0
-static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
+{
   Value *v_struc, *v_memb = NULL;
-  ASTNode *n_struc;
+  BoxASTNode *parent;
+  const char *member_name;
 
-  assert(n->type == ASTNODETYPE_MEMBERGET);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_GET);
 
-  n_struc = n->attr.member_get.struc;
-  if (n_struc == NULL) {
+  parent = ((BoxASTNodeGet *) node)->parent;
+  member_name = ((BoxASTNodeGet *) node)->name->name;
+  if (!parent) {
     v_struc = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
-    if (v_struc == NULL) {
+    if (!v_struc) {
       MSG_ERROR("Cannot get implicit member '%s'. Default parent is not "
-                "defined in current scope.", n->attr.member_get.member);
+                "defined in current scope.", member_name);
       BoxCmp_Push_Value(c, NULL);
       return;
     }
-
   } else {
-    My_Compile_Any(c, n_struc);
+    My_Compile_Any(c, parent);
     v_struc = BoxCmp_Pop_Value(c);
   }
 
   if (Value_Want_Value(v_struc)) {
-    v_memb = Value_Struc_Get_Member(v_struc, n->attr.member_get.member);
+    v_memb = Value_Struc_Get_Member(v_struc, member_name);
     /* No need to unlink v_struc here */
-    if (v_memb == NULL)
+    if (!v_memb)
       MSG_ERROR("Cannot find the member '%s' of an object with type '%T'.",
-                n->attr.member_get.member, v_struc->type);
-
+                member_name, v_struc->type);
   } else
     Value_Unlink(v_struc);
 
   BoxCmp_Push_Value(c, v_memb);
 }
 
+#if 0
 static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
   Value *v_parent = NULL, *v_result = NULL;
 
