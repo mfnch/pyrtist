@@ -271,7 +271,7 @@ opt_postfix_expr:
 unary_expr:
     postfix_expr                 {$$ = $1;}
   | un_op unary_expr             {$$ = NULL;}
-  | '^' unary_expr               {$$ = NULL;}
+  | '^' unary_expr               {$$ = BoxAST_Create_Raise(ast, $2);}
 ;
 
 pow_expr:

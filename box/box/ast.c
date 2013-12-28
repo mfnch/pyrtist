@@ -1022,6 +1022,17 @@ BoxASTNode *BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
   return node;
 }
 
+/* Create a raise node. */
+BoxASTNode *BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_RAISE);
+  if (node) {
+    MY_PROPAGATE_TYPE(node, value);
+    ((BoxASTNodeIgnore *) node)->value = value;
+  }
+  return node;
+}
+
 /* Create a new unary operation. */
 BoxASTNode *BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
 {

@@ -1418,13 +1418,11 @@ static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
   }
 }
 
-#if 0
-static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Raise_Type(BoxCmp *c, BoxASTNodeRaise *n)
+{
   Value *v_type, *v_inc_type = NULL;
 
-  assert(n->type == ASTNODETYPE_RAISETYPE);
-
-  My_Compile_Any(c, n->attr.raise_type.type);
+  My_Compile_Any(c, n->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
@@ -1439,25 +1437,30 @@ static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_inc_type);
 }
 
-static void My_Compile_Raise(BoxCmp *c, ASTNode *n) {
+static void My_Compile_Raise_Value(BoxCmp *c, BoxASTNodeRaise *n)
+{
   Value *v_operand = NULL;
 
-  assert(n->type == ASTNODETYPE_RAISE);
-
-  My_Compile_Any(c, n->attr.raise.expr);
+  My_Compile_Any(c, n->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
   v_operand = BoxCmp_Pop_Value(c);
   if (Value_Want_Value(v_operand)) {
     v_operand = Value_Raise(v_operand);
-
   } else {
     Value_Unlink(v_operand);
     v_operand = NULL;
   }
 
   BoxCmp_Push_Value(c, v_operand);
-
 }
-#endif
+
+static void My_Compile_Raise(BoxCmp *c, BoxASTNode *node)
+{
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_RAISE);
+  if (BoxASTNode_Is_Type(node))
+    My_Compile_Raise_Type(c, (BoxASTNodeRaise *) node);
+  else
+    My_Compile_Raise_Value(c, (BoxASTNodeRaise *) node);
+}
