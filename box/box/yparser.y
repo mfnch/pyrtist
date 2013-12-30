@@ -59,7 +59,7 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
   BoxASTNodePtr NewNode;
   ASTTypeMemb   TypeMemb;
   BoxASTSep     Sep;
-  ASTSelfLevel  SelfLevel;
+  uint32_t      SelfLevel;
 }
 
 %code requires {
@@ -247,7 +247,7 @@ prim_expr:
   | name                         {$$ = $1;}
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
-  | TOK_SELF                     {$$ = NULL;}
+  | TOK_SELF                     {$$ = BoxAST_Create_ArgGet(ast, $1);}
   | '(' compound ')'             {$$ = BoxAST_Close_Compound($2);}
   ;
 
@@ -276,7 +276,8 @@ unary_expr:
 
 pow_expr:
     unary_expr                   {$$ = $1;}
-  | pow_expr TOK_POW unary_expr  {$$ = NULL;}
+  | pow_expr TOK_POW unary_expr  {$$ = BoxAST_Create_BinOp(ast, $1,
+                                    BOXASTBINOP_POW, $3);}
   ;
 
 mul_expr:
@@ -291,7 +292,7 @@ add_expr:
 
 shift_expr:
     add_expr                     {$$ = $1;}
-  | shift_expr shift_op add_expr {$$ = NULL;}
+  | shift_expr shift_op add_expr {$$ = BoxAST_Create_BinOp(ast, $1, $2, $3);}
   ;
 
 cmp_expr:
@@ -306,17 +307,21 @@ eq_expr:
 
 band_expr:
     eq_expr                      {$$ = $1;}
-  | band_expr '&' eq_expr        {$$ = NULL;}
+  | band_expr '&' eq_expr
+                                 {$$ = BoxAST_Create_BinOp(ast, $1,
+                                    BOXASTBINOP_BAND, $3);}
   ;
 
 bxor_expr:
     band_expr                    {$$ = $1;}
-  | bxor_expr '^' band_expr      {$$ = NULL;}
+  | bxor_expr '^' band_expr      {$$ = BoxAST_Create_BinOp(ast, $1,
+                                    BOXASTBINOP_BXOR, $3);}
   ;
 
 bor_expr:
     bxor_expr                    {$$ = $1;}
-  | bor_expr '|' bxor_expr       {$$ = NULL;}
+  | bor_expr '|' bxor_expr       {$$ = BoxAST_Create_BinOp(ast, $1,
+                                    BOXASTBINOP_BOR, $3);}
   ;
 
 land_expr:
@@ -338,7 +343,7 @@ assign_expr:
 comb_expr:
     assign_expr                  {$$ = $1;}
   | assign_expr TOK_COMBINE opt_restrs comb_parent opt_c_name opt_comb_def
-                                 {$$ = NULL;}
+                         {$$ = BoxAST_Create_CombDef(ast, $1, $2, $4, $5, $6);}
    ;
 
 expr:
@@ -381,7 +386,7 @@ opt_comb_def:
   ;
 
 comb_parent:
-    TOK_TYPE_IDFR                {$$ = NULL;}
+    TOK_TYPE_IDFR                {$$ = $1;}
   | comb_parent '.' TOK_TYPE_IDFR
                                  {$$ = NULL;}
   ;

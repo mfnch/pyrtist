@@ -828,7 +828,8 @@ static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
 /** Deal with assignments.
  * REFERENCES: result: new, left: -1, right: -1;
  */
-static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
+static Value *My_Compile_Value_Assignment(BoxCmp *c, Value *left, Value *right)
+{
   if (Value_Want_Value(right)) {
     /* Subtypes are always expanded in assignments */
     left = Value_Expand_Subtype(left);
@@ -879,6 +880,61 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
   }
 }
 
+static Value *My_Compile_Type_Assignment(BoxCmp *c, Value *v_name,
+                                         Value *v_type)
+{
+  Value *v_named_type = NULL;
+
+  if (Value_Want_Has_Type(v_type)) {
+    if (Value_Is_Type_Name(v_name)) {
+      Value *v;
+      /* Create the new identity type. */
+      BoxType *ident_type =
+        BoxType_Create_Ident(BoxType_Link(v_type->type), v_name->name);
+
+      /* Register the type in the proper namespace */
+      v = Value_Create(c->cur_proc);
+      Value_Setup_As_Type(v, ident_type);
+      (void) BoxType_Unlink(ident_type);
+      Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, v_name->name, v);
+
+      /* Return a copy of the created type */
+      v_named_type = Value_Create(c->cur_proc);
+      Value_Setup_As_Weak_Copy(v_named_type, v);
+      Value_Unlink(v);
+
+    } else if (Value_Has_Type(v_name)) {
+      BoxType *t = v_name->type;
+      if (BoxType_Is_Subtype(t)) {
+        if (BoxType_Is_Registered_Subtype(t)) {
+          BoxType *t_child;
+          BoxBool success = BoxType_Get_Subtype_Info(t, NULL, NULL, & t_child);
+          assert(success);
+          if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
+            MSG_ERROR("Inconsistent redefinition of type '%T': was '%T' "
+                      "and is now '%T'", v_name->type, t_child, v_type->type);
+
+        } else {
+          (void) BoxType_Register_Subtype(t, v_type->type);
+          /* ^^^ ignore state of success of operation */
+        }
+
+      } else if (BoxType_Compare(v_name->type, v_type->type)
+                 == BOXTYPECMP_DIFFERENT) {
+        MSG_ERROR("Inconsistent redefinition of type '%T.'", v_name->type);
+      }
+
+      v_named_type = v_type;
+      Value_Link(v_type);
+    }
+  }
+
+  Value_Unlink(v_type);
+  Value_Unlink(v_name);
+
+  return v_named_type;
+}
+
 static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
 {
   BoxASTNodeBinOp *bin_op_node = (BoxASTNodeBinOp *) node;
@@ -899,7 +955,11 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
 
     op = bin_op_node->op;
     if (op == BOXASTBINOP_ASSIGN) {
-      result = My_Compile_Assignment(c, left, right);
+      if (BoxASTNode_Is_Type(bin_op_node->lhs)
+          && BoxASTNode_Is_Type(bin_op_node->rhs))
+        result = My_Compile_Type_Assignment(c, left, right);
+      else
+        result = My_Compile_Value_Assignment(c, left, right);
     } else {
       if (Value_Want_Value(left) & Value_Want_Value(right))
         /* NOTE: ^^^ We use & rather than &&*/
@@ -971,21 +1031,23 @@ static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
 
   if (v_parent != NULL) {
     if (Value_Want_Value(v_parent))
-        v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
+      v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
     else
-        Value_Unlink(v_parent);
+      Value_Unlink(v_parent);
   }
 
   BoxCmp_Push_Value(c, v_result);
 }
+#endif
 
-static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
+static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
+{
   Value *v_self = NULL;
   const char *n_self = NULL;
-  ASTSelfLevel self_level = n->attr.self_get.level;
+  ASTSelfLevel self_level = ((BoxASTNodeArgGet *) node)->depth;
   int i, promote_to_target = 0, return_weak_copy = 0;
 
-  assert(n->type == ASTNODETYPE_SELFGET);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_ARG_GET);
 
   switch (self_level) {
   case 1:
@@ -1005,7 +1067,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   default:
     n_self = "$$, $3, ...";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
-    for (i = 2; i < self_level && v_self != NULL; i++)
+    for (i = 2; i < self_level && v_self; i++)
       v_self = Value_Subtype_Get_Parent(v_self);
       /* FIXME: see Value_Init */
     promote_to_target = 1;
@@ -1031,24 +1093,27 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_self);
 }
 
-static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
+static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeCombDef *comb_def_node;
+  BoxASTNode *n_implem;
   Value *v_child, *v_parent, *v_ret = NULL;
   BoxCombType comb_type;
-  ASTNode *n_c_name = n->attr.proc_def.c_name,
-          *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
   BoxType *t_child, *t_parent, *comb;
   BoxCallable *comb_callable;
   int no_err;
 
-  assert(n->type == ASTNODETYPE_PROCDEF);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_COMB_DEF);
+  comb_def_node = (BoxASTNodeCombDef *) node;
+  n_implem = comb_def_node->implem;
 
   /* first, get the type of child and parent */
-  My_Compile_Any(c, n->attr.proc_def.child_type);
+  My_Compile_Any(c, comb_def_node->child);
   v_child = BoxCmp_Pop_Value(c);
-  My_Compile_Any(c, n->attr.proc_def.parent_type);
+  My_Compile_Any(c, comb_def_node->parent);
   v_parent = BoxCmp_Pop_Value(c);
-  comb_type = n->attr.proc_def.combine;
+  comb_type = (BoxCombType) comb_def_node->comb_type;
 
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
 
@@ -1059,9 +1124,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value_Unlink(v_parent);
 
   /* now get the C-name, if present */
-  if (n_c_name) {
-    assert(n_c_name->type == ASTNODETYPE_STRING);
-    c_name = n_c_name->attr.string.str;
+  if (comb_def_node->c_name) {
+    assert(BoxASTNode_Get_Type(comb_def_node->c_name)
+           == BOXASTNODETYPE_STR_IMM);
+    c_name = ((BoxASTNodeStrImm *) comb_def_node->c_name)->str;
     if (strlen(c_name) < 1) {
       /* NOTE: Should we test any other kind of "badness"? */
       MSG_ERROR("Empty string in C-name for procedure declaration.");
@@ -1161,7 +1227,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
                             !BoxType_Is_Empty(t_child),
                             !BoxType_Is_Empty(t_parent));
 
-    My_Compile_Box(c, n_implem, t_child, t_parent);
+    My_Compile_Box_Generic(c, n_implem, t_child, t_parent);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
@@ -1186,68 +1252,6 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
    */
   BoxCmp_Push_Value(c, v_ret);
 }
-
-static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
-  Value *v_name, *v_type, *v_named_type = NULL;
-
-  assert(n->type == ASTNODETYPE_TYPEDEF);
-
-  My_Compile_Any(c, n->attr.type_def.name);
-  My_Compile_Any(c, n->attr.type_def.src_type);
-
-  v_type = BoxCmp_Pop_Value(c);
-  v_name = BoxCmp_Pop_Value(c);
-
-  if (Value_Want_Has_Type(v_type)) {
-    if (Value_Is_Type_Name(v_name)) {
-      Value *v;
-      /* Create the new identity type. */
-      BoxType *ident_type =
-        BoxType_Create_Ident(BoxType_Link(v_type->type), v_name->name);
-
-      /* Register the type in the proper namespace */
-      v = Value_Create(c->cur_proc);
-      Value_Setup_As_Type(v, ident_type);
-      (void) BoxType_Unlink(ident_type);
-      Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, v_name->name, v);
-
-      /* Return a copy of the created type */
-      v_named_type = Value_Create(c->cur_proc);
-      Value_Setup_As_Weak_Copy(v_named_type, v);
-      Value_Unlink(v);
-
-    } else if (Value_Has_Type(v_name)) {
-      BoxType *t = v_name->type;
-      if (BoxType_Is_Subtype(t)) {
-        if (BoxType_Is_Registered_Subtype(t)) {
-          BoxType *t_child;
-          BoxBool success = BoxType_Get_Subtype_Info(t, NULL, NULL, & t_child);
-          assert(success);
-          if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
-            MSG_ERROR("Inconsistent redefinition of type '%T': was '%T' "
-                      "and is now '%T'", v_name->type, t_child, v_type->type);
-
-        } else {
-          (void) BoxType_Register_Subtype(t, v_type->type);
-          /* ^^^ ignore state of success of operation */
-        }
-
-      } else if (BoxType_Compare(v_name->type, v_type->type)
-                 == BOXTYPECMP_DIFFERENT) {
-        MSG_ERROR("Inconsistent redefinition of type '%T.'", v_name->type);
-      }
-
-      v_named_type = v_type;
-      Value_Link(v_type);
-    }
-  }
-
-  Value_Unlink(v_type);
-  Value_Unlink(v_name);
-
-  BoxCmp_Push_Value(c, v_named_type);
-}
-#endif
 
 static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
 {

@@ -1255,8 +1255,38 @@ BoxASTNode *BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent,
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_GET);
   if (node) {
+    assert(!member_name
+           || BoxASTNode_Get_Type(member_name) == BOXASTNODETYPE_VAR_IDFR);
     ((BoxASTNodeGet *) node)->parent = parent;
-    ((BoxASTNodeGet *) node)->name = member_name;
+    ((BoxASTNodeGet *) node)->name = (BoxASTNodeVarIdfr *) member_name;
+  }
+  return node;
+}
+
+/* Create a combination definition node. */
+BoxASTNode *
+BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
+                      BoxASTNode *parent, BoxASTNode *c_name,
+                      BoxASTNode *implem)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_COMB_DEF);
+  if (node) {
+    BoxASTNodeCombDef *spec = (BoxASTNodeCombDef *) node;
+    spec->child = child;
+    spec->comb_type = (uint8_t) comb_type;
+    spec->parent = parent;
+    spec->c_name = c_name;
+    spec->implem = implem;
+  }
+  return node;
+}
+
+/* Create an argument node. */
+BoxASTNode *BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_ARG_GET);
+  if (node) {
+    ((BoxASTNodeArgGet *) node)->depth = depth;
   }
   return node;
 }

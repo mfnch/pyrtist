@@ -54,15 +54,15 @@ typedef enum {
   ASTNODETYPE_IGNORE,    //
   ASTNODETYPE_UNOP,      //
   ASTNODETYPE_BINOP,     //
-  ASTNODETYPE_MEMBER,
+  ASTNODETYPE_MEMBER,    //
   ASTNODETYPE_STRUC,     //
   ASTNODETYPE_ARRAYGET,
-  ASTNODETYPE_MEMBERGET,
+  ASTNODETYPE_MEMBERGET, //
   ASTNODETYPE_RAISE,     //
-  ASTNODETYPE_SELFGET,
+  ASTNODETYPE_SELFGET,   //
   ASTNODETYPE_SUBTYPEBLD,
-  ASTNODETYPE_PROCDEF,
-  ASTNODETYPE_TYPEDEF,
+  ASTNODETYPE_PROCDEF,   //
+  ASTNODETYPE_TYPEDEF,   //
   ASTNODETYPE_STRUCTYPE, //
   ASTNODETYPE_MEMBERTYPE,
   ASTNODETYPE_RAISETYPE, //
@@ -705,5 +705,19 @@ BoxAST_Close_Compound(BoxASTNode *compound_node);
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name);
+
+/**
+ * @brief Create a combination definition node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
+                      BoxASTNode *parent, BoxASTNode *c_name,
+                      BoxASTNode *implem);
+
+/**
+ * @brief Create an argument node.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth);
 
 #endif /* _BOX_AST_H */

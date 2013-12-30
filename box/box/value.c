@@ -1615,14 +1615,13 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
    */
   while (1) {
     found_subtype = BoxType_Find_Subtype(v_parent->type, subtype_name);
-    if (found_subtype != NULL)
+    if (found_subtype)
       break;
 
     if (BoxType_Is_Subtype(v_parent->type)) {
       v_parent = Value_Expand_Subtype(v_parent);
-      if (v_parent == NULL)
+      if (!v_parent)
         return NULL;
-
     } else {
       MSG_ERROR("Type '%T' has not a subtype of name '%s'",
                 v_parent->type, subtype_name);

@@ -161,3 +161,24 @@ typedef struct BoxASTNodeGet_struct {
   BoxASTNodeVarIdfr   *name;
 } BoxASTNodeGet;
 #endif
+
+/* Node used to represent a combination definition. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(COMB_DEF, CombDef)
+#else
+typedef struct BoxASTNodeCombDef_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *child, *parent, *implem, *c_name;
+  uint8_t             comb_type;
+} BoxASTNodeCombDef;
+#endif
+
+/* Node used to represent an argument in a combination body. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(ARG_GET, ArgGet)
+#else
+typedef struct BoxASTNodeArgGet_struct {
+  BOXASTNODEHEAD
+  uint32_t            depth;
+} BoxASTNodeArgGet;
+#endif
