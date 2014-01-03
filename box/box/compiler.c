@@ -1401,6 +1401,14 @@ static void My_Compile_Species_Type(BoxCmp *c, BoxASTNodeCompound *compound)
   BoxCmp_Push_Value(c, v_spec_type);
 }
 
+static void My_Compile_Paren(BoxCmp *c, BoxASTNode *expr)
+{
+  Value *v;
+  My_Compile_Any(c, expr);
+  v = BoxCmp_Get_Value(c, 0);
+  Value_Set_Ignorable(v, 0);
+}
+
 static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
 {
   BoxASTNodeCompound *compound;
@@ -1410,7 +1418,7 @@ static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
 
   switch (compound->kind) {
   case BOXASTCOMPOUNDKIND_IDENTITY:
-    My_Compile_Any(c, compound->memb->expr);
+    My_Compile_Paren(c, compound->memb->expr);
     return;
   case BOXASTCOMPOUNDKIND_SPECIES:
     My_Compile_Species_Type(c, compound);
