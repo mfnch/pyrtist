@@ -460,19 +460,21 @@ static void My_Compile_TypeIdfr(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-#if 0
-static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n)
+static void My_Compile_TypeTag(BoxCmp *c, BoxASTNode *node)
 {
   Value *v;
+  BoxTypeId type_id;
 
-  assert(n->type == ASTNODETYPE_TYPETAG);
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_TYPE_TAG);
 
   /* Should we use c->value.create, etc. ? */
+  type_id = (BoxTypeId) ((BoxASTNodeTypeTag *) node)->type_id;
   v = Value_Create(c->cur_proc);
-  Value_Setup_As_Type(v, Box_Get_Core_Type(n->attr.typetag.type));
+  Value_Setup_As_Type(v, Box_Get_Core_Type(type_id));
   BoxCmp_Push_Value(c, v);
 }
 
+#if 0
 static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
   Value *parent_type;
   const char *name = p->attr.subtype.name;
@@ -519,8 +521,10 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
     BoxCmp_Push_Error(c, 1);
 }
 
-static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
-  assert(instance->type == ASTNODETYPE_INSTANCE);
+static void My_Compile_Keyword(BoxCmp *c, BoxASTNode *node)
+{
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_KEYWORD);
+
 
   My_Compile_Any(c, instance->attr.instance.type);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push */ 1))

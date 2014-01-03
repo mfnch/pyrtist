@@ -241,7 +241,7 @@ name:
 
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
-  | TOK_TTAG                     {$$ = NULL;}
+  | TOK_TTAG                     {$$ = BoxAST_Create_TypeTag(ast, $1);}
   | TOK_KEYWORD                  {$$ = NULL;}
   | string_concat                {$$ = $1;}
   | name                         {$$ = $1;}

@@ -1290,3 +1290,13 @@ BoxASTNode *BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
   }
   return node;
 }
+
+/* Create a type tag. */
+BoxASTNode *BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_TYPE_TAG);
+  if (node) {
+    ((BoxASTNodeTypeTag *) node)->type_id = (uint32_t) type_id;
+  }
+  return node;
+}

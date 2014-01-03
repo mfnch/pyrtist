@@ -182,3 +182,13 @@ typedef struct BoxASTNodeArgGet_struct {
   uint32_t            depth;
 } BoxASTNodeArgGet;
 #endif
+
+/* Node used to represent an argument in a combination body. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(TYPE_TAG, TypeTag)
+#else
+typedef struct BoxASTNodeTypeTag_struct {
+  BOXASTNODEHEAD
+  uint32_t            type_id;
+} BoxASTNodeTypeTag;
+#endif

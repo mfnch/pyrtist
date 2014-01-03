@@ -43,7 +43,7 @@ typedef struct ASTNode_struct ASTNode;
 typedef enum {
   ASTNODETYPE_ERROR,
   ASTNODETYPE_TYPENAME,  //
-  ASTNODETYPE_TYPETAG,
+  ASTNODETYPE_TYPETAG,   //
   ASTNODETYPE_SUBTYPE,
   ASTNODETYPE_INSTANCE,
   ASTNODETYPE_BOX,       //
@@ -719,5 +719,11 @@ BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth);
+
+/**
+ * @brief Create a type tag.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id);
 
 #endif /* _BOX_AST_H */
