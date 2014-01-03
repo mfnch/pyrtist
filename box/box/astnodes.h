@@ -192,3 +192,24 @@ typedef struct BoxASTNodeTypeTag_struct {
   uint32_t            type_id;
 } BoxASTNodeTypeTag;
 #endif
+
+/* Node used to represent a subtype. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(SUBTYPE, Subtype)
+#else
+typedef struct BoxASTNodeSubtype_struct {
+  BOXASTNODEHEAD
+  BoxASTNode          *parent;
+  BoxASTNodeTypeIdfr  *name;
+} BoxASTNodeSubtype;
+#endif
+
+/* Node used to represent a keyword. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(KEYWORD, Keyword)
+#else
+typedef struct BoxASTNodeKeyword_struct {
+  BOXASTNODEHEAD
+  BoxASTNodeTypeIdfr  *type;
+} BoxASTNodeKeyword;
+#endif

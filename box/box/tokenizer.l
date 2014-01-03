@@ -309,7 +309,8 @@ include BEGIN(include);
  }
 
 Else {
-  yylval.String = Box_Mem_Strndup(yytext, yyleng);
+  yylval.Node = MY_NODE(TypeIdfr, yytext, yyleng);
+  BoxASTNode_Set_Attr(yylval.Node, 0, BOXASTNODEATTR_TYPE);
   return TOK_KEYWORD;
 }
 

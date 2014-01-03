@@ -379,7 +379,7 @@ static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
 {
   BoxASTNodeType node_type = BoxASTNode_Get_Type(node);
 
-  printf("Compiling node %s\n", BoxASTNodeType_To_Str(node_type));
+  //printf("Compiling node %s\n", BoxASTNodeType_To_Str(node_type));
 
 #define BOXASTNODE_DEF(NODE, Node) \
   case BOXASTNODETYPE_##NODE: My_Compile_##Node(c, node); break;
@@ -431,7 +431,7 @@ static void My_Compile_StrImm(BoxCmp *c, BoxASTNode *node)
 #if 0
 static void My_Compile_Error(BoxCmp *c, ASTNode *node)
 {
-  BoxCmp_Push_Value(c, Value_New(c->cur_proc));
+  BoxCmp_Push_Value(c, Value_Create(c->cur_proc));
 }
 #endif
 
@@ -474,16 +474,49 @@ static void My_Compile_TypeTag(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-#if 0
-static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
+static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
+{
+  const char *name;
+  Value *v_parent = NULL, *v_result = NULL;
+
+  assert(BoxASTNode_Get_Type((BoxASTNode *) node->name)
+         == BOXASTNODETYPE_TYPE_IDFR);
+  name = node->name->name;
+
+  if (node->parent) {
+    My_Compile_Any(c, node->parent);
+    if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+      return;
+    v_parent = BoxCmp_Pop_Value(c);
+  } else {
+    v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    if (!v_parent) {
+      MSG_ERROR("Cannot get implicit method '%s'. Default parent is not "
+                "defined in current scope.", name);
+    }
+  }
+
+  if (v_parent) {
+    if (Value_Want_Value(v_parent))
+      v_result = Value_Subtype_Build(v_parent, name);
+    else
+      Value_Unlink(v_parent);
+  }
+
+  BoxCmp_Push_Value(c, v_result);
+}
+
+static void My_Compile_Subtype_Type(BoxCmp *c, BoxASTNodeSubtype *node)
+{
   Value *parent_type;
-  const char *name = p->attr.subtype.name;
   BoxType *new_subtype = NULL;
+  const char *name;
 
-  assert(p->type == ASTNODETYPE_SUBTYPE);
-  assert(p->attr.subtype.parent);
+  assert(BoxASTNode_Get_Type((BoxASTNode *) node->name)
+         == BOXASTNODETYPE_TYPE_IDFR);
+  name = node->name->name;
 
-  My_Compile_Any(c, p->attr.subtype.parent);
+  My_Compile_Any(c, node->parent);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
@@ -502,7 +535,6 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
         MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%T'.",
                   name, parent_type->type);
       }
-
     } else {
       new_subtype = BoxType_Find_Subtype(pt, name);
       if (!new_subtype)
@@ -521,21 +553,30 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
     BoxCmp_Push_Error(c, 1);
 }
 
+static void My_Compile_Subtype(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeSubtype *subtype_node;
+
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_SUBTYPE);
+  subtype_node = (BoxASTNodeSubtype *) node;
+  if (subtype_node->parent && BoxASTNode_Is_Type(subtype_node->parent))
+    My_Compile_Subtype_Type(c, subtype_node);
+  else
+    My_Compile_Subtype_Value(c, subtype_node);
+}
+
 static void My_Compile_Keyword(BoxCmp *c, BoxASTNode *node)
 {
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_KEYWORD);
 
-
-  My_Compile_Any(c, instance->attr.instance.type);
+  My_Compile_Any(c, (BoxASTNode *) ((BoxASTNodeKeyword *) node)->type);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push */ 1))
     return;
-
   else {
     Value *instance = Value_To_Temp_Or_Target(BoxCmp_Pop_Value(c));
     BoxCmp_Push_Value(c, instance);
   }
 }
-#endif
 
 static void My_Compile_Statement(BoxCmp *c, BoxASTNode *s)
 {
@@ -1012,37 +1053,6 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
 
   BoxCmp_Push_Value(c, v_memb);
 }
-
-#if 0
-static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
-  Value *v_parent = NULL, *v_result = NULL;
-
-  assert(n->type == ASTNODETYPE_SUBTYPEBLD);
-
-  if (n->attr.subtype_bld.parent != NULL) {
-    My_Compile_Any(c, n->attr.subtype_bld.parent);
-    if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
-      return;
-    v_parent = BoxCmp_Pop_Value(c);
-
-  } else {
-    v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
-    if (v_parent == NULL) {
-      MSG_ERROR("Cannot get implicit method '%s'. Default parent is not "
-                "defined in current scope.", n->attr.subtype_bld.subtype);
-    }
-  }
-
-  if (v_parent != NULL) {
-    if (Value_Want_Value(v_parent))
-      v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
-    else
-      Value_Unlink(v_parent);
-  }
-
-  BoxCmp_Push_Value(c, v_result);
-}
-#endif
 
 static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
 {

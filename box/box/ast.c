@@ -745,7 +745,7 @@ void BoxAST_Init(BoxAST *ast)
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
 
-#if 1
+#if 0
 #define BOXASTNODE_DEF(NODE, Node)                                      \
     printf("%s size=%zu, alignment=%zu\n",                              \
            #Node, sizeof(BoxASTNode##Node),                             \
@@ -1297,6 +1297,34 @@ BoxASTNode *BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_TYPE_TAG);
   if (node) {
     ((BoxASTNodeTypeTag *) node)->type_id = (uint32_t) type_id;
+  }
+  return node;
+}
+
+/* Create a subtype. */
+BoxASTNode *BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent,
+                                  BoxASTNode *member_name)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_SUBTYPE);
+  if (node) {
+    assert(BoxASTNode_Get_Type(member_name) == BOXASTNODETYPE_TYPE_IDFR);
+
+    ((BoxASTNodeSubtype *) node)->parent = parent;
+    ((BoxASTNodeSubtype *) node)->name = (BoxASTNodeTypeIdfr *) member_name;
+    if (parent)
+      MY_PROPAGATE_TYPE(node, parent);
+  }
+  return node;
+}
+
+/* Create a keyword. */
+BoxASTNode *BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type)
+{
+  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_KEYWORD);
+  if (node) {
+    assert(BoxASTNode_Get_Type(type) == BOXASTNODETYPE_TYPE_IDFR);
+    ((BoxASTNodeKeyword *) node)->type = (BoxASTNodeTypeIdfr *) type;
+    BoxASTNode_Set_Attr(node, 0, BOXASTNODEATTR_TYPE);
   }
   return node;
 }

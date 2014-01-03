@@ -44,7 +44,7 @@ typedef enum {
   ASTNODETYPE_ERROR,
   ASTNODETYPE_TYPENAME,  //
   ASTNODETYPE_TYPETAG,   //
-  ASTNODETYPE_SUBTYPE,
+  ASTNODETYPE_SUBTYPE,   //
   ASTNODETYPE_INSTANCE,
   ASTNODETYPE_BOX,       //
   ASTNODETYPE_STATEMENT, //
@@ -60,7 +60,7 @@ typedef enum {
   ASTNODETYPE_MEMBERGET, //
   ASTNODETYPE_RAISE,     //
   ASTNODETYPE_SELFGET,   //
-  ASTNODETYPE_SUBTYPEBLD,
+  ASTNODETYPE_SUBTYPEBLD,//
   ASTNODETYPE_PROCDEF,   //
   ASTNODETYPE_TYPEDEF,   //
   ASTNODETYPE_STRUCTYPE, //
@@ -725,5 +725,18 @@ BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth);
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id);
+
+/**
+ * @brief Create a subtype.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent,
+                      BoxASTNode *member_name);
+
+/**
+ * @brief Create a keyword.
+ */
+BOXEXPORT BoxASTNode *
+BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type);
 
 #endif /* _BOX_AST_H */

@@ -49,7 +49,6 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 
 /* Possible types for the nodes of the tree */
 %union {
-  char *        String;
   BoxTypeId     TTag;
   BoxCombType   Combine;
   ASTScope      Scope;
@@ -98,8 +97,7 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 %token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR
-%token <String> TOK_KEYWORD
+%token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR TOK_KEYWORD
 %token <Node> TOK_CONSTANT TOK_STRING
 %token <BinaryOperator> TOK_LAND TOK_LOR
 
@@ -242,7 +240,7 @@ name:
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | TOK_TTAG                     {$$ = BoxAST_Create_TypeTag(ast, $1);}
-  | TOK_KEYWORD                  {$$ = NULL;}
+  | TOK_KEYWORD                  {$$ = BoxAST_Create_Keyword(ast, $1);}
   | string_concat                {$$ = $1;}
   | name                         {$$ = $1;}
   | ':' name                     {$$ = NULL;}
@@ -259,8 +257,8 @@ postfix_expr:
   | opt_postfix_expr '.' TOK_VAR_IDFR
                                  {$$ = BoxAST_Create_Get(ast, $1, $3);}
   | opt_postfix_expr '.' TOK_TYPE_IDFR
-                                 {$$ = NULL;}
-  | postfix_expr post_op         {$$ = NULL;}
+                                 {$$ = BoxAST_Create_Subtype(ast, $1, $3);}
+  | postfix_expr post_op         {$$ = BoxAST_Create_UnOp(ast, $2, $1);}
   ;
 
 opt_postfix_expr:
@@ -270,7 +268,7 @@ opt_postfix_expr:
 
 unary_expr:
     postfix_expr                 {$$ = $1;}
-  | un_op unary_expr             {$$ = NULL;}
+  | un_op unary_expr             {$$ = BoxAST_Create_UnOp(ast, $1, $2);}
   | '^' unary_expr               {$$ = BoxAST_Create_Raise(ast, $2);}
 ;
 
@@ -371,7 +369,7 @@ opt_actions:
 
 opt_restrs:
                                  {$$ = NULL;}
-  | '(' restrs opt_actions')'    {$$ = NULL;}
+  | '(' restrs opt_actions ')'   {$$ = NULL;}
   ;
 
 opt_c_name:
@@ -388,7 +386,7 @@ opt_comb_def:
 comb_parent:
     TOK_TYPE_IDFR                {$$ = $1;}
   | comb_parent '.' TOK_TYPE_IDFR
-                                 {$$ = NULL;}
+                                 {$$ = BoxAST_Create_Subtype(ast, $1, $3);}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
