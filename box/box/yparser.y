@@ -215,8 +215,7 @@ compound_memb:
 compound:
     compound_memb                {$$ = BoxAST_Create_Compound(ast, $1);}
   | compound compound_sep compound_memb
-                                 {$$ = BoxAST_Append_Member(ast, $1, $2, 0,
-                                                            $3);}
+                               {$$ = BoxAST_Append_Member(ast, $1, $2, 0, $3);}
   ;
 
 /******************************* ARITHMETICS *******************************/

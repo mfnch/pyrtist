@@ -1073,10 +1073,10 @@ BoxASTNode *BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
   if (node) {
     BoxASTNodeCompound *spec = (BoxASTNodeCompound *) node;
     spec->kind = BOXASTCOMPOUNDKIND_UNDET;
-    spec->sep = BOXASTSEP_VOID;
+    spec->sep = BOXASTSEP_NONE;
     spec->memb = NULL;
     if (memb)
-      return BoxAST_Append_Member(ast, node, BOXASTSEP_VOID, NULL, memb);
+      return BoxAST_Append_Member(ast, node, BOXASTSEP_NONE, NULL, memb);
   }
   return node;
 }
@@ -1114,9 +1114,15 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
   compound = (BoxASTNodeCompound *) compound_node;
 
   /* The code below contracts a list of consecutive separators. */
-  if (sep != BOXASTSEP_VOID) {
+  if (sep == BOXASTSEP_VOID) {
+    if (compound->kind == BOXASTCOMPOUNDKIND_IDENTITY
+        && compound->sep == BOXASTSEP_NONE) {
+      compound->kind = BOXASTCOMPOUNDKIND_STRUCT;
+      compound->sep = sep;
+    }
+  } else if (sep > BOXASTSEP_VOID) {
     assert(sep == BOXASTSEP_ARROW);
-    if (compound->sep != BOXASTSEP_VOID)
+    if (compound->sep > BOXASTSEP_VOID)
       BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
                  "Duplicate separator in compound expression");
     compound->sep = sep;
@@ -1135,8 +1141,8 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
     compound->kind = BOXASTCOMPOUNDKIND_IDENTITY;
     break;
   case BOXASTCOMPOUNDKIND_IDENTITY:
-    compound->kind = ((compound->sep == BOXASTSEP_VOID) ?
-                      BOXASTCOMPOUNDKIND_STRUCT : BOXASTCOMPOUNDKIND_SPECIES);
+    compound->kind = ((compound->sep > BOXASTSEP_VOID) ?
+                      BOXASTCOMPOUNDKIND_SPECIES : BOXASTCOMPOUNDKIND_STRUCT);
     break;
   case BOXASTCOMPOUNDKIND_SPECIES:
     if (compound->sep != BOXASTSEP_ARROW) {
@@ -1146,7 +1152,7 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
     }
     break;
   case BOXASTCOMPOUNDKIND_STRUCT:
-    if (compound->sep != BOXASTSEP_VOID) {
+    if (compound->sep > BOXASTSEP_VOID) {
       BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
                  "Invalid separator in structure");
       //BoxASTNode_Mark_Err(compound_node);
@@ -1169,7 +1175,7 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
     memb->next = memb;
   }
 
-  compound->sep = BOXASTSEP_VOID;
+  compound->sep = BOXASTSEP_NONE;
   return compound_node;
 }
 

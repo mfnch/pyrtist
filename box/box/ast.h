@@ -73,7 +73,8 @@ typedef enum {
  * @brief Separator between statements.
  */
 typedef enum {
-  BOXASTSEP_VOID=0,
+  BOXASTSEP_NONE=0,
+  BOXASTSEP_VOID,
   BOXASTSEP_PAUSE,
   BOXASTSEP_ARROW,
   ASTSEP_VOID=BOXASTSEP_VOID,
