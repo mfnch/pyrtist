@@ -4,7 +4,7 @@
 include "raw"
 
 ///Intro: sequence of raw graphical commands.
-CmdStream = ++(Obj cmds,)
+CmdStream = ^(Obj cmds,)
 
 Obj@CmdStream[\ .cmds[$]]
 

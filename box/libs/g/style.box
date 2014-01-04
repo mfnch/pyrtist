@@ -16,7 +16,7 @@ include "option"
 // using the provided style, which will also become the default style.
 // Following ``Poly`` will use this style, unless another style is explicitly
 // provided.
-Preserve = ++(Int int,)
+Preserve = ^(Int int,)
 
 (.[)@Preserve[.int = -1] // -1 means "unset"
 
@@ -26,7 +26,7 @@ Preserve = ++(Int int,)
 Int@Preserve[.int = $]
 
 ///Intro: the dash pattern for tracing lines.
-Dash = ++((Int semicolon,) have, Real offset, Obj dashes)
+Dash = ^((Int semicolon,) have, Real offset, Obj dashes)
 
 (.[)@Dash[.have.semicolon = 0, .offset = 0.0]
 
@@ -59,7 +59,7 @@ join_options = Options[
 
 ///Intro: join style.
 // Controls how the segments in a line are joined together.
-Join = ++(Int int,)
+Join = ^(Int int,)
 
 (.[)@Join[.int = -1]
 
@@ -84,7 +84,7 @@ cap_options = Options[
 
 ///Intro: cap style.
 // Controls how lines are capped (how they begin and end).
-Cap = ++(Int int,)
+Cap = ^(Int int,)
 
 (.[)@Cap[.int = -1]
 
@@ -106,7 +106,7 @@ Cap@CmdStream[If[$.int >= 0], Obj[const.raw.set_line_cap, $.int]]
 // be joined with a bevel instead of a miter. This is determined by dividing
 // the miter by the line width. If the result is greater than the miter limit,
 // then the style is converted to a ``Join["bevel"]``.
-MiterLimit = ++(Real real,)
+MiterLimit = ^(Real real,)
 
 (.[)@MiterLimit[.real = -1.0]
 
@@ -119,10 +119,10 @@ MiterLimit@CmdStream[If[$.real >= 0.0], Obj[const.raw.set_miter_limit, $.real]]
 
 ///Intro: border width and color to be used when tracing the next
 // polygon (for {type(Poly)}, {type(Circle)}, etc).
-Border = ++((Int color, width, dash) have, Preserve preserve
-            Pattern pattern, Real width, Dash dash, Join join, Cap cap
-            MiterLimit miter_limit
-            Color color)
+Border = ^((Int color, width, dash) have, Preserve preserve
+           Pattern pattern, Real width, Dash dash, Join join, Cap cap
+           MiterLimit miter_limit
+           Color color)
 
 //^^^ NOTE: The member Border.color is somewhat redundant (as pattern already
 // contains the color specification). We keep this to make it easy to convert
@@ -190,7 +190,7 @@ Border@CmdStream[
 ]
 
 ///Intro: fill style.
-FillStyle = ++(Int style,)
+FillStyle = ^(Int style,)
 
 (.[)@FillStyle[.style = -2]  // -2 means: unspecified
 
@@ -223,8 +223,8 @@ FillStyle@CmdStream[If[$.style != -2], Obj[const.raw.set_fill_rule, $.style]]
 // then ``Window[][s, Poly[Style[color.red], ...]]`` will produce a red
 // polygon with blue border. All shapes following ``s`` in the same window,
 // are drawn using this style.
-Style = ++((Int border, color) have, Preserve preserve
-           FillStyle fill_style, Border border, Pattern pattern, Color color)
+Style = ^((Int border, color) have, Preserve preserve
+          FillStyle fill_style, Border border, Pattern pattern, Color color)
 
 (.[)@Style[.have = (0, 0)]
 

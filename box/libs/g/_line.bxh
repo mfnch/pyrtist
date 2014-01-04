@@ -5,7 +5,7 @@
 ///Intro: Style for joining lines.
 // Three default styles are available: ``line.sharp``, ``line.medium``,
 // ``line.smooth``.
-LineStyle = ++(Real a, b, c, d)
+LineStyle = ^(Real a, b, c, d)
 
 ///Intro: set the smoothness level for thick lines.
 // ``LineStyle[0]`` corresponds to ``line.medium``, while ``LineStyle[2.0]``

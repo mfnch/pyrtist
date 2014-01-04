@@ -4,7 +4,7 @@
 include "text"
 
 ///Intro: a collection of {type(Text)} shapes.
-Texts = ++(Obj texts, Text last, Style style)
+Texts = ^(Obj texts, Text last, Style style)
 
 ///Intro: set the style used to draw the text pieces.
 Style@Texts[\ .style[$]]

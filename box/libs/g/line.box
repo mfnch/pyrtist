@@ -7,11 +7,11 @@ include "path"
 include "points"
 
 ///Intro: create a {type(Line)} geometrical shape.
-Line = ++((Int close, arrow0, arrow1) have
-          Points points
-          StrokeStyle style
-          Window arrows, arrow0, arrow1
-          Scale scale, scale0, scale1)
+Line = ^((Int close, arrow0, arrow1) have
+         Points points
+         StrokeStyle style
+         Window arrows, arrow0, arrow1
+         Scale scale, scale0, scale1)
 
 //NOTE: the initializer leaves the windows in an invalid state
 // (IsValid[line.arrow0] == IsValid[line.arrow1] == 0).
@@ -25,7 +25,7 @@ Point@Line[
   line_vertex = $
 
   // Check whether we should trace the first arrow: this happens when one point
-  // has been already given, and this is the second one.  
+  // has been already given, and this is the second one.
   [If[Num[$$] == 1 && $$.have.arrow0]
      line_vertex0 = $$.points.Get[0]
      arrow_head = $$.arrow0.Get["head"]
@@ -141,7 +141,7 @@ Line@Path[
       point = $.points.Get[point_idx++]
       Obj[const.raw.line_to, point]
       For[1]]
-  
+
      [If[$.have.close]
         Obj[const.raw.close_path]]
      $$.empty = 0]

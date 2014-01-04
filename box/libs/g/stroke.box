@@ -6,7 +6,7 @@ include "raw"
 include "style"
 
 ///Intro: strokes the given objects and paths (into a Stroke object).
-Stroke = ++(Path path, StrokeStyle style)
+Stroke = ^(Path path, StrokeStyle style)
 
 ///Intro: add the path to the {type(@.)}.
 Path@Stroke[\ .path[$]]

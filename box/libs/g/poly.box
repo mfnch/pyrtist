@@ -7,12 +7,12 @@ include "path"
 include "points"
 
 ///Intro: polygonal shape (supports corner rounding).
-Poly = ++(Points points
-          Obj margins
-          (Real left, right) margin
-          Int num_margins
-          Int close
-          Style style)
+Poly = ^(Points points
+         Obj margins
+         (Real left, right) margin
+         Int num_margins
+         Int close
+         Style style)
 
 (.[)@Poly[.close = 0, .num_margins = 0, $$.margin = (0.0, 0.0)]
 
@@ -128,7 +128,7 @@ Poly@Window[
 ]
 
 ///Intro: close a polygon.
-Close = ++Void
+Close = ^Void
 
 ///Intro: close the polygon.
 Close@Poly[.close = 1]

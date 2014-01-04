@@ -1,6 +1,6 @@
 // The PointList object
 
-PointList = ++CPtr
+PointList = ^CPtr
 (.[)@PointList "pointlist_begin" ?
 //(].)@PointList "ipointlist_destroy" ?
 

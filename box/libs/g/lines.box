@@ -5,7 +5,7 @@
 // Note that each line (and its arrows) will be drawn idependently from the
 // others, using the {type(StrokeStyle)} settings available at the point where
 // the semicolon is given.
-Lines = ++(Line line, Window window)
+Lines = ^(Line line, Window window)
 
 (.[)@Lines[
   \ .window[]  // Initialize the window object.

@@ -6,7 +6,7 @@ include "path"
 include "style"
 
 ///Intro: fill the given paths.
-Fill = ++(Path path, Style style)
+Fill = ^(Path path, Style style)
 
 //Intro: add a path to fill.
 Path@Fill[\ .path[$]]

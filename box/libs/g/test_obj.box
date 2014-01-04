@@ -3,10 +3,10 @@ include "obj"
 Compare = Int
 (Str, Str)@Compare "GLib_StrStr_Compare" ?
 
-Tests = ++(Int nr_test, success)
+Tests = ^(Int nr_test, success)
 (.[)@Tests[.nr_test=0, .success=1]
 
-Testreport = ++(Str msg, Int success)
+Testreport = ^(Str msg, Int success)
 (.[)@Testreport[.success = 1]
 Str@Testreport[.msg = $, .success = 0]
 Testreport@Tests[

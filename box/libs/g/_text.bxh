@@ -23,7 +23,7 @@ Window.Text.From = Void
 Point@Window.Text.From "window_text_from_point" ?
 
 ///Intro: font object: encodes type, size and color of the Font.
-Font = ++(Str name, Real size, Color color, (Int color,) have)
+Font = ^(Str name, Real size, Color color, (Int color,) have)
 
 (.[)@Font[$$.size = 4.2, $$.have.color = 0, $$.name = "sans"]
 

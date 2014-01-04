@@ -4,9 +4,9 @@
 
 include "matrix"
 
-//FIXME: below we define Angle = ++(Real angle,) rather than Angle = ++Real.
+//FIXME: below we define Angle = ^(Real angle,) rather than Angle = ^Real.
 // This is because at the moment Box doesn't provide an inverse operator for
-// ++ (which takes an increased type object and reduces it to the original
+// ^  (which takes an increased type object and reduces it to the original
 // type). This is a feature which is planned for implementation.
 // (the note above holds also for Center, Scale, etc.)
 
@@ -18,7 +18,7 @@ include "matrix"
 
 ///Intro: Represents an angle in radians.
 ///Example: ``Angle[const.pi/2]``
-Angle = ++(Real angle,)
+Angle = ^ (Real angle,)
 
 ///Intro: angle in radians.
 Real@Angle[.angle = $]
@@ -52,7 +52,7 @@ AngleDeg@Str["AngleDeg[", $.angle*180.0/const.pi, "]"]
 AngleDeg@Print[Str[$]]
 
 ///Intro: represent a {type(Point)} in the center of something.
-Center = ++(Point center,)
+Center = ^ (Point center,)
 (.[)@Center[.center.x = .center.y = 0.0]
 
 ///Intro: the value for the center.
@@ -62,7 +62,7 @@ Point@Center[.center = $]
 Center@Point[$.center]
 
 ///Intro: Represents the factors for a scale transformation.
-Scale = ++(Point scale_factors,)
+Scale = ^(Point scale_factors,)
 (.[)@Scale[.scale_factors.x = .scale_factors.y = 1.0]
 
 ///Intro: scale isotropically by the given factor.
@@ -79,7 +79,7 @@ Scale@Scale[$$.scale_factors.x *= $.scale_factors.x
 Scale@Point[$.scale_factors]
 
 ///Intro: Represents a translation vector.
-Translation = ++(Point translation,)
+Translation = ^(Point translation,)
 (.[)@Translation[.translation.x = .translation.y = 0.0]
 
 ///Intro: translation vector.
@@ -89,8 +89,8 @@ Point@Translation[.translation = $]
 // A {type(.)} object represents a transformation of the two dimensional
 // coordinate system, parametrized by: a translation vector, a rotation angle
 // and rotation center and scaling factors along each dimension.
-Transform = ++(Point translation, rotation_center, scale_factors
-               Real rotation_angle)
+Transform = ^(Point translation, rotation_center, scale_factors
+              Real rotation_angle)
 
 (.[)@Transform[
   .translation = .rotation_center = (0.0, 0.0)

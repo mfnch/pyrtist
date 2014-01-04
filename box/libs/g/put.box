@@ -9,7 +9,7 @@ include "constraints"
 // Object providing a subset of functionality of Put.
 // In particular this object allows only to manually place figures.
 // (Undocumented as it is not expected to be used directly. Use Put, instead!)
-SimplePut = ++(Window src, Matrix matrix)
+SimplePut = ^(Window src, Matrix matrix)
 Matrix@SimplePut[.matrix = $]
 Transform@SimplePut[.matrix = $.GetMatrix[]]
 Window@SimplePut[.src = $]
@@ -28,10 +28,10 @@ SimplePut@IsValid[$.src]
 // The {type(Put)} object allows to transform manually (by giving translation
 // vectors or rotation angles) or automatically (by giving {type(Near)}
 // constraints) a source figure and put it inside a target figure.
-Put = ++(Constraints constraints
-         Transform transform
-         SimplePut simple_put
-         Window target)
+Put = ^(Constraints constraints
+        Transform transform
+        SimplePut simple_put
+        Window target)
 
 (.[)@Put[.target = Window[]]
 

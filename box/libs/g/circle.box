@@ -6,8 +6,8 @@ include "style"
 include "path"
 
 ///Intro: create a geometrical shape of type circle.
-Circle = ++((Int center, radius) have
-            Point center, Real radius, radius2, Style style)
+Circle = ^((Int center, radius) have
+           Point center, Real radius, radius2, Style style)
 
 (.[)@Circle[.have = (0, 0)]
 

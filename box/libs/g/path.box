@@ -4,7 +4,7 @@
 include "cmdstream"
 
 ///Intro: represents a path.
-Path = ++(CmdStream cmdstream, Int empty)
+Path = ^(CmdStream cmdstream, Int empty)
 
 (.[)@Path[.empty = 1]
 

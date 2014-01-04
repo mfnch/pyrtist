@@ -1,4 +1,4 @@
-Sphere = ++(Point center, Real radius, Color c1, c2, c3)
+Sphere = ^(Point center, Real radius, Color c1, c2, c3)
 
 Point@Sphere[$$.center = $]
 Real@Sphere[$$.radius = $]
@@ -17,4 +17,3 @@ Sphere@Window[
                $.c1, 0.4, $.c2, $.c3]
   Circle[$.center, $.radius, g]
 ]
-

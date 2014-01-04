@@ -3,7 +3,7 @@
 #provide "g.option"
 
 ///Intro: represents an association "string" --> value.
-Option = ++(Str name, Obj value)
+Option = ^(Str name, Obj value)
 
 ///Intro: provide the option name.
 Str@Option[.name = $]
@@ -15,7 +15,7 @@ Obj@Option[.value = $]
 Int@Option[.value = Obj[$]]
 
 ///Intro: this object acts as a dictionary mapping strings to Obj values.
-Options = ++(Obj names, values)
+Options = ^(Obj names, values)
 
 ///Intro: number of options.
 Options@Num[$.names]

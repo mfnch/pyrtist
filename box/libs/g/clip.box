@@ -7,7 +7,7 @@ include "path"
 ///Intro: create a clipped window. A clipped window is similar to a regular
 // {type(Window)} object, except that it gets clipped along a given path
 // before being shown.
-Clip = ++(Path path, Window window)
+Clip = ^(Path path, Window window)
 
 (.[)@Clip[.window = Window[]]
 

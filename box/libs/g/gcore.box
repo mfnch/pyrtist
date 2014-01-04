@@ -6,7 +6,7 @@
 // It can correspond to a real drawing device (array of pixels allocated in
 // memory, PDF/SVG file, etc) or can be simply a container of graphics
 // commands to be stored for later manipulation.
-Window = ++CPtr
+Window = ^CPtr
 
 (.[)@Window "Box_Lib_G_Init_At_Window" ?
 
@@ -28,7 +28,7 @@ Real@Deg[$$ = $*0.01745329251994329576]
 // The {type(.)} object is typically used to provide the resolution (points
 // per inch) to be used when saving a figure (see {type(Window)} and
 // {type(Figure)}) to a raster file format (such as PNG).
-Resolution = ++(Point point,)
+Resolution = ^(Point point,)
 
 (.[)@Resolution[.point.x = .point.y = 0.0]
 

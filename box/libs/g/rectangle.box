@@ -1,8 +1,8 @@
 #provide "g.rectangle"
 
-Rectangle = ++(Int have_color, have_style, have_gradient, num_corners
-               Color color, OldStyle style, Gradient gradient
-               Point corner1, corner2)
+Rectangle = ^(Int have_color, have_style, have_gradient, num_corners
+              Color color, OldStyle style, Gradient gradient
+              Point corner1, corner2)
 
 (.[)@Rectangle[.num_corners = 0, .have_color = 0, .have_style = 0, .have_gradient = 0]
 

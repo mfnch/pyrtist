@@ -3,7 +3,7 @@
 include "gradcore"
 
 ///Intro: color gradient.
-OldGradient = ++CPtr
+OldGradient = ^CPtr
 
 (.[)@OldGradient "gradient_begin" ?
 (])@OldGradient "gradient_end" ?

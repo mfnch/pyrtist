@@ -15,12 +15,12 @@ include "option"
 // Boxer has been modified to handle well many versions of Box).
 
 ///Intro: color gradient to be used for painting.
-Gradient = ++(Int type, state
-              (Int offset,) have
-              Extend extend
-              Point point1, point2
-              Real real1, real2, offset
-              Obj offsets, colors)
+Gradient = ^(Int type, state
+             (Int offset,) have
+             Extend extend
+             Point point1, point2
+             Real real1, real2, offset
+             Obj offsets, colors)
 
 (.[)@Gradient[.type = 0, .state = 0, .have.offset = 1, .offset = 0.0]
 

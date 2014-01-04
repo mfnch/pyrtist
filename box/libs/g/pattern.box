@@ -15,7 +15,7 @@ extend_options = Options[
 
 ///Intro: The pattern extend mode.
 // This is the mode to be used for drawing outside the area of a pattern.
-Extend = ++(Int int,)
+Extend = ^(Int int,)
 
 (.[)@Extend[.int = -1]
 
@@ -50,7 +50,7 @@ filter_options = Options[
 
 ///Intro: used to indicate what filtering should be applied when reading pixel
 // values from patterns.
-Filter = ++(Int int,)
+Filter = ^(Int int,)
 
 (.[)@Filter[.int = -1]
 
@@ -79,8 +79,8 @@ Filter@CmdStream[If[$.int >= 0], Obj[const.raw.pattern_set_filter, $.int]]
 ///Intro: similar to {type(Pattern)}.
 // The only difference is that, while a {type(Color)} or a {type(Gradient)} are
 // automatically converted to {type(Pattern)}, this automatic convertion does
-// not happen for {type(PATTERN)}. 
-PATTERN = ++(CmdStream cmdstream, Extend extend, Filter filter)
+// not happen for {type(PATTERN)}.
+PATTERN = ^(CmdStream cmdstream, Extend extend, Filter filter)
 
 ///Intro: set how the pattern should be repeated in space.
 Extend@PATTERN[\ $$.extend[$]]

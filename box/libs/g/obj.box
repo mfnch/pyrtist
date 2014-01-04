@@ -7,7 +7,7 @@
 // inspected for its content and the original objects can be extracted.
 // Note that an {type(.)} object can contain other {type(.)} objects.
 ///Value: Obj[{value(Real)}, {value(Str)}, {value(.)}, {etc}]
-Obj = ++CPtr
+Obj = ^CPtr
 
 ///Intro: an integer identifying the type of an {type(Obj)} object.
 ObjType = Int

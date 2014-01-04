@@ -8,7 +8,7 @@ include "transform"
 ///Examples: ``Near[src_point, dst_point, weight]``,
 //  ``Near["src-name", dst_point, weight]``,
 //  ``Near[src_index, dst_point, weight]``.
-Near = ++(Obj src_dst, Real weight)
+Near = ^(Obj src_dst, Real weight)
 
 (.[)@Near[.weight = 1.0]
 
@@ -98,7 +98,7 @@ Window@Near[
 // figure. This is done by providing a set of allowed transformations and a set
 // of constraints. The idea is to find which of the allowed transformations
 // best satisfies the constraints.
-Constraints = ++(Str freedom, Obj constraints, Window window)
+Constraints = ^(Str freedom, Obj constraints, Window window)
 
 ///Intro: number of constraints.
 Constraints@Num[$.constraints]

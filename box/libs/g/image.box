@@ -3,7 +3,7 @@
 #provide "g.image"
 
 ///Intro: object representing an image taken from an external file.
-Image = ++(Str filename, Axes axes, From from)
+Image = ^(Str filename, Axes axes, From from)
 
 (.[)@Image[\ $$.from[(0.0, 0.0)]]
 

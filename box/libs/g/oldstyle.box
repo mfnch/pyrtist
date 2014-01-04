@@ -4,7 +4,7 @@
 
 ///Intro: drawing style. This is now obsolete. You should use {type(Style)}
 // instead
-OldStyle = ++CPtr
+OldStyle = ^CPtr
 
 (.[)@OldStyle "style_begin" ?
 //(].)@OldStyle "style_destroy" ?

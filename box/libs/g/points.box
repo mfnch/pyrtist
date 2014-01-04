@@ -6,7 +6,7 @@
 // Allow to interpolate between the points and perform other geometrical
 // calculations through what we call "interpolated indices" (indices which
 // are resolved by interpolating two neighbouring points).
-Points = ++(Obj points,)
+Points = ^(Obj points,)
 
 ///Intro: add the point to the array.
 Point@Points[\ $$.points[$]]

@@ -6,7 +6,7 @@
 // better than this...
 
 ///Intro: line with variable width.
-ThickLine = ++(Obj args, Style style, Int close)
+ThickLine = ^(Obj args, Style style, Int close)
 
 (.[)@ThickLine[.close = 0]
 

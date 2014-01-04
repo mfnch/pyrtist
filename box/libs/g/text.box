@@ -11,7 +11,7 @@ include "path"
 // make sure that the center of the bounding box of the figure will end up in
 // ``p``. Using ``From[(0, 0)]`` will make sure that the bottom-left corner
 // ends up to be in ``p``.
-From = ++(Point point,)
+From = ^(Point point,)
 
 (.[)@From[.point.x = .point.y = 0.5]
 
@@ -26,10 +26,10 @@ Point@From[.point = $]
 Real@From[.point.x = .point.y = $]
 
 ///Intro: create a new text shape.
-Text = ++((Int pos,) have
-          Point pos
-          From from
-          Str text, Font font, Style style)
+Text = ^((Int pos,) have
+         Point pos
+         From from
+         Str text, Font font, Style style)
 
 (.[)@Text[.have = (0,)]
 

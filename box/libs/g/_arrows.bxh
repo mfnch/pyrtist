@@ -43,7 +43,7 @@ Color@Arrow[
 Arrow@Arrow[$$ = $]
 
 // A 2D specialisation of {type(Arrow)}.
-Arrow_2D = ++(Arrow arrow,)
+Arrow_2D = ^(Arrow arrow,)
 
 // How to draw 2D arrows...
 Arrow_2D@Window[
@@ -51,7 +51,7 @@ Arrow_2D@Window[
 ]
 
 // A 3D specialisation of {type(Arrow)}.
-Arrow_3D = ++(Arrow arrow,)
+Arrow_3D = ^(Arrow arrow,)
 
 // How to draw 3D arrows...
 Arrow_3D@Window[]
