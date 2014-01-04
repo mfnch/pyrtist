@@ -154,14 +154,14 @@ void Operator_Del_Opn(Operator *opr, Operation *opn) {
   Box_Mem_Free(opn);
 }
 
-/** Get the Operator object corresponding to the given ASTBinOp constant. */
-Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op) {
+/** Get the Operator object corresponding to the given BoxASTBinOp constant. */
+Operator *BoxCmp_BinOp_Get(BoxCmp *c, BoxASTBinOp bin_op) {
   assert(bin_op >= 0 && bin_op < BOXASTBINOP_NUM_OPS);
   return & c->bin_ops[bin_op];
 }
 
-/** Get the Operator object corresponding to the given ASTUnOp constant. */
-Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op) {
+/** Get the Operator object corresponding to the given BoxASTUnOp constant. */
+Operator *BoxCmp_UnOp_Get(BoxCmp *c, BoxASTUnOp un_op) {
   assert(un_op >= 0 && un_op < BOXASTUNOP_NUM_OPS);
   return & c->un_ops[un_op];
 }
@@ -173,15 +173,15 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   for(i = 0; i < BOXASTUNOP_NUM_OPS; i++) {
     OprAttr attr;
     Operator *opr = BoxCmp_UnOp_Get(c, i);
-    Operator_Init(opr, c, ASTUnOp_To_String(i));
+    Operator_Init(opr, c, BoxASTUnOp_To_String(i));
     attr = OPR_ATTR_NATIVE |
-           (ASTUnOp_Is_Right(i) ? OPR_ATTR_UN_RIGHT : 0);
+           (BoxASTUnOp_Is_Right(i) ? OPR_ATTR_UN_RIGHT : 0);
     Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
   }
 
   for(i = 0; i < BOXASTBINOP_NUM_OPS; i++) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
-    Operator_Init(opr, c, ASTBinOp_To_String(i));
+    Operator_Init(opr, c, BoxASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
   }
 
@@ -395,7 +395,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
  * the operator is opr.
  * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
+Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
   Operator *opr = BoxCmp_UnOp_Get(c, op);
   Operation *opn;
   OprMatch match;
@@ -435,7 +435,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
  * the operator is opr.
  * REFERENCES: return: new, v_left: -1, v_right: -1;
  */
-Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
                              Value *v_left, Value *v_right) {
   Operator *opr = BoxCmp_BinOp_Get(c, op);
   Operation *opn;

@@ -466,7 +466,7 @@ static void My_Register_UnOps(BoxCmp *c) {
     const char *types; /* Two characters describing the types of the result
                           and of the operand, following the map character->type
                           implemented by My_Type_Of_Char) */
-    ASTUnOp    op;     /* Operator to which the operation refers */
+    BoxASTUnOp op;     /* Operator to which the operation refers */
     const char *mask,  /* Mask of attributes (a string which is converted
                           to an OprAttr by calling My_OprAttr_Of_Str) */
                *attr;  /* Attributes to set */
@@ -504,14 +504,14 @@ static void My_Register_UnOps(BoxCmp *c) {
 /* Register all the core binary operations for the Box compiler. */
 static void My_Register_BinOps(BoxCmp *c) {
   struct {
-    const char *types; /* Three characters describing the types of the result,
-                          of the left and right operands (following the map
-                          character->type implemented by My_Type_Of_Char) */
-    ASTBinOp   op;     /* Operator to which the operation refers */
-    const char *mask,  /* Mask of attributes (a string which is converted
-                          to an OprAttr by calling My_OprAttr_Of_Str) */
-               *attr;  /* Attributes to set */
-    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
+    const char  *types; /* Three characters describing the types of the result,
+                           of the left and right operands (following the map
+                           character->type implemented by My_Type_Of_Char) */
+    BoxASTBinOp op;     /* Operator to which the operation refers */
+    const char  *mask,  /* Mask of attributes (a string which is converted
+                           to an OprAttr by calling My_OprAttr_Of_Str) */
+                *attr;  /* Attributes to set */
+    BoxGOp      g_op;   /* Generic opcode to use for assembling the operation */
 
   } *binop, binops[] = {
     {"Ppp", BOXASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},

@@ -51,12 +51,10 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 %union {
   BoxTypeId     TTag;
   BoxCombType   Combine;
-  ASTScope      Scope;
   BoxASTUnOp    UnaryOperator;
   BoxASTBinOp   BinaryOperator;
   BoxASTNodePtr Node;
   BoxASTNodePtr NewNode;
-  ASTTypeMemb   TypeMemb;
   BoxASTSep     Sep;
   uint32_t      SelfLevel;
 }

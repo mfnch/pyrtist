@@ -136,22 +136,22 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
                             BoxType *type_right, BoxType *type_result);
 
 /** Get the Operator object corresponding to the given ASTBinOp constant. */
-Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op);
+Operator *BoxCmp_BinOp_Get(BoxCmp *c, BoxASTBinOp bin_op);
 
 /** Get the Operator object corresponding to the given ASTUnOp constant. */
-Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op);
+Operator *BoxCmp_UnOp_Get(BoxCmp *c, BoxASTUnOp un_op);
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v);
+Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v);
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  * REFERENCES: return: new, v_left: -1, v_right: -1;
  */
-Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
                              Value *v_left, Value *v_right);
 
 /** Map an object 'src' to an object 'dest' with (possibly) different type.
