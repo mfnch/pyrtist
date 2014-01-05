@@ -12,7 +12,7 @@ gear_pos1 1 -5.80503357401 2.91855231481 gear_pos2 1 18.5917679487
 include "g"
 
 ///Intro: a clipart of a gear.
-Gear = ++(Point pos, Real rad, h, Int n)
+Gear = ^(Point pos, Real rad, h, Int n)
 
 (.[)@Gear[.pos=(0, 0), .rad = 10.0, .h = 1, .n = 20]
 

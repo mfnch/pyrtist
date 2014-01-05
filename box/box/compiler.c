@@ -607,12 +607,12 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   assert(BoxASTNode_Get_Type(box_node) == BOXASTNODETYPE_BOX);
   box = (BoxASTNodeBox *) box_node;
 
-  if (box->parent == NULL) {
+  if (!box->parent) {
     Value *v_void = My_Get_Void_Value(c);
     BoxCmp_Push_Value(c, v_void);
 
     parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
-    if (parent == NULL)
+    if (!parent)
       parent = v_void;
     else
       outer_parent = parent;
@@ -632,7 +632,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
 
   /* Add $ (the child) to namespace */
   if (t_child) {
-    Value *v_child = Value_New(c->cur_proc);
+    Value *v_child = Value_Create(c->cur_proc);
     Value_Setup_As_Child(v_child, t_child);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$", v_child);
     Value_Unlink(v_child);
@@ -640,7 +640,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
 
   /* Add $$ (the parent) to namespace */
   if (t_parent) {
-    Value *v_parent = Value_New(c->cur_proc);
+    Value *v_parent = Value_Create(c->cur_proc);
     Value_Setup_As_Parent(v_parent, t_parent);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$", v_parent);
     Value_Unlink(v_parent); /* has already a link from the namespace */
@@ -659,7 +659,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
      *
      * NOTE: the following works also when parent = ERROR
      */
-    Value *v_parent = Value_New(c->cur_proc);
+    Value *v_parent = Value_Create(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_parent, parent);
     v_parent = Value_Promote_Temp_To_Target(v_parent);
     /* ^^^ Promote # (the Box object) to a target so that it can be
@@ -1335,12 +1335,14 @@ static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
   /* Compile the members, check their types and leave them on the stack */
   err = 0;
   for (memb = compound->memb; memb; memb = memb->next) {
-    char *memb_name;
+    char *memb_name = NULL;
 
     assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
-    assert(BoxASTNode_Get_Type(memb->name) == BOXASTNODETYPE_VAR_IDFR);
 
-    memb_name = ((BoxASTNodeVarIdfr *) memb->name)->name;
+    if (memb->name) {
+      assert(BoxASTNode_Get_Type(memb->name) == BOXASTNODETYPE_VAR_IDFR);
+      memb_name = ((BoxASTNodeVarIdfr *) memb->name)->name;
+    }
 
     if (memb->expr) {
       Value *v_type;

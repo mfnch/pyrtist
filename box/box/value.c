@@ -548,9 +548,8 @@ Value *Value_To_Temp_Or_Target(Value *v) {
   if (v->kind == VALUEKIND_TARGET) {
     Value_Link(v);
     return v;
-
-  } else
-    return Value_To_Temp(v);
+  }
+  return Value_To_Temp(v);
 }
 
 Value *Value_Promote_Temp_To_Target(Value *v) {
@@ -1567,7 +1566,6 @@ void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
     Value_Setup_Container(v, Box_Get_Core_Type(BOXTYPEID_PTR), & vc);
     v = Value_Cast_From_Ptr(v, t);
     v->kind = VALUEKIND_TARGET;
-
   } else {
     Value_Setup_As_Temp(v, t);
     v->kind = VALUEKIND_TARGET;

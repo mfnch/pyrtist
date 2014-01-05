@@ -11,7 +11,7 @@ P3D@Point[
   $$ = p + (0.2, 0.2)*$.z
 ]
 
-Sph = ++(Real r, theta, phi)
+Sph = ^(Real r, theta, phi)
 Sph@P3D[
   rct = $.r*Cos[$.theta], rst = $.r*Sin[$.theta]
   cp = Cos[$.phi], sp = Sin[$.phi]
@@ -19,4 +19,3 @@ Sph@P3D[
 ]
 
 Sph@Point[P3D[$]]
-

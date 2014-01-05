@@ -1,7 +1,7 @@
 include "g"
 
 // Define a Wheel object
-Wheel = ++(Real radius, Int slices)
+Wheel = ^(Real radius, Int slices)
 Wheel.Slices = Void
 
 Real@Wheel[$$.radius = $]

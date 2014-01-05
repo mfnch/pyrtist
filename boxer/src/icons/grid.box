@@ -1,7 +1,7 @@
 
 include "g"
 
-Grid = ++(Point from, to, Int nx, ny, (Int p, i) have)
+Grid = ^(Point from, to, Int nx, ny, (Int p, i) have)
 
 ([)@Grid[.nx = .ny = 10, .from = (0, 0), .to = (100, 100), .have.i = .have.p = 0]
 

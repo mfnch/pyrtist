@@ -11,7 +11,7 @@ GUI = Void
 include "g"
 include "gears"
 
-Program = ++(Point size, pos, Int n)
+Program = ^(Point size, pos, Int n)
 
 (.[)@Program[.size=(10, 5), .pos=(0, 0), .n=10]
 
@@ -26,9 +26,9 @@ Program@Window[
 ]
 
 ///Intro: a clipart of a computer (keyboard and screen).
-Computer = ++(Int master, Point monitor, scr, keyboard,
-              Font font, Str str
-              (Color pc, scr, keys) color)
+Computer = ^(Int master, Point monitor, scr, keyboard,
+             Font font, Str str
+             (Color pc, scr, keys) color)
 
 (.[)@Computer[
   .master = 0, .monitor = (40.0, 30.0)

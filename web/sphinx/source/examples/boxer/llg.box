@@ -65,7 +65,7 @@ s2 = StrokeStyle[0.5, Dash[1], color_traj]
 
 p1 = UndampTrajectory[t1]
 
-Draw = ++(Int which,)
+Draw = ^(Int which,)
 Int@Draw[.which = $]
 
 Draw@Window[

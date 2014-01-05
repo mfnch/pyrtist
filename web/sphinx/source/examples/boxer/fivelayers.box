@@ -23,7 +23,7 @@ gui15 = Point[.x=26.1563938497, .y=40.8722670455]
 //!BOXER:REFPOINTS:END
 include "arrows"
 
-Cylinder = ++(Point pos, Real rx, ry, l)
+Cylinder = ^(Point pos, Real rx, ry, l)
 
 Cylinder@Window[
   p = $.pos, vx = Point[($.rx, 0)], vy = Point[(0, $.ry)]
@@ -34,7 +34,7 @@ Cylinder@Window[
        0, 1, (p += vx), (p -= vy), (p -= vy)]
 ]
 
-InfoBox = ++(Point pos, size, Real round, Style style)
+InfoBox = ^(Point pos, size, Real round, Style style)
 
 (.[)@InfoBox[.pos = (0, 0), .size = (10, 10), .round = 0]
 
