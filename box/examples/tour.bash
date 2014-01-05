@@ -28,7 +28,7 @@ inspect wheatstone.eps
 
 introduce "The snake example"
 $BOX -l g snake.box
-inspect snake.eps
+inspect_png snake.png
 
 introduce "The closed line example"
 $BOX -l g closed_line.box
@@ -40,9 +40,8 @@ inspect multivibrator.eps
 
 introduce "The cycloid example"
 $BOX -l g cycloid.box
-inspect cycloid.eps
+inspect_png cycloid.png
 
 introduce "The ying-yang example"
 $BOX -l g yin-yang.box
 inspect_png yin-yang.png
-

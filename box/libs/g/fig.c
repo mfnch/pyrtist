@@ -450,7 +450,7 @@ static void My_Fig_Finish(BoxGWin *w) {
 static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   MyCmdRGradientArgs arg0;
   CmndArg args[] = {{sizeof(arg0), & arg0},
-		    {0, NULL},
+                    {0, NULL},
                     {0, NULL}};
 
   arg0.gradient = *cg;
@@ -469,7 +469,7 @@ static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
   enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_PS, EXT_SVG, EXT_NUM};
   char *ext[] = {"eps", "bmp", "png", "pdf", "ps", "svg", (char *) NULL};
   switch(file_extension(ext, file_name)) {
-  case EXT_EPS: out_type = "eps"; break;
+  case EXT_EPS: out_type = "cairo:eps"; break;
   case EXT_BMP: out_type = "bm8"; break;
   case EXT_PNG: out_type = "argb32"; break;
   case EXT_PDF: out_type = "pdf"; break;

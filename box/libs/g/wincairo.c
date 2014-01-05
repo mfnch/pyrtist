@@ -1432,7 +1432,7 @@ static int My_WinCairo_Save_To_File(BoxGWin *w, const char *file_name) {
   if (w->win_type_str != wincairo_image_id_string)
     return 1;
 
-  switch(file_extension(exts, file_name)) {
+  switch (file_extension(exts, file_name)) {
   default:
     g_warning("Unrecognized extension: using PNG!");
   case EXT_PNG:

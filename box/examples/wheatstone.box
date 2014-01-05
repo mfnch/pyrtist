@@ -8,7 +8,7 @@ include "electric"
 // This is not a real Wheatstone bridge.
 // We replace some of the resistors with other components, just to make
 // the thing more interesting!
-wheatstone = Window["fig"][
+wheatstone = Figure[
   d1 = 20.0 // d1 = half diagonal
   p1 = (0, -d1), p2 = (d1, 0), p3 = (0, d1), p4 = (-d1, 0)
 
@@ -36,4 +36,3 @@ wheatstone = Window["fig"][
 
   .Save["wheatstone.eps"]  // Saving to eps file
 ]
-
