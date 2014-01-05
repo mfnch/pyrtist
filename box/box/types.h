@@ -537,11 +537,11 @@ BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType **next);
   do {(void) (iter);} while(0)
 
 /**
- * @brief Whether an iterator has more items to read with BoxTypeIter_Get_Next().
+ * @brief Whether an iterator has more items to read via BoxTypeIter_Get_Next().
  *
  * @param ti Pointer to an initialized, possibly "used" iterator.
- * @return @c BOXBOOL_TRUE if the iterator has some items (in other words, if the
- *   next call to BoxTypeIter_Get_Next is going to return BOXBOOL_TRUE),
+ * @return @c BOXBOOL_TRUE if the iterator has some items (in other words, if
+ *   the next call to BoxTypeIter_Get_Next is going to return @c BOXBOOL_TRUE),
  *   @c BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
@@ -556,7 +556,7 @@ BoxTypeIter_Has_Items(BoxTypeIter *ti);
  * practice, the stem type is obtained by resolving species, identifiers and
  * raised types (with BoxType_Resolve()).
  *
- * @param type The input type. 
+ * @param type The input type.
  * @return The stem type of type (or @c NULL in case of failure).
  */
 BOXEXPORT BoxType *
@@ -597,8 +597,8 @@ BoxType_Is_Any(BoxType *t);
  * @param t The input type.
  * @return Whether @p t is a subtype.
  */
-#define BoxType_Is_Subtype(t) \
-  (BoxType_Get_Class((t)) == BOXTYPECLASS_SUBTYPE_NODE)
+BOXEXPORT BoxBool
+BoxType_Is_Subtype(BoxType *t);
 
 /**
  * @brief Whether the type is a fast type.

@@ -351,7 +351,6 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
       v->value.cont.value.reg = reg;
       v->attr.own_register = (reg > 0);
       return;
-
     } else {
       /* The user wants a particular register to be chosen */
       v->value.cont.value.reg = vc->which_one;
@@ -368,7 +367,6 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
       assert(reg <= 0);
       v->value.cont.value.reg = reg;
       return;
-
     } else {
       /* The user wants a particolar variable to be chosen */
       v->value.cont.value.reg = vc->which_one;
@@ -385,7 +383,6 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
       assert(reg <= 0);
       v->value.cont.value.reg = reg;
       return;
-
     } else {
       /* The user wants a particolar variable to be chosen */
       v->value.cont.value.reg = vc->which_one;
@@ -415,7 +412,6 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
       v->value.cont.value.ptr.reg = reg;
       assert(reg >= 1);
       return;
-
     } else {
       BoxInt reg = -Var_Occupy(ra, BOXTYPEID_OBJ, 0);
       v->value.cont.value.ptr.reg = reg;
@@ -1467,7 +1463,7 @@ Value_Expand(Value *src, BoxType *t_dst) {
                ValueStrucIter_Do_Next(& src_iter)) {
           Value_Link(& src_iter.v_member);
           Value_Move_Content(& dst_iter.v_member, & src_iter.v_member);
-        } 
+        }
 
         assert(dst_iter.has_next == src_iter.has_next);
 

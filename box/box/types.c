@@ -1155,6 +1155,12 @@ BoxBool BoxType_Is_Fast(BoxType *t) {
   return BOXBOOL_FALSE;
 }
 
+/* Whether the type is a subtype. */
+BoxBool BoxType_Is_Subtype(BoxType *t) {
+  BoxType *stem = BoxType_Get_Stem(t);
+  return (stem && stem->type_class == BOXTYPECLASS_SUBTYPE_NODE);
+}
+
 /* Get a string representation of the given type. */
 char *BoxType_Get_Repr(BoxType *t) {
   if (!t)

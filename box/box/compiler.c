@@ -621,8 +621,17 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     Value *parent_type;
     My_Compile_Any(c, box->parent);
     parent_type = BoxCmp_Pop_Value(c);
-    parent = Value_To_Temp_Or_Target(parent_type);
-    parent_is_err = Value_Is_Err(parent);
+    assert(parent_type);
+
+    if (BoxASTNode_Is_Type(box->parent)
+        && BoxType_Is_Subtype(parent_type->type)) {
+      MSG_ERROR("Cannot instantiate unbound subtype %T", parent_type->type);
+      parent = Value_Create(c->cur_proc);
+      parent_is_err = BOXBOOL_TRUE;
+    } else {
+      parent = Value_To_Temp_Or_Target(parent_type);
+      parent_is_err = Value_Is_Err(parent);
+    }
     Value_Unlink(parent_type); /* XXX */
     BoxCmp_Push_Value(c, parent);
   }
