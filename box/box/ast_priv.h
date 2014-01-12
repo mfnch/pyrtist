@@ -36,8 +36,9 @@
  * @brief Implementation of #BoxAST.
  */
 struct BoxAST_struct {
-  BoxAllocPool pool;  /**< Pool used to allocate the tree's objects. */
-  BoxASTNode   *root; /**< Root node of the tree. */
+  BoxAllocPool pool;    /**< Pool used to allocate the tree's objects. */
+  BoxASTNode   *root;   /**< Root node of the tree. */
+  BoxBool      is_sane; /**< Whether the AST is sane (has no errors). */
 };
 
 /**

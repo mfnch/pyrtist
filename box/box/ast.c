@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <box/mem.h>
 #include <box/print.h>
@@ -112,6 +113,7 @@ void BoxAST_Init(BoxAST *ast)
 {
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
+  ast->is_sane = BOXBOOL_TRUE;
 
 #if 0
 #define BOXASTNODE_DEF(NODE, Node)                                      \
@@ -145,6 +147,58 @@ void BoxAST_Destroy(BoxAST *ast)
     Box_Mem_Free(ast);
   }
 }
+
+
+
+
+
+typedef void BoxLogger;
+
+/* The one below is the most primitive error reporting function in the
+ * compiler. We'll eventually move it in a separate logging module.
+ * The idea is that the user can intercept this function to redirect the output
+ * of the compiler logging system.
+ */
+void BoxLogger_VA_Log(BoxLogger *logger, BoxSrcPos *begin, BoxSrcPos *end,
+                      BoxLogLevel lev, const char *fmt, va_list ap)
+{
+  printf("Error: ");
+  (void) vprintf(fmt, ap);
+  printf(".\n");
+}
+
+void BoxAST_VA_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
+                   const char *fmt, va_list ap)
+{
+  if (lev >= BOXLOGLEVEL_ERROR)
+    ast->is_sane = BOXBOOL_FALSE;
+
+  BoxLogger_VA_Log(NULL, NULL, NULL, lev, fmt, ap);
+}
+
+/* Generic error reporting for an AST. */
+void BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
+                const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  BoxAST_VA_Log(ast, src, lev, fmt, ap);
+  va_end(ap);
+}
+
+/* Error reporting for groups of AST nodes. */
+void BoxASTNode_Log(BoxAST *ast, BoxASTNode *node, BoxLogLevel lev,
+                    const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  BoxAST_VA_Log(ast, NULL, lev, fmt, ap);
+  va_end(ap);
+}
+
+
+
+
 
 /* Set the root node of the tree. */
 BoxASTNode *BoxAST_Get_Root(BoxAST *ast)
@@ -461,10 +515,6 @@ BoxASTNode *BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr,
   return node;
 }
 
-/* For now... */
-#define BoxAST_Log(src, start_node, end_node, args...) \
-  do {printf("Error: "); printf(args); printf("\n");} while(0)
-
 #define BoxASTNode_Mark_Err(stuff)
 
 /* Append a member to an expression list. */
@@ -491,7 +541,7 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
   } else if (sep > BOXASTSEP_VOID) {
     assert(sep == BOXASTSEP_ARROW);
     if (compound->sep > BOXASTSEP_VOID)
-      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+      BoxAST_Log(ast, & compound->sep_src, BOXLOGLEVEL_ERROR,
                  "Duplicate separator in compound expression");
     compound->sep = sep;
     compound->sep_src = (sep_src) ? *sep_src : ((BoxSrc) {0, 0});
@@ -514,14 +564,14 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
     break;
   case BOXASTCOMPOUNDKIND_SPECIES:
     if (compound->sep != BOXASTSEP_ARROW) {
-      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+      BoxAST_Log(ast, & compound->sep_src, BOXLOGLEVEL_ERROR,
                  "Invalid separator in species definition");
       //BoxASTNode_Mark_Err(compound_node);
     }
     break;
   case BOXASTCOMPOUNDKIND_STRUCT:
     if (compound->sep > BOXASTSEP_VOID) {
-      BoxAST_Log(& compound->sep_src, NULL, BOXLOG_ERROR,
+      BoxAST_Log(ast, & compound->sep_src, BOXLOGLEVEL_ERROR,
                  "Invalid separator in structure");
       //BoxASTNode_Mark_Err(compound_node);
     }
@@ -548,7 +598,7 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
 }
 
 /* Perform final checks on a compound node. */
-BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
+BoxASTNode *BoxAST_Close_Compound(BoxAST *ast, BoxASTNode *compound_node)
 {
   BoxASTNodeCompound *compound;
   BoxASTNodeMember *memb;
@@ -565,13 +615,13 @@ BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
 
   switch (compound->kind) {
   case BOXASTCOMPOUNDKIND_UNDET:
-    BoxAST_Log(NULL, NULL, BOXLOG_ERROR, "Empty parentheses");
+    BoxAST_Log(ast, NULL, BOXLOGLEVEL_ERROR, "Empty parentheses");
     break;
   case BOXASTCOMPOUNDKIND_IDENTITY:
     if (memb->name)
-      BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
-                 "Spurious member name, but this is not a structure. Hint: "
-                 "Structures must contain at least one separator");
+      BoxASTNode_Log(ast, memb->name, BOXLOGLEVEL_ERROR,
+                     "Spurious member name, but this is not a structure. "
+                     "Hint: Structures must contain at least one separator");
     MY_PROPAGATE_TYPE(compound_node, memb->expr);
     break;
   case BOXASTCOMPOUNDKIND_SPECIES:
@@ -580,11 +630,11 @@ BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
     memb->next = NULL;           /* NULL terminate. */
     for (memb = compound->memb; memb; memb = memb->next) {
       if (memb->name)
-        BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
-                   "Unexpected member name in species");
+        BoxASTNode_Log(ast, memb->name, BOXLOGLEVEL_ERROR,
+                       "Unexpected member name in species");
       if (!BoxASTNode_Is_Type(memb->expr))
-        BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
-                   "Unexpected expression in species");
+        BoxASTNode_Log(ast, memb->expr, BOXLOGLEVEL_ERROR,
+                       "Unexpected expression in species");
     }
     BoxASTNode_Set_Attr(compound_node, 0, BOXASTNODEATTR_TYPE);
     break;
@@ -596,25 +646,25 @@ BoxASTNode *BoxAST_Close_Compound(BoxASTNode *compound_node)
       for (memb = compound->memb; memb; memb = memb->next) {
         if (memb->name) {
           if (!BoxASTNode_Is_Type(memb->expr))
-            BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
-                       "Invalid expression in structure");
+            BoxASTNode_Log(ast, memb->expr, BOXLOGLEVEL_ERROR,
+                           "Invalid expression in structure");
         } else if (!BoxASTNode_Is_Type(memb->expr)) {
           if (BoxASTNode_Get_Type(memb->expr) == BOXASTNODETYPE_VAR_IDFR) {
             memb->name = memb->expr;
             memb->expr = NULL;
           } else
-            BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
-                       "Invalid expression in structure");
+            BoxASTNode_Log(ast, memb->expr, BOXLOGLEVEL_ERROR,
+                           "Invalid expression in structure");
         }
       }
     } else {
       for (memb = compound->memb; memb; memb = memb->next) {
         if (memb->name)
-          BoxAST_Log(memb->name, NULL, BOXLOG_ERROR,
-                     "Spurious member name in structure");
+          BoxASTNode_Log(ast, memb->name, BOXLOGLEVEL_ERROR,
+                         "Spurious member name in structure");
         if (BoxASTNode_Is_Type(memb->expr))
-          BoxAST_Log(memb->expr, NULL, BOXLOG_ERROR,
-                     "Unexpected type expression in structure");
+          BoxASTNode_Log(ast, memb->expr, BOXLOGLEVEL_ERROR,
+                         "Unexpected type expression in structure");
       }
     }
     break;

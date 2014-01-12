@@ -433,8 +433,9 @@ void Value_Setup_As_LReg(Value *v, BoxType *type) {
   Value_Setup_Container(v, type, & vc);
 }
 
-void BoxValue_Emit_Allocate(BoxValue *v) {
-  switch(v->kind) {
+void BoxValue_Emit_Allocate(BoxValue *v)
+{
+  switch (v->kind) {
   case VALUEKIND_ERR:
     return;
   case VALUEKIND_TEMP:

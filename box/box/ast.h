@@ -383,7 +383,7 @@ BoxAST_Append_Member(BoxAST *ast, BoxASTNode *list, BoxASTSep sep,
  * @brief Perform final checks and adjustments on a compound node.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Close_Compound(BoxASTNode *compound_node);
+BoxAST_Close_Compound(BoxAST *ast, BoxASTNode *compound_node);
 
 /**
  * @brief Get a member from a structure value.

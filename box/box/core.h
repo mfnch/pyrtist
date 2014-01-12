@@ -197,8 +197,25 @@ typedef struct BoxPtr_struct {
  */
 #  define BOXOUT
 
-/** Type representing C pointers from Box */
+/**
+ * @brief Type representing C pointers from Box.
+ */
 typedef void *BoxCPtr;
+
+/**
+ * @brief Enumerations of logging levels used throughout the Box sources.
+ */
+enum BoxLogLevel_enum {
+  BOXLOGLEVEL_ADVICE,
+  BOXLOGLEVEL_WARNING,
+  BOXLOGLEVEL_ERROR,
+  BOXLOGLEVEL_FATAL
+};
+
+/**
+ * @brief Log level type, used to indicate the type of a log message.
+ */
+typedef int BoxLogLevel;
 
 /**
  * A subtype is simply a structure containing two pointers: one points

@@ -243,7 +243,7 @@ prim_expr:
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
   | TOK_SELF                     {$$ = BoxAST_Create_ArgGet(ast, $1);}
-  | '(' compound ')'             {$$ = BoxAST_Close_Compound($2);}
+  | '(' compound ')'             {$$ = BoxAST_Close_Compound(ast, $2);}
   ;
 
 postfix_expr:
