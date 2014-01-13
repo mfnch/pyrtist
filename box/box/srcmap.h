@@ -56,6 +56,12 @@ BOXEXPORT void
 BoxSrcMap_Destroy(BoxSrcMap *sm);
 
 /**
+ * @brief Return the depth of the tree.
+ */
+BOXEXPORT int
+BoxSrcMap_Get_Depth(BoxSrcMap *sm);
+
+/**
  * @brief Provide a mapping linear to source position.
  */
 BOXEXPORT void

@@ -18,12 +18,9 @@
  ****************************************************************************/
 
 #include <assert.h>
-
 #include <box/mem.h>
 #include <box/srcmap.h>
 
-
-typedef uint32_t BoxSrcLinPos;
 typedef struct {uint32_t file_num, line, col;} MyFullPos;
 
 
@@ -74,8 +71,46 @@ BoxSrcMap_Init(BoxSrcMap *sm)
 void
 BoxSrcMap_Finish(BoxSrcMap *sm)
 {
-  /* Not implemented */
-  abort();
+  MyNode *node, *parent_node;
+  int depth = BoxSrcMap_Get_Depth(sm), d;
+
+  if (depth > 0) {
+    /* Find the leftmost node. */
+    for (d = depth - 1, node = sm->root; d; d--)
+      node = node->left;
+
+    /* Fee the initial node. */
+    parent_node = node->parent;
+    Box_Mem_Free(node->left);
+    Box_Mem_Free(node);
+
+    for (d = depth - 1; d; d--) {
+      int d1;
+      MyNode *leaves_node;
+
+      node = parent_node;
+      parent_node = parent_node->parent;
+
+      /* Free all the leaves in the right branch. */
+      for (d1 = d, leaves_node = node->right; d1 < depth; d1++)
+        leaves_node = leaves_node->left;
+      Box_Mem_Free(leaves_node);
+
+      /* Free this node and all the nodes in the right branch. */
+      Box_Mem_Free(node);
+    }
+  }
+}
+
+/* Return the depth of the tree. */
+int
+BoxSrcMap_Get_Depth(BoxSrcMap *sm)
+{
+  int depth = 0;
+  MyNode *node;
+  for (node = sm->cur_node; node; node = node->parent)
+    depth++;
+  return depth;
 }
 
 /* Create a #BoxSrcMap object. */
@@ -132,6 +167,8 @@ My_Grow_Tree(BoxSrcMap *sm, int depth)
     all_nodes[0].left = & all_leaves[0];
     all_nodes[0].right = & all_leaves[1];
     all_nodes[0].parent = NULL;
+    sm->root = & all_nodes[0];
+    sm->cur_node = sm->root;
     sm->cur_leaf = (MyLeaf *) sm->root->left;
     sm->cur_leaf_length = 0;
     return BOXBOOL_TRUE;
@@ -162,18 +199,22 @@ My_Grow_Tree(BoxSrcMap *sm, int depth)
     }
   }
 
-  /* Now link the leaves. */
   {
     uint32_t p0_idx = 1 << (depth - 1), p_idx;
 
+    /* Now link the leaves. */
     for (p_idx = 0; p_idx < p0_idx; p_idx++) {
       uint32_t c_idx = p_idx + p_idx;
       MyNode *parent = & all_nodes[p0_idx + p_idx];
       parent->left = & all_leaves[c_idx];
       parent->right = & all_leaves[c_idx + 1];
     }
-  }
 
+    /* ...and change the current leaf. */
+    sm->cur_node = & all_nodes[p0_idx];
+    sm->cur_leaf = (MyLeaf *) sm->cur_node->left;
+    sm->cur_leaf_length = 0;
+  }
   return BOXBOOL_TRUE;
 }
 
@@ -437,12 +478,130 @@ BoxSrcMap_Give(BoxSrcMap *sm, uint32_t lin_pos,
     fp.file_num = 0;
     fp.line = line;
     fp.col = col;
+
+    if (sm->cur_leaf_length > MY_NL_SIZE) {
+      /*sm->cur_leaf_length == MY_NL_SIZE + 1: leaf is full. */
+      if (!My_Use_New_Leaf(sm))
+        return;
+    }
+
     My_Add_To_Leaf(sm, lin_pos, & fp);
   }
 }
 
-void BoxSrcMap_Get(BoxSrcMap *sm, uint32_t pos,
-                   const char **file_name, uint32_t *line, uint32_t *col)
+BoxBool
+BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
+              const char **file_name, uint32_t *line, uint32_t *col)
 {
-  
+  return BOXBOOL_FALSE;
 }
+
+#ifdef TEST_SRCMAP
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <sys/stat.h>
+
+static void
+My_Run_Test(const char *file_name, const char *content, size_t size)
+{
+  BoxSrcMap sm;
+  uint32_t lin_pos, line, col, mline, mcol;
+  const char *mfile_name;
+  int max_errs = 10;
+  char c[2];
+  c[1] = 0;
+
+  assert(size = (uint32_t) size);
+
+  BoxSrcMap_Init(& sm);
+
+  /* First let's map the file. */
+  for (lin_pos = 0, line = 0, col = 0; lin_pos < size; lin_pos++) {
+    c[0] = content[lin_pos];
+    if (c[0] != '\n')
+      col++;
+    else {
+      line++;
+      col = 0;
+      BoxSrcMap_Give(& sm, lin_pos, file_name, line, col);
+    }
+  }
+
+  /* Now let's check the mapping. */
+  for (lin_pos = 0, line = 0, col = 0; lin_pos < size; lin_pos++) {
+    BoxBool success;
+    char c = content[lin_pos];
+
+    if (c != '\n')
+      col++;
+    else {
+      line++;
+      col = 0;
+    }
+
+    success = BoxSrcMap_Map(& sm, lin_pos, & mfile_name, & mline, & mcol);
+    if (!success || mline != line || mcol != col || mfile_name != file_name) {
+      if (max_errs > 0) {
+        max_errs--;
+        if (success)
+          fprintf(stderr, "Error %u -> (%s, %u, %u) should be (%s, %u, %u)\n",
+                  lin_pos,
+                  mfile_name, (unsigned int) mline, (unsigned int) mcol,
+                  "?", (unsigned int) line, (unsigned int) col);
+        else
+          fprintf(stderr, "Cannot perform map at %u ~ (%s, %u, %u)\n",
+                  lin_pos,
+                  file_name, (unsigned int) line, (unsigned int) col);
+      } else if (max_errs == 0) {
+        fprintf(stderr, "... Too many errors\n");
+        max_errs--;
+      }
+    }
+  }
+
+  BoxSrcMap_Finish(& sm);
+}
+
+int
+main(int argc, const char **argv)
+{
+  FILE *f;
+  const char *file_name;
+  char *content;
+  struct stat st;
+
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s file.txt\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
+  file_name = argv[1];
+  if (stat(file_name, & st)) {
+    fprintf(stderr, "Cannot stat file '%s'\n", file_name);
+    exit(EXIT_FAILURE);
+  }
+
+  content = (char *) malloc(st.st_size);
+  if (!content) {
+    fprintf(stderr, "Cannot malloc(%zu)\n", st.st_size);
+    exit(EXIT_FAILURE);
+  }
+
+  f = fopen(file_name, "r");
+  if (!f) {
+    fprintf(stderr, "Cannot open file '%s'\n", file_name);
+    exit(EXIT_FAILURE);
+  }
+
+  if (fread(content, st.st_size, 1, f) != 1) {
+    fprintf(stderr, "Error reading from file '%s'\n", file_name);
+    exit(EXIT_FAILURE);
+  }
+  fclose(f);
+
+  My_Run_Test(file_name, content, st.st_size);
+  free(content);
+  exit(EXIT_SUCCESS);
+}
+#endif
