@@ -37,16 +37,19 @@ typedef struct {
   void      *parent,
             *left,
             *right;
+  uint32_t  lin_pos;
 } MyNode;
 
 struct BoxSrcMap_struct {
+  MyNode    *leftmost_node;
   MyNode    *cur_node;
   MyLeaf    *cur_leaf;
+  MyNode    *root;
   uint32_t  cur_leaf_length;
   uint32_t  cur_lin_pos;
   uint32_t  cur_file_num;
   uint32_t  cur_line;
-  MyNode    *root;
+  int       depth;
 };
 
 /* Forward declarations. */
@@ -58,13 +61,15 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp);
 void
 BoxSrcMap_Init(BoxSrcMap *sm)
 {
+  sm->leftmost_node = NULL;
   sm->cur_node = NULL;
   sm->cur_leaf = NULL;
+  sm->root = NULL;
   sm->cur_leaf_length = 0;
   sm->cur_lin_pos = 0;
   sm->cur_file_num = 0;
   sm->cur_line = 0;
-  sm->root = NULL;
+  sm->depth = 0;
 }
 
 /* Finalize a #BoxSrcMap object initialized with BoxSrcMap_Init(). */
@@ -72,17 +77,13 @@ void
 BoxSrcMap_Finish(BoxSrcMap *sm)
 {
   MyNode *node, *parent_node;
-  int depth = BoxSrcMap_Get_Depth(sm), d;
+  int depth = sm->depth, d;
 
   if (depth > 0) {
-    /* Find the leftmost node. */
-    for (d = depth - 1, node = sm->root; d; d--)
-      node = node->left;
-
-    /* Fee the initial node. */
-    parent_node = node->parent;
-    Box_Mem_Free(node->left);
-    Box_Mem_Free(node);
+    /* Free the leftmost node. */
+    parent_node = sm->leftmost_node->parent;
+    Box_Mem_Free(sm->leftmost_node->left);
+    Box_Mem_Free(sm->leftmost_node);
 
     for (d = depth - 1; d; d--) {
       int d1;
@@ -106,11 +107,7 @@ BoxSrcMap_Finish(BoxSrcMap *sm)
 int
 BoxSrcMap_Get_Depth(BoxSrcMap *sm)
 {
-  int depth = 0;
-  MyNode *node;
-  for (node = sm->cur_node; node; node = node->parent)
-    depth++;
-  return depth;
+  return sm->depth;
 }
 
 /* Create a #BoxSrcMap object. */
@@ -167,10 +164,11 @@ My_Grow_Tree(BoxSrcMap *sm, int depth)
     all_nodes[0].left = & all_leaves[0];
     all_nodes[0].right = & all_leaves[1];
     all_nodes[0].parent = NULL;
-    sm->root = & all_nodes[0];
+    sm->root = sm->leftmost_node = & all_nodes[0];
     sm->cur_node = sm->root;
     sm->cur_leaf = (MyLeaf *) sm->root->left;
     sm->cur_leaf_length = 0;
+    sm->depth = 1;
     return BOXBOOL_TRUE;
   }
 
@@ -180,6 +178,7 @@ My_Grow_Tree(BoxSrcMap *sm, int depth)
   sm->root = & all_nodes[0];
   ((MyNode *) sm->root->left)->parent = sm->root;
   ((MyNode *) sm->root->right)->parent = sm->root;
+  sm->depth++;
 
   /* In principle, the right nodes could be binary heaps, but this would make
    * the implementation more complicated without any relevant gains.
@@ -377,12 +376,25 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
 
   /* Deal in a special way with the first entry of the leaf. */
   if (sm->cur_leaf_length == 0) {
+    int depth;
+    MyNode *child, *parent;
+
     cl->lin_pos = lin_pos;
     cl->full_pos = *fp;
     sm->cur_leaf_length = 1;
     sm->cur_lin_pos = lin_pos;
     sm->cur_file_num = fp->file_num;
     sm->cur_line = fp->line;
+
+    /* Propagate the linear positions to the inner nodes.
+     * This information will be used in the binary search.
+     */
+    child = (MyNode *) sm->cur_leaf;
+    parent = sm->cur_node;
+    for (depth = sm->depth; depth;
+         depth--, child = parent, parent = parent->parent)
+      if (child != parent->left)
+        parent->lin_pos = lin_pos;
     return;
   }
 
@@ -415,8 +427,14 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
   uint32_t file_num, col, line, cur_lin_pos;
   uint8_t *input;
 
-  if (leaf_length < 1 || lin_pos < leaf->lin_pos)
-    return BOXBOOL_FALSE;
+  if (leaf_length < 1 || lin_pos < leaf->lin_pos) {
+    if (leaf != sm->leftmost_node->left)
+      return BOXBOOL_FALSE;
+    fp->file_num = leaf->full_pos.file_num;
+    fp->line = 0;
+    fp->col = lin_pos;
+    return BOXBOOL_TRUE;
+  }
 
   leaf_length--;
   cur_lin_pos = leaf->lin_pos;
@@ -493,7 +511,33 @@ BoxBool
 BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
               const char **file_name, uint32_t *line, uint32_t *col)
 {
-  return BOXBOOL_FALSE;
+  MyFullPos fp;
+
+  if (pos >= sm->cur_lin_pos) {
+    fp.file_num = sm->cur_file_num;
+    fp.line = sm->cur_line;
+    fp.col = sm->cur_lin_pos - pos;
+  } else {
+    MyNode *node;
+    MyLeaf *leaf;
+    int leaf_length, depth;
+
+    for (depth = sm->depth, node = sm->root; depth; depth--)
+      node = (MyNode *) ((pos < node->lin_pos) ? node->left : node->right);
+
+    leaf = (MyLeaf *) node;
+    leaf_length = (leaf == sm->cur_leaf) ? sm->cur_leaf_length : MY_NL_SIZE;
+    if (!My_Find_In_Leaf(sm, leaf, leaf_length, pos, & fp))
+      return BOXBOOL_FALSE;
+  }
+
+  if (line)
+    *line = fp.line;
+  if (col)
+    *col = fp.col;
+  if (file_name)
+    *file_name = NULL;
+  return BOXBOOL_TRUE;
 }
 
 #ifdef TEST_SRCMAP
@@ -508,7 +552,7 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
   BoxSrcMap sm;
   uint32_t lin_pos, line, col, mline, mcol;
   const char *mfile_name;
-  int max_errs = 10;
+  int max_errs = 100;
   char c[2];
   c[1] = 0;
 
@@ -519,34 +563,25 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
   /* First let's map the file. */
   for (lin_pos = 0, line = 0, col = 0; lin_pos < size; lin_pos++) {
     c[0] = content[lin_pos];
-    if (c[0] != '\n')
-      col++;
-    else {
+    if (c[0] == '\n') {
       line++;
-      col = 0;
-      BoxSrcMap_Give(& sm, lin_pos, file_name, line, col);
+      BoxSrcMap_Give(& sm, lin_pos + 1, file_name, line, 0);
     }
   }
 
   /* Now let's check the mapping. */
   for (lin_pos = 0, line = 0, col = 0; lin_pos < size; lin_pos++) {
     BoxBool success;
-    char c = content[lin_pos];
-
-    if (c != '\n')
-      col++;
-    else {
-      line++;
-      col = 0;
-    }
+    c[0] = content[lin_pos];
 
     success = BoxSrcMap_Map(& sm, lin_pos, & mfile_name, & mline, & mcol);
+    mfile_name = file_name; /* For now... */
     if (!success || mline != line || mcol != col || mfile_name != file_name) {
       if (max_errs > 0) {
         max_errs--;
         if (success)
-          fprintf(stderr, "Error %u -> (%s, %u, %u) should be (%s, %u, %u)\n",
-                  lin_pos,
+          fprintf(stderr, "Error: '%s' %u -> (%s, %u, %u) should be "
+                  "(%s, %u, %u)\n", (c[0] == '\n' ? "\\n" : c), lin_pos,
                   mfile_name, (unsigned int) mline, (unsigned int) mcol,
                   "?", (unsigned int) line, (unsigned int) col);
         else
@@ -557,6 +592,13 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
         fprintf(stderr, "... Too many errors\n");
         max_errs--;
       }
+    }
+
+    if (c[0] != '\n')
+      col++;
+    else {
+      line++;
+      col = 0;
     }
   }
 
