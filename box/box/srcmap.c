@@ -393,8 +393,14 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
     parent = sm->cur_node;
     for (depth = sm->depth; depth;
          depth--, child = parent, parent = parent->parent)
-      if (child != parent->left)
+      if (child != parent->left) {
         parent->lin_pos = lin_pos;
+        return;
+      } else
+        /* Set node key to very high value, so that left node is always
+         * chosen in binary search.
+         */
+        parent->lin_pos = ~((uint32_t) 0);
     return;
   }
 
@@ -436,7 +442,6 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
     return BOXBOOL_TRUE;
   }
 
-  leaf_length--;
   cur_lin_pos = leaf->lin_pos;
   file_num = leaf->full_pos.file_num;
   line = leaf->full_pos.line;
@@ -552,7 +557,7 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
   BoxSrcMap sm;
   uint32_t lin_pos, line, col, mline, mcol;
   const char *mfile_name;
-  int max_errs = 100;
+  int max_errs = 10;
   char c[2];
   c[1] = 0;
 
