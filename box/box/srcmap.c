@@ -321,7 +321,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
     extattr = 1 + log2_sz;
   }
 
-  if (fp->file_num == sm->cur_file_num) {
+  if (fp->file_num != sm->cur_file_num) {
     int log2_sz = My_Get_UInt32_Log2_Size(fp->file_num);
     entry_size += 1 << log2_sz;
     extattr = (1 + log2_sz) << 2;
@@ -341,7 +341,12 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
 
   /* Check whether there is space to add the entry in the current leaf. */
   if (output_length + entry_size > MY_NL_SIZE) {
-    /* No space: create a new leaf and try again. */
+    /* No space: fill current leaf with zeros. */
+    for (output = & sm->cur_leaf->new_lines[output_length];
+         output_length < MY_NL_SIZE; output_length++)
+      *(output++) = 0;
+
+    /* Create a new leaf and try again. */
     if (My_Use_New_Leaf(sm)) {
       assert(sm->cur_leaf_length == 0);
       My_Add_To_Leaf(sm, lin_pos, fp);
@@ -463,12 +468,14 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
         uint8_t extattr = *(input++);
         int sz0 = extattr & 0x3, sz1 = (extattr & 0xc) >> 2,
           sz2 = (extattr & 0x30) >> 4, sz3 = (extattr & 0xc0) >> 6,
-          entry_size = ((sz0 ? 1 << sz0 : 0) + (sz1 ? 1 << sz1 : 0) +
-                        (sz2 ? 1 << sz2 : 0) + (sz3 ? 1 << sz3 : 0)) + 1;
-        if (leaf_length >= entry_size) {
+          entry_size = ((sz0 ? 1 << (sz0 - 1) : 0) +
+                        (sz1 ? 1 << (sz1 - 1) : 0) +
+                        (sz2 ? 1 << (sz2 - 1) : 0) +
+                        (sz3 ? 1 << (sz3 - 1) : 0)) + 1;
+        if (extattr && leaf_length >= entry_size) {
           input = My_Read_UInt(input, & delta_pos, sz0, 1);
           uint32_t next_lin_pos = cur_lin_pos + delta_pos;
-          if (lin_pos <= next_lin_pos)
+          if (lin_pos < next_lin_pos)
             break;
 
           cur_lin_pos = next_lin_pos;
@@ -480,8 +487,8 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
         }
       }
 
-      /* Could not read entry. */
-      return BOXBOOL_FALSE;
+      /* Got to the end of the list: quit the for loop. */
+      break;
     }
   }
 
@@ -521,7 +528,7 @@ BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
   if (pos >= sm->cur_lin_pos) {
     fp.file_num = sm->cur_file_num;
     fp.line = sm->cur_line;
-    fp.col = sm->cur_lin_pos - pos;
+    fp.col = pos - sm->cur_lin_pos;
   } else {
     MyNode *node;
     MyLeaf *leaf;
