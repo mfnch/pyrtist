@@ -21,11 +21,10 @@
 #include <box/mem.h>
 #include <box/srcmap.h>
 
-typedef struct {uint32_t file_num, line, col;} MyFullPos;
-
 
 #define MY_NL_SIZE 112
 
+typedef struct {uint32_t file_num, line, col;} MyFullPos;
 
 typedef struct {
   uint32_t     lin_pos;               /**< Linear position. */
@@ -53,7 +52,7 @@ struct BoxSrcMap_struct {
 };
 
 /* Forward declarations. */
-static void
+static BoxBool
 My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp);
 
 
@@ -101,13 +100,6 @@ BoxSrcMap_Finish(BoxSrcMap *sm)
       Box_Mem_Free(node);
     }
   }
-}
-
-/* Return the depth of the tree. */
-int
-BoxSrcMap_Get_Depth(BoxSrcMap *sm)
-{
-  return sm->depth;
 }
 
 /* Create a #BoxSrcMap object. */
@@ -300,7 +292,7 @@ My_Read_UInt(uint8_t *input, uint32_t *value, int size,
 }
 
 /* Add an uncompressed map entry to the current leaf. */
-static void
+static BoxBool
 My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
 {
   uint8_t extattr = 0;
@@ -310,7 +302,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
   uint32_t delta_pos;
 
   if (output_length == 0)
-    My_Add_To_Leaf_Ext(sm, lin_pos, fp);
+    return My_Add_To_Leaf_Ext(sm, lin_pos, fp);
   --output_length;
 
   assert(lin_pos > sm->cur_lin_pos);
@@ -347,11 +339,11 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
       *(output++) = 0;
 
     /* Create a new leaf and try again. */
-    if (My_Use_New_Leaf(sm)) {
-      assert(sm->cur_leaf_length == 0);
-      My_Add_To_Leaf(sm, lin_pos, fp);
-    }
-    return;
+    if (!My_Use_New_Leaf(sm))
+      return BOXBOOL_FALSE;
+
+    assert(sm->cur_leaf_length == 0);
+    return My_Add_To_Leaf(sm, lin_pos, fp);
   }
 
   /* Write uncompressed entry. */
@@ -371,10 +363,11 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
   sm->cur_lin_pos = lin_pos;
   sm->cur_file_num = fp->file_num;
   sm->cur_line = fp->line;
+  return BOXBOOL_TRUE;
 }
 
 /* Add a map entry to the current leaf, trying to compress it when possible. */
-static void
+static BoxBool
 My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
 {
   MyLeaf *cl = sm->cur_leaf;
@@ -400,13 +393,13 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
          depth--, child = parent, parent = parent->parent)
       if (child != parent->left) {
         parent->lin_pos = lin_pos;
-        return;
+        break;
       } else
         /* Set node key to very high value, so that left node is always
          * chosen in binary search.
          */
         parent->lin_pos = ~((uint32_t) 0);
-    return;
+    return BOXBOOL_TRUE;
   }
 
   /* Check whether we can use incremental positions. */
@@ -420,12 +413,12 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
       cl->new_lines[nl_pos] = (uint8_t) delta_pos;
       sm->cur_lin_pos = lin_pos;
       sm->cur_line = fp->line;
-      return;
+      return BOXBOOL_TRUE;
     }
   }
 
   /* Cannot use incremental positions: write extended entry. */
-  My_Add_To_Leaf_Ext(sm, lin_pos, fp);
+  return My_Add_To_Leaf_Ext(sm, lin_pos, fp);
 }
 
 /* Map a linear position to the corresponding full position, assuming the
@@ -499,9 +492,9 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
   return BOXBOOL_TRUE;
 }
 
-void
-BoxSrcMap_Give(BoxSrcMap *sm, uint32_t lin_pos,
-               const char *file_name, uint32_t line, uint32_t col)
+BoxBool
+BoxSrcMap_Store(BoxSrcMap *sm, uint32_t lin_pos,
+                const char *file_name, uint32_t line, uint32_t col)
 {
   if (sm->cur_leaf || My_Grow_Tree(sm, 0)) {
     MyFullPos fp;
@@ -512,11 +505,13 @@ BoxSrcMap_Give(BoxSrcMap *sm, uint32_t lin_pos,
     if (sm->cur_leaf_length > MY_NL_SIZE) {
       /*sm->cur_leaf_length == MY_NL_SIZE + 1: leaf is full. */
       if (!My_Use_New_Leaf(sm))
-        return;
+        return BOXBOOL_FALSE;;
     }
 
-    My_Add_To_Leaf(sm, lin_pos, & fp);
+    return My_Add_To_Leaf(sm, lin_pos, & fp);
   }
+
+  return BOXBOOL_FALSE;
 }
 
 BoxBool
@@ -577,7 +572,7 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
     c[0] = content[lin_pos];
     if (c[0] == '\n') {
       line++;
-      BoxSrcMap_Give(& sm, lin_pos + 1, file_name, line, 0);
+      BoxSrcMap_Store(& sm, lin_pos + 1, file_name, line, 0);
     }
   }
 
