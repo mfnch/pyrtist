@@ -52,6 +52,24 @@
 
 
 /**
+ * @brief Full position of a character of the input source code.
+ *
+ * Object which describes the position in a source file (which file, which line
+ * and column).
+ */
+typedef struct {
+  uint32_t  file_num,
+            line,
+            col;
+} BoxSrcFullPos;
+
+/**
+ * @brief Initialize a #BoxSrcFullPos.
+ */
+#define BoxSrcFullPos_Init(fp, file_number) \
+  do {(fp)->line = (fp)->col = 0; (fp)->file_num = file_number;} while(0)
+
+/**
  * @brief Allow to define and extrapolate a mapping linear to full position.
  *
  * This object allows to provide a mapping between linear and full position
@@ -76,29 +94,51 @@ BoxSrcMap_Destroy(BoxSrcMap *sm);
 /**
  * @brief Provide a mapping linear to source position.
  *
- * @param sm The #BoxSrcMap where to store the map information.
+ * @param sm The object where to store the map information.
  * @param lin_pos The input linear position.
- * @param file_name The file name corresponding to @p lin_pos.
+ * @param file_num The file number corresponding to @p lin_pos.
  * @param line The line number corresponding to @p lin_pos.
  * @param col The column corresponding to @p lin_pos.
  * @return Whether the map could be stored.
  */
 BOXEXPORT BoxBool
 BoxSrcMap_Store(BoxSrcMap *sm, uint32_t lin_pos,
-                const char *file_name, uint32_t line, uint32_t col);
+                uint32_t file_num, uint32_t line, uint32_t col);
+
+/**
+ * @brief Provide a mapping linear to source position.
+ *
+ * @param sm The object where to store the map information.
+ * @param lin_pos The input linear position.
+ * @param full_pos The full position corresponding to @p lin_pos.
+ * @return Whether the map could be stored.
+ */
+BOXEXPORT BoxBool
+BoxSrcMap_Store_FP(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *full_pos);
 
 /**
  * @brief Map from linear to full position.
  *
- * @param sm The #BoxSrcMap where the map information is stored.
+ * @param sm The object where the map information is stored.
  * @param lin_pos The input linear position.
- * @param file_name Where to put the file name corresponding to @p lin_pos.
+ * @param file_num Where to put the file number corresponding to @p lin_pos.
  * @param line Where to put the line number corresponding to @p lin_pos.
  * @param col Where to put the column number corresponding to @p lin_pos.
  * @return Whether the map was performed successfully.
  */
 BOXEXPORT BoxBool
 BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
-              const char **file_name, uint32_t *line, uint32_t *col);
+              uint32_t *file_num, uint32_t *line, uint32_t *col);
+
+/**
+ * @brief Map from linear to full position.
+ *
+ * @param sm The object where the map information is stored.
+ * @param lin_pos The input linear position.
+ * @param full_pos Where to put the full position corresponding to @p lin_pos.
+ * @return Whether the map was performed successfully.
+ */
+BOXEXPORT BoxBool
+BoxSrcMap_Map_FP(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *full_pos);
 
 #endif /* _BOX_SRCMAP_H */

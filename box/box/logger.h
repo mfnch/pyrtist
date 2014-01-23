@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2009 by Matteo Franchin                                    *
+ * Copyright (C) 2014 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -18,48 +18,50 @@
  ****************************************************************************/
 
 /**
- * @file ast_priv.h
- * @brief Private definitions for ast_priv.h.
+ * @file logger.h
+ * @brief Logging functionality for the Box compiler.
  */
+#ifndef _BOX_LOGGER_H
+#  define _BOX_LOGGER_H
 
-#ifndef _BOX_AST_PRIV_H
-#  define _BOX_AST_PRIV_H
-
+#  include <stdarg.h>
 #  include <stdint.h>
 
-#  include <box/logger.h>
-#  include <box/srcmap.h>
-#  include <box/ast.h>
-#  include <box/hashtable.h>
-
-#  include <box/allocpool_priv.h>
-#  include <box/index_priv.h>
+#  include <box/core.h>
 
 
 /**
- * @brief Implementation of #BoxAST.
+ * @brief The position inside a text file (file name, line and column).
  */
-struct BoxAST_struct {
-  BoxAllocPool pool;       /**< Pool used to allocate the tree's objects. */
-  BoxLogger    *logger;    /**< Logger object. */
-  BoxASTNode   *root;      /**< Root node of the tree. */
-  BoxSrcMap    *src_map;   /**< Position mapping object. */
-  BoxIndex     src_names;  /**< Map file name -> number (used in src_map). */
-  uint32_t     num_names;  /**< Number of file names.*/
-  BoxBool      src_map_ok; /**< Whether there were errors with src_map. */
-  BoxBool      is_sane;    /**< Whether the AST is sane (has no errors). */
-};
+typedef struct {
+  const char *file_name;
+  uint32_t    line,
+              col;
+} BoxLogPos;
 
 /**
- * @brief Initialize a #BoxAST.
+ * @brief Logger object.
+ */
+typedef struct BoxLogger_struct BoxLogger;
+
+/**
+ * @brief Callback function to intercept messages sent to a logger.
+ */
+typedef BoxBool (*BoxLoggerCallback)(BoxLogger *logger, BoxLogPos *begin,
+                                     BoxLogPos *end, BoxLogLevel level,
+                                     const char *fmt, va_list ap,
+                                     void *data);
+
+/**
+ * @brief Generic logging function for the Box compiler.
+ *
+ * The one below is the most primitive error reporting function in the
+ * compiler. We'll eventually move it in a separate logging module.
+ * The idea is that the user can intercept this function to redirect the output
+ * of the compiler logging system.
  */
 BOXEXPORT void
-BoxAST_Init(BoxAST *ast);
+BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+                 BoxLogLevel lev, const char *fmt, va_list ap);
 
-/**
- * @brief Finalize a #BoxAST object initialized with BoxAST_Init().
- */
-BOXEXPORT void
-BoxAST_Finish(BoxAST *ast);
-
-#endif /* _BOX_AST_PRIV_H */
+#endif /* _BOX_LOGGER_H */

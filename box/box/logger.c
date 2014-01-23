@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2009 by Matteo Franchin                                    *
+ * Copyright (C) 2014 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,49 +17,23 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/**
- * @file ast_priv.h
- * @brief Private definitions for ast_priv.h.
- */
+#include <stdio.h>
 
-#ifndef _BOX_AST_PRIV_H
-#  define _BOX_AST_PRIV_H
-
-#  include <stdint.h>
-
-#  include <box/logger.h>
-#  include <box/srcmap.h>
-#  include <box/ast.h>
-#  include <box/hashtable.h>
-
-#  include <box/allocpool_priv.h>
-#  include <box/index_priv.h>
+#include <box/logger.h>
 
 
-/**
- * @brief Implementation of #BoxAST.
- */
-struct BoxAST_struct {
-  BoxAllocPool pool;       /**< Pool used to allocate the tree's objects. */
-  BoxLogger    *logger;    /**< Logger object. */
-  BoxASTNode   *root;      /**< Root node of the tree. */
-  BoxSrcMap    *src_map;   /**< Position mapping object. */
-  BoxIndex     src_names;  /**< Map file name -> number (used in src_map). */
-  uint32_t     num_names;  /**< Number of file names.*/
-  BoxBool      src_map_ok; /**< Whether there were errors with src_map. */
-  BoxBool      is_sane;    /**< Whether the AST is sane (has no errors). */
-};
-
-/**
- * @brief Initialize a #BoxAST.
- */
-BOXEXPORT void
-BoxAST_Init(BoxAST *ast);
-
-/**
- * @brief Finalize a #BoxAST object initialized with BoxAST_Init().
- */
-BOXEXPORT void
-BoxAST_Finish(BoxAST *ast);
-
-#endif /* _BOX_AST_PRIV_H */
+void
+BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+                 BoxLogLevel lev, const char *fmt, va_list ap)
+{
+  if (begin && end) {
+    printf("Error (%s, %d-%d, %d-%d): ",
+           begin->file_name, begin->line, end->line, begin->col, end->col);
+    (void) vprintf(fmt, ap);
+    printf(".\n");
+  } else {
+    printf("Error: ");
+    (void) vprintf(fmt, ap);
+    printf(".\n");
+  }
+}

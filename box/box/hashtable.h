@@ -48,23 +48,20 @@ typedef struct ht {
 
 /** @brief Hash table object */
 typedef struct {
-  size_t  num_entries,  /**< Size of the hash table, should be a power of 2 */
-          mask;         /**< num_entries is a power of two, mask is
-                             num_entries - 1 */
+  size_t    num_entries, /**< Size of the hash table, should be a power of 2 */
+            mask;        /**< num_entries is a power of two, mask is
+                              num_entries - 1 */
   struct {
     unsigned int
-       copy_keys: 1,    /**< Should we copy the key (using malloc)? */
-       copy_objs: 1;    /**< Should we copy the key (using malloc)? */
-  } settings;           /**< Hash table settings */
+       copy_keys: 1,     /**< Should we copy the key (using malloc)? */
+       copy_objs: 1;     /**< Should we copy the key (using malloc)? */
+  } settings;            /**< Hash table settings */
 
   BoxTask (*destroy)(BoxHTItem *);
                         /**< Used to finalize elements before destruction */
-  BoxHTFunc
-       hash;            /**< function to get the hash from the key */
-  BoxHTCmp
-       cmp;             /**< function to compare two keys */
-  BoxHTItem
-       **item;          /**< Pointer to the table */
+  BoxHTFunc hash;       /**< function to get the hash from the key */
+  BoxHTCmp  cmp;        /**< function to compare two keys */
+  BoxHTItem **item;     /**< Pointer to the table */
 } BoxHT;
 
 typedef int (*BoxHTIterator)(BoxHTItem *item, void *pass_data);
@@ -86,13 +83,16 @@ BOXEXPORT int BoxHT_Default_Action(BoxHTItem *hi, void *pass_data);
 BOXEXPORT BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash,
                            BoxHTCmp cmp);
 
-/** Similar to BoxHT_New, but put the hashtable structure in ht, assuming
+/**
+ * @brief Initialize a #BoxHT object.
+ *
+ * Similar to BoxHT_Create(), but put the hashtable structure in ht, assuming
  * ht points to an allocated region of memory capable of containing
- * a BoxHT object.
- * @see BoxHT_New, BoxHT_Finish
+ * a #BoxHT object.
+ * @see BoxHT_Create, BoxHT_Finish
  */
-BOXEXPORT void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
-                          BoxHTFunc hash, BoxHTCmp cmp);
+BOXEXPORT void
+BoxHT_Init(BoxHT *ht, unsigned int num_entries, BoxHTFunc hash, BoxHTCmp cmp);
 
 /** Destroy an hashtable created with BoxHT_Init
  * @see BoxHT_Init
@@ -107,23 +107,25 @@ BOXEXPORT void BoxHT_Destroy(BoxHT *ht);
 /** Gives a function used to destroy objects when 'BoxHT_Destroy' is called */
 BOXEXPORT void BoxHT_Destructor(BoxHT *ht, BoxTask (*destroy)(BoxHTItem *));
 
-/** Most general function to add a new element to the hashtable.
+/**
+ * Most general function to add a new element to the hash table.
  * key and object will be duplicated or not, depending on the settings
- * of the hash table (see BoxHT_Copy_Key, BoxHT_Copy_Obj).
- * The function returns the BoxHTItem corresponding to the newly inserted
+ * of the hash table (see BoxHT_Copy_Key(), BoxHT_Copy_Obj()).
+ * The function returns the #BoxHTItem corresponding to the newly inserted
  * item.
  * @param ht the hash table.
  * @param branch number of the branch in the hash table (should be computed
- *  using the hash function). This is done by the macro BoxHT_Insert.
+ *  using the hash function). This is done by the macro BoxHT_Insert().
  * @param key pointer to the key.
  * @param key_size size of the key.
  * @param object object corresponding to the key.
  * @param object_size size of the object.
  * @see BoxHT_Insert, BoxHT_Insert_Obj, BoxHT_Copy_Key, BoxHT_Copy_Obj
  */
-BOXEXPORT BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
-                               const void *key, size_t key_size,
-                               const void *object, size_t object_size);
+BOXEXPORT BoxHTItem *
+BoxHT_Add(BoxHT *ht, unsigned int branch,
+          const void *key, size_t key_size,
+          const void *object, size_t object_size);
 
 /** Remove the element matching the given key from the hash-table.
  */

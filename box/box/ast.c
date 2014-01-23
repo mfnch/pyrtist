@@ -113,7 +113,11 @@ void BoxAST_Init(BoxAST *ast)
 {
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
+  ast->logger = NULL;
+  ast->src_map = BoxSrcMap_Create();
+  ast->src_map_ok = BOXBOOL_TRUE;
   ast->is_sane = BOXBOOL_TRUE;
+  BoxIndex_Init(& ast->src_names, 50);
 
 #if 0
 #define BOXASTNODE_DEF(NODE, Node)                                      \
@@ -127,6 +131,8 @@ void BoxAST_Init(BoxAST *ast)
 
 void BoxAST_Finish(BoxAST *ast)
 {
+  BoxSrcMap_Destroy(ast->src_map);
+  BoxIndex_Finish(& ast->src_names);
   BoxAllocPool_Finish(& ast->pool);
 }
 
@@ -148,32 +154,33 @@ void BoxAST_Destroy(BoxAST *ast)
   }
 }
 
-
-
-
-
-typedef void BoxLogger;
-
-/* The one below is the most primitive error reporting function in the
- * compiler. We'll eventually move it in a separate logging module.
- * The idea is that the user can intercept this function to redirect the output
- * of the compiler logging system.
- */
-void BoxLogger_VA_Log(BoxLogger *logger, BoxSrcPos *begin, BoxSrcPos *end,
-                      BoxLogLevel lev, const char *fmt, va_list ap)
-{
-  printf("Error: ");
-  (void) vprintf(fmt, ap);
-  printf(".\n");
-}
-
-void BoxAST_VA_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
+/* Message logging. */
+void BoxAST_Log_VA(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
                    const char *fmt, va_list ap)
 {
+  BoxSrcFullPos begin_fp, end_fp;
+
   if (lev >= BOXLOGLEVEL_ERROR)
     ast->is_sane = BOXBOOL_FALSE;
 
-  BoxLogger_VA_Log(NULL, NULL, NULL, lev, fmt, ap);
+  if (BoxAST_Get_Src_Map(ast, src->begin, & begin_fp)
+      && BoxAST_Get_Src_Map(ast, src->end, & end_fp)) {
+    BoxLogPos begin_lp, end_lp;
+
+    begin_lp.file_name = BoxAST_Get_File_Name(ast, begin_fp.file_num);
+    begin_lp.line = begin_fp.line;
+    begin_lp.col = begin_fp.col;
+
+    end_lp.file_name = (end_fp.file_num == begin_fp.file_num ?
+                        begin_lp.file_name :
+                        BoxAST_Get_File_Name(ast, end_fp.file_num));
+    end_lp.line = end_fp.line;
+    end_lp.col = end_fp.col;
+    BoxLogger_Log_VA(ast->logger, & begin_lp, & end_lp, lev, fmt, ap);
+    return;
+  }
+
+  BoxLogger_Log_VA(ast->logger, NULL, NULL, lev, fmt, ap);
 }
 
 /* Generic error reporting for an AST. */
@@ -182,7 +189,7 @@ void BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
 {
   va_list ap;
   va_start(ap, fmt);
-  BoxAST_VA_Log(ast, src, lev, fmt, ap);
+  BoxAST_Log_VA(ast, src, lev, fmt, ap);
   va_end(ap);
 }
 
@@ -192,13 +199,46 @@ void BoxASTNode_Log(BoxAST *ast, BoxASTNode *node, BoxLogLevel lev,
 {
   va_list ap;
   va_start(ap, fmt);
-  BoxAST_VA_Log(ast, NULL, lev, fmt, ap);
+  BoxAST_Log_VA(ast, NULL, lev, fmt, ap);
   va_end(ap);
 }
 
+/* Provide a correspondence between linear and full source positions. */
+void BoxAST_Store_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
+{
+  if (!BoxSrcMap_Store_FP(ast->src_map, lp, fp)) {
+    if (ast->src_map_ok) {
+      ast->src_map_ok = BOXBOOL_FALSE;
+      BoxAST_Log(ast, NULL, BOXLOGLEVEL_WARNING,
+                 "Cannot store source mapping. Positions in source file may "
+                 "be inaccurate or wrong.");
+    }
+  }
+}
 
+/* Map from linear to full source positions. */
+BoxBool BoxAST_Get_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
+{
+  if (BoxSrcMap_Map(ast->src_map, lp,
+                    & fp->file_num, & fp->line, & fp->col))
+    return BOXBOOL_TRUE;
 
+  ast->src_map_ok = BOXBOOL_FALSE;
+  BoxAST_Log(ast, NULL, BOXLOGLEVEL_WARNING,
+             "Cannot read source mapping. Positions in source file may "
+             "be inaccurate or wrong.");
+  return BOXBOOL_FALSE;
+}
 
+uint32_t BoxAST_Get_File_Num(BoxAST *ast, const char *name)
+{
+  return BoxIndex_Get_Idx_From_Name(& ast->src_names, name);
+}
+
+const char *BoxAST_Get_File_Name(BoxAST *ast, uint32_t num)
+{
+  return BoxIndex_Get_Name_From_Idx(& ast->src_names, num);
+}
 
 /* Set the root node of the tree. */
 BoxASTNode *BoxAST_Get_Root(BoxAST *ast)

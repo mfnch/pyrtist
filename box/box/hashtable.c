@@ -57,8 +57,8 @@ int BoxHT_Default_Action(BoxHTItem *it, void *pass_data) {return 1;}
  */
 BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash, BoxHTCmp cmp) {
   BoxHT *ht = Box_Mem_Alloc(sizeof(BoxHT));
-  if (ht == NULL) return NULL;
-  BoxHT_Init(ht, num_entries, hash, cmp);
+  if (ht)
+    BoxHT_Init(ht, num_entries, hash, cmp);
   return ht;
 }
 

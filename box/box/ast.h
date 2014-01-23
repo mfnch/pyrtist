@@ -34,6 +34,7 @@
 #  include <box/types.h>
 #  include <box/allocpool.h>
 #  include <box/srcpos.h>
+#  include <box/srcmap.h>
 
 
 /**
@@ -235,6 +236,28 @@ BOXEXPORT void
 BoxAST_Destroy(BoxAST *ast);
 
 /**
+ * @brief Message logging.
+ *
+ * Variable-Argument version of BoxAST_Log(). The formatted arguments are
+ * passed through a @c va_list object.
+ */
+BOXEXPORT void
+BoxAST_Log_VA(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
+              const char *fmt, va_list ap);
+
+/**
+ * @brief Generic error reporting for an AST.
+ *
+ * @param ast The AST object containing source mapping information.
+ * @param src Portion of the file associated with the message.
+ * @param lev Logging level.
+ * @param fmt printf-like format string.
+ * @param ... Arguments to be formatted following the formats in @p fmt.
+ */
+BOXEXPORT void
+BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev, const char *fmt, ...);
+
+/**
  * @brief Get the root node of the tree.
  */
 BOXEXPORT BoxASTNode *
@@ -245,6 +268,47 @@ BoxAST_Get_Root(BoxAST *ast);
  */
 BOXEXPORT void
 BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root);
+
+/**
+ * @brief Return the file number for a given file name.
+ *
+ * @brief ast The #BoxAST object, where the correspondence is kept.
+ * @brief name Input file name.
+ * @return The file number corresponding to @p name.
+ */
+BOXEXPORT uint32_t
+BoxAST_Get_File_Num(BoxAST *ast, const char *name);
+
+/**
+ * @brief Return the file name for a given file number.
+ *
+ * @brief ast The #BoxAST object, where the correspondence is kept.
+ * @brief num Input file number.
+ * @return The file name corresponding to @p num.
+ */
+BOXEXPORT const char *
+BoxAST_Get_File_Name(BoxAST *ast, uint32_t num);
+
+/**
+ * @brief Map from linear to full source positions.
+ *
+ * @param ast The #BoxAST object, where the mapping is stored.
+ * @param lp The input linear position.
+ * @param fp The full position corresponding to @p lp.
+ * @return Whether the mapping was performed successfully.
+ */
+BOXEXPORT BoxBool
+BoxAST_Get_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp);
+
+/**
+ * @brief Provide a correspondence between linear and full source positions.
+ *
+ * @param ast The #BoxAST object, where the mapping is stored.
+ * @param lp The input linear position.
+ * @param fp The full position corresponding to @p lp.
+ */
+BOXEXPORT void
+BoxAST_Store_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp);
 
 /**
  * @brief Create an char immediate node.

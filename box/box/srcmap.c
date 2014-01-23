@@ -22,38 +22,54 @@
 #include <box/srcmap.h>
 
 
+/**
+ * @brief Size of the mapping table in each leaf.
+ */
 #define MY_NL_SIZE 112
 
-typedef struct {uint32_t file_num, line, col;} MyFullPos;
-
+/**
+ * @brief Leaf of the binary search tree.
+ *
+ * Each leaf contains a table which contains several correspondences linear-
+ * position -> full position. A leaf is searched linearly, but this is fine, as
+ * every call to BoxSrcMap_Map() requires only one such search. At the same
+ * time, the leaf contains compressed data when possible, which gives good
+ * memory performance.
+ */
 typedef struct {
-  uint32_t     lin_pos;               /**< Linear position. */
-  MyFullPos    full_pos;              /**< Full position. */
-  uint8_t      new_lines[MY_NL_SIZE]; /**< Incremental newlines positions. */
+  uint32_t      lin_pos;               /**< Linear position. */
+  BoxSrcFullPos full_pos;              /**< Full position. */
+  uint8_t       new_lines[MY_NL_SIZE]; /**< Incremental newlines positions. */
 } MyLeaf;
 
+/**
+ * @brief Node in the binary search tree.
+ */
 typedef struct {
-  void      *parent,
-            *left,
-            *right;
-  uint32_t  lin_pos;
+  void      *parent, /**< Parent node, or @c NULL if this is the top node. */
+            *left,   /**< Left node or left leaf. */
+            *right;  /**< Right node or right leaf. */
+  uint32_t  lin_pos; /**< Linear position used as key in the binary search. */
 } MyNode;
 
+/**
+ * @brief Implementation of #BoxSrcMap.
+ */
 struct BoxSrcMap_struct {
-  MyNode    *leftmost_node;
-  MyNode    *cur_node;
-  MyLeaf    *cur_leaf;
-  MyNode    *root;
-  uint32_t  cur_leaf_length;
-  uint32_t  cur_lin_pos;
-  uint32_t  cur_file_num;
-  uint32_t  cur_line;
-  int       depth;
+  MyNode    *leftmost_node;  /**< Firstly (and leftmost) allocated node. */
+  MyNode    *cur_node;       /**< Current mode (from a filling persepective). */
+  MyLeaf    *cur_leaf;       /**< Current leaf (from a filling persepective). */
+  MyNode    *root;           /**< Root of the tree. */
+  uint32_t  cur_leaf_length; /**< Length of the BoxSrcMap#cur_leaf. */
+  uint32_t  cur_lin_pos;     /**< Linear position in BoxSrcMap#cur_leaf. */
+  uint32_t  cur_file_num;    /**< File number in BoxSrcMap#cur_leaf. */
+  uint32_t  cur_line;        /**< Line number in BoxSrcMap#cur_leaf. */
+  int       depth;           /**< Depth of the tree (=0 for empty tree). */
 };
 
 /* Forward declarations. */
 static BoxBool
-My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp);
+My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp);
 
 
 /* Initialize a #BoxSrcMap object. */
@@ -293,7 +309,7 @@ My_Read_UInt(uint8_t *input, uint32_t *value, int size,
 
 /* Add an uncompressed map entry to the current leaf. */
 static BoxBool
-My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
+My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
 {
   uint8_t extattr = 0;
   int entry_size = 2;
@@ -368,7 +384,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
 
 /* Add a map entry to the current leaf, trying to compress it when possible. */
 static BoxBool
-My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
+My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
 {
   MyLeaf *cl = sm->cur_leaf;
 
@@ -426,7 +442,7 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, MyFullPos *fp)
  */
 static BoxBool
 My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
-                uint32_t lin_pos, MyFullPos *fp)
+                uint32_t lin_pos, BoxSrcFullPos *fp)
 {
   uint32_t file_num, col, line, cur_lin_pos;
   uint8_t *input;
@@ -494,21 +510,25 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
 
 BoxBool
 BoxSrcMap_Store(BoxSrcMap *sm, uint32_t lin_pos,
-                const char *file_name, uint32_t line, uint32_t col)
+                uint32_t file_num, uint32_t line, uint32_t col)
+{
+  BoxSrcFullPos fp;
+  fp.file_num = file_num;
+  fp.line = line;
+  fp.col = col;
+  return BoxSrcMap_Store_FP(sm, lin_pos, & fp);
+}
+
+BoxBool
+BoxSrcMap_Store_FP(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
 {
   if (sm->cur_leaf || My_Grow_Tree(sm, 0)) {
-    MyFullPos fp;
-    fp.file_num = 0;
-    fp.line = line;
-    fp.col = col;
-
     if (sm->cur_leaf_length > MY_NL_SIZE) {
       /*sm->cur_leaf_length == MY_NL_SIZE + 1: leaf is full. */
       if (!My_Use_New_Leaf(sm))
         return BOXBOOL_FALSE;;
     }
-
-    return My_Add_To_Leaf(sm, lin_pos, & fp);
+    return My_Add_To_Leaf(sm, lin_pos, fp);
   }
 
   return BOXBOOL_FALSE;
@@ -516,14 +536,31 @@ BoxSrcMap_Store(BoxSrcMap *sm, uint32_t lin_pos,
 
 BoxBool
 BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
-              const char **file_name, uint32_t *line, uint32_t *col)
+              uint32_t *file_num, uint32_t *line, uint32_t *col)
 {
-  MyFullPos fp;
+  BoxSrcFullPos fp;
+  if (!BoxSrcMap_Map_FP(sm, pos, & fp))
+    return BOXBOOL_FALSE;
+  if (file_num)
+    *file_num = fp.file_num;
+  if (line)
+    *line = fp.line;
+  if (col)
+    *col = fp.col;
+  return BOXBOOL_TRUE;
+}
+
+BoxBool
+BoxSrcMap_Map_FP(BoxSrcMap *sm, uint32_t pos, BoxSrcFullPos *fp)
+{
+  if (!fp)
+    return BOXBOOL_FALSE;
 
   if (pos >= sm->cur_lin_pos) {
-    fp.file_num = sm->cur_file_num;
-    fp.line = sm->cur_line;
-    fp.col = pos - sm->cur_lin_pos;
+    fp->file_num = sm->cur_file_num;
+    fp->line = sm->cur_line;
+    fp->col = pos - sm->cur_lin_pos;
+    return BOXBOOL_TRUE;
   } else {
     MyNode *node;
     MyLeaf *leaf;
@@ -534,17 +571,8 @@ BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
 
     leaf = (MyLeaf *) node;
     leaf_length = (leaf == sm->cur_leaf) ? sm->cur_leaf_length : MY_NL_SIZE;
-    if (!My_Find_In_Leaf(sm, leaf, leaf_length, pos, & fp))
-      return BOXBOOL_FALSE;
+    return My_Find_In_Leaf(sm, leaf, leaf_length, pos, fp);
   }
-
-  if (line)
-    *line = fp.line;
-  if (col)
-    *col = fp.col;
-  if (file_name)
-    *file_name = NULL;
-  return BOXBOOL_TRUE;
 }
 
 #ifdef TEST_SRCMAP
@@ -554,11 +582,10 @@ BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
 #include <sys/stat.h>
 
 static void
-My_Run_Test(const char *file_name, const char *content, size_t size)
+My_Run_Test(uint32_t file_num, const char *content, size_t size)
 {
   BoxSrcMap sm;
-  uint32_t lin_pos, line, col, mline, mcol;
-  const char *mfile_name;
+  uint32_t lin_pos, line, col, mfile_num, mline, mcol;
   int max_errs = 10;
   char c[2];
   c[1] = 0;
@@ -572,7 +599,7 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
     c[0] = content[lin_pos];
     if (c[0] == '\n') {
       line++;
-      BoxSrcMap_Store(& sm, lin_pos + 1, file_name, line, 0);
+      BoxSrcMap_Store(& sm, lin_pos + 1, file_num, line, 0);
     }
   }
 
@@ -581,20 +608,19 @@ My_Run_Test(const char *file_name, const char *content, size_t size)
     BoxBool success;
     c[0] = content[lin_pos];
 
-    success = BoxSrcMap_Map(& sm, lin_pos, & mfile_name, & mline, & mcol);
-    mfile_name = file_name; /* For now... */
-    if (!success || mline != line || mcol != col || mfile_name != file_name) {
+    success = BoxSrcMap_Map(& sm, lin_pos, & mfile_num, & mline, & mcol);
+    if (!success || mline != line || mcol != col || mfile_num != file_num) {
       if (max_errs > 0) {
+        typedef unsigned int ui;
         max_errs--;
         if (success)
-          fprintf(stderr, "Error: '%s' %u -> (%s, %u, %u) should be "
-                  "(%s, %u, %u)\n", (c[0] == '\n' ? "\\n" : c), lin_pos,
-                  mfile_name, (unsigned int) mline, (unsigned int) mcol,
-                  "?", (unsigned int) line, (unsigned int) col);
+          fprintf(stderr, "Error: '%s' %u -> (%u, %u, %u) should be "
+                  "(%u, %u, %u)\n", (c[0] == '\n' ? "\\n" : c), (ui) lin_pos,
+                  (ui) mfile_num, (ui) mline, (ui) mcol,
+                  (ui) file_num, (ui) line, (ui) col);
         else
-          fprintf(stderr, "Cannot perform map at %u ~ (%s, %u, %u)\n",
-                  lin_pos,
-                  file_name, (unsigned int) line, (unsigned int) col);
+          fprintf(stderr, "Cannot perform map at %u ~ (%u, %u, %u)\n",
+                  (ui) lin_pos, (ui) file_num, (ui) line, (ui) col);
       } else if (max_errs == 0) {
         fprintf(stderr, "... Too many errors\n");
         max_errs--;
@@ -649,7 +675,7 @@ main(int argc, const char **argv)
   }
   fclose(f);
 
-  My_Run_Test(file_name, content, st.st_size);
+  My_Run_Test(12, content, st.st_size);
   free(content);
   exit(EXIT_SUCCESS);
 }

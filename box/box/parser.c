@@ -19,10 +19,9 @@
 
 /** Data used to handle files included with "include". */
 typedef struct {
-  char      *script_dir;
-  BoxSrcPos pos;
-  BoxUInt   msgcontext;
-  BoxUInt   num_errs, num_warns;
+  char          *script_dir;
+  BoxSrcFullPos full_pos;
+  BoxUInt       num_errs, num_warns;
 } MyIncludeData;
 
 
@@ -41,7 +40,6 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
   bp->comment_level = 0;
   bp->paths = paths;
   bp->fnames = BoxSrcName_Create();
-  BoxSrcPos_Init(& bp->pos, "<stdin>");
   bp->src.begin = 1;
 
   bp->max_include_level = TOK_MAX_INCLUDE;

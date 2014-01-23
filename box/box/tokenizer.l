@@ -53,31 +53,31 @@
 #include <box/parser_priv.h>
 
 /* Add our own position tracking code. We here assume the token does not
- * contain newline characters. All exceptions have need to be corrected with
- * a call to My_Fix_Pos().
+ * contain newline characters. All exceptions have need to be corrected by
+ * using MY_EAT_NEWLINES.
  */
 #define YY_USER_ACTION \
   yyextra->src.begin = yyextra->src.end; \
   yyextra->src.end += yyleng; \
-  yyextra->pos.col += yyleng;
+  yyextra->full_pos.col += yyleng;
 
 /* Function used to update the location counters (line, column, etc.) */
-static void My_Fix_Pos(yyscan_t scanner);
+static void My_Eat_Newlines(yyscan_t scanner);
 
-/* Shorthand for My_Fix_Pos(). */
-#define MY_FIX_POS \
-  My_Fix_Pos(yyscanner)
+/* Shorthand for My_Eat_Newlines(yyscanner). */
+#define MY_EAT_NEWLINES \
+  My_Eat_Newlines(yyscanner)
 
 #define MY_NODE(nodeType, args...) \
   BoxAST_Create_##nodeType(yyextra->ast, & yyextra->src, args)
 
 /* Generic error reporting. */
 #define MY_ERR(args...) \
-  BoxParser_Log_Err(yyextra, args)
+  BoxAST_Log((yyextra)->ast, NULL, BOXLOGLEVEL_ERROR, args)
 
 /* Token-related error reporting. */
 #define MY_TOK_ERR(args...) \
-  BoxParser_Log_Tok_Err(yyextra, args)
+  BoxAST_Log(yyextra->ast,   & yyextra->src, BOXLOGLEVEL_ERROR, args)
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
@@ -135,7 +135,7 @@ STRING   ["]([^"\n]|\\\")*["]
 }
 
 <comment>.|\n    {
-  MY_FIX_POS;
+  MY_EAT_NEWLINES;
   My_Comment_Read_Char(yyextra, yytext, yyleng);
 }
 
@@ -171,11 +171,11 @@ include BEGIN(include);
   * Alternatively, the line continuation character ``_'' or ``\'' can used
   * at the end of the line to continue the statement in the next line.
   */
-"\n"    {MY_FIX_POS; return TOK_NEWLINE;}
+"\n"    {MY_EAT_NEWLINES; return TOK_NEWLINE;}
 
  /* Here are the rules to implement the line continuation. */
-[_\\]{SPACES}"\n"            {MY_FIX_POS;}
-[_\\]{SPACES}"//"[^\n]*"\n"  {MY_FIX_POS;}
+[_\\]{SPACES}"\n"            {MY_EAT_NEWLINES;}
+[_\\]{SPACES}"//"[^\n]*"\n"  {MY_EAT_NEWLINES;}
 
  /* Discard comments. Comments start either with // or with #! */
 "//"[^\n]*  {}
@@ -358,16 +358,16 @@ BoxBool BoxParser_Begin_Include_FILE(BoxParser *bl, FILE *f, const char *fn)
   }
 
   cur = BoxArr_Push(& bl->include_list, NULL);
-  cur->pos = bl->pos;
+  cur->full_pos = bl->full_pos;
   cur->script_dir = NULL;
-  cur->msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
   cur->num_errs = MSG_GT_ERRORS;
   cur->num_warns = MSG_NUM_WARNINGS;
 
   buffer = yy_create_buffer(f, YY_BUF_SIZE, bl->scanner);
   assert(buffer != NULL);
   yypush_buffer_state(buffer, bl->scanner);
-  BoxSrcPos_Init(& bl->pos, BoxSrcName_Add(bl->fnames, fn));
+  bl->full_pos.file_num = BoxAST_Get_File_Num(bl->ast, fn);
+  bl->full_pos.line = bl->full_pos.col = 0;
 
   MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", fn);
   return BOXBOOL_TRUE;
@@ -380,16 +380,15 @@ BoxBool BoxParser_End_Include(BoxParser *bl)
     size_t num_errs, num_warns;
     MyIncludeData cur;
 
-    /* Retrieve the last include data block and remove it from the stack */
+    /* Retrieve the last include data block and remove it from the stack. */
     BoxArr_Pop(& bl->include_list, & cur);
 
-    /* Return to the previous buffer and restore the previous position */
+    /* Return to the previous buffer and restore the previous position. */
     yypop_buffer_state(bl->scanner);
-    bl->pos = cur.pos;
-
+    bl->full_pos = cur.full_pos;
     Box_Mem_Free(cur.script_dir);
 
-    /* Compute the number of errors in the included file */
+    /* Compute the number of errors in the included file. */
     num_errs = MSG_GT_ERRORS - cur.num_errs;
     num_warns = MSG_NUM_WARNINGS - cur.num_warns;
     MSG_ADVICE("Exiting from the included file. "
@@ -402,28 +401,29 @@ BoxBool BoxParser_End_Include(BoxParser *bl)
   return BOXBOOL_TRUE;
 }
 
-static void My_Fix_Pos(yyscan_t scanner)
+static void My_Eat_Newlines(yyscan_t scanner)
 {
   size_t i, tok_length = yyget_leng(scanner);
   const char *tok_text = yyget_text(scanner);
-  BoxParser *box_lexer = yyget_extra(scanner);
-  BoxSrcLine line = 0;
-  BoxSrcCol col = 0;
+  BoxParser *bp = yyget_extra(scanner);
+  BoxSrcLinPos lin_pos = bp->src.begin, col0_lin_pos = 0;
+  BoxSrcFullPos full_pos = bp->full_pos;
 
-  for(i = 0; i < tok_length; i++) {
-    if (tok_text[i] == '\n') {
-      col = 1;
-      line += 1;
-    } else
-      col += 1;
+  for (i = 0, full_pos.col = 0; i < tok_length; i++) {
+    if (tok_text[i] != '\n')
+      continue;
+
+    full_pos.line += 1;
+    col0_lin_pos = lin_pos + i + 1;
+    BoxAST_Store_Src_Map(bp->ast, col0_lin_pos, & full_pos);
   }
 
-  /* Note: if line == 0, then there is nothing to fix, as the basic rule
-   * of adding yyleng to box_lexer->pos.col gave already the right result.
+  /* Note: if col0_lin_pos == 0, then there is nothing to fix, as the basic
+   * rule of adding yyleng to bp->pos.col gave already the right result.
    */
-  if (line) {
-    box_lexer->pos.line += line;
-    box_lexer->pos.col = col;
+  if (col0_lin_pos) {
+    full_pos.col = lin_pos + tok_length - col0_lin_pos;
+    bp->full_pos = full_pos;
   }
 }
 
@@ -507,15 +507,15 @@ static void My_Process_Macro(BoxParser *bl, BoxMacro *bm)
     long int arg1;
     if (num_args >= 1 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 0), & arg1)) {
       long int arg2;
-      BoxSrcPos_Set_Line(& bl->pos, (arg1 > 0) ? arg1 : 0);
+      bl->full_pos.line = (arg1 > 0) ? arg1 : 0;
 
       if (num_args >= 2 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 1), & arg2)) {
         char *arg3;
 
-        BoxSrcPos_Set_Col(& bl->pos, (arg2 > 0) ? arg2 : 0);
+        bl->full_pos.col = (arg2 > 0) ? arg2 : 0;
 
         if (My_Parse_Str_Arg(BoxMacro_Get_Arg(bm, 2), & arg3))
-          BoxSrcPos_Set_File_Name(& bl->pos, BoxSrcName_Add(bl->fnames, arg3));
+          bl->full_pos.file_num = BoxAST_Get_File_Num(bl->ast, arg3);
       }
     }
   }

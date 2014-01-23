@@ -17,12 +17,29 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/**
+ * @file srcpos.h
+ * @brief Definitions of source position types.
+ */
+
 #ifndef _BOX_SRCPOS_H
 #  define _BOX_SRCPOS_H
+
+#  include <stdint.h>
 
 #  include <box/types.h>
 #  include <box/array.h>
 
+
+/**
+ * @brief Integer type used to store line numbers in source files.
+ */
+typedef uint32_t BoxSrcLine;
+
+/**
+ * @brief Integer type used to store column numbers in source files.
+ */
+typedef uint32_t BoxSrcCol;
 
 /**
  * @brief Array of file names.
@@ -34,24 +51,7 @@ typedef struct {
   BoxArr names;
 } BoxSrcName;
 
-/**
- * @brief Type for number of line in a source file.
- */
-typedef int BoxSrcLine;
 
-/**
- * @brief Type for number of column in a source file.
- */
-typedef int BoxSrcCol;
-
-/**
- * @brief Position of a character of the input source code.
- *
- * Object which describes the position in a Box source file (which file,
- * which line and column). It is used to associate debug information to VM
- * code, i.e. to state to which portion of source a certain fragment of code
- * corresponds.
- */
 typedef struct {
   const char *file_name;
   BoxSrcLine line;
@@ -59,12 +59,14 @@ typedef struct {
 } BoxSrcPos;
 
 /**
- * @brief Serial position of a character in a Box source file (>= 1).
+ * @brief Linear position of a character in a source file (>= 1).
  *
- * This is simply the number of characters (including this one) read by the
- * tokenizer so far. This is a positive integer number and is therefore easier
- * to handle than a #BoxSrcPos object.
+ * This is simply the number of characters read by the tokenizer so far.
+ * This is a positive integer number and is therefore easier to handle than
+ * a full position (#BoxSrcFullPos).
  */
+typedef unsigned int BoxSrcLinPos;
+
 typedef unsigned int BoxSrcIdx;
 
 /**
@@ -75,7 +77,7 @@ typedef unsigned int BoxSrcIdx;
  * code they refer to).
  */
 typedef struct {
-  BoxSrcIdx begin, end;
+  BoxSrcLinPos begin, end;
 } BoxSrc;
 
 /** "Linear" position in the source */
