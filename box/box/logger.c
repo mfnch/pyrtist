@@ -30,7 +30,7 @@ BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
     printf("Error (%s, %d-%d, %d-%d): ",
            begin->file_name, begin->line, end->line, begin->col, end->col);
     (void) vprintf(fmt, ap);
-    printf(".\n");
+    printf("\n");
   } else {
     printf("Error: ");
     (void) vprintf(fmt, ap);

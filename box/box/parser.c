@@ -40,7 +40,7 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
   bp->comment_level = 0;
   bp->paths = paths;
   bp->fnames = BoxSrcName_Create();
-  bp->src.begin = 1;
+  bp->src.begin = bp->src.end = 0;
 
   bp->max_include_level = TOK_MAX_INCLUDE;
   BoxArr_Init(& bp->include_list, sizeof(MyIncludeData),
@@ -132,18 +132,6 @@ void BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...)
   va_start(ap, fmt);
   msg = Box_Mem_Strdup(Box_VA_Print(fmt, ap));
   MSG_ERROR("%s", msg);
-  Box_Mem_Free(msg);
-  va_end(ap);
-}
-
-/* Report an error while scanning a token. */
-void BoxParser_Log_Tok_Err(BoxParser *bp, const char *fmt, ...)
-{
-  va_list ap;
-  char *msg;
-  va_start(ap, fmt);
-  msg = Box_Mem_Strdup(Box_VA_Print(fmt, ap));
-  MSG_ERROR("(%d-%d): %s", bp->src.begin, bp->src.end, msg);
   Box_Mem_Free(msg);
   va_end(ap);
 }

@@ -134,8 +134,12 @@ STRING   ["]([^"\n]|\\\")*["]
   yyterminate();
 }
 
-<comment>.|\n    {
+<comment>\n      {
   MY_EAT_NEWLINES;
+  My_Comment_Read_Char(yyextra, yytext, yyleng);
+}
+
+<comment>.       {
   My_Comment_Read_Char(yyextra, yytext, yyleng);
 }
 
@@ -366,8 +370,11 @@ BoxBool BoxParser_Begin_Include_FILE(BoxParser *bl, FILE *f, const char *fn)
   buffer = yy_create_buffer(f, YY_BUF_SIZE, bl->scanner);
   assert(buffer != NULL);
   yypush_buffer_state(buffer, bl->scanner);
+
+  bl->src.begin = ++bl->src.end;
   bl->full_pos.file_num = BoxAST_Get_File_Num(bl->ast, fn);
   bl->full_pos.line = bl->full_pos.col = 0;
+  BoxAST_Store_Src_Map(bl->ast, bl->src.begin, & bl->full_pos);
 
   MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", fn);
   return BOXBOOL_TRUE;
@@ -385,7 +392,9 @@ BoxBool BoxParser_End_Include(BoxParser *bl)
 
     /* Return to the previous buffer and restore the previous position. */
     yypop_buffer_state(bl->scanner);
+    bl->src.begin = ++bl->src.end;
     bl->full_pos = cur.full_pos;
+    BoxAST_Store_Src_Map(bl->ast, bl->src.begin, & bl->full_pos);
     Box_Mem_Free(cur.script_dir);
 
     /* Compute the number of errors in the included file. */
@@ -476,9 +485,8 @@ static int My_Parse_Int_Arg(const char *text, long int *arg)
     if (arg != NULL)
       *arg = retval;
     return 1;
-
-  } else
-    return 0;
+  }
+  return 0;
 }
 
 /** Check that 'text' is a string of the type '"content"' and - if this is the
@@ -507,16 +515,18 @@ static void My_Process_Macro(BoxParser *bl, BoxMacro *bm)
     long int arg1;
     if (num_args >= 1 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 0), & arg1)) {
       long int arg2;
-      bl->full_pos.line = (arg1 > 0) ? arg1 : 0;
+      bl->full_pos.line = (arg1 > 0) ? arg1 - 1 : 0;
 
       if (num_args >= 2 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 1), & arg2)) {
         char *arg3;
 
-        bl->full_pos.col = (arg2 > 0) ? arg2 : 0;
+        bl->full_pos.col = (arg2 > 0) ? arg2 - 1 : 0;
 
         if (My_Parse_Str_Arg(BoxMacro_Get_Arg(bm, 2), & arg3))
           bl->full_pos.file_num = BoxAST_Get_File_Num(bl->ast, arg3);
       }
+
+      BoxAST_Store_Src_Map(bl->ast, bl->src.end, & bl->full_pos);
     }
   }
 }

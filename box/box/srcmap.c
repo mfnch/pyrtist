@@ -21,7 +21,6 @@
 #include <box/mem.h>
 #include <box/srcmap.h>
 
-
 /**
  * @brief Size of the mapping table in each leaf.
  */
@@ -56,15 +55,14 @@ typedef struct {
  * @brief Implementation of #BoxSrcMap.
  */
 struct BoxSrcMap_struct {
-  MyNode    *leftmost_node;  /**< Firstly (and leftmost) allocated node. */
-  MyNode    *cur_node;       /**< Current mode (from a filling persepective). */
-  MyLeaf    *cur_leaf;       /**< Current leaf (from a filling persepective). */
-  MyNode    *root;           /**< Root of the tree. */
-  uint32_t  cur_leaf_length; /**< Length of the BoxSrcMap#cur_leaf. */
-  uint32_t  cur_lin_pos;     /**< Linear position in BoxSrcMap#cur_leaf. */
-  uint32_t  cur_file_num;    /**< File number in BoxSrcMap#cur_leaf. */
-  uint32_t  cur_line;        /**< Line number in BoxSrcMap#cur_leaf. */
-  int       depth;           /**< Depth of the tree (=0 for empty tree). */
+  MyNode        *leftmost_node;  /**< Firstly (and leftmost) allocated node. */
+  MyNode        *cur_node;       /**< Current node (for filling). */
+  MyLeaf        *cur_leaf;       /**< Current leaf (for filling). */
+  MyNode        *root;           /**< Root of the tree. */
+  uint32_t      cur_leaf_length; /**< Length of the BoxSrcMap#cur_leaf. */
+  uint32_t      cur_lin_pos;     /**< Linear position in BoxSrcMap#cur_leaf. */
+  BoxSrcFullPos cur_full_pos;    /**< Current ``fill'' position. */
+  int           depth;           /**< Depth of the tree (=0 for empty tree). */
 };
 
 /* Forward declarations. */
@@ -82,8 +80,9 @@ BoxSrcMap_Init(BoxSrcMap *sm)
   sm->root = NULL;
   sm->cur_leaf_length = 0;
   sm->cur_lin_pos = 0;
-  sm->cur_file_num = 0;
-  sm->cur_line = 0;
+  sm->cur_full_pos.file_num = 0;
+  sm->cur_full_pos.line = 0;
+  sm->cur_full_pos.col = 0;
   sm->depth = 0;
 }
 
@@ -318,7 +317,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
   uint32_t delta_pos;
 
   if (output_length == 0)
-    return My_Add_To_Leaf_Ext(sm, lin_pos, fp);
+    return My_Add_To_Leaf(sm, lin_pos, fp);
   --output_length;
 
   assert(lin_pos > sm->cur_lin_pos);
@@ -329,7 +328,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
     extattr = 1 + log2_sz;
   }
 
-  if (fp->file_num != sm->cur_file_num) {
+  if (fp->file_num != sm->cur_full_pos.file_num) {
     int log2_sz = My_Get_UInt32_Log2_Size(fp->file_num);
     entry_size += 1 << log2_sz;
     extattr = (1 + log2_sz) << 2;
@@ -341,7 +340,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
     extattr |= (1 + log2_sz) << 4;
   }
 
-  if (fp->line != sm->cur_line + 1) {
+  if (fp->line != sm->cur_full_pos.line + 1) {
     int log2_sz = My_Get_UInt32_Log2_Size(fp->line);
     entry_size += 1 << log2_sz;
     extattr |= (1 + log2_sz) << 6;
@@ -377,8 +376,7 @@ My_Add_To_Leaf_Ext(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
 
   sm->cur_leaf_length += entry_size;
   sm->cur_lin_pos = lin_pos;
-  sm->cur_file_num = fp->file_num;
-  sm->cur_line = fp->line;
+  sm->cur_full_pos = *fp;
   return BOXBOOL_TRUE;
 }
 
@@ -397,8 +395,7 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
     cl->full_pos = *fp;
     sm->cur_leaf_length = 1;
     sm->cur_lin_pos = lin_pos;
-    sm->cur_file_num = fp->file_num;
-    sm->cur_line = fp->line;
+    sm->cur_full_pos = *fp;
 
     /* Propagate the linear positions to the inner nodes.
      * This information will be used in the binary search.
@@ -419,8 +416,8 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
   }
 
   /* Check whether we can use incremental positions. */
-  if (fp->col == 0 && fp->line == sm->cur_line + 1
-      && fp->file_num == sm->cur_file_num) {
+  if (fp->col == 0 && fp->line == sm->cur_full_pos.line + 1
+      && fp->file_num == sm->cur_full_pos.file_num) {
     uint32_t delta_pos = lin_pos - sm->cur_lin_pos;
     assert(lin_pos > sm->cur_lin_pos);
     if (delta_pos < 256) {
@@ -428,7 +425,8 @@ My_Add_To_Leaf(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
       assert(nl_pos < MY_NL_SIZE);
       cl->new_lines[nl_pos] = (uint8_t) delta_pos;
       sm->cur_lin_pos = lin_pos;
-      sm->cur_line = fp->line;
+      sm->cur_full_pos.line = fp->line;
+      sm->cur_full_pos.col = 0;
       return BOXBOOL_TRUE;
     }
   }
@@ -504,7 +502,7 @@ My_Find_In_Leaf(BoxSrcMap *sm, MyLeaf *leaf, int leaf_length,
   assert(cur_lin_pos <= lin_pos);
   fp->file_num = file_num;
   fp->line = line;
-  fp->col = lin_pos - cur_lin_pos;
+  fp->col = lin_pos - cur_lin_pos + col;
   return BOXBOOL_TRUE;
 }
 
@@ -535,11 +533,11 @@ BoxSrcMap_Store_FP(BoxSrcMap *sm, uint32_t lin_pos, BoxSrcFullPos *fp)
 }
 
 BoxBool
-BoxSrcMap_Map(BoxSrcMap *sm, uint32_t pos,
+BoxSrcMap_Map(BoxSrcMap *sm, uint32_t lin_pos,
               uint32_t *file_num, uint32_t *line, uint32_t *col)
 {
   BoxSrcFullPos fp;
-  if (!BoxSrcMap_Map_FP(sm, pos, & fp))
+  if (!BoxSrcMap_Map_FP(sm, lin_pos, & fp))
     return BOXBOOL_FALSE;
   if (file_num)
     *file_num = fp.file_num;
@@ -557,9 +555,9 @@ BoxSrcMap_Map_FP(BoxSrcMap *sm, uint32_t pos, BoxSrcFullPos *fp)
     return BOXBOOL_FALSE;
 
   if (pos >= sm->cur_lin_pos) {
-    fp->file_num = sm->cur_file_num;
-    fp->line = sm->cur_line;
-    fp->col = pos - sm->cur_lin_pos;
+    fp->file_num = sm->cur_full_pos.file_num;
+    fp->line = sm->cur_full_pos.line;
+    fp->col = sm->cur_full_pos.col + (pos - sm->cur_lin_pos);
     return BOXBOOL_TRUE;
   } else {
     MyNode *node;

@@ -126,18 +126,4 @@ BoxParser_Get_AST(BoxParser *bp);
 BOXEXPORT void
 BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...);
 
-/**
- * @brief Report an error while scanning a token.
- *
- * This function assumes the error refers to the token which is currently
- * being scanned. The error message will indeed be extended with the location
- * of the current token.
- *
- * @param bp Parser object.
- * @param fmt Format string.
- * @param ... Arguments corresponding to the format string.
- */
-BOXEXPORT void
-BoxParser_Log_Tok_Err(BoxParser *bp, const char *fmt, ...);
-
 #endif /* _BOX_PARSER_H */

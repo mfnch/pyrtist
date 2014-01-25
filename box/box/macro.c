@@ -135,7 +135,7 @@ BoxMacroErr BoxMacro_Parse(BoxMacro *bm) {
 
       } else if (this_char == '\\')
         state = MY_GET_STRING_ESCAPE;
- 
+
       else if (this_char == '\0')
         return BOXMACROERR_STRING;
       break;
@@ -149,7 +149,7 @@ BoxMacroErr BoxMacro_Parse(BoxMacro *bm) {
 
     default:
       return BOXMACROERR_UNKNOWN;
-    }    
+    }
   }
 
   return 0;
