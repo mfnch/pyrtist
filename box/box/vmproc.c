@@ -46,7 +46,8 @@ void BoxVM_Proc_Init(BoxVM *vmp) {
   BoxVMProcTable *pt = & vmp->proc_table;
   BoxOcc_Init(& pt->uninstalled, sizeof(BoxVMProc), VMPROC_UNINST_CLC_SIZE);
   BoxOcc_Set_Finalizer(& pt->uninstalled, Procedure_Destroy);
-  BoxArr_Init(& pt->installed, sizeof(BoxVMProcInstalled), VMPROC_INST_ARR_SIZE);
+  BoxArr_Init(& pt->installed,
+              sizeof(BoxVMProcInstalled), VMPROC_INST_ARR_SIZE);
   BoxArr_Set_Finalizer(& pt->installed, My_Destroy_Installed_Procedure);
   pt->target_proc_num = 0;
   pt->target_proc = (BoxVMProc *) NULL;
@@ -159,7 +160,7 @@ My_Get_Inst_Proc_Desc(BoxVMProcTable *pt, BoxVMCallNum cn,
   if (cn != BOXVMCALLNUM_NONE) {
     if (cn > BoxArr_Get_Num_Items(& pt->installed))
       return BOXVMPROCKIND_UNDEFINED;
-        
+
     *inst_proc = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn);
     return (*inst_proc)->type;
   }
@@ -286,7 +287,7 @@ BoxVMProcKind BoxVM_Get_Proc_Kind(BoxVM *vm, BoxVMCallNum cn) {
 }
 
 /* Get the callable associated to a foreign procedure. */
-BoxBool 
+BoxBool
 BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code) {
   BoxArr *inst_procs = & vm->proc_table.installed;
   if (cn > 0 && cn <= BoxArr_Num_Items(inst_procs)) {

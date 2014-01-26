@@ -44,7 +44,7 @@ typedef enum {
  * @brief Implementation of #BoxOp.
  */
 struct BoxOp_struct {
-  BoxOpId   id;         /**< Instruction identifiers (an integer). */
+  BoxOpId   id;         /**< Instruction identifier (an integer). */
   const BoxOpDesc
             *desc;      /**< Instruction description (used internally). */
   BoxInt    next;       /**< Advance offset. */

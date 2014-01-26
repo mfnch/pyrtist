@@ -83,7 +83,7 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
   void *data;
 
   if (op->format == BOXOPFMT_SHORT) {
-    /* SHORT INSTRUCTION: we assemble the istruction header in the following way:
+    /* SHORT INSTRUCTION: we assemble the istruction header as follows:
      * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
      *  bit 0: true if the instruction is long
      *  bit 1-4: type of arguments
@@ -91,7 +91,7 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
      *  bit 8-15: type of instruction
      *  (bit 16-23: left empty for argument 1)
      *  (bit 24-31: left empty for argument 2)
-     */ 
+     */
     data = & bytecode[1];
     if (op->num_args >= 2)
       bytecode[0] = ((op->args[1] & 0xff) << 24
