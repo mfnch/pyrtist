@@ -35,11 +35,10 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
 
   yylex_init(& bp->scanner);
   yyset_extra(bp, bp->scanner);
-  bp->ast = BoxAST_Create();
+  bp->ast = BoxAST_Create(NULL);
 
   bp->comment_level = 0;
   bp->paths = paths;
-  bp->fnames = BoxSrcName_Create();
   bp->src.begin = bp->src.end = 0;
 
   bp->max_include_level = TOK_MAX_INCLUDE;
@@ -51,8 +50,8 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
   bp->parsing_macro = 0;
   BoxArr_Init(& bp->macro_content, 1, 64);
 
-  if (!(bp->ast && bp->fnames)) {
-    BoxAST_Destroy(BoxParser_Destroy(bp));
+  if (!bp->ast) {
+    BoxParser_Destroy(bp);
     return NULL;
   }
 
@@ -66,9 +65,6 @@ BoxAST *BoxParser_Destroy(BoxParser *bp)
   BoxHT_Finish(& bp->provided_features);
   BoxArr_Finish(& bp->include_list);
   BoxArr_Finish(& bp->macro_content);
-
-  BoxSrcName_Destroy(bp->fnames); // <-- TODO: fix this
-
   Box_Mem_Free(bp);
   return ast;
 }
@@ -122,16 +118,4 @@ BoxBool BoxParser_Begin_Include(BoxParser *bl, const char *fn)
 BoxAST *BoxParser_Get_AST(BoxParser *bp)
 {
   return bp->ast;
-}
-
-/* Report an error (not related to a particular token). */
-void BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...)
-{
-  va_list ap;
-  char *msg;
-  va_start(ap, fmt);
-  msg = Box_Mem_Strdup(Box_VA_Print(fmt, ap));
-  MSG_ERROR("%s", msg);
-  Box_Mem_Free(msg);
-  va_end(ap);
 }

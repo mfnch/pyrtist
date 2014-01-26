@@ -32,7 +32,7 @@
 #  include <stdint.h>
 
 #  include <box/types.h>
-#  include <box/allocpool.h>
+#  include <box/logger.h>
 #  include <box/srcpos.h>
 #  include <box/srcmap.h>
 
@@ -144,52 +144,15 @@ typedef enum {
 } BoxASTNodeType;
 
 /**
- * @brief Generic AST node.
+ * @brief First element of a #BoxASTNode.
  *
- * AST nodes have type names starting with BoxASTNode (e.g. #BoxASTNodeIntImm)
- * and can all be safely cast to a generic AST node.
- * All AST nodes do indeed begin with the same common header structure, which
- * tells the type of the node and the piece of source code the node is
- * representing. See #BOXASTNODEHEAD for more information.
+ * @see #BOXASTNODEHEAD
  */
-typedef struct BoxASTNode_struct {
+struct BoxASTNodeHead_struct {
   BoxSrc         src;
   uint8_t        type;
   uint8_t        attr;
-} BoxASTNode;
-
-/**
- * @brief Get the attributes mask of an AST node.
- */
-#define BoxASTNode_Get_Attr_Mask(ast) ((ast)->attr)
-
-/**
- * @brief Set the attributes mask of an AST node (does an or operation).
- */
-#define BoxASTNode_Set_Attr_Mask(ast, val) do{(ast)->attr = (val);} while(0)
-
-/**
- * @brief Set the attributes mask of an AST node (does an or operation).
- */
-#define BoxASTNode_Set_Attr(ast, clr, set) \
-  do {(ast)->attr = ((ast)->attr & ~((uint8_t) clr)) \
-                  | (uint8_t) (set);} while(0)
-
-/**
- * @brief Whether the node is a type expression.
- */
-#define BoxASTNode_Is_Type(ast) \
-  ((BoxASTNode_Get_Attr_Mask((ast)) & BOXASTNODEATTR_TYPE) != 0)
-
-/**
- * @brief Get the type of an AST node.
- */
-#define BoxASTNode_Get_Type(ast) ((ast)->type)
-
-/**
- * @brief Set the type of an AST node.
- */
-#define BoxASTNode_Set_Type(ast, val) do{(ast)->type = (val);} while(0)
+};
 
 /**
  * @brief Beginning of every AST node.
@@ -207,16 +170,57 @@ typedef struct BoxASTNode_struct {
  * #BoxASTNode node.
  */
 #define BOXASTNODEHEAD \
-  BoxASTNode head;
+  struct BoxASTNodeHead_struct head;
 
 /**
- * @brief Pointer to an AST node.
+ * @brief Generic AST node.
+ *
+ * AST nodes have type names starting with BoxASTNode (e.g. #BoxASTNodeIntImm)
+ * and can all be safely cast to a generic AST node.
+ * All AST nodes do indeed begin with the same common header structure, which
+ * tells the type of the node and the piece of source code the node is
+ * representing. See #BOXASTNODEHEAD for more information.
+ *
+ * @see BOXASTNODEHEAD
  */
-typedef BoxASTNode *BoxASTNodePtr;
+typedef struct BoxASTNode_struct {
+  BOXASTNODEHEAD
+} BoxASTNode;
 
+/**
+ * @brief Get the attributes mask of an AST node.
+ */
+#define BoxASTNode_Get_Attr_Mask(ast) ((ast)->head.attr)
 
-/* Define all nodes types. */
-#  include <box/astnodes.h>
+/**
+ * @brief Set the attributes mask of an AST node (does an or operation).
+ */
+#define BoxASTNode_Set_Attr_Mask(ast, val) \
+  do{(ast)->head.attr = (val);} while(0)
+
+/**
+ * @brief Set the attributes mask of an AST node (does an or operation).
+ */
+#define BoxASTNode_Set_Attr(ast, clr, set) \
+  do {(ast)->head.attr = ((ast)->head.attr & ~((uint8_t) clr)) \
+                  | (uint8_t) (set);} while(0)
+
+/**
+ * @brief Whether the node is a type expression.
+ */
+#define BoxASTNode_Is_Type(ast) \
+  ((BoxASTNode_Get_Attr_Mask((ast)) & BOXASTNODEATTR_TYPE) != 0)
+
+/**
+ * @brief Get the type of an AST node.
+ */
+#define BoxASTNode_Get_Type(ast) ((ast)->head.type)
+
+/**
+ * @brief Set the type of an AST node.
+ */
+#define BoxASTNode_Set_Type(ast, val) \
+  do{(ast)->head.type = (val);} while(0)
 
 /**
  * @brief Box Compiler's Abstract Syntax Tree object.
@@ -224,16 +228,33 @@ typedef BoxASTNode *BoxASTNodePtr;
 typedef struct BoxAST_struct BoxAST;
 
 /**
+ * @brief Pointer to an AST node.
+ */
+typedef BoxASTNode *BoxASTNodePtr;
+
+/* Define all nodes types. */
+#  include <box/astnodes.h>
+
+/**
  * @brief Create a new abstract syntax tree.
+ *
+ * @param logger Target for reporting error messages (@c NULL for default).
+ * @return A new abstract syntax tree or @c NULL in case of errors.
  */
 BOXEXPORT BoxAST *
-BoxAST_Create(void);
+BoxAST_Create(BoxLogger *logger);
 
 /**
  * @brief Destroy an abstract syntax tree created with BoxAST_Create().
  */
 BOXEXPORT void
 BoxAST_Destroy(BoxAST *ast);
+
+/**
+ * @brief Whether the AST is sane and can be further processed.
+ */
+BOXEXPORT BoxBool
+BoxAST_Is_Sane(BoxAST *ast);
 
 /**
  * @brief Message logging.

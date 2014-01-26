@@ -45,16 +45,18 @@ struct BoxAST_struct {
   BoxASTNode   *root;      /**< Root node of the tree. */
   BoxSrcMap    *src_map;   /**< Position mapping object. */
   BoxIndex     src_names;  /**< Map file name -> number (used in src_map). */
-  uint32_t     num_names;  /**< Number of file names.*/
   BoxBool      src_map_ok; /**< Whether there were errors with src_map. */
   BoxBool      is_sane;    /**< Whether the AST is sane (has no errors). */
 };
 
 /**
  * @brief Initialize a #BoxAST.
+ *
+ * @param ast Memory to initialize.
+ * @param logger Target for reporting error messages (@c NULL for default).
  */
 BOXEXPORT void
-BoxAST_Init(BoxAST *ast);
+BoxAST_Init(BoxAST *ast, BoxLogger *logger);
 
 /**
  * @brief Finalize a #BoxAST object initialized with BoxAST_Init().

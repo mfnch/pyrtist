@@ -29,21 +29,22 @@
 #include <box/ast_priv.h>
 
 
-#define MY_COPY_SRC(lhs, rhs)                   \
-  do {BoxASTNode *src_node = (rhs);             \
-    if (src_node) lhs->src = src_node->src;     \
-    else BoxSrc_Init(& lhs->src);} while(0)
+#define MY_COPY_SRC(lhs, rhs)                             \
+  do {BoxASTNode *src_node = (rhs);                       \
+    if (src_node) lhs->head.src = src_node->head.src;     \
+    else BoxSrc_Init(& lhs->head.src);} while(0)
 
-#define MY_PROPAGATE_SRC(container, fst, lst)           \
-  do {(container)->src.begin = (fst)->src.begin;        \
-      (container)->src.end = (lst)->src.end;} while(0)
+#define MY_PROPAGATE_SRC(container, fst, lst)                     \
+  do {(container)->head.src.begin = (fst)->head.src.begin;        \
+      (container)->head.src.end = (lst)->head.src.end;} while(0)
 
 #define MY_PROPAGATE_TYPE(dst, src)                             \
   BoxASTNode_Set_Attr((dst), 0,                                 \
     (BoxASTNode_Get_Attr_Mask(src) & BOXASTNODEATTR_TYPE))
 
 
-const char *BoxASTUnOp_To_String(BoxASTUnOp op)
+const char *
+BoxASTUnOp_To_String(BoxASTUnOp op)
 {
   switch(op) {
   case BOXASTUNOP_PLUS: return "+";
@@ -59,7 +60,8 @@ const char *BoxASTUnOp_To_String(BoxASTUnOp op)
   return "?";
 }
 
-BoxBool BoxASTUnOp_Is_Right(BoxASTUnOp op)
+BoxBool
+BoxASTUnOp_Is_Right(BoxASTUnOp op)
 {
  switch(op) {
  case BOXASTUNOP_RINC:
@@ -71,7 +73,8 @@ BoxBool BoxASTUnOp_Is_Right(BoxASTUnOp op)
   return BOXBOOL_FALSE;
 }
 
-const char *BoxASTBinOp_To_String(BoxASTBinOp op)
+const char *
+BoxASTBinOp_To_String(BoxASTBinOp op)
 {
   switch(op) {
   case BOXASTBINOP_ADD: return "+";
@@ -109,11 +112,12 @@ const char *BoxASTBinOp_To_String(BoxASTBinOp op)
   return "?";
 }
 
-void BoxAST_Init(BoxAST *ast)
+void
+BoxAST_Init(BoxAST *ast, BoxLogger *logger)
 {
   BoxAllocPool_Init(& ast->pool, sizeof(BoxASTNode)*16);
   ast->root = NULL;
-  ast->logger = NULL;
+  ast->logger = logger;
   ast->src_map = BoxSrcMap_Create();
   ast->src_map_ok = BOXBOOL_TRUE;
   ast->is_sane = BOXBOOL_TRUE;
@@ -129,7 +133,8 @@ void BoxAST_Init(BoxAST *ast)
 #endif
 }
 
-void BoxAST_Finish(BoxAST *ast)
+void
+BoxAST_Finish(BoxAST *ast)
 {
   BoxSrcMap_Destroy(ast->src_map);
   BoxIndex_Finish(& ast->src_names);
@@ -137,16 +142,18 @@ void BoxAST_Finish(BoxAST *ast)
 }
 
 /* Create a new abstract syntax tree. */
-BoxAST *BoxAST_Create(void)
+BoxAST *
+BoxAST_Create(BoxLogger *logger)
 {
   BoxAST *ast = (BoxAST *) Box_Mem_Alloc(sizeof(BoxAST));
   if (ast)
-    BoxAST_Init(ast);
+    BoxAST_Init(ast, logger);
   return ast;
 }
 
 /* Destroy an abstract syntax tree created with BoxAST_Create(). */
-void BoxAST_Destroy(BoxAST *ast)
+void
+BoxAST_Destroy(BoxAST *ast)
 {
   if (ast) {
     BoxAST_Finish(ast);
@@ -154,16 +161,23 @@ void BoxAST_Destroy(BoxAST *ast)
   }
 }
 
+BoxBool
+BoxAST_Is_Sane(BoxAST *ast)
+{
+  return ast->is_sane;
+}
+
 /* Message logging. */
-void BoxAST_Log_VA(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
-                   const char *fmt, va_list ap)
+void
+BoxAST_Log_VA(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
+              const char *fmt, va_list ap)
 {
   BoxSrcFullPos begin_fp, end_fp;
 
   if (lev >= BOXLOGLEVEL_ERROR)
     ast->is_sane = BOXBOOL_FALSE;
 
-  if (BoxAST_Get_Src_Map(ast, src->begin, & begin_fp)
+  if (src && BoxAST_Get_Src_Map(ast, src->begin, & begin_fp)
       && BoxAST_Get_Src_Map(ast, src->end, & end_fp)) {
     BoxLogPos begin_lp, end_lp;
 
@@ -184,8 +198,8 @@ void BoxAST_Log_VA(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
 }
 
 /* Generic error reporting for an AST. */
-void BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
-                const char *fmt, ...)
+void
+BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev, const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
@@ -194,17 +208,19 @@ void BoxAST_Log(BoxAST *ast, BoxSrc *src, BoxLogLevel lev,
 }
 
 /* Error reporting for groups of AST nodes. */
-void BoxASTNode_Log(BoxAST *ast, BoxASTNode *node, BoxLogLevel lev,
-                    const char *fmt, ...)
+void
+BoxASTNode_Log(BoxAST *ast, BoxASTNode *node, BoxLogLevel lev,
+               const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
-  BoxAST_Log_VA(ast, NULL, lev, fmt, ap);
+  BoxAST_Log_VA(ast, & node->head.src, lev, fmt, ap);
   va_end(ap);
 }
 
 /* Provide a correspondence between linear and full source positions. */
-void BoxAST_Store_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
+void
+BoxAST_Store_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
 {
   if (!BoxSrcMap_Store_FP(ast->src_map, lp, fp)) {
     if (ast->src_map_ok) {
@@ -217,7 +233,8 @@ void BoxAST_Store_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
 }
 
 /* Map from linear to full source positions. */
-BoxBool BoxAST_Get_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
+BoxBool
+BoxAST_Get_Src_Map(BoxAST *ast, BoxSrcLinPos lp, BoxSrcFullPos *fp)
 {
   if (BoxSrcMap_Map(ast->src_map, lp,
                     & fp->file_num, & fp->line, & fp->col))
@@ -235,25 +252,29 @@ uint32_t BoxAST_Get_File_Num(BoxAST *ast, const char *name)
   return BoxIndex_Get_Idx_From_Name(& ast->src_names, name);
 }
 
-const char *BoxAST_Get_File_Name(BoxAST *ast, uint32_t num)
+const char *
+BoxAST_Get_File_Name(BoxAST *ast, uint32_t num)
 {
   return BoxIndex_Get_Name_From_Idx(& ast->src_names, num);
 }
 
 /* Set the root node of the tree. */
-BoxASTNode *BoxAST_Get_Root(BoxAST *ast)
+BoxASTNode *
+BoxAST_Get_Root(BoxAST *ast)
 {
   return ast->root;
 }
 
 /* Set the root node of the tree. */
-void BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root)
+void
+BoxAST_Set_Root(BoxAST *ast, BoxASTNode *root)
 {
   ast->root = root;
 }
 
 /* Get size and alignment for the given node type. */
-static uint32_t My_Get_Node_Size(BoxASTNodeType type, uint32_t *alignment)
+static uint32_t
+My_Get_Node_Size(BoxASTNodeType type, uint32_t *alignment)
 {
 #define BOXASTNODE_DEF(NODE, Node)               \
   case BOXASTNODETYPE_##NODE:                    \
@@ -270,7 +291,8 @@ static uint32_t My_Get_Node_Size(BoxASTNodeType type, uint32_t *alignment)
 }
 
 /* Get a string representation of the given node type. */
-const char *BoxASTNodeType_To_Str(BoxASTNodeType type)
+const char *
+BoxASTNodeType_To_Str(BoxASTNodeType type)
 {
 #define BOXASTNODE_DEF(NODE, Node) \
   case BOXASTNODETYPE_##NODE: return #Node;
@@ -284,7 +306,8 @@ const char *BoxASTNodeType_To_Str(BoxASTNodeType type)
 #undef BOXASTNODE_DEF
 }
 
-void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
+void *
+BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
 {
   uint32_t node_alignment;
   uint32_t node_size = My_Get_Node_Size(type, & node_alignment);
@@ -301,8 +324,9 @@ void *BoxAST_Create_Node(BoxAST *ast, BoxASTNodeType type)
 }
 
 /* Create a variable-size node. */
-void *BoxAST_Create_Var_Node(BoxAST *ast, BoxASTNodeType type,
-                             uint32_t extra_size, void **extra)
+void *
+BoxAST_Create_Var_Node(BoxAST *ast, BoxASTNodeType type,
+                       uint32_t extra_size, void **extra)
 {
   uint32_t node_alignment;
   uint32_t head_size = My_Get_Node_Size(type, & node_alignment);
@@ -325,69 +349,75 @@ void *BoxAST_Create_Var_Node(BoxAST *ast, BoxASTNodeType type,
   return NULL;
 }
 
-BoxBool BoxASTNode_Set_Src(BoxASTNode *node, BoxSrcIdx begin, BoxSrcIdx end)
+BoxBool
+BoxASTNode_Set_Src(BoxASTNode *node, BoxSrcIdx begin, BoxSrcIdx end)
 {
   if (node) {
     if (begin & end) {
-      node->src.begin = begin;
-      node->src.end = end;
+      node->head.src.begin = begin;
+      node->head.src.end = end;
       return BOXBOOL_TRUE;
     }
-    node->src.begin = 0;
+    node->head.src.begin = 0;
   }
   return BOXBOOL_FALSE;
 }
 
-BoxASTNode *BoxAST_Create_CharImm(BoxAST *ast, BoxSrc *src, BoxChar value)
+BoxASTNode *
+BoxAST_Create_CharImm(BoxAST *ast, BoxSrc *src, BoxChar value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_CHAR_IMM);
   if (node) {
-    node->src = *src;
+    node->head.src = *src;
     ((BoxASTNodeCharImm *) node)->value = value;
   }
   return node;
 }
 
-BoxASTNode *BoxAST_Create_IntImm(BoxAST *ast, BoxSrc *src, BoxInt value)
+BoxASTNode *
+BoxAST_Create_IntImm(BoxAST *ast, BoxSrc *src, BoxInt value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_INT_IMM);
   if (node) {
-    node->src = *src;
+    node->head.src = *src;
     ((BoxASTNodeIntImm *) node)->value = value;
   }
   return node;
 }
 
-BoxASTNode *BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value)
+BoxASTNode *
+BoxAST_Create_RealImm(BoxAST *ast, BoxSrc *src, BoxReal value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_REAL_IMM);
   if (node) {
-    node->src = *src;
+    node->head.src = *src;
     ((BoxASTNodeRealImm *) node)->value = value;
   }
   return node;
 }
 
-BoxASTNode *BoxAST_Create_StrImm(BoxAST *ast, BoxSrc *src,
-                                 const char *str, uint32_t str_length)
+BoxASTNode *
+BoxAST_Create_StrImm(BoxAST *ast, BoxSrc *src,
+                     const char *str, uint32_t str_length)
 {
   char *str_copy = BoxAllocPool_Str_NDup(& ast->pool, str, str_length);
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STR_IMM);
   if (node && str_copy) {
-    node->src = *src;
+    node->head.src = *src;
     ((BoxASTNodeStrImm *) node)->str = str_copy;
   }
   return node;
 }
 
 /* Create the first statement of statement list. */
-BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
+BoxASTNode *
+BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
   if (node) {
     BoxASTNodeStatement *stmt = (BoxASTNodeStatement *) node;
     if (val)
-      node->src = val->src;
+      node->head.src = val->head.src;
     stmt->value = val;
     stmt->next = stmt;
     stmt->sep = 0;
@@ -396,8 +426,9 @@ BoxASTNode *BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
 }
 
 /* Append a statement to the given one. */
-BoxASTNode *BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
-                                    BoxASTSep sep, BoxASTNode *stmt_val)
+BoxASTNode *
+BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
+                        BoxASTSep sep, BoxASTNode *stmt_val)
 {
   BoxASTNode *stmt_node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
   if (stmt_node) {
@@ -413,8 +444,8 @@ BoxASTNode *BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
 }
 
 /* Create a box node. */
-BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
-                              BoxASTNode *last_stmt_node)
+BoxASTNode *
+BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent, BoxASTNode *last_stmt_node)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_BOX);
   if (node) {
@@ -433,8 +464,9 @@ BoxASTNode *BoxAST_Create_Box(BoxAST *ast, BoxASTNode *parent,
 }
 
 /* Create a type identifier node. */
-BoxASTNode *BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
-                                   const char *name, uint32_t name_length)
+BoxASTNode *
+BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
+                       const char *name, uint32_t name_length)
 {
   uint32_t extra_size = name_length + 1;
   BoxASTNode *node;
@@ -444,7 +476,7 @@ BoxASTNode *BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
                                 extra_size, NULL);
   if (node) {
     BoxASTNodeTypeIdfr *idfr = (BoxASTNodeTypeIdfr *) node;
-    node->src = *src;
+    node->head.src = *src;
     memcpy(& idfr->name[0], name, name_length);
     idfr->name[name_length] = '\0';
   }
@@ -453,8 +485,9 @@ BoxASTNode *BoxAST_Create_TypeIdfr(BoxAST *ast, BoxSrc *src,
 }
 
 /* Create a type/variable identifier node. */
-BoxASTNode *BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
-                                  const char *name, uint32_t name_length)
+BoxASTNode *
+BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
+                      const char *name, uint32_t name_length)
 {
   uint32_t extra_size = name_length + 1;
   BoxASTNode *node;
@@ -464,7 +497,7 @@ BoxASTNode *BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
                                 extra_size, NULL);
   if (node) {
     BoxASTNodeVarIdfr *idfr = (BoxASTNodeVarIdfr *) node;
-    node->src = *src;
+    node->head.src = *src;
     memcpy(& idfr->name[0], name, name_length);
     idfr->name[name_length] = '\0';
   }
@@ -473,19 +506,21 @@ BoxASTNode *BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
 }
 
 /* Create an ignore node. */
-BoxASTNode *BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
+BoxASTNode *
+BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_IGNORE);
   if (node) {
     BoxASTNodeIgnore *ignore = (BoxASTNodeIgnore *) node;
-    node->src = value->src;
+    node->head.src = value->head.src;
     ignore->value = value;
   }
   return node;
 }
 
 /* Create a raise node. */
-BoxASTNode *BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value)
+BoxASTNode *
+BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_RAISE);
   if (node) {
@@ -496,7 +531,8 @@ BoxASTNode *BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value)
 }
 
 /* Create a new unary operation. */
-BoxASTNode *BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
+BoxASTNode *
+BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_UN_OP);
   if (node) {
@@ -508,8 +544,9 @@ BoxASTNode *BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
 }
 
 /* Create a new binary operation. */
-BoxASTNode *BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
-                                BoxASTBinOp op, BoxASTNode *rhs)
+BoxASTNode *
+BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
+                    BoxASTBinOp op, BoxASTNode *rhs)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_BIN_OP);
   if (node) {
@@ -529,7 +566,8 @@ BoxASTNode *BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
  *   carrying out some checks that normally would be done during parsing. This
  *   is the price to pay for extra flexibility in the grammar...
  */
-BoxASTNode *BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
+BoxASTNode *
+BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_COMPOUND);
   if (node) {
@@ -544,8 +582,8 @@ BoxASTNode *BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
 }
 
 /* Create a new structure/species member. */
-BoxASTNode *BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr,
-                                 BoxASTNode *name)
+BoxASTNode *
+BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_MEMBER);
   if (node) {
@@ -558,9 +596,9 @@ BoxASTNode *BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr,
 #define BoxASTNode_Mark_Err(stuff)
 
 /* Append a member to an expression list. */
-BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
-                                 BoxASTSep sep, BoxSrc *sep_src,
-                                 BoxASTNode *memb_node)
+BoxASTNode *
+BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node, BoxASTSep sep,
+                     BoxSrc *sep_src, BoxASTNode *memb_node)
 {
   BoxASTNodeCompound *compound;
   BoxASTNodeMember *memb;
@@ -638,7 +676,8 @@ BoxASTNode *BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
 }
 
 /* Perform final checks on a compound node. */
-BoxASTNode *BoxAST_Close_Compound(BoxAST *ast, BoxASTNode *compound_node)
+BoxASTNode *
+BoxAST_Close_Compound(BoxAST *ast, BoxASTNode *compound_node)
 {
   BoxASTNodeCompound *compound;
   BoxASTNodeMember *memb;
@@ -714,8 +753,8 @@ BoxASTNode *BoxAST_Close_Compound(BoxAST *ast, BoxASTNode *compound_node)
 }
 
 /* Create a new binary operation. */
-BoxASTNode *BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent,
-                              BoxASTNode *member_name)
+BoxASTNode *
+BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_GET);
   if (node) {
@@ -746,7 +785,8 @@ BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
 }
 
 /* Create an argument node. */
-BoxASTNode *BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
+BoxASTNode *
+BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_ARG_GET);
   if (node) {
@@ -756,7 +796,8 @@ BoxASTNode *BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
 }
 
 /* Create a type tag. */
-BoxASTNode *BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
+BoxASTNode *
+BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_TYPE_TAG);
   if (node) {
@@ -766,8 +807,8 @@ BoxASTNode *BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
 }
 
 /* Create a subtype. */
-BoxASTNode *BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent,
-                                  BoxASTNode *member_name)
+BoxASTNode *
+BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_SUBTYPE);
   if (node) {
@@ -782,7 +823,8 @@ BoxASTNode *BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent,
 }
 
 /* Create a keyword. */
-BoxASTNode *BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type)
+BoxASTNode *
+BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_KEYWORD);
   if (node) {

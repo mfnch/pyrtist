@@ -31,10 +31,8 @@
 #include "parser.h"
 #include "paths.h"
 
-
 static int yyparse(BoxParser *parser, BoxAST *ast);
 static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
-//static void My_Syntax_Error(BoxSrc *src, char *s);
 
 /* Trick to induce yyparse to call BoxParser_Get_Next_Token rather than
  * yylex.
@@ -394,11 +392,10 @@ statement:
   | '\\' expr                    {$$ = BoxAST_Create_Ignore(ast, $2);}
   | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);;}
   | error sep                    {$$ = NULL;
-                                  printf("Syntax error!!!\n");
-                                  /*ASTNodeStatement_New(ASTNodeError_New());
-                                  My_Syntax_Error(& @$, NULL);
+                                  BoxAST_Log(ast, NULL, BOXLOGLEVEL_ERROR,
+                                             "Syntax error!");
                                   assert(yychar == YYEMPTY); yychar = (int) ',';
-                                  yyerrok;*/}
+                                  yyerrok;}
   ;
 
 statement_list:
@@ -418,17 +415,6 @@ program:
 static void yyerror(BoxParser *bp, BoxAST *ast, char* s)
 {
   /* Do nothing, as - at the moment - we report error in error action */
-}
-
-static void My_Syntax_Error(YYLTYPE *src, char *s)
-{
-  BoxSrc *prev_src_of_err;
-  prev_src_of_err = Msg_Set_Src(src);
-  if (s)
-    MSG_ERROR("%s", s);
-  else
-    MSG_ERROR("Syntax error.");
-  (void) Msg_Set_Src(prev_src_of_err);
 }
 
 BoxAST *Box_Parse_FILE(FILE *in, const char *in_name,

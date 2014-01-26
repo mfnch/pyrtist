@@ -51,7 +51,6 @@ typedef struct {
   BoxArr names;
 } BoxSrcName;
 
-
 typedef struct {
   const char *file_name;
   BoxSrcLine line;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006-2013 by Matteo Franchin                            *
+ *   Copyright (C) 2006-2014 by Matteo Franchin                            *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -73,14 +73,17 @@ static void My_Eat_Newlines(yyscan_t scanner);
 
 /* Generic error reporting. */
 #define MY_ERR(args...) \
-  BoxAST_Log((yyextra)->ast, NULL, BOXLOGLEVEL_ERROR, args)
+  BoxAST_Log(yyextra->ast, NULL, BOXLOGLEVEL_ERROR, args)
 
 /* Token-related error reporting. */
 #define MY_TOK_ERR(args...) \
-  BoxAST_Log(yyextra->ast,   & yyextra->src, BOXLOGLEVEL_ERROR, args)
+  BoxAST_Log(yyextra->ast, & yyextra->src, BOXLOGLEVEL_ERROR, args)
 
 /* Use our message handler */
-#define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
+#define YY_FATAL_ERROR(msg) \
+  do {BoxAST *ast = (BoxAST *) yyget_extra(yyscanner); \
+      BoxAST_Log(ast, NULL, BOXLOGLEVEL_FATAL, "%s", (msg)); \
+      abort();} while(0)
 
 /** Function used to notify entering a multi-line comment. */
 static void My_Comment_Enter(BoxParser *bl, int is_macro);
@@ -344,9 +347,10 @@ int BoxParser_Get_Next_Token(BoxParser *bl)
 {
   if (BoxArr_Num_Items(& bl->include_list) > 0)
     return yylex(bl->scanner);
-  else
-    MSG_FATAL("BoxParser_Next_Token: the source file has not been specified. "
-              "Use BoxParser_Begin_Include to set it.");
+  BoxAST_Log(bl->ast, NULL, BOXLOGLEVEL_ERROR,
+             "BoxParser_Next_Token: the source file has not been "
+             "specified. Use BoxParser_Begin_Include to set it.");
+  abort();
 }
 
 BoxBool BoxParser_Begin_Include_FILE(BoxParser *bl, FILE *f, const char *fn)
@@ -356,8 +360,8 @@ BoxBool BoxParser_Begin_Include_FILE(BoxParser *bl, FILE *f, const char *fn)
   MyIncludeData *cur;
 
   if (include_level >= bl->max_include_level) {
-    BoxParser_Log_Err(bl, "Cannot include \"%s\": too many files included!",
-                      fn);
+    BoxAST_Log(bl->ast, & bl->src, BOXLOGLEVEL_ERROR,
+               "Cannot include \"%s\": too many files included!", fn);
     return BOXBOOL_FALSE;
   }
 

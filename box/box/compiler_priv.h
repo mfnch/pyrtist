@@ -45,6 +45,7 @@ struct BoxCmp_struct {
                own_vm :1; /**< Was the VM created by us, or given from
                                outside? */
   }          attr;      /**< Attributes of the compiler */
+  BoxAST     *ast;      /**< Abstract syntax tree. */
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */

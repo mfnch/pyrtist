@@ -134,8 +134,9 @@ static Value *My_Get_Void_Value(BoxCmp *c)
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
+  c->ast = NULL;
   c->attr.own_vm = (target_vm == NULL);
-  c->vm = (target_vm != NULL) ? target_vm : BoxVM_Create();
+  c->vm = (target_vm) ? target_vm : BoxVM_Create();
 
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
 
@@ -157,6 +158,7 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
 void BoxCmp_Finish(BoxCmp *c)
 {
+  BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   My_Finish_Const_Values(c);
@@ -212,18 +214,17 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                                    const char *setup_file_name,
                                    BoxPaths *paths)
 {
-  BoxAST *ast;
   BoxCmp *compiler;
   BoxVM *vm;
   BoxVMCallNum dummy_cn;
 
-  if (main == NULL)
+  if (!main)
     main = & dummy_cn;
 
   compiler = BoxCmp_Create(target_vm);
-  ast = Box_Parse_FILE(file, file_name, setup_file_name, paths);
-  BoxCmp_Compile(compiler, ast);
-  BoxAST_Destroy(ast);
+  compiler->ast = Box_Parse_FILE(file, file_name, setup_file_name, paths);
+  if (BoxAST_Is_Sane(compiler->ast))
+    BoxCmp_Compile(compiler, compiler->ast);
   *main = BoxVMCode_Install(& compiler->main_proc);
   vm = BoxCmp_Steal_VM(compiler);
   BoxCmp_Destroy(compiler);
@@ -491,8 +492,9 @@ static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
   } else {
     v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
     if (!v_parent) {
-      MSG_ERROR("Cannot get implicit method '%s'. Default parent is not "
-                "defined in current scope.", name);
+      BoxAST_Log(c->ast, & node->head.src, BOXLOGLEVEL_ERROR,
+                 "Cannot get implicit method '%s'. Default parent is not "
+                 "defined in current scope.", name);
     }
   }
 

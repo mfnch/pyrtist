@@ -116,14 +116,4 @@ BoxParser_Was_Provided(BoxParser *bp, const char *feature, int length);
 BOXEXPORT BoxAST *
 BoxParser_Get_AST(BoxParser *bp);
 
-/**
- * @brief Report an error (not related to a particular token).
- *
- * @param bp Parser object.
- * @param fmt Format string.
- * @param ... Arguments corresponding to the format string.
- */
-BOXEXPORT void
-BoxParser_Log_Err(BoxParser *bp, const char *fmt, ...);
-
 #endif /* _BOX_PARSER_H */

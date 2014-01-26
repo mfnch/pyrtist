@@ -35,23 +35,19 @@
 
 
 struct BoxParser_struct {
-  BoxLogger   *logger;           /**< Destination of logged messages. */
-  BoxPaths    *paths;            /**< Paths used to search for files */
-  yyscan_t    scanner;           /**< The Lex scanner */
-  BoxAST      *ast;              /**< The Abstract Syntax Tree */
-  BoxSrcName  *fnames;           /**< File names referred by BoxSrcPos
-                                      objects */
-
-  BoxSrcLinPos  lin_pos;         /**< Linear position in the source file. */
-  BoxSrcFullPos full_pos;        /**< Full position in the source file. */
-
-  BoxSrc      src;               /**< Position of the current token */
-  size_t      max_include_level, /**< Max number of includeable files */
-              comment_level;     /**< Multi-comment level of inclusion */
-  BoxArr      include_list;      /**< Stack of saved data for include files */
-  BoxHT       provided_features; /**< Hashtb. to remember provided features */
-  int         parsing_macro;     /**< Whether we are parsing a comment macro */
-  BoxArr      macro_content;     /**< Content of currently parsed macro */
+  BoxLogger     *logger;           /**< Destination of logged messages. */
+  BoxPaths      *paths;            /**< Paths used to search for files */
+  yyscan_t      scanner;           /**< The Lex scanner */
+  BoxAST        *ast;              /**< The Abstract Syntax Tree */
+  BoxSrcLinPos  lin_pos;           /**< Linear position in the source file. */
+  BoxSrcFullPos full_pos;          /**< Full position in the source file. */
+  BoxSrc        src;               /**< Position of the current token */
+  size_t        max_include_level, /**< Max number of includeable files */
+                comment_level;     /**< Multi-comment level of inclusion */
+  BoxArr        include_list;      /**< Stack of saved data for include files */
+  BoxHT         provided_features; /**< Hashtb. to remember provided features */
+  int           parsing_macro;     /**< Whether we are parsing a macro. */
+  BoxArr        macro_content;     /**< Content of currently parsed macro */
 };
 
 #endif /* _BOX_PARSER_PRIV_H */
