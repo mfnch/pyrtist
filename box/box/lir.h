@@ -93,4 +93,45 @@ struct BoxLIRNode_struct {
 /* Define all nodes types. */
 #  include <box/lirnodes.h>
 
+
+/**
+ * @brief Append a zero argument instruction to the current instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op(BoxLIR *lir, uint8_t op_id);
+
+/**
+ * @brief Append a one argument instruction to the current instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op1(BoxLIR *lir, uint8_t op_id, uint8_t cat0, uint32_t arg0);
+
+/**
+ * @brief Append a two arguments instruction to the current instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op2(BoxLIR *lir, uint8_t op_id,
+                  uint8_t cat0, uint32_t arg0, uint8_t cat1, uint32_t arg1);
+
+/**
+ * @brief Append a load-char-immediate instruction to the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Char(BoxLIR *lir, uint8_t op_id,
+                         uint8_t cat0, uint32_t reg0, char value);
+
+/**
+ * @brief Append a load-int-immediate instruction to the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Int(BoxLIR *lir, uint8_t op_id,
+                        uint8_t cat0, uint32_t reg0, BoxInt value);
+
+/**
+ * @brief Append a load-real-immediate instruction to the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Real(BoxLIR *lir, uint8_t op_id,
+                         uint8_t cat0, uint32_t reg0, BoxReal value);
+
 #endif /* _BOX_LIR_H */

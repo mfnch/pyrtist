@@ -36,6 +36,7 @@
 
 #include "compiler_priv.h"
 
+
 /* For now it is safer not to cache const values!
  * (will make easier to detect reference count problems)
  */
@@ -135,6 +136,7 @@ static Value *My_Get_Void_Value(BoxCmp *c)
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
   c->ast = NULL;
+  BoxLIR_Init(& c->lir);
   c->attr.own_vm = (target_vm == NULL);
   c->vm = (target_vm) ? target_vm : BoxVM_Create();
 
@@ -158,6 +160,7 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
 void BoxCmp_Finish(BoxCmp *c)
 {
+  BoxLIR_Finish(& c->lir);
   BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);

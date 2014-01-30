@@ -333,7 +333,8 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
   }
 }
 
-void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpId op, va_list ap) {
+void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpId op, va_list ap)
+{
   BoxVMProcID proc_id, previous_target;
   BoxVMCode_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = BoxVMCode_Get_ProcID(p);
@@ -342,11 +343,36 @@ void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpId op, va_list ap) {
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
-void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpId op, ...) {
+void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpId op, ...)
+{
   va_list ap;
   va_start(ap, op);
   BoxVMCode_Raw_VA_Assemble(p, op, ap);
   va_end(ap);
+}
+
+static void
+BoxVMCode_Raw_Assemble_0(BoxVMCode *p, BoxOpId op)
+{
+  BoxLIR_Append_Op(& p->cmp->lir, op);
+  BoxVMCode_Raw_Assemble(p, op);
+}
+
+static void
+BoxVMCode_Raw_Assemble_1(BoxVMCode *p, BoxOpId op,
+                         BoxContCateg cat0, BoxInt arg0)
+{
+  BoxLIR_Append_Op1(& p->cmp->lir, op, cat0, arg0);
+  BoxVMCode_Raw_Assemble(p, op, cat0, arg0);
+}
+
+static void
+BoxVMCode_Raw_Assemble_2(BoxVMCode *p, BoxOpId op,
+                         BoxContCateg cat0, BoxInt arg0,
+                         BoxContCateg cat1, BoxInt arg1)
+{
+  BoxLIR_Append_Op2(& p->cmp->lir, op, cat0, arg0, cat1, arg1);
+  BoxVMCode_Raw_Assemble(p, op, cat0, arg0, cat1, arg1);
 }
 
 void BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num) {
@@ -369,8 +395,8 @@ static void My_Prepare_Ptr_Access(BoxVMCode *p, const BoxCont *c) {
   BoxInt ptr_reg = c->value.ptr.reg;
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     BoxInt categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
-    BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPARGFORM_LREG, (BoxInt) 0,
-                           categ, ptr_reg);
+    BoxVMCode_Raw_Assemble_2(p, BOXOP_MOV_OO, BOXOPARGFORM_LREG, 0,
+                             categ, ptr_reg);
   }
 }
 
@@ -411,7 +437,7 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op,
                                int num_args, const BoxCont **cs) {
   assert(num_args >= 0 && num_args <= 2);
   if (num_args == 0) {
-     BoxVMCode_Raw_Assemble(p, op);
+     BoxVMCode_Raw_Assemble_0(p, op);
      return;
 
   } else if (num_args == 1) {
@@ -419,7 +445,7 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op,
     My_Prepare_Ptr_Access(p, c1);
     if (c1->categ != BOXCONTCATEG_IMM) {
       BoxInt c1_int_val = My_Int_Val_From_Cont(c1);
-      BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val);
+      BoxVMCode_Raw_Assemble_1(p, op, c1->categ, c1_int_val);
       return;
 
     } else {
@@ -433,9 +459,11 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op,
       case BOXCONTTYPE_REAL:
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_real);
         return;
+#if 0
       case BOXCONTTYPE_POINT:
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_point);
         return;
+#endif
       default:
         MSG_FATAL("My_Unsafe_Assemble: invalid type for immediate.");
         assert(0);
@@ -452,30 +480,38 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op,
       BoxInt c1_int_val = My_Int_Val_From_Cont(c1),
              c2_int_val = My_Int_Val_From_Cont(c2);
 
-      BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                           c2->categ, c2_int_val);
+      BoxVMCode_Raw_Assemble_2(p, op, c1->categ, c1_int_val,
+                               c2->categ, c2_int_val);
       return;
 
     } else {
-      BoxInt c1_int_val = (c1->categ == BOXCONTCATEG_PTR) ?
-                          c1->value.ptr.offset : c1->value.reg;
+      BoxInt c1_int_val = (c1->categ == BOXCONTCATEG_PTR ?
+                           c1->value.ptr.offset : c1->value.reg);
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
+        BoxLIR_Append_Op_Ld_Char(& p->cmp->lir, op, c1->categ, c1_int_val,
+                                 c2->value.imm.box_char);
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.box_char);
+                               c2->categ, c2->value.imm.box_char);
         return;
       case BOXCONTTYPE_INT:
+        BoxLIR_Append_Op_Ld_Int(& p->cmp->lir, op, c1->categ, c1_int_val,
+                                c2->value.imm.box_int);
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.box_int);
+                               c2->categ, c2->value.imm.box_int);
         return;
       case BOXCONTTYPE_REAL:
+        BoxLIR_Append_Op_Ld_Int(& p->cmp->lir, op, c1->categ, c1_int_val,
+                                c2->value.imm.box_real);
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.box_real);
+                               c2->categ, c2->value.imm.box_real);
         return;
+#if 0
       case BOXCONTTYPE_POINT:
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.box_point);
+                               c2->categ, c2->value.imm.box_point);
         return;
+#endif
       default:
         MSG_FATAL("My_Unsafe_Assemble: invalid type for immediate.");
         assert(0);
@@ -632,9 +668,9 @@ My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
           ri0->categ = BOXCONTCATEG_LREG;
           ri0->type = BOXCONTTYPE_INT;
           ri0->value.reg = 0;
-          BoxVMCode_Raw_Assemble(p, BOXOP_MOV_Iimm,
-                                 ri0->categ, ri0->value.reg,
-                                 BOXCONTCATEG_IMM, value);
+          BoxVMCode_Raw_Assemble_2(p, BOXOP_MOV_Iimm,
+                                   ri0->categ, ri0->value.reg,
+                                   BOXCONTCATEG_IMM, value);
 
           /* Update references to the container. */
           args[i] = ri0;
@@ -647,7 +683,8 @@ My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
   }
 }
 
-void BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap) {
+void BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
+{
   const BoxCont *args[BOXOP_MAX_NUM_ARGS];
   BoxOpInfo *oi;
   MyFoundOp op;

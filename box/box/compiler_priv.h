@@ -29,11 +29,13 @@
 #  include <box/array.h>
 #  include <box/vmcode.h>
 #  include <box/srcpos.h>
-#  include "registers.h"
-#  include "value.h"
-#  include "namespace.h"
-#  include "operator.h"
-#  include "builtins.h"
+#  include <box/registers.h>
+#  include <box/value.h>
+#  include <box/namespace.h>
+#  include <box/operator.h>
+#  include <box/builtins.h>
+
+#  include <box/lir_priv.h>
 
 
 /**
@@ -46,6 +48,7 @@ struct BoxCmp_struct {
                                outside? */
   }          attr;      /**< Attributes of the compiler */
   BoxAST     *ast;      /**< Abstract syntax tree. */
+  BoxLIR     lir;
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */

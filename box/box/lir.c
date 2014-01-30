@@ -121,21 +121,75 @@ BoxLIR_Append_Op(BoxLIR *lir, uint8_t op_id)
 }
 
 BoxLIRNodeOp *
-BoxLIR_Append_Op1(BoxLIR *lir, uint8_t op_id, uint32_t arg1)
+BoxLIR_Append_Op1(BoxLIR *lir, uint8_t op_id, uint8_t cat0, uint32_t arg0)
 {
   BoxLIRNodeOp *node = My_Append_Op(lir, BOXLIRNODETYPE_OP1, op_id);
-  if (node)
-    ((BoxLIRNodeOp1 *) node)->args[0] = arg1;
+  if (node) {
+    ((BoxLIRNodeOp1 *) node)->regs[0] = arg0;
+    ((BoxLIRNodeOp1 *) node)->op.cats[0] = cat0;
+  }
   return node;
 }
 
 BoxLIRNodeOp *
-BoxLIR_Append_Op2(BoxLIR *lir, uint8_t op_id, uint32_t arg1, uint32_t arg2)
+BoxLIR_Append_Op2(BoxLIR *lir, uint8_t op_id,
+                  uint8_t cat0, uint32_t arg0, uint8_t cat1, uint32_t arg1)
 {
   BoxLIRNodeOp *node = My_Append_Op(lir, BOXLIRNODETYPE_OP2, op_id);
   if (node) {
-    ((BoxLIRNodeOp2 *) node)->args[0] = arg1;
-    ((BoxLIRNodeOp2 *) node)->args[1] = arg2;
+    BoxLIRNodeOp2 *op2 = (BoxLIRNodeOp2 *) node;
+    op2->op.cats[0] = cat0;
+    op2->regs[0] = arg0;
+    op2->op.cats[1] = cat1;
+    op2->regs[1] = arg1;
+  }
+  return node;
+}
+
+/* Append a load-char-immediate instruction to the instruction chain. */
+BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Char(BoxLIR *lir, uint8_t op_id,
+                         uint8_t cat0, uint32_t reg0, char value)
+{
+  BoxLIRNodeOp *node =
+    (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_CHAR, op_id);
+  if (node) {
+    BoxLIRNodeOpLdChar *op = (BoxLIRNodeOpLdChar *) node;
+    op->cat = cat0;
+    op->value = value;
+    op->reg = reg0;
+  }
+  return node;
+}
+
+/* Append a load-int-immediate instruction to the instruction chain. */
+BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Int(BoxLIR *lir, uint8_t op_id,
+                        uint8_t cat0, uint32_t reg0, BoxInt value)
+{
+  BoxLIRNodeOp *node =
+    (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_INT, op_id);
+  if (node) {
+    BoxLIRNodeOpLdChar *op = (BoxLIRNodeOpLdChar *) node;
+    op->cat = cat0;
+    op->reg = reg0;
+    op->value = value;
+  }
+  return node;
+}
+
+/* Append a load-real-immediate instruction to the instruction chain. */
+BoxLIRNodeOp *
+BoxLIR_Append_Op_Ld_Real(BoxLIR *lir, uint8_t op_id,
+                         uint8_t cat0, uint32_t reg0, BoxReal value)
+{
+  BoxLIRNodeOp *node =
+    (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_REAL, op_id);
+  if (node) {
+    BoxLIRNodeOpLdReal *op = (BoxLIRNodeOpLdReal *) node;
+    op->cat = cat0;
+    op->reg = reg0;
+    op->value = value;
   }
   return node;
 }

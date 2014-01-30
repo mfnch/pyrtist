@@ -860,7 +860,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
 
   /* Now we search for the procedure associated with *child */
   BoxTypeCmp expand;
-  BoxType *found_combination = 
+  BoxType *found_combination =
     BoxType_Find_Combination(parent->type, BOXCOMBTYPE_AT,
                              child->type, & expand);
 
