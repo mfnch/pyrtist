@@ -155,9 +155,9 @@ BoxLIR_Append_Op_Ld_Char(BoxLIR *lir, uint8_t op_id,
     (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_CHAR, op_id);
   if (node) {
     BoxLIRNodeOpLdChar *op = (BoxLIRNodeOpLdChar *) node;
-    op->cat = cat0;
+    op->op.cats[0] = cat0;
+    op->regs[0] = reg0;
     op->value = value;
-    op->reg = reg0;
   }
   return node;
 }
@@ -170,9 +170,9 @@ BoxLIR_Append_Op_Ld_Int(BoxLIR *lir, uint8_t op_id,
   BoxLIRNodeOp *node =
     (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_INT, op_id);
   if (node) {
-    BoxLIRNodeOpLdChar *op = (BoxLIRNodeOpLdChar *) node;
-    op->cat = cat0;
-    op->reg = reg0;
+    BoxLIRNodeOpLdInt *op = (BoxLIRNodeOpLdInt *) node;
+    op->op.cats[0] = cat0;
+    op->regs[0] = reg0;
     op->value = value;
   }
   return node;
@@ -187,8 +187,8 @@ BoxLIR_Append_Op_Ld_Real(BoxLIR *lir, uint8_t op_id,
     (BoxLIRNodeOp *) My_Append_Op(lir, BOXLIRNODETYPE_OP_LD_REAL, op_id);
   if (node) {
     BoxLIRNodeOpLdReal *op = (BoxLIRNodeOpLdReal *) node;
-    op->cat = cat0;
-    op->reg = reg0;
+    op->op.cats[0] = cat0;
+    op->regs[0] = reg0;
     op->value = value;
   }
   return node;
