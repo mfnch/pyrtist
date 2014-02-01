@@ -40,6 +40,7 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
   bp->comment_level = 0;
   bp->paths = paths;
   bp->src.begin = bp->src.end = 0;
+  BoxSrcFullPos_Init(& bp->full_pos, 0);
 
   bp->max_include_level = TOK_MAX_INCLUDE;
   BoxArr_Init(& bp->include_list, sizeof(MyIncludeData),

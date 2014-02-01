@@ -39,7 +39,6 @@ struct BoxParser_struct {
   BoxPaths      *paths;            /**< Paths used to search for files */
   yyscan_t      scanner;           /**< The Lex scanner */
   BoxAST        *ast;              /**< The Abstract Syntax Tree */
-  BoxSrcLinPos  lin_pos;           /**< Linear position in the source file. */
   BoxSrcFullPos full_pos;          /**< Full position in the source file. */
   BoxSrc        src;               /**< Position of the current token */
   size_t        max_include_level, /**< Max number of includeable files */
