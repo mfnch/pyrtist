@@ -103,6 +103,7 @@ My_Append_Op(BoxLIR *lir, BoxLIRNodeType type, uint8_t op_id)
   BoxLIRNodeOp *node = (BoxLIRNodeOp *) BoxLIR_Create_Node(lir, type);
   if (node) {
     node->op_id = op_id;
+    node->next = NULL;
     if (lir->last_op)
       lir->last_op->next = node;
     else {
@@ -202,6 +203,7 @@ BoxLIR_Append_Proc(BoxLIR *lir)
   if (node) {
     node->next = NULL;
     node->first_op = NULL;
+    node->last_op = NULL;
     if (lir->last_proc)
       lir->last_proc->next = node;
     else
@@ -211,9 +213,13 @@ BoxLIR_Append_Proc(BoxLIR *lir)
   return node;
 }
 
-void
+BoxLIRNodeProc *
 BoxLIR_Set_Target_Proc(BoxLIR *lir, BoxLIRNodeProc *proc)
 {
+  BoxLIRNodeProc *previous = lir->target;
+  if (previous)
+    previous->last_op = lir->last_op;
   lir->target = proc;
-  lir->last_op = NULL;
+  lir->last_op = proc->last_op;
+  return previous;
 }

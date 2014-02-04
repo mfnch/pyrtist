@@ -196,7 +196,7 @@ static void My_Exec_Shr_II(BoxVMX *vmx, void *arg1, void *arg2) {
 }
 
 static void My_Exec_Inc_I(BoxVMX *vmx, void *arg1, void *arg2) {
-  ++*((BoxInt *) arg1); 
+  ++*((BoxInt *) arg1);
 }
 
 static void My_Exec_Inc_R(BoxVMX *vmx, void *arg1, void *arg2) {

@@ -95,6 +95,23 @@ struct BoxLIRNode_struct {
 
 
 /**
+ * @brief Create a new target procedure.
+ */
+BOXEXPORT BoxLIRNodeProc *
+BoxLIR_Append_Proc(BoxLIR *lir);
+
+/**
+ * @brief Change the target procedure.
+ *
+ * @param lir The LIR tree.
+ * @param proc The procedure to be set as the new target for instruction
+ *   append.
+ * @return The previous active procedure.
+ */
+BOXEXPORT BoxLIRNodeProc *
+BoxLIR_Set_Target_Proc(BoxLIR *lir, BoxLIRNodeProc *proc);
+
+/**
  * @brief Append a zero argument instruction to the current instruction chain.
  */
 BOXEXPORT BoxLIRNodeOp *

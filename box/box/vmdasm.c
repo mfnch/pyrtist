@@ -53,7 +53,7 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
     dasm.op_pos = op_pos;
     dasm.op_desc = ((dasm.op.id >= 0 || dasm.op.id < BOX_NUM_OPS) ?
                     & exec_table[dasm.op.id] : NULL);
- 
+
     outcome = iter(& dasm, pass);
     if (outcome != BOXTASK_OK)
       return outcome;
