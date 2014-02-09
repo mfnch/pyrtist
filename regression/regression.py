@@ -1,4 +1,5 @@
 import os
+from commands import getstatusoutput
 import glob
 
 (MSG_INFO,
@@ -97,6 +98,19 @@ class RegressionTestRunner(object):
       log_msg(MSG_WARNING, "Directory '%s' is empty after executing the test"
               % path)
 
+  def _check_file_pair(self, new_file, reference_file):
+    '''Check that two files are ``similar enough''.'''
+    ext = os.path.splitext(reference_file)[1]
+    if ext in  ('.png', '.jpg'):
+      exit_status, output = \
+        getstatusoutput('compare -fuzz 1\% -metric AE '
+                        + '"%s" "%s" /dev/null' % (new_file, reference_file))
+      return (exit_status == 0 and int(output) == 0)
+    else:
+      exit_status = os.system('diff "%s" "%s" >/dev/null 2>&1'
+                              % (new_file, reference_file))
+      return (exit_status == 0)
+
   def _check_files_do_match(self, reg_dir, out_dir):
     '''Check that files in the output directory 'out_dir' match with those
     stored in 'reg_dir'.'''
@@ -107,10 +121,9 @@ class RegressionTestRunner(object):
       rf = os.path.join(reg_dir, reg_file)
       of = os.path.join(out_dir, reg_file)
 
-      if reg_file in out_files: 
+      if reg_file in out_files:
         out_files.remove(reg_file)
-        exit_status = os.system('diff "%s" "%s" >/dev/null 2>&1' % (of, rf))
-        if exit_status != 0:
+        if not self._check_file_pair(of, rf) != 0:
           log_msg(MSG_ERROR, "File '%s' not matching regression '%s'"
                   % (of, rf))
           success = False
