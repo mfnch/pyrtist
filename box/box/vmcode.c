@@ -34,6 +34,8 @@
 #include "compiler_priv.h"
 #include "vmop_priv.h"
 
+#define USE_LIR 1
+
 
 BoxLIRNodeProc *
 My_Get_Proc(BoxVMCode *p)
@@ -312,7 +314,12 @@ BoxVMCallNum BoxVMCode_Get_Call_Num(BoxVMCode *p) {
   return p->call_num;
 }
 
-BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
+BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
+{
+  BoxVM *vm = p->cmp->vm;
+  BoxVMCallNum fake_call_num;
+  BoxVMProcID proc_id;
+
   if (p->style == BOXVMCODESTYLE_EXTERN) {
     MSG_FATAL("BoxVMCode_Install: Case BOXVMCODESTYLE_EXTERN "
               "not implemented!");
@@ -322,7 +329,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
   if (!p->have.installed) {
     BoxVMProcID pn = BoxVMCode_Get_ProcID(p);
     char *alter_name,
-         *proc_name  = (p->have.proc_name) ? p->proc_name : NULL;
+         *proc_name = (p->have.proc_name) ? p->proc_name : NULL;
     BoxVMCode_End(p); /* End the procedure, if not done explicitly */
 
     if (!p->have.call_num) {
@@ -330,27 +337,14 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
       p->have.call_num = 1;
     }
 
+    fake_call_num = BoxVM_Allocate_Call_Num(vm);
+    assert(fake_call_num != BOXVMCALLNUM_NONE);
+
     if (p->call_num == BOXVMCALLNUM_NONE)
       return BOXVMCALLNUM_NONE;
 
-    if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, pn)) {
-      (void) BoxVM_Deallocate_Call_Num(p->cmp->vm, p->call_num);
-      return BOXVMCALLNUM_NONE;
-    }
-
-    alter_name = BoxVMCode_Get_Alter_Name(p);
-    (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
-                                proc_name, alter_name);
-    Box_Mem_Free(alter_name);
-
-    p->have.installed = 1;
-
-
 #if 1
     if (p->proc) {
-      BoxVM *vm = p->cmp->vm;
-      BoxVMProcID proc_id;
-      BoxVMCallNum call_num;
       BoxLIRNodeOp *op;
       int32_t offset;
 
@@ -491,32 +485,26 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
       }
 
       proc_id = BoxVM_Proc_Target_Set(vm, proc_id);
-      call_num = BoxVM_Allocate_Call_Num(vm);
-      assert(call_num != BOXVMCALLNUM_NONE);
-      if (!BoxVM_Install_Proc_Code(vm, call_num, proc_id))
-        (void) BoxVM_Deallocate_Call_Num(vm, call_num);
-
-#if 0
-      alter_name = BoxVMCode_Get_Alter_Name(p);
-      (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
-                                  proc_name, alter_name);
+#if USE_LIR != 0
+      pn = proc_id;
 #endif
-
-
-
-
-
 
     } else {
       printf("Procedure not created\n");
     }
 #endif
 
+    if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, pn)) {
+      (void) BoxVM_Deallocate_Call_Num(p->cmp->vm, p->call_num);
+      return BOXVMCALLNUM_NONE;
+    }
 
+    alter_name = BoxVMCode_Get_Alter_Name(p);
+    (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
+                                proc_name, alter_name);
+    Box_Mem_Free(alter_name);
 
-
-
-
+    p->have.installed = 1;
     return p->call_num;
 
   } else {
