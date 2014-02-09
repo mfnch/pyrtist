@@ -607,6 +607,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   Value *parent = NULL, *outer_parent = NULL;
   BoxBool parent_is_err = 0, need_floor_down;
   BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
+  BoxLIRNodeOp *begin_label, *else_label = NULL, *end_label = NULL;
   MyBoxState state;
 
   assert(BoxASTNode_Get_Type(box_node) == BOXASTNODETYPE_BOX);
@@ -696,6 +697,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   jump_label_begin = BoxVMCode_Jump_Label_Here(c->cur_proc);
   jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
   jump_label_end = BOXVMSYMID_NONE;
+  begin_label = BoxLIR_Get_Last_Op(& c->lir);
 
   /* Save previous source position */
   //BoxSrc *prev_src_of_err = Msg_Set_Src(& box->head.src);
@@ -743,7 +745,11 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
           /* Handle the case where stmt_val is an If[] or For[] value */
           if (BoxType_Compare(stmt_val->type,
                               Box_Get_Core_Type(BOXTYPEID_IF))) {
-            Value_Emit_CJump(stmt_val, jump_label_next);
+            BoxLIRNodeOpBranch *branch;
+            if (!else_label)
+              else_label = BoxLIR_Append_Op_Label(& c->lir);
+            branch = Value_Emit_CJump(stmt_val, jump_label_next);
+            branch->target = else_label;
 
             if (state != MYBOXSTATE_GOT_IF) {
               assert(!need_floor_down);
@@ -762,6 +768,14 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
               BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
               jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
 
+              if (!end_label)
+                end_label = BoxLIR_Append_Op_Label(& c->lir);
+              BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JMP_I, end_label);
+
+              assert(else_label);
+              BoxLIR_Move_Label_Back(& c->lir, else_label);
+              else_label = NULL;
+
               assert(need_floor_down);
               Namespace_Floor_Down(& c->ns);
               need_floor_down = BOXBOOL_FALSE;
@@ -774,12 +788,12 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
             }
             Value_Unlink(stmt_val);
             state = MYBOXSTATE_GOT_ELSE;
-
           } else if (BoxType_Compare(stmt_val->type,
-                                     Box_Get_Core_Type(BOXTYPEID_FOR)))
-            Value_Emit_CJump(stmt_val, jump_label_begin);
-
-          else {
+                                     Box_Get_Core_Type(BOXTYPEID_FOR))) {
+            BoxLIRNodeOpBranch *branch;
+            branch = Value_Emit_CJump(stmt_val, jump_label_begin);
+            branch->target = BoxLIR_Get_Next_Op(& c->lir, begin_label);
+          } else {
             MSG_WARNING("Don't know how to use '%T' expressions inside "
                         "a '%T' box.", stmt_val->type, parent->type);
             Value_Unlink(stmt_val);
@@ -809,6 +823,15 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_end);
     BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_end);
   }
+
+  if (end_label)
+    BoxLIR_Move_Label_Back(& c->lir, end_label);
+
+  /* If without else: make if jump to the end of the [] block. */
+  if (else_label)
+    BoxLIR_Move_Label_Back(& c->lir, else_label);
+
+
 
   /* Invoke the closing procedure */
   if (box->parent) {

@@ -17,6 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <assert.h>
+
 #include <box/mem.h>
 
 #include <box/lir_priv.h>
@@ -98,11 +100,27 @@ BoxLIR_Create_Node(BoxLIR *lir, BoxLIRNodeType type)
 }
 
 BoxLIRNodeOp *
+BoxLIR_Get_Last_Op(BoxLIR *lir)
+{
+  return lir->last_op;
+}
+
+BoxLIRNodeOp *
+BoxLIR_Get_Next_Op(BoxLIR *lir, BoxLIRNodeOp *op)
+{
+  if (op)
+    return op->next;
+  assert(lir->target);
+  return lir->target->first_op;
+}
+
+BoxLIRNodeOp *
 My_Append_Op(BoxLIR *lir, BoxLIRNodeType type, uint8_t op_id)
 {
   BoxLIRNodeOp *node = (BoxLIRNodeOp *) BoxLIR_Create_Node(lir, type);
   if (node) {
     node->op_id = op_id;
+    node->offset = 0;
     node->next = NULL;
     if (lir->last_op)
       lir->last_op->next = node;
@@ -193,6 +211,68 @@ BoxLIR_Append_Op_Ld_Real(BoxLIR *lir, uint8_t op_id,
     op->value = value;
   }
   return node;
+}
+
+BoxLIRNodeOp *
+BoxLIR_Append_Op_Branch(BoxLIR *lir, uint8_t op_id, BoxLIRNodeOp *target)
+{
+  BoxLIRNodeOp *node = My_Append_Op(lir, BOXLIRNODETYPE_OP_BRANCH, op_id);
+  if (node) {
+    BoxLIRNodeOpBranch *branch = (BoxLIRNodeOpBranch *) node;
+    branch->target = target;
+  }
+  return node;
+}
+
+BoxLIRNodeOp *
+BoxLIR_Append_Op_Label(BoxLIR *lir)
+{
+  BoxLIRNodeOp *prev = BoxLIR_Get_Last_Op(lir),
+    *node = My_Append_Op(lir, BOXLIRNODETYPE_OP_LABEL, 0);
+  if (node) {
+    BoxLIRNodeOpLabel *label = (BoxLIRNodeOpLabel *) node;
+    label->prev = prev;
+  }
+  return node;
+}
+
+BoxLIRNodeOp *
+BoxLIR_Move_Label(BoxLIR *lir, BoxLIRNodeOp *label_op, BoxLIRNodeOp *dest)
+{
+  BoxLIRNodeOpLabel *label = (BoxLIRNodeOpLabel *) label_op;
+  assert(label_op->head.type == BOXLIRNODETYPE_OP_LABEL);
+
+  /* Unchain the label. */
+  if (label->prev)
+    label->prev->next = label_op->next;
+  if (label_op->next && label_op->next->head.type == BOXLIRNODETYPE_OP_LABEL)
+    ((BoxLIRNodeOpLabel *) label_op->next)->prev = label->prev;
+
+  /* Insert the label. */
+  label->prev = dest;
+  if (dest) {
+    label_op->next = dest->next;
+    dest->next = label_op;
+  } else {
+    /* dest is the beginning of the chain (dest == NULL). */
+    if (lir->target) {
+      label_op->next = lir->target->first_op;
+      lir->target->first_op = label_op;
+    }
+  }
+
+  if (label_op->next) {
+    if (label_op->next->head.type == BOXLIRNODETYPE_OP_LABEL)
+      ((BoxLIRNodeOpLabel *) label_op->next)->prev = label_op;
+  } else
+    lir->last_op = label_op;
+  return label_op;
+}
+
+BoxLIRNodeOp *
+BoxLIR_Move_Label_Back(BoxLIR *lir, BoxLIRNodeOp *label_op)
+{
+  return BoxLIR_Move_Label(lir, label_op, BoxLIR_Get_Last_Op(lir));
 }
 
 BoxLIRNodeProc *

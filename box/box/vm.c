@@ -440,12 +440,12 @@ BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
   vmx.flags.exit = vmx.flags.error = 0;
 
   do {
-    BoxOp op;
+    BoxVMOp op;
     BoxOpArg data1, data2;
     void *arg1, *arg2;
 
     /* Read the instruction. */
-    if (!BoxOp_Read(& op, exec_table, i_pos)) {
+    if (!BoxVMOp_Read(& op, exec_table, i_pos)) {
       MSG_ERROR("Unknown VM instruction!");
       return BOXTASK_FAILURE;
     }
@@ -564,7 +564,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
     BoxReal   val_real;
     BoxPoint  val_point;
   } data;
-  BoxOp op;
+  BoxVMOp op;
   unsigned int op_length;
   BoxVMWord *bytecode;
   BoxTypeId type_id;
@@ -583,7 +583,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
   op.id = op_id;
   op.desc = & vmp->exec_table[op_id];
   op.next = 0;
-  op.format = (vmp->attr.forcelong) ? BOXOPFMT_LONG : BOXOPFMT_UNDECIDED;
+  op.format = (vmp->attr.forcelong) ? BOXVMOPFMT_LONG : BOXVMOPFMT_UNDECIDED;
   op.length = 0;
   op.args_forms = 0;
   op.num_args = op.desc->num_args;
@@ -659,9 +659,9 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
   }
 
   /* Compute the size of the instruction and assemble it. */
-  op_length = BoxOp_Get_Length(& op);
+  op_length = BoxVMOp_Get_Length(& op);
   bytecode = (BoxVMWord *) BoxArr_MPush(& proc->code, NULL, op_length);
-  if (!BoxOp_Write(& op, bytecode))
+  if (!BoxVMOp_Write(& op, bytecode))
     MSG_FATAL("Error assembling the instruction");
 }
 

@@ -112,6 +112,19 @@ BOXEXPORT BoxLIRNodeProc *
 BoxLIR_Set_Target_Proc(BoxLIR *lir, BoxLIRNodeProc *proc);
 
 /**
+ * @brief Get the last instruction in the current instruction chain.
+ * @return The last instruction, or @c NULL if the chain is empty.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Get_Last_Op(BoxLIR *lir);
+
+/**
+ * @brief Get the instruction following the given one.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Get_Next_Op(BoxLIR *lir, BoxLIRNodeOp *op);
+
+/**
  * @brief Append a zero argument instruction to the current instruction chain.
  */
 BOXEXPORT BoxLIRNodeOp *
@@ -150,5 +163,29 @@ BoxLIR_Append_Op_Ld_Int(BoxLIR *lir, uint8_t op_id,
 BOXEXPORT BoxLIRNodeOp *
 BoxLIR_Append_Op_Ld_Real(BoxLIR *lir, uint8_t op_id,
                          uint8_t cat0, uint32_t reg0, BoxReal value);
+
+/**
+ * @brief Append a branch instruction to the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op_Branch(BoxLIR *lir, uint8_t op_id, BoxLIRNodeOp *target);
+
+/**
+ * @brief Append a branch target (label) to the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Append_Op_Label(BoxLIR *lir);
+
+/**
+ * @brief Move a label in another position in the chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Move_Label(BoxLIR *lir, BoxLIRNodeOp *label, BoxLIRNodeOp *dest);
+
+/**
+ * @brief Move a label to the end of the instruction chain.
+ */
+BOXEXPORT BoxLIRNodeOp *
+BoxLIR_Move_Label_Back(BoxLIR *lir, BoxLIRNodeOp *label_op);
 
 #endif /* _BOX_LIR_H */

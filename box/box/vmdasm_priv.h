@@ -46,7 +46,7 @@ struct BoxVMDasm_struct {
   BoxVM           *vm;             /**< VM which is being processed. */
   BoxVMWord       *op_ptr;         /**< Pointer to the current word. */
   size_t          op_pos;          /**< Position in the buffer. */
-  BoxOp           op;              /**< Current instruction. */
+  BoxVMOp         op;              /**< Current instruction. */
   const BoxOpDesc *op_desc;        /**< Descriptor for current instruction. */
 };
 

@@ -104,7 +104,7 @@ My_Data_To_Str(char *out, size_t out_size, BoxTypeId t, void *data) {
 
 static void
 My_Translate_Op_New(MyTranslatorData *data, BoxTypeId args_type,
-                    BoxOp *op) {
+                    BoxVMOp *op) {
   FILE *out = data->out;
   BoxInt i, num_vars = op->args[0], num_regs = op->args[1];
   const char *sep = "";
@@ -137,7 +137,7 @@ static BoxTask
 My_Translate_Op(BoxVMDasm *dasm, void *pass) {
   MyTranslatorData *data = (MyTranslatorData *) pass;
   FILE *out = data->out;
-  BoxOp *op = & dasm->op;
+  BoxVMOp *op = & dasm->op;
   const BoxOpDesc *op_desc = dasm->op_desc;
   char arg_buf[BOX_OP_MAX_NUM_ARGS + 1][MY_MAX_ARG_LENGTH];
   int num_args, num_written_bufs;

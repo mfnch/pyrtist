@@ -184,7 +184,7 @@ typedef enum {
 /**
  * @brief Datastructure representing one instruction to be read/written.
  */
-typedef struct BoxOp_struct BoxOp;
+typedef struct BoxVMOp_struct BoxVMOp;
 
 /**
  * Object describing a Box VM instruction characteristics.

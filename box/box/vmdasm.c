@@ -34,7 +34,8 @@
  * instruction.
  */
 BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
-                                BoxVMDasmIter iter, void *pass) {
+                                BoxVMDasmIter iter, void *pass)
+{
   BoxVMDasm dasm;
   const BoxOpDesc *exec_table = vm->exec_table;
   size_t op_pos;
@@ -47,7 +48,7 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
     BoxVMWord *op_addr = & ((BoxVMWord *) prog)[op_pos];
     BoxTask outcome;
 
-    if (!BoxOp_Read(& dasm.op, exec_table, op_addr))
+    if (!BoxVMOp_Read(& dasm.op, exec_table, op_addr))
       return BOXTASK_FAILURE;
 
     dasm.op_pos = op_pos;

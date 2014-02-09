@@ -36,7 +36,7 @@ typedef struct {
 } MyDasmData;
 
 
-static void 
+static void
 My_Arg_To_Str(char *out, size_t out_size,
               int arg_format, BoxTypeId args_type, BoxInt arg_value) {
   BoxInt arg_abs_value = abs(arg_value);
@@ -93,7 +93,7 @@ static BoxTask
 My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
   MyDasmData *data = pass;
   FILE *output = data->output;
-  BoxOp *op = & dasm->op;
+  BoxVMOp *op = & dasm->op;
   const char *op_name;
   const size_t arg_buf_size = 64;
   char arg_buf[BOX_OP_MAX_NUM_ARGS + 1][arg_buf_size];

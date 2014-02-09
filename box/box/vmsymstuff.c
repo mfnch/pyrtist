@@ -206,7 +206,7 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
   BoxTask success;
 
   assert(sym_type == BOXVMSYMTYPE_PROC && proc_def && defined);
-  
+
   if (BoxCallable_Is_Implemented(proc_def->callable))
     return BOXTASK_OK;
 
@@ -243,4 +243,3 @@ BoxVMSym_Reference_Proc(BoxVM *vm, BoxCallable *cb) {
   BoxVMSym_Ref(vm, sym_id, My_Resolve_Proc_Ref, NULL, 0, BOXVMSYM_AUTO);
   return BOXBOOL_TRUE;
 }
-

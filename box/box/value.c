@@ -488,10 +488,15 @@ void Value_Emit_Unlink(Value *v) {
 }
 
 /* REFERENCES: v: -1 */
-void Value_Emit_CJump(Value *v, BoxVMSymID jump_label) {
+BoxLIRNodeOpBranch *
+Value_Emit_CJump(Value *v, BoxVMSymID jump_label)
+{
   BoxCmp *c = v->proc->cmp;
+  BoxLIRNodeOp *ret;
   BoxVMCode_Assemble_CJump(c->cur_proc, jump_label, & v->value.cont);
+  ret = BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JC_I, NULL);
   Value_Unlink(v);
+  return (BoxLIRNodeOpBranch *) ret;
 }
 
 /* REFERENCES: return: new, v_ptr: -1; */

@@ -30,7 +30,8 @@
 
 /* Get the length of a VM instruction in words. */
 unsigned int
-BoxOp_Get_Length(BoxOp *op) {
+BoxVMOp_Get_Length(BoxVMOp *op)
+{
   BoxTypeId type_id = op->desc->t_id;
   int sz = (op->has_data) ? MY_SIZE_IN_WORDS(size_of_type[type_id]) : 0;
 
@@ -42,16 +43,16 @@ BoxOp_Get_Length(BoxOp *op) {
      */
     assert(!op->has_data);
 
-    if (op->format == BOXOPFMT_UNDECIDED) {
+    if (op->format == BOXVMOPFMT_UNDECIDED) {
       const BoxInt u8_sign = ~((BoxInt) 0x7f);
       BoxInt a0_sign = op->args[0] & u8_sign;
       BoxBool a0_is_u8 = (a0_sign == 0 || a0_sign == u8_sign);
       BoxInt a1_sign = op->args[1] & u8_sign;
       BoxBool a1_is_u8 = (a1_sign == 0 || a1_sign == u8_sign);
-      op->format = (a0_is_u8 && a1_is_u8) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
+      op->format = (a0_is_u8 && a1_is_u8) ? BOXVMOPFMT_SHORT : BOXVMOPFMT_LONG;
     }
 
-    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
+    op->length = (op->format == BOXVMOPFMT_SHORT) ? 1 + sz : 3 + sz;
     return op->length;
 
   } else if (op->num_args == 1) {
@@ -59,19 +60,19 @@ BoxOp_Get_Length(BoxOp *op) {
     assert(type_id == BOXTYPEID_INT || type_id == BOXTYPEID_CHAR
            || (op->args_forms & 0x3) != BOXOPARGFORM_IMM);
 
-    if (op->format == BOXOPFMT_UNDECIDED) {
+    if (op->format == BOXVMOPFMT_UNDECIDED) {
       const BoxInt u16_sign = ~((BoxInt) 0x7fff);
       BoxInt a0_sign = op->args[0] & u16_sign;
       BoxBool a0_is_u16 = (a0_sign == 0 || a0_sign == u16_sign);
-      op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
+      op->format = (a0_is_u16) ? BOXVMOPFMT_SHORT : BOXVMOPFMT_LONG;
     }
 
-    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 2 + sz;
+    op->length = (op->format == BOXVMOPFMT_SHORT) ? 1 + sz : 2 + sz;
     return op->length;
 
   } else {
     /* 0 arguments. */
-    op->format = BOXOPFMT_SHORT;
+    op->format = BOXVMOPFMT_SHORT;
     op->length = 1 + sz;
     return op->length;
   }
@@ -79,10 +80,11 @@ BoxOp_Get_Length(BoxOp *op) {
 
 /* VM instruction writer. */
 BoxBool
-BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
+BoxVMOp_Write(BoxVMOp *op, BoxVMWord *bytecode)
+{
   void *data;
 
-  if (op->format == BOXOPFMT_SHORT) {
+  if (op->format == BOXVMOPFMT_SHORT) {
     /* SHORT INSTRUCTION: we assemble the istruction header as follows:
      * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
      *  bit 0: true if the instruction is long

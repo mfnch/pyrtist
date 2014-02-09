@@ -36,6 +36,8 @@
 #  include <box/types.h>
 #  include <box/container.h>
 #  include <box/vmcode.h>
+#  include <box/lir.h>
+
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
@@ -220,7 +222,8 @@ void Value_Emit_Unlink(Value *v);
 /** Given an If, For type emits a conditional jump to the specified jump
  * label.
  */
-void Value_Emit_CJump(Value *v, BoxVMSymID jump_label);
+BoxLIRNodeOpBranch *
+Value_Emit_CJump(Value *v, BoxVMSymID jump_label);
 
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference

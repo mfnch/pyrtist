@@ -40,6 +40,8 @@
 #  include <box/compiler.h>
 #  include <box/srcpos.h>
 #  include <box/callable.h>
+#  include <box/lir.h>
+
 
 /**
  * @brief The BoxVMCode object.
@@ -106,6 +108,8 @@ struct BoxVMCode_struct {
   } perm;
   BoxVMCodeStyle  style;       /**< Procedure style */
   BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
+  BoxLIRNodeProc
+                *proc;
   BoxVMCodeBegin
                 beginning;   /**< If not NULL, this is called before emitting
                                   any other instruction */
@@ -118,12 +122,12 @@ struct BoxVMCode_struct {
                                   new instructions */
                 sym;         /**< Symbol associated with the procedure */
   BoxVMProcID   proc_id;     /**< Proc. number (needed to write ASM to it) */
+  BoxVMProcID   real_proc_id; /* Hack */
   char          *proc_name,  /**< Procedure name */
                 *alter_name; /**< Alternative name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
   BoxVMRegNum   reg_parent,  /**< Register number for the parent */
                 reg_child;   /**< Register number for the child */
-
 
   BoxCallable   *callable;
 };
@@ -230,43 +234,11 @@ BOXEXPORT BoxVMCallNum
 BoxVMCode_Get_Call_Num(BoxVMCode *p);
 
 /**
- * @brief Returns the size of the VM code associated with the given procedure.
- *
- * In case of errors returns a negative value:
- *  -1: if there has not been any attempt to write VM code on the procedure;
- *  -2: if this is a C procedure;
- */
-BOXEXPORT size_t
-BoxVMCode_Get_Code_Size(BoxVMCode *p);
-
-/**
  * @brief Install the procedure such that the code which calls it can be
  *   actually executed.
  */
 BOXEXPORT BoxVMCallNum
 BoxVMCode_Install(BoxVMCode *p);
-
-/**
- * @brief Assemble the instruction calling VM_Assemble() and put the code
- * inside the given #BoxVMCode procedure p.
- *
- * @note A higher level function for assembling code is provided by
- *   BoxVMCode_Assemble().
- * @see BoxVMCode_Raw_VA_Assemble
- * @see BoxVMCode_Assemble
- */
-BOXEXPORT void
-BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpId instr, ...);
-
-/**
- * @brief Non-variadic version of the function BoxVMCode_Raw_Assemble().
- *
- * Equivalent to the latter, but gets a va_list rather than a variable-length
- * argument list.
- * @see BoxVMCode_Raw_Assemble
- */
-BOXEXPORT void
-BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpId instr, va_list ap);
 
 /**
  * @brief Assemble a @c call instruction to call the procedure with the given
@@ -326,7 +298,7 @@ BoxVMCode_Assemble_CJump(BoxVMCode *p, BoxVMSymID jl, BoxCont *cont);
 
 /**
  * @brief State that the next code generated in the procedure will correspond
- *   to the given position in the source file. 
+ *   to the given position in the source file.
  *
  * Use a NULL pointer to specify that such information is not known.
  */

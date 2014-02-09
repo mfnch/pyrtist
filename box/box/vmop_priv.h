@@ -35,28 +35,27 @@
  * @brief Instruction format.
  */
 typedef enum {
-  BOXOPFMT_SHORT,    /**< Short form of instruction. */
-  BOXOPFMT_LONG,     /**< Long form of instruction. */
-  BOXOPFMT_UNDECIDED /**< Unknown form of instruction. */
-} BoxOpFmt;
+  BOXVMOPFMT_SHORT,    /**< Short form of instruction. */
+  BOXVMOPFMT_LONG,     /**< Long form of instruction. */
+  BOXVMOPFMT_UNDECIDED /**< Unknown form of instruction. */
+} BoxVMOpFmt;
 
 /**
- * @brief Implementation of #BoxOp.
+ * @brief Implementation of #BoxVMOp.
  */
-struct BoxOp_struct {
-  BoxOpId   id;         /**< Instruction identifier (an integer). */
+struct BoxVMOp_struct {
+  BoxOpId      id;         /**< Instruction identifier (an integer). */
   const BoxOpDesc
-            *desc;      /**< Instruction description (used internally). */
-  BoxInt    next;       /**< Advance offset. */
-  BoxOpFmt  format;     /**< Instruction format. */
-  unsigned int
-            length,     /**< Instruction length (in words). */
-            args_forms, /**< Type of arguments of instruction.  */
-            num_args;   /**< Number of arguments (excluding data). */
-  BoxInt    args[BOX_OP_MAX_NUM_ARGS];
-                        /**< Raw argument values. */
-  BoxBool   has_data;   /**< Whether the instruction has associated data. */
-  BoxVMWord *data;      /**< Pointer to the instruction data. */
+               *desc;      /**< Instruction description (used internally). */
+  BoxInt       next;       /**< Advance offset. */
+  BoxVMOpFmt   format;     /**< Instruction format. */
+  unsigned int length,     /**< Instruction length (in words). */
+               args_forms, /**< Type of arguments of instruction.  */
+               num_args;   /**< Number of arguments (excluding data). */
+  BoxInt       args[BOX_OP_MAX_NUM_ARGS];
+                           /**< Raw argument values. */
+  BoxBool      has_data;   /**< Whether the instruction has associated data. */
+  BoxVMWord    *data;      /**< Pointer to the instruction data. */
 };
 
 /**
@@ -69,7 +68,8 @@ struct BoxOp_struct {
  * Compilers should be able to easily translate this to efficient code.
  */
 static inline int8_t
-BoxInt8_From_UInt8(uint8_t x) {
+BoxInt8_From_UInt8(uint8_t x)
+{
   return (x & (uint8_t) 0x80) ? -((int8_t) -x) : (int8_t) x;
 }
 
@@ -79,7 +79,8 @@ BoxInt8_From_UInt8(uint8_t x) {
  * Similar to BoxInt8_From_UInt8(), but works on 16 bit integers.
  */
 static inline int16_t
-BoxInt16_From_UInt16(uint16_t x) {
+BoxInt16_From_UInt16(uint16_t x)
+{
   return (x & (uint16_t) 0x8000) ? -((int16_t) -x) : (int16_t) x;
 }
 
@@ -96,11 +97,12 @@ BoxInt32_From_UInt32(uint32_t x) {
 /**
  * @brief VM instruction reader.
  *
- * This function translates a serialized instruction into a #BoxOp
+ * This function translates a serialized instruction into a #BoxVMOp
  * structure containing all the information about the instruction.
  */
 static inline BoxBool
-BoxOp_Read(BoxOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode) {
+BoxVMOp_Read(BoxVMOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode)
+{
   BoxVMWord word1 = bytecode[0];
   if (word1 & 0x1) {
     /* Long format. */
@@ -155,16 +157,16 @@ BoxOp_Read(BoxOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode) {
  * @return Size of the instruction in words.
  */
 BOXEXPORT unsigned int
-BoxOp_Get_Length(BoxOp *op);
+BoxVMOp_Get_Length(BoxVMOp *op);
 
 
 /**
  * @brief VM instruction writer.
  *
- * This function translates a #BoxOp structure containing all the information
+ * This function translates a #BoxVMOp structure containing all the information
  * about one instruction into a serialized instruction in @p bytecode.
  */
 BOXEXPORT BoxBool
-BoxOp_Write(BoxOp *op, BoxVMWord *bytecode);
+BoxVMOp_Write(BoxVMOp *op, BoxVMWord *bytecode);
 
 #endif /* _BOX_VMOP_PRIV_H */
