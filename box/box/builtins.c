@@ -33,7 +33,6 @@
 #include "vm_priv.h"
 #include "vmproc.h"
 #include "vmsym.h"
-#include "vmsymstuff.h"
 #include "registers.h"
 #include "builtins.h"
 #include "bltinstr.h"

@@ -47,8 +47,6 @@ static void
 My_Proc_Begin(BoxVMCode *p)
 {
   /* Assemble the newc, newi, ... instructions */
-  BoxVMCode_Get_ProcID(p);
-
   if (p->style == BOXVMCODESTYLE_SUB) {
     /* If this is a subprocedure then we need to get parent and child
      * from global registers and put them into local registers, so they can
@@ -59,7 +57,7 @@ My_Proc_Begin(BoxVMCode *p)
       (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
       BoxLIR_Append_Op2(& p->cmp->lir, BOXOP_SHIFT_OO,
                        BOXOPARGFORM_LREG, p->reg_parent,
-                       BOXOPARGFORM_GREG, 1);
+                       BOXOPARGFORM_GREG, (BoxInt) 1);
     }
 
     if (p->have.child) {
@@ -89,7 +87,6 @@ My_Proc_End(BoxVMCode *p)
     }
  }
 
-  BoxVMCode_Get_ProcID(p);
   (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
   BoxLIR_Append_Op(& p->cmp->lir, BOXOP_RET);
 }
@@ -103,30 +100,22 @@ BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style)
   p->have.parent = 0;
   p->have.child = 0;
   p->have.reg_alloc = 0;
-  p->have.proc_id = 0;
   p->have.proc_name = 0;
   p->have.alter_name = 0;
   p->have.call_num = 0;
   p->have.wrote_beg = 0;
-  p->have.wrote_end = 0;
   p->have.installed = 0;
   p->have.head = 0;
-  p->perm.proc_id = 1;
   p->beginning = NULL;
-  p->ending = NULL;
 
   switch(style) {
-  case BOXVMCODESTYLE_PLAIN:
-    break;
   case BOXVMCODESTYLE_SUB:
   case BOXVMCODESTYLE_MAIN:
     p->beginning = My_Proc_Begin;
-    p->ending = My_Proc_End;
     (void) BoxVMCode_Get_RegAlloc(p); /* Force initialisation
                                        of register allocator */
     break;
   case BOXVMCODESTYLE_EXTERN:
-    p->perm.proc_id = 0; /* Deny permission to create proc_id */
     break;
   default:
     MSG_FATAL("BoxVMCode_Init: Invalid value for style (BoxVMCodeStyle).");
@@ -184,16 +173,6 @@ BoxVMCode_Begin(BoxVMCode *p)
   p->have.wrote_beg = 1;
   if (p->beginning)
     p->beginning(p);
-}
-
-void
-BoxVMCode_End(BoxVMCode *p)
-{
-  if (p->have.wrote_end)
-    return;
-  p->have.wrote_end = 1;
-  if (p->ending)
-    p->ending(p);
 }
 
 void
@@ -259,23 +238,6 @@ BoxVMCode_Get_RegAlloc(BoxVMCode *p)
   }
 }
 
-BoxVMProcID
-BoxVMCode_Get_ProcID(BoxVMCode *p)
-{
-  if (!p->perm.proc_id) {
-    MSG_FATAL("BoxVMCode_Get_ProcID: operation not permitted.");
-    assert(0);
-  }
-
-  if (p->have.proc_id)
-    return p->proc_id;
-
-  p->have.proc_id = 1;
-  p->real_proc_id = BoxVM_Proc_Code_New(p->cmp->vm);
-  p->proc_id = BoxVM_Proc_Code_New(p->cmp->vm);
-  return p->proc_id;
-}
-
 void
 BoxVMCode_Set_Alter_Name(BoxVMCode *p, const char *alter_name)
 {
@@ -311,7 +273,8 @@ BoxVMCode_Get_Alter_Name(BoxVMCode *p)
 BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
 {
   BoxVM *vm = p->cmp->vm;
-  BoxVMProcID proc_id;
+  BoxVMProcID proc_id, prev_proc_id;
+  char *alter_name, *proc_name;
 
   if (p->style == BOXVMCODESTYLE_EXTERN) {
     MSG_FATAL("BoxVMCode_Install: Case BOXVMCODESTYLE_EXTERN "
@@ -319,188 +282,183 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     return BOXVMCALLNUM_NONE;
   }
 
-  if (!p->have.installed) {
-    BoxVMProcID pn = BoxVMCode_Get_ProcID(p);
-    char *alter_name,
-         *proc_name = (p->have.proc_name) ? p->proc_name : NULL;
-    BoxVMCode_End(p); /* End the procedure, if not done explicitly */
+  proc_id = BoxVM_Proc_Code_New(p->cmp->vm);
+  proc_name = (p->have.proc_name) ? p->proc_name : NULL;
 
-    if (!p->have.call_num) {
-      p->call_num = BoxVM_Allocate_Call_Num(p->cmp->vm);
-      p->have.call_num = 1;
-    }
+  /* End the procedure. */
+  My_Proc_End(p);
 
-    if (p->call_num == BOXVMCALLNUM_NONE)
-      return BOXVMCALLNUM_NONE;
+  if (!p->have.call_num) {
+    p->call_num = BoxVM_Allocate_Call_Num(p->cmp->vm);
+    p->have.call_num = 1;
+  }
 
-    if (p->proc) {
-      BoxLIRNodeOp *op;
-      int32_t offset;
-      RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
-      BoxInt num_regs[NUM_TYPES], num_vars[NUM_TYPES];
-      BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
+  if (p->call_num == BOXVMCALLNUM_NONE)
+    return BOXVMCALLNUM_NONE;
+
+  if (p->proc) {
+    BoxLIRNodeOp *op;
+    int32_t offset;
+    RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
+    BoxInt num_regs[NUM_TYPES], num_vars[NUM_TYPES];
+    BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
                                     BOXOP_NEWR_II, BOXOP_NEWP_II,
                                     BOXOP_NEWO_II};
-      int i;
+    int i;
 
-      /* New procedure. */
-      proc_id = BoxVM_Proc_Target_Set(vm, p->real_proc_id);
+    /* New procedure. */
+    prev_proc_id = BoxVM_Proc_Target_Set(vm, proc_id);
 
-      /* Write register allocation instructions. */
-      Reg_Get_Local_Nums(ra, num_regs, num_vars);
-      for (i = 0; i < NUM_TYPES; i++) {
-        BoxOpId op = asm_code[i];
-        BoxInt nv = num_vars[i], nr = num_regs[i];
-        if (nv || nr)
-          BoxVM_Assemble(vm, op, BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
-      }
-
-      /* First determine the instruction offsets. */
-      for (op = p->proc->first_op, offset = 0; op; op = op->next) {
-        BoxVMOp vm_op;
-        vm_op.id = op->op_id;
-        vm_op.desc = & vm->exec_table[op->op_id];
-        vm_op.next = 0;
-        vm_op.format = BOXVMOPFMT_UNDECIDED;
-        vm_op.length = 0;
-        vm_op.args_forms = 0;
-        vm_op.data = NULL;
-
-        op->offset = offset;
-
-        switch (op->head.type) {
-        case BOXLIRNODETYPE_OP:
-          vm_op.num_args = 0;
-          vm_op.has_data = BOXBOOL_FALSE;
-          break;
-        case BOXLIRNODETYPE_OP1:
-          vm_op.num_args = 1;
-          vm_op.args_forms = op->cats[0];
-          vm_op.args[0] = (BoxInt) ((BoxLIRNodeOp1 *) op)->regs[0];
-          vm_op.has_data = BOXBOOL_FALSE;
-          break;
-        case BOXLIRNODETYPE_OP2:
-          vm_op.num_args = 2;
-          vm_op.args_forms = op->cats[0] | (op->cats[1] << 2);
-          vm_op.args[0] = (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[0];
-          vm_op.args[1] = (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[1];
-          vm_op.has_data = BOXBOOL_FALSE;
-          break;
-        case BOXLIRNODETYPE_OP_LD_CHAR:
-          /* No real reason to use this. */
-          abort();
-          break;
-        case BOXLIRNODETYPE_OP_LD_INT:
-          vm_op.num_args = 1;
-          vm_op.args_forms = op->cats[0];
-          vm_op.args[0] = (BoxInt) ((BoxLIRNodeOpLdInt *) op)->regs[0];
-          vm_op.has_data = BOXBOOL_TRUE;
-          vm_op.data = (BoxVMWord *) & ((BoxLIRNodeOpLdInt *) op)->value;
-          break;
-        case BOXLIRNODETYPE_OP_LD_REAL:
-          vm_op.num_args = 1;
-          vm_op.args_forms = op->cats[0];
-          vm_op.args[0] = (BoxInt) ((BoxLIRNodeOpLdChar *) op)->regs[0];
-          vm_op.has_data = BOXBOOL_TRUE;
-          vm_op.data = (BoxVMWord *) & ((BoxLIRNodeOpLdReal *) op)->value;
-          break;
-        case BOXLIRNODETYPE_OP_BRANCH:
-          assert(((BoxLIRNodeOpBranch *) op)->target);
-          vm_op.format = BOXVMOPFMT_LONG;
-          vm_op.num_args = 1;
-          vm_op.args_forms = BOXCONTCATEG_IMM;
-          vm_op.has_data = BOXBOOL_FALSE;
-          break;
-        case BOXLIRNODETYPE_OP_LABEL:
-          continue;
-        default: printf("?\n"); break;
-        }
-
-        offset += BoxVMOp_Get_Length(& vm_op);
-      }
-
-      for (op = p->proc->first_op; op; op = op->next) {
-        switch (op->head.type) {
-        case BOXLIRNODETYPE_OP:
-          BoxVM_Assemble(vm, op->op_id);
-          break;
-        case BOXLIRNODETYPE_OP1:
-          BoxVM_Assemble(vm, op->op_id,
-                         (BoxContCateg) op->cats[0],
-                         (BoxInt) ((BoxLIRNodeOp1 *) op)->regs[0]);
-          break;
-        case BOXLIRNODETYPE_OP2:
-          BoxVM_Assemble(vm, (BoxOpId) op->op_id,
-                         (BoxContCateg) op->cats[0],
-                         (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[0],
-                         (BoxContCateg) op->cats[1],
-                         (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[1]);
-          break;
-        case BOXLIRNODETYPE_OP_LD_CHAR:
-          BoxVM_Assemble(vm, (BoxOpId) op->op_id,
-                         (BoxContCateg) op->cats[0],
-                         (BoxInt) ((BoxLIRNodeOpLdChar *) op)->regs[0],
-                         BOXCONTCATEG_IMM,
-                         ((BoxLIRNodeOpLdChar *) op)->value);
-          break;
-        case BOXLIRNODETYPE_OP_LD_INT:
-          BoxVM_Assemble(vm, (BoxOpId) op->op_id,
-                         (BoxContCateg) op->cats[0],
-                         (BoxInt) ((BoxLIRNodeOpLdInt *) op)->regs[0],
-                         BOXCONTCATEG_IMM,
-                         ((BoxLIRNodeOpLdInt *) op)->value);
-          break;
-        case BOXLIRNODETYPE_OP_LD_REAL:
-          BoxVM_Assemble(vm, (BoxOpId) op->op_id,
-                         (BoxContCateg) op->cats[0],
-                         (BoxInt) ((BoxLIRNodeOpLdReal *) op)->regs[0],
-                         BOXCONTCATEG_IMM,
-                         ((BoxLIRNodeOpLdReal *) op)->value);
-          break;
-        case BOXLIRNODETYPE_OP_BRANCH:
-          {
-            BoxLIRNodeOp *target = ((BoxLIRNodeOpBranch *) op)->target;
-            BoxVM_Assemble_Long(vm, (BoxOpId) op->op_id,
-                                BOXCONTCATEG_IMM,
-                                (BoxInt) (target->offset - op->offset));
-            break;
-          }
-        case BOXLIRNODETYPE_OP_LABEL:
-          break;
-        default: printf("?\n"); break;
-        }
-      }
-
-      proc_id = BoxVM_Proc_Target_Set(vm, proc_id);
-      pn = proc_id;
-    } else {
-      printf("Procedure not created\n");
+    /* Write register allocation instructions. */
+    Reg_Get_Local_Nums(ra, num_regs, num_vars);
+    for (i = 0; i < NUM_TYPES; i++) {
+      BoxOpId op = asm_code[i];
+      BoxInt nv = num_vars[i], nr = num_regs[i];
+      if (nv || nr)
+        BoxVM_Assemble(vm, op, BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
     }
 
-    if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, pn)) {
-      (void) BoxVM_Deallocate_Call_Num(p->cmp->vm, p->call_num);
-      return BOXVMCALLNUM_NONE;
+    /* First determine the instruction offsets. */
+    for (op = p->proc->first_op, offset = 0; op; op = op->next) {
+      BoxVMOp vm_op;
+      vm_op.id = op->op_id;
+      vm_op.desc = & vm->exec_table[op->op_id];
+      vm_op.next = 0;
+      vm_op.format = BOXVMOPFMT_UNDECIDED;
+      vm_op.length = 0;
+      vm_op.args_forms = 0;
+      vm_op.data = NULL;
+
+      op->offset = offset;
+
+      switch (op->head.type) {
+      case BOXLIRNODETYPE_OP:
+        vm_op.num_args = 0;
+        vm_op.has_data = BOXBOOL_FALSE;
+        break;
+      case BOXLIRNODETYPE_OP1:
+        vm_op.num_args = 1;
+        vm_op.args_forms = op->cats[0];
+        vm_op.args[0] = (BoxInt) ((BoxLIRNodeOp1 *) op)->regs[0];
+        vm_op.has_data = BOXBOOL_FALSE;
+        break;
+      case BOXLIRNODETYPE_OP2:
+        vm_op.num_args = 2;
+        vm_op.args_forms = op->cats[0] | (op->cats[1] << 2);
+        vm_op.args[0] = (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[0];
+        vm_op.args[1] = (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[1];
+        vm_op.has_data = BOXBOOL_FALSE;
+        break;
+      case BOXLIRNODETYPE_OP_LD_CHAR:
+        /* No real reason to use this. */
+        abort();
+        break;
+      case BOXLIRNODETYPE_OP_LD_INT:
+        vm_op.num_args = 1;
+        vm_op.args_forms = op->cats[0];
+        vm_op.args[0] = (BoxInt) ((BoxLIRNodeOpLdInt *) op)->regs[0];
+        vm_op.has_data = BOXBOOL_TRUE;
+        vm_op.data = (BoxVMWord *) & ((BoxLIRNodeOpLdInt *) op)->value;
+        break;
+      case BOXLIRNODETYPE_OP_LD_REAL:
+        vm_op.num_args = 1;
+        vm_op.args_forms = op->cats[0];
+        vm_op.args[0] = (BoxInt) ((BoxLIRNodeOpLdChar *) op)->regs[0];
+        vm_op.has_data = BOXBOOL_TRUE;
+        vm_op.data = (BoxVMWord *) & ((BoxLIRNodeOpLdReal *) op)->value;
+        break;
+      case BOXLIRNODETYPE_OP_BRANCH:
+        assert(((BoxLIRNodeOpBranch *) op)->target);
+        vm_op.format = BOXVMOPFMT_LONG;
+        vm_op.num_args = 1;
+        vm_op.args_forms = BOXCONTCATEG_IMM;
+        vm_op.has_data = BOXBOOL_FALSE;
+        break;
+      case BOXLIRNODETYPE_OP_LABEL:
+        continue;
+      default: printf("?\n"); break;
+      }
+
+      offset += BoxVMOp_Get_Length(& vm_op);
     }
 
-    alter_name = BoxVMCode_Get_Alter_Name(p);
-    (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
-                                proc_name, alter_name);
-    Box_Mem_Free(alter_name);
+    for (op = p->proc->first_op; op; op = op->next) {
+      switch (op->head.type) {
+      case BOXLIRNODETYPE_OP:
+        BoxVM_Assemble(vm, op->op_id);
+        break;
+      case BOXLIRNODETYPE_OP1:
+        BoxVM_Assemble(vm, op->op_id,
+                       (BoxContCateg) op->cats[0],
+                       (BoxInt) ((BoxLIRNodeOp1 *) op)->regs[0]);
+        break;
+      case BOXLIRNODETYPE_OP2:
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id,
+                       (BoxContCateg) op->cats[0],
+                       (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[0],
+                       (BoxContCateg) op->cats[1],
+                       (BoxInt) ((BoxLIRNodeOp2 *) op)->regs[1]);
+        break;
+      case BOXLIRNODETYPE_OP_LD_CHAR:
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id,
+                       (BoxContCateg) op->cats[0],
+                       (BoxInt) ((BoxLIRNodeOpLdChar *) op)->regs[0],
+                       BOXCONTCATEG_IMM,
+                       ((BoxLIRNodeOpLdChar *) op)->value);
+        break;
+      case BOXLIRNODETYPE_OP_LD_INT:
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id,
+                       (BoxContCateg) op->cats[0],
+                       (BoxInt) ((BoxLIRNodeOpLdInt *) op)->regs[0],
+                       BOXCONTCATEG_IMM,
+                       ((BoxLIRNodeOpLdInt *) op)->value);
+        break;
+      case BOXLIRNODETYPE_OP_LD_REAL:
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id,
+                       (BoxContCateg) op->cats[0],
+                       (BoxInt) ((BoxLIRNodeOpLdReal *) op)->regs[0],
+                       BOXCONTCATEG_IMM,
+                       ((BoxLIRNodeOpLdReal *) op)->value);
+        break;
+      case BOXLIRNODETYPE_OP_BRANCH:
+        {
+          BoxLIRNodeOp *target = ((BoxLIRNodeOpBranch *) op)->target;
+          BoxVM_Assemble_Long(vm, (BoxOpId) op->op_id,
+                              BOXCONTCATEG_IMM,
+                              (BoxInt) (target->offset - op->offset));
+          break;
+        }
+      case BOXLIRNODETYPE_OP_LABEL:
+        break;
+      default:
+        abort();
+        break;
+      }
+    }
 
-    p->have.installed = 1;
-    return p->call_num;
-
+    BoxVM_Proc_Target_Set(vm, prev_proc_id);
   } else {
-    assert(p->have.call_num);
-    return p->call_num;
+    MSG_FATAL("Procedure not created");
+    abort();
   }
+
+  if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, proc_id)) {
+    (void) BoxVM_Deallocate_Call_Num(p->cmp->vm, p->call_num);
+    return BOXVMCALLNUM_NONE;
+  }
+
+  alter_name = BoxVMCode_Get_Alter_Name(p);
+  (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num, proc_name, alter_name);
+  Box_Mem_Free(alter_name);
+
+  p->have.installed = 1;
+  return p->call_num;
 }
 
 void
 BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num)
 {
   BoxVMCode_Begin(code); /* Begin the procedure, if not done explicitly */
-  BoxVMCode_Get_ProcID(code);
   (void) BoxLIR_Set_Target_Proc(& code->cmp->lir, My_Get_Proc(code));
   BoxLIR_Append_Op1(& code->cmp->lir,
                     BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
@@ -514,13 +472,12 @@ BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num)
  *   mov i[ro0+8], 45
  */
 static void
-My_Prepare_Ptr_Access(BoxVMCode *p, const BoxCont *c)
+My_Prepare_Ptr_Access(BoxLIR *lir, const BoxCont *c)
 {
   BoxInt ptr_reg = c->value.ptr.reg;
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     BoxInt categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
-    BoxLIR_Append_Op2(& p->cmp->lir, BOXOP_MOV_OO, BOXOPARGFORM_LREG, 0,
-                      categ, ptr_reg);
+    BoxLIR_Append_Op2(lir, BOXOP_MOV_OO, BOXOPARGFORM_LREG, 0, categ, ptr_reg);
   }
 }
 
@@ -559,29 +516,27 @@ My_Int_Val_From_Cont(const BoxCont *c)
  * Moreover this function does not deal with implicit input/output registers.
  */
 static void
-My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op, int num_args, const BoxCont **cs)
+My_Unsafe_Assemble(BoxLIR *lir, BoxOpId op, int num_args, const BoxCont **cs)
 {
   assert(num_args >= 0 && num_args <= 2);
   if (num_args == 0) {
-    BoxLIR_Append_Op(& p->cmp->lir, op);
+    BoxLIR_Append_Op(lir, op);
     return;
   } else if (num_args == 1) {
     const BoxCont *c1 = cs[0];
-    My_Prepare_Ptr_Access(p, c1);
+    My_Prepare_Ptr_Access(lir, c1);
     if (c1->categ != BOXCONTCATEG_IMM) {
       BoxInt c1_int_val = My_Int_Val_From_Cont(c1);
-      BoxLIR_Append_Op1(& p->cmp->lir, op, c1->categ, c1_int_val);
+      BoxLIR_Append_Op1(lir, op, c1->categ, c1_int_val);
       return;
 
     } else {
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
-        BoxLIR_Append_Op1(& p->cmp->lir, op,
-                          c1->categ, c1->value.imm.box_char);
+        BoxLIR_Append_Op1(lir, op, c1->categ, c1->value.imm.box_char);
         return;
       case BOXCONTTYPE_INT:
-        BoxLIR_Append_Op1(& p->cmp->lir, op,
-                          c1->categ, c1->value.imm.box_int);
+        BoxLIR_Append_Op1(lir, op, c1->categ, c1->value.imm.box_int);
         return;
       default:
         MSG_FATAL("My_Unsafe_Assemble: invalid type for immediate.");
@@ -592,14 +547,13 @@ My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op, int num_args, const BoxCont **cs)
   } else {
     const BoxCont *c1 = cs[0], *c2 = cs[1];
 
-    My_Prepare_Ptr_Access(p, c1);
-    My_Prepare_Ptr_Access(p, c2);
+    My_Prepare_Ptr_Access(lir, c1);
+    My_Prepare_Ptr_Access(lir, c2);
 
     if (c2->categ != BOXCONTCATEG_IMM) {
       BoxInt c1_int_val = My_Int_Val_From_Cont(c1),
              c2_int_val = My_Int_Val_From_Cont(c2);
-      BoxLIR_Append_Op2(& p->cmp->lir, op, c1->categ, c1_int_val,
-                        c2->categ, c2_int_val);
+      BoxLIR_Append_Op2(lir, op, c1->categ, c1_int_val, c2->categ, c2_int_val);
       return;
 
     } else {
@@ -607,15 +561,15 @@ My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op, int num_args, const BoxCont **cs)
                            c1->value.ptr.offset : c1->value.reg);
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
-        BoxLIR_Append_Op2(& p->cmp->lir, op, c1->categ, c1_int_val,
+        BoxLIR_Append_Op2(lir, op, c1->categ, c1_int_val,
                           c2->categ, c2->value.imm.box_char);
         return;
       case BOXCONTTYPE_INT:
-        BoxLIR_Append_Op2(& p->cmp->lir, op, c1->categ, c1_int_val,
+        BoxLIR_Append_Op2(lir, op, c1->categ, c1_int_val,
                           c2->categ, c2->value.imm.box_int);
         return;
       case BOXCONTTYPE_REAL:
-        BoxLIR_Append_Op_Ld_Real(& p->cmp->lir, op, c1->categ, c1_int_val,
+        BoxLIR_Append_Op_Ld_Real(lir, op, c1->categ, c1_int_val,
                                  c2->value.imm.box_real);
         return;
       default:
@@ -763,8 +717,9 @@ My_Find_Op(BoxVMCode *p, MyFoundOp *info, BoxGOp g_op,
 }
 
 static void
-My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
-                   const BoxCont **args, MyFoundOp *op) {
+My_Load_Immediates(BoxLIR *lir, int num_regs, BoxOpReg *regs,
+                   const BoxCont **args, MyFoundOp *op)
+{
   int i, j;
   for(i = 0; i < num_regs; i++) {
     const BoxCont *src = args[i];
@@ -778,7 +733,7 @@ My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
           ri0->categ = BOXCONTCATEG_LREG;
           ri0->type = BOXCONTTYPE_INT;
           ri0->value.reg = 0;
-          BoxLIR_Append_Op_Ld_Int(& p->cmp->lir, BOXOP_MOV_Iimm,
+          BoxLIR_Append_Op_Ld_Int(lir, BOXOP_MOV_Iimm,
                                   ri0->categ, ri0->value.reg, value);
 
           /* Update references to the container. */
@@ -795,6 +750,7 @@ My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
 void
 BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
 {
+  BoxLIR *lir = & p->cmp->lir;
   const BoxCont *args[BOXOP_MAX_NUM_ARGS];
   BoxOpInfo *oi;
   MyFoundOp op;
@@ -805,7 +761,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
     assert(0);
   }
 
-  (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
+  (void) BoxLIR_Set_Target_Proc(lir, My_Get_Proc(p));
 
   for(i = 0; i < num_args; i++)
     args[i] = va_arg(ap, BoxCont *);
@@ -872,7 +828,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
   /* Use separate load for immediates, if they are out of the admissible
    * range.
    */
-  My_Load_Immediates(p, num_args, oi->regs, args, & op);
+  My_Load_Immediates(lir, num_args, oi->regs, args, & op);
 
   /* Setting all the implicit input registers from the given arguments */
   My_Gather_Implicit_Input_Regs(p, num_args, oi->regs, args);
@@ -890,7 +846,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
        *   mov ro0, ro5
        *   add ri5, i[ro0+32]
        */
-      My_Unsafe_Assemble(p, oi->opcode, op.num_exp_args, op.exp_args);
+      My_Unsafe_Assemble(lir, oi->opcode, op.num_exp_args, op.exp_args);
 
     } else {
       /* The argument of the operation are both pointers: we then have to
@@ -916,7 +872,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
          */
         BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
         op.exp_args[1] = & r0;
-        My_Unsafe_Assemble(p, oi->opcode, 2, op.exp_args);
+        My_Unsafe_Assemble(lir, oi->opcode, 2, op.exp_args);
 
       } else {
         /* we can do something like:
@@ -933,17 +889,17 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
         ro1.categ = BOXCONTCATEG_LREG;
         ro1.value.reg = 1;
         cs[0] = & ro1;
-        My_Unsafe_Assemble(p, BOXOP_PUSH_O, 1, cs);
+        My_Unsafe_Assemble(lir, BOXOP_PUSH_O, 1, cs);
         BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & ro1, op.exp_args[1]);
         op.exp_args[1] = & ro1;
-        My_Unsafe_Assemble(p, oi->opcode, 2, op.exp_args);
-        My_Unsafe_Assemble(p, BOXOP_POP_O, 1, cs);
+        My_Unsafe_Assemble(lir, oi->opcode, 2, op.exp_args);
+        My_Unsafe_Assemble(lir, BOXOP_POP_O, 1, cs);
       }
     }
 
   } else {
     if (op.ro0_arg_conflict == 0)
-      My_Unsafe_Assemble(p, oi->opcode, op.num_exp_args, op.exp_args);
+      My_Unsafe_Assemble(lir, oi->opcode, op.num_exp_args, op.exp_args);
 
     else if (op.ro0_arg_conflict == 1) {
       /* ro0 is an implicit input register */
@@ -969,19 +925,4 @@ BoxVMCode_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, ...)
   va_start(ap, num_args);
   BoxVMCode_VA_Assemble(p, g_op, num_args, ap);
   va_end(ap);
-}
-
-void
-BoxVMCode_Assemble_CJump(BoxVMCode *p, BoxCont *cont)
-{
-  BoxCont ri0_cont;
-  BoxVMCode_Begin(p);
-  BoxCont_Set(& ri0_cont, "ri", 0);
-  BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & ri0_cont, cont);
-}
-
-void
-BoxVMCode_Associate_Source(BoxVMCode *p, BoxSrcPos *src_pos)
-{
-  BoxVM_Proc_Associate_Source(p->cmp->vm, BoxVMCode_Get_ProcID(p), src_pos);
 }

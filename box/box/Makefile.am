@@ -49,8 +49,8 @@ lib_LTLIBRARIES = libboxcore0.4.la
 boxinc_HEADERS = version.h defaults.h core.h logger.h types.h integers.h obj.h \
   exception.h callable.h error.h mem.h stream.h array.h occupation.h srcpos.h  \
   srcmap.h index.h msgbase.h messages.h strutils.h print.h hashfunc.h          \
-  hashtable.h list.h vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h \
-  vm2c.h vmserial.h vmstore.h bltinarray.h lir.h
+  hashtable.h list.h vm_priv.h vmproc.h vmsym.h vmdasm.h vm2txt.h vm2c.h       \
+  vmserial.h vmstore.h bltinarray.h lir.h
 
 libboxcore0_4_la_SOURCES = types.c core.c logger.c types.h types_priv.h        \
   combs.c combs.h obj.c obj.h exception.c exception.h callable.c callable.h    \
@@ -61,14 +61,13 @@ libboxcore0_4_la_SOURCES = types.c core.c logger.c types.h types_priv.h        \
   hashfunc.h hashtable.c hashtable.h list.c list.h container.c container.h     \
   vm.c vm.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c vmserial.c    \
   vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h      \
-  vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c           \
-  vmopregs_priv.h vmop.c vmop_priv.h str.c str.h bltinarray.c                  \
-  bltinarray_priv.h vmcode.c ast.c ast_priv.h ast.h value.c compiler.c         \
-  operator.c namespace.c builtins.c bltinstr.c bltinio.c fileutils.c           \
-  tokenizer.l macro.c yparser.y parser_priv.h parser.h registers.c paths.c     \
-  fileutils.h registers.h macro.h paths.h vmcode.h value.h compiler_priv.h     \
-  compiler.h operator.h namespace.h builtins.h bltinstr.h bltinio.h lir.c      \
-  lir_priv.h
+  vmproc_priv.h vmsym.c vmsym.h vmopregs.c vmopregs_priv.h vmop.c vmop_priv.h  \
+  str.c str.h bltinarray.c bltinarray_priv.h vmcode.c ast.c ast_priv.h ast.h   \
+  value.c compiler.c operator.c namespace.c builtins.c bltinstr.c bltinio.c    \
+  fileutils.c tokenizer.l macro.c yparser.y parser_priv.h parser.h registers.c \
+  paths.c fileutils.h registers.h macro.h paths.h vmcode.h value.h             \
+  compiler_priv.h compiler.h operator.h namespace.h builtins.h bltinstr.h      \
+  bltinio.h lir.c lir_priv.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32

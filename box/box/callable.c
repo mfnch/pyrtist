@@ -25,13 +25,11 @@
 #include <box/callable.h>
 #include <box/vm.h>
 #include <box/vmproc.h>
+#include <box/vmsym.h>
 
 #include <box/core_priv.h>
 #include <box/callable_priv.h>
 #include <box/vm_priv.h>
-
-#include <box/vmsym.h>
-#include <box/vmsymstuff.h>
 
 
 /* Initialize a callable object as an undefined callable. */

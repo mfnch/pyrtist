@@ -36,6 +36,8 @@
 #  include <box/hashtable.h>
 #  include <box/list.h>
 #  include <box/vm.h>
+#  include <box/callable.h>
+
 
 /**
  * @brief An integer number used to identify a symbol.
@@ -274,5 +276,17 @@ BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs);
 
 #  define BoxVMSym_Resolve_All(vm) \
   BoxVMSym_Resolve((vm), 0)
+
+/* Temporary, very ugly stuff... */
+
+BoxBool
+BoxVMSym_Proc_Is_Implemented(BoxVM *vm, BoxVMSymID sym_id,
+                             const char **c_name);
+
+BoxBool
+BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);
+
+BoxBool
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxCallable *cb);
 
 #endif /* _BOX_VMSYM_H */

@@ -32,7 +32,6 @@
 #include "bltinstr.h"
 
 #include "vmproc.h"
-#include "vmsymstuff.h"
 
 /****************************************************************************
  * Here we interface Str and register it for the compiler.                  *

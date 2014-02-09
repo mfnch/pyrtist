@@ -32,7 +32,6 @@
 #include "messages.h"
 #include "parser.h"
 #include "combs.h"
-#include "vmsymstuff.h"
 
 #include "compiler_priv.h"
 
