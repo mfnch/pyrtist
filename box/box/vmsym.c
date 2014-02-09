@@ -234,17 +234,6 @@ void BoxVMSym_Ref_Report(BoxVM *vm) {
   (void) BoxArr_Iter(& st->refs, My_Report_Ref, vm);
 }
 
-#if 0
-BoxTask BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
-  BoxVMSymTable *st = & vm->sym_table;
-  BoxVMSym *s;
-
-  s = (BoxVMSym *) BoxArr_ItemPtr(& st->defs, sym_id);
-  s->resolver = r;
-  return BOXTASK_OK;
-}
-#endif
-
 BoxTask BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
@@ -441,17 +430,6 @@ My_Iter_Over_Libs(void *string, void *pass_data) {
   return BOXTASK_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 static int
 My_Resolve_Own_Symbol(BoxVMSymID sym_id, void *item, void *pass) {
   BoxVM *vm = pass;
@@ -475,13 +453,6 @@ BoxTask My_Resolve_Own_Symbols(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-
-
-
-
-
-
-
 BoxTask BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
   struct clibs_data cld;
   (void) My_Resolve_Own_Symbols(vm);
@@ -489,131 +460,3 @@ BoxTask BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
   cld.lib_paths = lib_paths;
   return BoxList_Iter(libs, My_Iter_Over_Libs, & cld);
 }
-
-/****************************************************************************/
-
-static BoxTask
-My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
-                  int defined, void *def, BoxUInt def_size,
-                  void *ref, BoxUInt ref_size) {
-  BoxVMSymCodeRef *ref_head = (BoxVMSymCodeRef *) ref;
-  void *ref_tail = ref + sizeof(BoxVMSymCodeRef);
-  BoxUInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
-  BoxVMProcTable *pt = & vm->proc_table;
-  BoxVMProc *tmp_proc;
-  BoxUInt saved_proc_num;
-
-  saved_proc_num = BoxVM_Proc_Target_Get(vm);
-  BoxVM_Proc_Empty(vm, pt->tmp_proc);
-  BoxVM_Proc_Target_Set(vm, pt->tmp_proc);
-  tmp_proc = pt->target_proc;
-  /* Call the procedure here! */
-  BOXTASK( ref_head->code_gen(vm, sym_id, sym_type, defined,
-                           def, def_size, ref_tail, ref_tail_size) );
-  BoxVM_Proc_Target_Set(vm, ref_head->proc_num);
-  /* Replace the referencing code with the generated code */
-  {
-    void *src = BoxArr_First_Item_Ptr(& tmp_proc->code);
-    int src_size = BoxArr_Num_Items(& tmp_proc->code);
-    BoxArr *dest =  & pt->target_proc->code; /* Destination sheet */
-    int dest_pos = ref_head->pos + 1; /* NEED TO ADD 1 */
-    if (src_size != ref_head->size) {
-      MSG_ERROR("My_Code_Generator: The code for the resolved reference does "
-                "not match the space which was reserved for it!");
-      return BOXTASK_FAILURE;
-    }
-    BoxArr_Overwrite(dest, dest_pos, src, src_size);
-  }
-  BoxVM_Proc_Target_Set(vm, saved_proc_num);
-  return BOXTASK_OK;
-}
-
-BoxTask
-BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
-                  void *ref, size_t ref_size) {
-  BoxVMSymTable *st = & vm->sym_table;
-  BoxVMSym *s;
-  void *def;
-  BoxVMProcTable *pt = & vm->proc_table;
-
-  BoxUInt ref_all_size;
-  BoxVMSymCodeRef *ref_head;
-  void *ref_all, *ref_tail;
-
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
-  def = BoxArr_Item_Ptr(& st->data, s->def_addr);
-
-  ref_all_size = sizeof(BoxVMSymCodeRef) + ref_size;
-  ref_all = Box_Mem_Safe_Alloc(ref_all_size);
-  ref_head = (BoxVMSymCodeRef *) ref_all;
-  ref_tail = ref_all + sizeof(BoxVMSymCodeRef);
-
-  /* fill the section describing the code */
-  ref_head->code_gen = code_gen;
-  ref_head->proc_num = pt->target_proc_num;
-  ref_head->pos = BoxArr_Num_Items(& pt->target_proc->code);
-
-  /* Copy the user provided reference data */
-  if (ref != NULL && ref_size > 0)
-    (void) memcpy(ref_tail, ref, ref_size);
-
-  BOXTASK( code_gen(vm, sym_id, s->sym_type, s->defined, def, s->def_size,
-                 ref, ref_size) );
-  if (pt->target_proc_num != ref_head->proc_num) {
-    MSG_ERROR("BoxVMSym_Code_Ref: the function 'code_gen' must not change "
-              "the current target for compilation!");
-  }
-  ref_head->size = BoxArr_Num_Items(& pt->target_proc->code) - ref_head->pos;
-  BoxVMSym_Ref(vm, sym_id, My_Code_Generator, ref_all, ref_all_size, -1);
-  Box_Mem_Free(ref_all);
-  return BOXTASK_OK;
-}
-
-#if 0
-/* Usage for the function 'BoxVMSym_Code_Ref' */
-
-#  define CALL_TYPE 1
-
-/* This is the function which assembles the code for the function call */
-BoxTask Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
-                      int defined, void *def, BoxUInt def_size,
-                      void *ref, BoxUInt ref_size) {
-  BoxUInt call_num = 0;
-  assert(sym_type == CALL_TYPE);
-  if (defined && def != NULL) {
-    assert(def_size=sizeof(BoxUInt));
-    call_num = *((BoxUInt *) def);
-  }
-  BoxVM_Assemble(vm, ASM_CALL_I, CAT_IMM, call_num);
-  return BOXTASK_OK;
-}
-
-int main(void) {
-  BoxVMSymID sym_id;
-  BoxVM *vm;
-  /* Initialization of the VM goes here
-   ...
-   ...
-   */
-
-  /* Here we define that a new symbol with type CALL_TYPE=1 exists */
-  (void) BoxVMSym_New(vm, & sym_id, CALL_TYPE, sizeof(BoxUInt));
-  /* Here we make a reference to it: at this point the assembled code for
-   * "call 0" will be added to the current target procedure.
-   * 0 is wrong, but we don't know what is the right number, because
-   * the symbol is still not defined.
-   */
-  (void) BoxVMSym_Code_Ref(vm, sym_id, Assemble_Call);
-  /* Here we define the symbol "my_proc" to be (BoxUInt) 123.
-   * Now we know that all the "call" instructions referencing
-   * the symbol "my_proc" should be assembled with "call 123"
-   */
-  (void) BoxVMSym_Def(vm, sym_id, & ((BoxUInt) 123));
-  /* We can now resolve all the past references which were made when
-   * we were not aware of the real value of "my_proc".
-   * The code "call 0" will be replaced with "call 123"
-   */
-  (void) BoxVMSym_Resolve_All(vm);
-  return 0;
-}
-#endif

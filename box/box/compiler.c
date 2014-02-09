@@ -606,7 +606,6 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   BoxASTNodeStatement *s;
   Value *parent = NULL, *outer_parent = NULL;
   BoxBool parent_is_err = 0, need_floor_down;
-  BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
   BoxLIRNodeOp *begin_label, *else_label = NULL, *end_label = NULL;
   MyBoxState state;
 
@@ -694,9 +693,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   }
 
   /* Create jump-labels for If and For */
-  jump_label_begin = BoxVMCode_Jump_Label_Here(c->cur_proc);
-  jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
-  jump_label_end = BOXVMSYMID_NONE;
+  BoxVMCode_Begin(c->cur_proc);
   begin_label = BoxLIR_Get_Last_Op(& c->lir);
 
   /* Save previous source position */
@@ -748,7 +745,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
             BoxLIRNodeOpBranch *branch;
             if (!else_label)
               else_label = BoxLIR_Append_Op_Label(& c->lir);
-            branch = Value_Emit_CJump(stmt_val, jump_label_next);
+            branch = Value_Emit_CJump(stmt_val);
             branch->target = else_label;
 
             if (state != MYBOXSTATE_GOT_IF) {
@@ -761,13 +758,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_ELSE))) {
             if (state == MYBOXSTATE_GOT_IF) {
-              if (jump_label_end == BOXVMSYMID_NONE)
-                jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
-              BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
-              BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
-              BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
-              jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
-
+              BoxVMCode_Begin(c->cur_proc);
               if (!end_label)
                 end_label = BoxLIR_Append_Op_Label(& c->lir);
               BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JMP_I, end_label);
@@ -791,7 +782,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_FOR))) {
             BoxLIRNodeOpBranch *branch;
-            branch = Value_Emit_CJump(stmt_val, jump_label_begin);
+            branch = Value_Emit_CJump(stmt_val);
             branch->target = BoxLIR_Get_Next_Op(& c->lir, begin_label);
           } else {
             MSG_WARNING("Don't know how to use '%T' expressions inside "
@@ -814,15 +805,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   //(void) Msg_Set_Src(prev_src_of_err);
 
   /* Define the end label and release it together with the begin label */
-  BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
-  BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_begin);
-  BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
-
-  /* Define the end label, if used at all! */
-  if (jump_label_end != BOXVMSYMID_NONE) {
-    BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_end);
-    BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_end);
-  }
+  BoxVMCode_Begin(c->cur_proc);
 
   if (end_label)
     BoxLIR_Move_Label_Back(& c->lir, end_label);

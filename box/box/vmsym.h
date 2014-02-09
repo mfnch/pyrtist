@@ -272,20 +272,6 @@ BoxVMSym_Resolve_CLib(BoxVM *vm, const char *lib_file);
 BOXEXPORT BoxTask
 BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs);
 
-/**
- * This function calls the function given as argument BoxVMSym_Code_Ref()
- * to assemble a piece of VM-code which makes reference to the symbol
- * @p sym_id. The reference will be resolved calling again @p code_gen
- * once the symbol has been defined.
- * The function @p code_gen assembles parametrically a piece of VM byte-code.
- */
-BOXEXPORT BoxTask
-BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
-                  void *ref, size_t ref_size);
-
-#  define BoxVMSym_Code_New BoxVMSym_New
-#  define BoxVMSym_Code_Def BoxVMSym_Def
-
 #  define BoxVMSym_Resolve_All(vm) \
   BoxVMSym_Resolve((vm), 0)
 

@@ -118,9 +118,6 @@ struct BoxVMCode_struct {
   RegAlloc      reg_alloc;   /**< Register allocator: keeps track of registers
                                   which are being used and of those which are
                                   not used.*/
-  BoxVMSymID    head_sym_id, /**< Symbol associated with the head block of
-                                  new instructions */
-                sym;         /**< Symbol associated with the procedure */
   BoxVMProcID   proc_id;     /**< Proc. number (needed to write ASM to it) */
   BoxVMProcID   real_proc_id; /* Hack */
   char          *proc_name,  /**< Procedure name */
@@ -225,15 +222,6 @@ RegAlloc *BoxVMCode_Get_RegAlloc(BoxVMCode *p);
 BoxVMProcID BoxVMCode_Get_ProcID(BoxVMCode *p);
 
 /**
- * @brief Get the procedure call number.
- *
- * If the procedure doesn't have a call number then, it is installed and the
- * call number returned by such installation operation is returned.
- */
-BOXEXPORT BoxVMCallNum
-BoxVMCode_Get_Call_Num(BoxVMCode *p);
-
-/**
  * @brief Install the procedure such that the code which calls it can be
  *   actually executed.
  */
@@ -250,51 +238,6 @@ BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num);
 /** High level routine to assemble bytecode for the Box virtual machine (VM).
  */
 void BoxVMCode_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, ...);
-
-/** Create a new jump-label. The label can be used to assemble jump
- * instructions with BoxVMCode_Assemble_Jump, BoxVMCode_Assemble_CJump.
- * The label has to be defined using BoxVMCode_Jump_Label_Define.
- */
-BoxVMSymID BoxVMCode_Jump_Label_New(BoxVMCode *p);
-
-/**
- * @brief Define the label with the current position in the code.
- *
- * This is a shorthand for:
- * @code
- * jl = BoxVMCode_Jump_Label_New(p);
- * BoxVMCode_Jump_Label_Define(p, jl);
- * return jl;
- * @endcode
- */
-BOXEXPORT BoxVMSymID
-BoxVMCode_Jump_Label_Here(BoxVMCode *p);
-
-/**
- * @brief Define an existing undefined label to point to the current position
- *   in the procedure.
- */
-BOXEXPORT void
-BoxVMCode_Jump_Label_Define(BoxVMCode *p, BoxVMSymID jl);
-
-/**
- * @brief Release the given jump label. After this function has been called
- *   the jump label cannot be used anymore.
- */
-BOXEXPORT void
-BoxVMCode_Jump_Label_Release(BoxVMCode *p, BoxVMSymID jl);
-
-/**
- * @brief Assemble a jump instruction to the given jump label.
- */
-BOXEXPORT void
-BoxVMCode_Assemble_Jump(BoxVMCode *p, BoxVMSymID jl);
-
-/**
- * @brief Assemble a conditional jump instruction to the given jump label.
- */
-BOXEXPORT void
-BoxVMCode_Assemble_CJump(BoxVMCode *p, BoxVMSymID jl, BoxCont *cont);
 
 /**
  * @brief State that the next code generated in the procedure will correspond

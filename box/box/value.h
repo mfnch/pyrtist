@@ -223,7 +223,7 @@ void Value_Emit_Unlink(Value *v);
  * label.
  */
 BoxLIRNodeOpBranch *
-Value_Emit_CJump(Value *v, BoxVMSymID jump_label);
+Value_Emit_CJump(Value *v);
 
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
