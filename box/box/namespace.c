@@ -67,7 +67,6 @@ void Namespace_Destroy(Namespace *ns) {
 static NmspFloorData *My_Get_Floor(Namespace *ns, NmspFloor f) {
   if (f == NMSPFLOOR_DEFAULT)
     return (NmspFloorData *) BoxArr_Last_Item_Ptr(& ns->floors);
-
   else
     return (NmspFloorData *) BoxArr_Item_Ptr(& ns->floors, f);
 }
@@ -139,7 +138,6 @@ void Namespace_Floor_Down(Namespace *ns) {
     My_NmspItem_Finish(ns, floor_idx, item_to_del);
     if (item_to_del->ht_item != NULL)
       BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
-
     else
       Box_Mem_Free(item_to_del);
   }
@@ -156,10 +154,9 @@ NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
     hi = BoxHT_Insert_Obj(& ns->ht, item_name, item_name_len,
                           & dummy, sizeof(NmspItem));
     new_item = (NmspItem *) hi->object;
-
   } else
     new_item = (NmspItem *) Box_Mem_Safe_Alloc(sizeof(NmspItem));
- 
+
   new_item->ht_item = hi;
   new_item->next = floor_data->first_item;
   floor_data->first_item = new_item;

@@ -653,7 +653,7 @@ static void My_Exec_Unbox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   } else
     BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in unboxing operation");
 
-  vmx->flags.error = vmx->flags.exit = 1;  
+  vmx->flags.error = vmx->flags.exit = 1;
 }
 
 /**
@@ -692,7 +692,7 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx, void *arg1, void *arg2) {
     Box_Mem_Free(msg);
   }
 
-  vmx->flags.error = vmx->flags.exit = 1;  
+  vmx->flags.error = vmx->flags.exit = 1;
 }
 
 
@@ -828,53 +828,50 @@ BoxTypeId My_Type_From_Char(char c) {
   }
 }
 
-const BoxOpDesc *BoxVM_Get_Exec_Table(void) {
+const BoxOpDesc *
+BoxVM_Get_Exec_Table(void)
+{
+  int i;
   static BoxOpDesc the_optable[BOX_NUM_OPS],
                    *the_optable_ptr = NULL;
 
-  if (the_optable_ptr != NULL)
+  if (the_optable_ptr)
     return the_optable_ptr;
 
-  else {
-    int i;
+  for(i = 0; i < BOX_NUM_OPS; i++) {
+    BoxOpDesc *dest = & the_optable[i];
+    BoxOpTable4Humans *src = & op_table_for_humans[i];
+    BoxOpSignature sig = My_BoxOpSignature_From_Str(src->assembler);
 
-    for(i = 0; i < BOX_NUM_OPS; i++) {
-      BoxOpDesc *dest = & the_optable[i];
-      BoxOpTable4Humans *src = & op_table_for_humans[i];
-      BoxOpSignature sig = My_BoxOpSignature_From_Str(src->assembler);
+    dest->name = src->name;
+    dest->numargs = src->num_args;
+    dest->t_id = My_Type_From_Char(src->arg_type);
+    dest->execute = src->executor;
 
-      dest->name = src->name;
-      dest->numargs = src->num_args;
-      dest->t_id = My_Type_From_Char(src->arg_type);
-      dest->execute = src->executor;
-
-      switch(sig) {
-      case BOXOPSIGNATURE_NONE: dest->num_args = 0; dest->has_data = 0; break;
-      case BOXOPSIGNATURE_IMM:  dest->num_args = 0; dest->has_data = 1; break;
-      case BOXOPSIGNATURE_ANY:  dest->num_args = 1; dest->has_data = 0; break;
-      case BOXOPSIGNATURE_ANY_IMM: dest->num_args = 1; dest->has_data = 1; break;
-      case BOXOPSIGNATURE_ANY_ANY: dest->num_args = 2; dest->has_data = 0; break;
-      default:
-        abort();
-      }
+    switch(sig) {
+    case BOXOPSIGNATURE_NONE: dest->num_args = 0; dest->has_data = 0; break;
+    case BOXOPSIGNATURE_IMM:  dest->num_args = 0; dest->has_data = 1; break;
+    case BOXOPSIGNATURE_ANY:  dest->num_args = 1; dest->has_data = 0; break;
+    case BOXOPSIGNATURE_ANY_IMM: dest->num_args = 1; dest->has_data = 1; break;
+    case BOXOPSIGNATURE_ANY_ANY: dest->num_args = 2; dest->has_data = 0; break;
+    default:
+      abort();
     }
-
-    the_optable_ptr = the_optable;
-    return the_optable_ptr;
   }
+
+  the_optable_ptr = the_optable;
+  return the_optable_ptr;
 }
 
-/** Count how many commas are present on the given string. */
-static char My_Count_Commas(const char *s) {
-  if (s == NULL)
+/* Count how many comma-separated arguments are present in the given string. */
+static char My_Count_Args(const char *s)
+{
+  char count = 0;
+  if (!s)
     return 0;
-
-  else {
-    char count = 0;
-    for(; *s != '\0'; s++)
-      count += (*s == ',');
-    return count + 1;
-  }
+  for(; *s != '\0'; s++)
+    count += (*s == ',');
+  return count + 1;
 }
 
 static int My_Parse_Reg_List(const char **reg_list, char arg_type,
@@ -970,8 +967,8 @@ void BoxOpTable_Build(BoxOpTable *ot) {
     oi->dasm = 0; /* change me */
     oi->arg_type = h_ot->arg_type;
     oi->num_args = h_ot->num_args;
-    oi->num_inputs = My_Count_Commas(h_ot->input_regs);
-    oi->num_outputs = My_Count_Commas(h_ot->output_regs);
+    oi->num_inputs = My_Count_Args(h_ot->input_regs);
+    oi->num_outputs = My_Count_Args(h_ot->output_regs);
     oi->executor = h_ot->executor;
 
     num_regs_to_alloc += oi->num_inputs + oi->num_outputs;

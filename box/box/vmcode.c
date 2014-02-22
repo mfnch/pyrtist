@@ -42,50 +42,18 @@ My_Get_Proc(BoxVMCode *p)
   return p->proc;
 }
 
-/* Function called to begin for BOXVMCODETYPE_MAIN or BOXVMCODETYPE_SUB */
-static void
-My_Proc_Begin(BoxVMCode *p)
-{
-  /* Assemble the newc, newi, ... instructions */
-  if (p->style == BOXVMCODESTYLE_SUB) {
-    /* If this is a subprocedure then we need to get parent and child
-     * from global registers and put them into local registers, so they can
-     * be utilised later.
-     */
-    if (p->have.parent) {
-      p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
-      (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
-      BoxLIR_Append_Op2(& p->cmp->lir, BOXOP_SHIFT_OO,
-                       BOXOPARGFORM_LREG, p->reg_parent,
-                       BOXOPARGFORM_GREG, (BoxInt) 1);
-    }
-
-    if (p->have.child) {
-      p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
-      (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
-      BoxLIR_Append_Op2(& p->cmp->lir, BOXOP_SHIFT_OO,
-                        BOXOPARGFORM_LREG, p->reg_child,
-                        BOXOPARGFORM_GREG, (BoxInt) 2);
-    }
-  }
-
-  p->have.head = 1;
-}
-
 /* Function called to end for BOXVMCODETYPE_MAIN or BOXVMCODETYPE_SUB */
 static void
 My_Proc_End(BoxVMCode *p)
 {
-  if (p->have.head) {
-    RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
-    BoxInt num_reg[NUM_TYPES], num_var[NUM_TYPES];
+  RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
+  BoxInt num_reg[NUM_TYPES], num_var[NUM_TYPES];
 
-    /* Global registers are allocated only for main */
-    if (p->style == BOXVMCODESTYLE_MAIN) {
-      Reg_Get_Global_Nums(ra, num_reg, num_var);
-      ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_var, num_reg) );
-    }
- }
+  /* Global registers are allocated only for main */
+  if (p->style == BOXVMCODESTYLE_MAIN) {
+    Reg_Get_Global_Nums(ra, num_reg, num_var);
+    ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_var, num_reg) );
+  }
 
   (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
   BoxLIR_Append_Op(& p->cmp->lir, BOXOP_RET);
@@ -98,22 +66,20 @@ BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style)
   p->cmp = c;
   p->proc = NULL;
   p->have.parent = 0;
+  p->have.parent_reg = 0;
   p->have.child = 0;
+  p->have.child_reg = 0;
   p->have.reg_alloc = 0;
   p->have.proc_name = 0;
   p->have.alter_name = 0;
   p->have.call_num = 0;
-  p->have.wrote_beg = 0;
   p->have.installed = 0;
-  p->have.head = 0;
-  p->beginning = NULL;
 
   switch(style) {
   case BOXVMCODESTYLE_SUB:
   case BOXVMCODESTYLE_MAIN:
-    p->beginning = My_Proc_Begin;
-    (void) BoxVMCode_Get_RegAlloc(p); /* Force initialisation
-                                       of register allocator */
+    /* Force initialisation of the register allocator. */
+    (void) BoxVMCode_Get_RegAlloc(p);
     break;
   case BOXVMCODESTYLE_EXTERN:
     break;
@@ -149,43 +115,12 @@ BoxVMCode_Set_Callable(BoxVMCode *p, BoxCallable *cb)
   p->have.callable = 1;
 }
 
-BoxVMCode *
-BoxVMCode_Create(BoxCmp *c, BoxVMCodeStyle style)
-{
-  BoxVMCode *p = Box_Mem_Alloc(sizeof(BoxVMCode));
-  if (p)
-    BoxVMCode_Init(p, c, style);
-  return p;
-}
-
-void
-BoxVMCode_Destroy(BoxVMCode *p)
-{
-  BoxVMCode_Finish(p);
-  Box_Mem_Free(p);
-}
-
-void
-BoxVMCode_Begin(BoxVMCode *p)
-{
-  if (p->have.wrote_beg)
-    return;
-  p->have.wrote_beg = 1;
-  if (p->beginning)
-    p->beginning(p);
-}
-
 void
 BoxVMCode_Set_Prototype(BoxVMCode *p, int have_child, int have_parent)
 {
-  if (p->have.wrote_beg) {
-    MSG_WARNING("BoxVMCode_Set_Prototype: cannot change the prototype for "
-                "the procedure: the procedure has been already generated!");
-
-  } else if (p->style != BOXVMCODESTYLE_SUB) {
-    MSG_WARNING("BoxVMCode_Set_Prototype: the prototype can be set only for "
-                "BOXVMCODESTYLE_SUB.");
-  }
+  /* Make sure the prototype is consistent with the previous one. */
+  assert(!p->have.parent || have_parent);
+  assert(!p->have.child || have_child);
 
   p->have.parent = have_parent;
   p->have.child = have_child;
@@ -194,29 +129,27 @@ BoxVMCode_Set_Prototype(BoxVMCode *p, int have_child, int have_parent)
 BoxVMRegNum
 BoxVMCode_Get_Parent_Reg(BoxVMCode *p)
 {
-  if (!p->have.wrote_beg)
-    BoxVMCode_Begin(p);
+  assert(p->have.parent);
 
-  if (p->have.parent)
+  if (p->have.parent_reg)
     return p->reg_parent;
 
-  MSG_FATAL("BoxVMCode_Get_Parent_Reg: procedure does not have the parent.");
-  assert(0);
-  return 0;
+  p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
+  p->have.parent_reg = 1;
+  return p->reg_parent;
 }
 
 BoxVMRegNum
 BoxVMCode_Get_Child_Reg(BoxVMCode *p)
 {
-  if (!p->have.wrote_beg)
-    BoxVMCode_Begin(p);
+  assert(p->have.child);
 
-  if (p->have.child)
+  if (p->have.child_reg)
     return p->reg_child;
 
-  MSG_FATAL("BoxVMCode_Get_Child_Reg: procedure does not have the child.");
-  assert(0);
-  return 0;
+  p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
+  p->have.child_reg = 1;
+  return p->reg_child;
 }
 
 BoxVMCodeStyle
@@ -316,6 +249,21 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
       BoxInt nv = num_vars[i], nr = num_regs[i];
       if (nv || nr)
         BoxVM_Assemble(vm, op, BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
+    }
+
+    /* If this is a subprocedure then we need to get parent and child
+     * from global registers and put them into local registers, so they can
+     * be utilised later.
+     */
+    if (p->style == BOXVMCODESTYLE_SUB) {
+      if (p->have.parent_reg)
+        BoxVM_Assemble(vm, BOXOP_SHIFT_OO,
+                       BOXOPARGFORM_LREG, p->reg_parent,
+                       BOXOPARGFORM_GREG, (BoxInt) 1);
+      if (p->have.child_reg)
+        BoxVM_Assemble(vm, BOXOP_SHIFT_OO,
+                       BOXOPARGFORM_LREG, p->reg_child,
+                       BOXOPARGFORM_GREG, (BoxInt) 2);
     }
 
     /* First determine the instruction offsets. */
@@ -458,7 +406,6 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
 void
 BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num)
 {
-  BoxVMCode_Begin(code); /* Begin the procedure, if not done explicitly */
   (void) BoxLIR_Set_Target_Proc(& code->cmp->lir, My_Get_Proc(code));
   BoxLIR_Append_Op1(& code->cmp->lir,
                     BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);

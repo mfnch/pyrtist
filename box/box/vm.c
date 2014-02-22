@@ -223,7 +223,8 @@ char *BoxVM_Get_Installed_Types_Desc(BoxVM *vm) {
   return (s) ? s : Box_SPrintF("");
 }
 
-BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
+BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op)
+{
   assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
   if (!vm->has.op_table) {
     BoxOpTable_Build(& vm->op_table);

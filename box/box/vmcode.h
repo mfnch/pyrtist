@@ -70,35 +70,26 @@ typedef enum {
 } BoxVMCodeStyle;
 
 /**
- * Function called in order to generate the beginning of a procedure
- * (such as the register allocation instructions 'newi xx, yy', etc.)
- */
-typedef void (*BoxVMCodeBegin)(BoxVMCode *p);
-
-/**
  * @brief Implementation of the #BoxVMCode object.
  */
 struct BoxVMCode_struct {
   struct {
     unsigned int
                parent     :1,  /**< The procedure has a parent */
+               parent_reg :1,  /**< The procedure uses the parent register. */
                child      :1,  /**< The procedure has a child */
+               child_reg  :1,  /**< The procedure uses the child register. */
                reg_alloc  :1,  /**< it has automatic register allocation */
                proc_name  :1,  /**< it has a name */
                alter_name :1,  /**< has an alternative name */
                call_num   :1,  /**< it has a call number */
-               wrote_beg  :1,  /**< BoxVMCode->beginning has been called */
                installed  :1,  /**< The procedure was installed */
-               head       :1,  /**< Head new-instructions have been emitted */
                callable   :1;
   } have;
   BoxVMCodeStyle  style;       /**< Procedure style */
   BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
   BoxLIRNodeProc
                 *proc;
-  BoxVMCodeBegin
-                beginning;   /**< If not NULL, this is called before emitting
-                                  any other instruction */
   RegAlloc      reg_alloc;   /**< Register allocator: keeps track of registers
                                   which are being used and of those which are
                                   not used.*/
@@ -122,26 +113,6 @@ BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style);
  */
 BOXEXPORT void
 BoxVMCode_Finish(BoxVMCode *p);
-
-/**
- * @brief Allocate space in the heap to hold a #BoxVMCode object and initialise
- *   it with BoxVMCode_Init().
- */
-BOXEXPORT BoxVMCode *
-BoxVMCode_Create(BoxCmp *c, BoxVMCodeStyle style);
-
-/**
- * @brief Destroy a #BoxVMCode object created with BoxVMCode_Create().
- */
-BOXEXPORT void
-BoxVMCode_Destroy(BoxVMCode *p);
-
-/**
- * @breif Initialise the code in the procedure, coherently with the procedure
- *   style.
- */
-BOXEXPORT void
-BoxVMCode_Begin(BoxVMCode *p);
 
 /**
  * Set the prototype for the procedure. The prototype must be set for

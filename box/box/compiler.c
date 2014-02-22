@@ -145,7 +145,6 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
   assert(success);
 
   BoxCmp_Init__Operators(c);
-
   BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
   BoxVMCode_Set_Alter_Name(& c->main_proc, "main");
   c->cur_proc = & c->main_proc;
@@ -692,7 +691,6 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   }
 
   /* Create jump-labels for If and For */
-  BoxVMCode_Begin(c->cur_proc);
   begin_label = BoxLIR_Get_Last_Op(& c->lir);
 
   /* Save previous source position */
@@ -757,7 +755,6 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_ELSE))) {
             if (state == MYBOXSTATE_GOT_IF) {
-              BoxVMCode_Begin(c->cur_proc);
               if (!end_label)
                 end_label = BoxLIR_Append_Op_Label(& c->lir);
               BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JMP_I, end_label);
@@ -803,17 +800,12 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   /* Restore previous source position */
   //(void) Msg_Set_Src(prev_src_of_err);
 
-  /* Define the end label and release it together with the begin label */
-  BoxVMCode_Begin(c->cur_proc);
-
   if (end_label)
     BoxLIR_Move_Label_Back(& c->lir, end_label);
 
-  /* If without else: make if jump to the end of the [] block. */
+  /* If without else: make If[] jump to the end of the [] block. */
   if (else_label)
     BoxLIR_Move_Label_Back(& c->lir, else_label);
-
-
 
   /* Invoke the closing procedure */
   if (box->parent) {

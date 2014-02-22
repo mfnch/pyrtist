@@ -493,7 +493,6 @@ Value_Emit_CJump(Value *v)
   BoxCmp *c = v->proc->cmp;
   BoxLIRNodeOp *ret;
   BoxCont ri0_cont;
-  BoxVMCode_Begin(c->cur_proc);
   BoxCont_Set(& ri0_cont, "ri", 0);
   BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV, 2, & ri0_cont, & v->value.cont);
   ret = BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JC_I, NULL);
