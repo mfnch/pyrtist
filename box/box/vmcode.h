@@ -163,10 +163,4 @@ RegAlloc *BoxVMCode_Get_RegAlloc(BoxVMCode *p);
 BOXEXPORT BoxVMCallNum
 BoxVMCode_Install(BoxVMCode *p);
 
-/**
- * @brief Append a LIR node for a Generic OPcode.
- */
-BOXEXPORT void
-BoxLIR_Append_GOp(BoxLIR *lir, BoxGOp g_op, int num_args, ...);
-
 #endif /* _BOX_BOXVMCODE_H */

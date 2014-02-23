@@ -26,6 +26,7 @@
 #  define _BOX_LIR_PRIV_H
 
 #  include <box/lir.h>
+#  include <box/logger.h>
 
 #  include <box/allocpool_priv.h>
 
@@ -34,6 +35,7 @@
  */
 struct BoxLIR_struct {
   BoxAllocPool   pool;        /**< Pool used to allocate the tree's objects. */
+  BoxLogger      *logger;     /**< Logger object. */
   BoxLIRNodeProc *first_proc, /**< First procedure in the chain. */
                  *last_proc,  /**< Last procedure in the chain. */
                  *target;     /**< Target of instruction append. */

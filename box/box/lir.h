@@ -28,6 +28,7 @@
 #  include <stdint.h>
 
 #  include <box/core.h>
+#  include <box/vm.h>
 
 
 /**
@@ -187,5 +188,11 @@ BoxLIR_Move_Label(BoxLIR *lir, BoxLIRNodeOp *label, BoxLIRNodeOp *dest);
  */
 BOXEXPORT BoxLIRNodeOp *
 BoxLIR_Move_Label_Back(BoxLIR *lir, BoxLIRNodeOp *label_op);
+
+/**
+ * @brief Append a LIR node for a Generic OPcode.
+ */
+BOXEXPORT void
+BoxLIR_Append_GOp(BoxLIR *lir, BoxGOp g_op, int num_args, ...);
 
 #endif /* _BOX_LIR_H */

@@ -63,3 +63,13 @@ BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
     printf("\n");
   }
 }
+
+void
+BoxLogger_Log(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+              BoxLogLevel lev, const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  BoxLogger_Log_VA(logger, begin, end, lev, fmt, ap);
+  va_end(ap);
+}

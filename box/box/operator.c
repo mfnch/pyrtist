@@ -274,15 +274,17 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
 
   switch(opn->asm_scheme) {
   case OPASMSCHEME_STD_UN:
-    if (opn->attr & OPR_ATTR_ASSIGNMENT) {
-      if (Value_Is_Target(v_left))
-        Value_Link(v_left);
-      MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
+    if (!(opn->attr & OPR_ATTR_ASSIGNMENT))
+      v_left = Value_To_Temp(v_left);
+    else {
+      if (!Value_Is_Target(v_left)) {
+        MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
                   opn->opr->name, ValueKind_To_Str(v_left->kind));
-      return NULL;
+        return NULL;
+      }
+      Value_Link(v_left);
     }
 
-    v_left = Value_To_Temp(v_left);
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
                       1, & v_left->value.cont);
     result = v_left;

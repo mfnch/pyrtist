@@ -53,15 +53,21 @@ typedef BoxBool (*BoxLoggerCallback)(BoxLogger *logger, BoxLogPos *begin,
                                      void *data);
 
 /**
- * @brief Generic logging function for the Box compiler.
- *
- * The one below is the most primitive error reporting function in the
- * compiler. We'll eventually move it in a separate logging module.
- * The idea is that the user can intercept this function to redirect the output
- * of the compiler logging system.
+ * @brief Var-Arg version of BoxLogger_Log().
  */
 BOXEXPORT void
 BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
                  BoxLogLevel lev, const char *fmt, va_list ap);
+
+/**
+ * @brief Generic logging function for the Box compiler.
+ *
+ * The one below is the most primitive error reporting function in the
+ * compiler. The idea is that the user can intercept this function to redirect
+ * the output of the compiler logging system.
+ */
+BOXEXPORT void
+BoxLogger_Log(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+              BoxLogLevel lev, const char *fmt, ...);
 
 #endif /* _BOX_LOGGER_H */
