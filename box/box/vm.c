@@ -74,7 +74,6 @@ BoxTask BoxVM_Init(BoxVM *vm) {
   vm->attr.identdata = 0;
 
   vm->has.globals = 0;
-  vm->has.op_table = 0;
 
   /* Table of actions for each VM instruction */
   vm->exec_table = BoxVM_Get_Exec_Table();
@@ -149,9 +148,6 @@ void BoxVM_Finish(BoxVM *vm) {
 
   BoxVMSymTable_Finish(& vm->sym_table);
   BoxVM_Proc_Finish(vm);
-
-  if (vm->has.op_table)
-    BoxOpTable_Destroy(& vm->op_table);
 }
 
 BoxVM *BoxVM_Create(void) {
@@ -223,14 +219,18 @@ char *BoxVM_Get_Installed_Types_Desc(BoxVM *vm) {
   return (s) ? s : Box_SPrintF("");
 }
 
-BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op)
+const BoxOpInfo *
+Box_Get_VM_Op_Info(BoxGOp g_op)
 {
+  static BoxBool have_op_table = BOXBOOL_FALSE;
+  static BoxOpTable op_table;
+
+  if (have_op_table)
+    return & op_table.info[g_op];
+
   assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
-  if (!vm->has.op_table) {
-    BoxOpTable_Build(& vm->op_table);
-    vm->has.op_table = 1;
-  }
-  return & vm->op_table.info[g_op];
+  BoxOpTable_Build(& op_table);
+  return & op_table.info[g_op];
 }
 
 /* Sets the number of global registers and variables for each type. */

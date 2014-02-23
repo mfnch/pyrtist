@@ -232,10 +232,6 @@ struct BoxVM_struct {
   BoxVMSymTable
             sym_table;      /**< Table of referenced and defined symbols */
 
-  BoxOpTable
-            op_table;       /**< Table describing the instructions and their
-                                 properties */
-
   BoxArr    backtrace;      /**< Information about error location */
   char      *fail_msg;      /**< Failure message */
 
@@ -260,13 +256,14 @@ void BoxOpTable_Build(BoxOpTable *ot);
 void BoxOpTable_Destroy(BoxOpTable *ot);
 
 /** Print the given BoxOpTable to the given stream. */
-void BoxOpTable_Print(FILE *out, BoxOpTable *ot);
+void BoxOpTable_Print(FILE *out, const BoxOpTable *ot);
 
 /** Get information about the specified generic VM operation. */
-BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op);
+BOXEXPORT const BoxOpInfo *
+Box_Get_VM_Op_Info(BoxGOp g_op);
 
 /** Print all the signatures for a the given BoxOpInfo object. */
-void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
+void BoxOpInfo_Print(FILE *out, const BoxOpInfo *oi);
 
 /** (Internal) Get the execution table for the Box VM instructions. */
 const BoxOpDesc *BoxVM_Get_Exec_Table(void);

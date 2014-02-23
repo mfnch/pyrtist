@@ -33,15 +33,6 @@
 #include "vmop_priv.h"
 
 
-BoxLIRNodeProc *
-My_Get_Proc(BoxVMCode *p)
-{
-  if (p->proc)
-    return p->proc;
-  p->proc = BoxLIR_Append_Proc(& p->cmp->lir);
-  return p->proc;
-}
-
 /* Function called to end for BOXVMCODETYPE_MAIN or BOXVMCODETYPE_SUB */
 static void
 My_Proc_End(BoxVMCode *p)
@@ -55,7 +46,6 @@ My_Proc_End(BoxVMCode *p)
     ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_var, num_reg) );
   }
 
-  (void) BoxLIR_Set_Target_Proc(& p->cmp->lir, My_Get_Proc(p));
   BoxLIR_Append_Op(& p->cmp->lir, BOXOP_RET);
 }
 
@@ -64,7 +54,6 @@ BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style)
 {
   p->style = style;
   p->cmp = c;
-  p->proc = NULL;
   p->have.parent = 0;
   p->have.parent_reg = 0;
   p->have.child = 0;
@@ -85,7 +74,7 @@ BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style)
     break;
   default:
     MSG_FATAL("BoxVMCode_Init: Invalid value for style (BoxVMCodeStyle).");
-    assert(0);
+    abort();
   }
 
   p->have.callable = 0;
@@ -229,14 +218,14 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
   if (p->call_num == BOXVMCALLNUM_NONE)
     return BOXVMCALLNUM_NONE;
 
-  if (p->proc) {
+  {
+    BoxLIRNodeProc *proc = p->cmp->lir.target;
     BoxLIRNodeOp *op;
     int32_t offset;
     RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
     BoxInt num_regs[NUM_TYPES], num_vars[NUM_TYPES];
-    BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
-                                    BOXOP_NEWR_II, BOXOP_NEWP_II,
-                                    BOXOP_NEWO_II};
+    BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II,
+                                  BOXOP_NEWP_II, BOXOP_NEWO_II};
     int i;
 
     /* New procedure. */
@@ -267,7 +256,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     }
 
     /* First determine the instruction offsets. */
-    for (op = p->proc->first_op, offset = 0; op; op = op->next) {
+    for (op = proc->first_op, offset = 0; op; op = op->next) {
       BoxVMOp vm_op;
       vm_op.id = op->op_id;
       vm_op.desc = & vm->exec_table[op->op_id];
@@ -330,7 +319,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
       offset += BoxVMOp_Get_Length(& vm_op);
     }
 
-    for (op = p->proc->first_op; op; op = op->next) {
+    for (op = proc->first_op; op; op = op->next) {
       switch (op->head.type) {
       case BOXLIRNODETYPE_OP:
         BoxVM_Assemble(vm, op->op_id);
@@ -385,9 +374,6 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     }
 
     BoxVM_Proc_Target_Set(vm, prev_proc_id);
-  } else {
-    MSG_FATAL("Procedure not created");
-    abort();
   }
 
   if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, proc_id)) {
@@ -403,15 +389,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
   return p->call_num;
 }
 
-void
-BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num)
-{
-  (void) BoxLIR_Set_Target_Proc(& code->cmp->lir, My_Get_Proc(code));
-  BoxLIR_Append_Op1(& code->cmp->lir,
-                    BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
-}
-
-/** Internal function used by My_Unsafe_Assemble to assemble operation
+/* Internal function used by My_Unsafe_Assemble to assemble operation
  * involving pointer access (i.e. involving args like i[ro5+16]).
  * This function is used when assembling things like:
  *
@@ -428,7 +406,7 @@ My_Prepare_Ptr_Access(BoxLIR *lir, const BoxCont *c)
   }
 }
 
-/** Internal function used by My_Unsafe_Assemble.
+/* Internal function used by My_Unsafe_Assemble.
  * Used to get the integer value of a container whose value is an integer.
  * Containers having this property are: registers (both local and global)
  * pointers and immediate integers/chars.
@@ -450,8 +428,8 @@ My_Int_Val_From_Cont(const BoxCont *c)
   abort();
 }
 
-/** Internal function used by BoxVMCode_Assemble and co.
- * Similar to BoxVMCode_Assemble, but works only in certain particular cases
+/* Internal function used by BoxLIR_Append_GOp and co.
+ * Similar to BoxLIR_Append_GOp, but works only in certain particular cases
  * and does not check these are actually satisfied. In particular this
  * function assumes that:
  *  - the operands pointed by cs[0] (and cs[1], if num_args == 2)
@@ -528,7 +506,7 @@ My_Unsafe_Assemble(BoxLIR *lir, BoxOpId op, int num_args, const BoxCont **cs)
 }
 
 static void
-My_Gather_Implicit_Input_Regs(BoxVMCode *p, int num_regs, BoxOpReg *regs,
+My_Gather_Implicit_Input_Regs(BoxLIR *lir, int num_regs, BoxOpReg *regs,
                               const BoxCont **args)
 {
   int i;
@@ -544,14 +522,14 @@ My_Gather_Implicit_Input_Regs(BoxVMCode *p, int num_regs, BoxOpReg *regs,
         dst.value.reg = reg->num;
 
         if (!(dst.categ == src->categ && dst.value.reg == src->value.reg))
-          BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & dst, src);
+          BoxLIR_Append_GOp(lir, BOXGOP_MOV, 2, & dst, src);
       }
     }
   }
 }
 
 static void
-My_Scatter_Implicit_Input_Regs(BoxVMCode *p, int num_regs, BoxOpReg *regs,
+My_Scatter_Implicit_Input_Regs(BoxLIR *lir, int num_regs, BoxOpReg *regs,
                                const BoxCont **args)
 {
   int i;
@@ -569,19 +547,19 @@ My_Scatter_Implicit_Input_Regs(BoxVMCode *p, int num_regs, BoxOpReg *regs,
         src.value.reg = reg->num;
 
         if (!(dst->categ == src.categ && dst->value.reg == src.value.reg))
-          BoxVMCode_Assemble(p, gop, 2, dst, & src);
+          BoxLIR_Append_GOp(lir, gop, 2, dst, & src);
       }
     }
   }
 }
 
 typedef struct {
-  BoxOpInfo     *oi;
-  int           num_exp_args,
-                ro0_arg_conflict,
-                ro0_input_conflict;
-  const BoxCont *exp_args[2];
-  BoxCont       aux_arg;
+  const BoxOpInfo *oi;
+  int             num_exp_args,
+                  ro0_arg_conflict,
+                  ro0_input_conflict;
+  const BoxCont   *exp_args[2];
+  BoxCont         aux_arg;
 } MyFoundOp;
 
 int
@@ -591,15 +569,15 @@ My_ContTypes_Match(BoxContType t1, BoxContType t2)
          == ((t2 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t2);
 }
 
-static BoxOpInfo *
-My_Find_Op(BoxVMCode *p, MyFoundOp *info, BoxGOp g_op,
-           int num_args, const BoxCont **args, int ignore_signature)
+static const BoxOpInfo *
+My_Find_Op(MyFoundOp *info, BoxGOp g_op, int num_args,
+           const BoxCont **args, int ignore_signature)
 {
-  BoxOpInfo *oi;
+  const BoxOpInfo *oi;
   int num_exp_args, ro0_arg_conflict, ro0_input_conflict;
 
   /* Search for operations whose argument number and type match */
-  for(oi = BoxVM_Get_Op_Info(p->cmp->vm, g_op); oi; oi = oi->next) {
+  for(oi = Box_Get_VM_Op_Info(g_op); oi; oi = oi->next) {
     if (oi->num_regs == num_args) {
       /* Consider only operations with matching arg number */
       BoxOpSignature signature;
@@ -640,7 +618,6 @@ My_Find_Op(BoxVMCode *p, MyFoundOp *info, BoxGOp g_op,
             signature = (is_immediate) ?
                         BOXOPSIGNATURE_ANY_IMM : BOXOPSIGNATURE_ANY_ANY;
           ++num_exp_args;
-
         } else {
           /* Implicit register */
           assert(reg->kind == 'r');
@@ -695,26 +672,23 @@ My_Load_Immediates(BoxLIR *lir, int num_regs, BoxOpReg *regs,
 }
 
 void
-BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
+BoxLIR_Append_GOp_VA(BoxLIR *lir, BoxGOp g_op, int num_args, va_list ap)
 {
-  BoxLIR *lir = & p->cmp->lir;
   const BoxCont *args[BOXOP_MAX_NUM_ARGS];
-  BoxOpInfo *oi;
+  const BoxOpInfo *oi;
   MyFoundOp op;
   int i;
 
   if (num_args > BOXOP_MAX_NUM_ARGS) {
-    MSG_FATAL("BoxVMCode_Assemble: the given number of arguments is too high.");
+    MSG_FATAL("BoxLIR_Append_GOp: the given number of arguments is too high.");
     assert(0);
   }
-
-  (void) BoxLIR_Set_Target_Proc(lir, My_Get_Proc(p));
 
   for(i = 0; i < num_args; i++)
     args[i] = va_arg(ap, BoxCont *);
 
   /* Search for operations whose argument number and type match */
-  oi = My_Find_Op(p, & op, g_op, num_args, args, /*ignore_signature*/ 0);
+  oi = My_Find_Op(& op, g_op, num_args, args, /*ignore_signature*/ 0);
 
   if (oi == NULL) {
     /* Try to search again ignoring the signature: it may be that an immediate
@@ -722,20 +696,20 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
      * values. If this is the case we should move the immediate to a temporary
      * register and retry
      */
-    oi = My_Find_Op(p, & op, g_op, num_args, args, /*ignore_signature*/ 1);
+    oi = My_Find_Op(& op, g_op, num_args, args, /*ignore_signature*/ 1);
     if (oi == NULL) {
       int i;
       char *sep = "";
-      fprintf(stderr, "BoxVMCode_Assemble: cannot find a matching operation.\n");
+      fprintf(stderr, "BoxLIR_Append_GOp: cannot find a matching operation.\n");
       fprintf(stderr, "Possible signatures are:\n");
-      BoxOpInfo_Print(stderr, BoxVM_Get_Op_Info(p->cmp->vm, g_op));
+      BoxOpInfo_Print(stderr, Box_Get_VM_Op_Info(g_op));
       fprintf(stderr, "Got the following %d arguments: ", num_args);
       for(i = 0; i < num_args; i++) {
         fprintf(stderr, "%s%s", sep, BoxCont_To_String(args[i]));
         sep = ", ";
       }
       fprintf(stderr, "\n");
-      MSG_FATAL("BoxVMCode_Assemble: aborting!");
+      MSG_FATAL("BoxLIR_Append_GOp: aborting!");
       assert(0);
 
     } else {
@@ -747,13 +721,13 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
       r0.categ = BOXCONTCATEG_LREG;
       r0.value.reg = 0;
       if (op.num_exp_args == 2) {
-        BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
-        BoxVMCode_Assemble(p, g_op, 2, op.exp_args[0], & r0);
+        BoxLIR_Append_GOp(lir, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
+        BoxLIR_Append_GOp(lir, g_op, 2, op.exp_args[0], & r0);
 
       } else {
         assert(op.num_exp_args == 1);
-        BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
-        BoxVMCode_Assemble(p, g_op, 1, & r0);
+        BoxLIR_Append_GOp(lir, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
+        BoxLIR_Append_GOp(lir, g_op, 1, & r0);
       }
       return;
     }
@@ -778,7 +752,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
   My_Load_Immediates(lir, num_args, oi->regs, args, & op);
 
   /* Setting all the implicit input registers from the given arguments */
-  My_Gather_Implicit_Input_Regs(p, num_args, oi->regs, args);
+  My_Gather_Implicit_Input_Regs(lir, num_args, oi->regs, args);
 
   if (!op.ro0_input_conflict) {
     /* ro0 is not an implicit input register */
@@ -817,7 +791,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
          * than one output argument and when they have just one, then it is
          * always exp_arg[0] and not exp_arg[1]).
          */
-        BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
+        BoxLIR_Append_GOp(lir, BOXGOP_MOV, 2, & r0, op.exp_args[1]);
         op.exp_args[1] = & r0;
         My_Unsafe_Assemble(lir, oi->opcode, 2, op.exp_args);
 
@@ -837,7 +811,7 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
         ro1.value.reg = 1;
         cs[0] = & ro1;
         My_Unsafe_Assemble(lir, BOXOP_PUSH_O, 1, cs);
-        BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & ro1, op.exp_args[1]);
+        BoxLIR_Append_GOp(lir, BOXGOP_MOV, 2, & ro1, op.exp_args[1]);
         op.exp_args[1] = & ro1;
         My_Unsafe_Assemble(lir, oi->opcode, 2, op.exp_args);
         My_Unsafe_Assemble(lir, BOXOP_POP_O, 1, cs);
@@ -862,14 +836,14 @@ BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap)
   /* Distributing all the implicit output registers to the corresponding
    * arguments
    */
-  My_Scatter_Implicit_Input_Regs(p, num_args, oi->regs, args);
+  My_Scatter_Implicit_Input_Regs(lir, num_args, oi->regs, args);
 }
 
 void
-BoxVMCode_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, ...)
+BoxLIR_Append_GOp(BoxLIR *lir, BoxGOp g_op, int num_args, ...)
 {
   va_list ap;
   va_start(ap, num_args);
-  BoxVMCode_VA_Assemble(p, g_op, num_args, ap);
+  BoxLIR_Append_GOp_VA(lir, g_op, num_args, ap);
   va_end(ap);
 }

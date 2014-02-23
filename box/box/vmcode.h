@@ -86,19 +86,18 @@ struct BoxVMCode_struct {
                installed  :1,  /**< The procedure was installed */
                callable   :1;
   } have;
-  BoxVMCodeStyle  style;       /**< Procedure style */
-  BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
-  BoxLIRNodeProc
-                *proc;
-  RegAlloc      reg_alloc;   /**< Register allocator: keeps track of registers
-                                  which are being used and of those which are
-                                  not used.*/
-  char          *proc_name,  /**< Procedure name */
-                *alter_name; /**< Alternative name */
-  BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
-  BoxVMRegNum   reg_parent,  /**< Register number for the parent */
-                reg_child;   /**< Register number for the child */
-  BoxCallable   *callable;
+  BoxVMCodeStyle
+               style;       /**< Procedure style */
+  BoxCmp       *cmp;        /**< Compiler corresponding to the procedure */
+  RegAlloc     reg_alloc;   /**< Register allocator: keeps track of registers
+                                 which are being used and of those which are
+                                 not used.*/
+  char         *proc_name,  /**< Procedure name */
+               *alter_name; /**< Alternative name */
+  BoxVMCallNum call_num;    /**< Call number (needed to call it from ASM) */
+  BoxVMRegNum  reg_parent,  /**< Register number for the parent */
+               reg_child;   /**< Register number for the child */
+  BoxCallable  *callable;
 };
 
 /**
@@ -165,14 +164,9 @@ BOXEXPORT BoxVMCallNum
 BoxVMCode_Install(BoxVMCode *p);
 
 /**
- * @brief Assemble a @c call instruction to call the procedure with the given
- *   call number.
+ * @brief Append a LIR node for a Generic OPcode.
  */
 BOXEXPORT void
-BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num);
-
-/** High level routine to assemble bytecode for the Box virtual machine (VM).
- */
-void BoxVMCode_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, ...);
+BoxLIR_Append_GOp(BoxLIR *lir, BoxGOp g_op, int num_args, ...);
 
 #endif /* _BOX_BOXVMCODE_H */

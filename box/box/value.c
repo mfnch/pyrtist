@@ -450,8 +450,8 @@ void BoxValue_Emit_Allocate(BoxValue *v)
       Value v_type_id;
       Value_Init(& v_type_id, proc);
       Value_Setup_As_Imm_Int(& v_type_id, (BoxInt) type_id);
-      BoxVMCode_Assemble(proc, BOXGOP_CREATE,
-                         2, & v->value.cont, & v_type_id.value.cont);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_CREATE,
+                        2, & v->value.cont, & v_type_id.value.cont);
     }
     return;
 
@@ -469,7 +469,7 @@ void Value_Emit_Link(Value *v) {
     assert(v->value.cont.categ == BOXCONTCATEG_LREG
            || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    BoxVMCode_Assemble(v->proc, BOXGOP_MLN, 1, & v->value.cont);
+    BoxLIR_Append_GOp(& v->proc->cmp->lir, BOXGOP_MLN, 1, & v->value.cont);
   }
 }
 
@@ -482,7 +482,7 @@ void Value_Emit_Unlink(Value *v) {
     assert(v->value.cont.categ == BOXCONTCATEG_LREG
            || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    BoxVMCode_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+    BoxLIR_Append_GOp(& v->proc->cmp->lir, BOXGOP_MUNLN, 1, & v->value.cont);
   }
 }
 
@@ -494,7 +494,7 @@ Value_Emit_CJump(Value *v)
   BoxLIRNodeOp *ret;
   BoxCont ri0_cont;
   BoxCont_Set(& ri0_cont, "ri", 0);
-  BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV, 2, & ri0_cont, & v->value.cont);
+  BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV, 2, & ri0_cont, & v->value.cont);
   ret = BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JC_I, NULL);
   Value_Unlink(v);
   return (BoxLIRNodeOpBranch *) ret;
@@ -537,8 +537,8 @@ Value *Value_To_Temp(Value *v) {
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
       (void) BoxType_Unlink(t);
-      BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV,
-                         2, & v->value.cont, & cont);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV,
+                        2, & v->value.cont, & cont);
       return v;
     }
   }
@@ -677,8 +677,8 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
       if (offset != 0) {
         Value *v_offs = Value_Create(c->cur_proc);
         Value_Setup_As_Imm_Int(v_offs, offset);
-        BoxVMCode_Assemble(c->cur_proc, BOXGOP_ADD,
-                           3, & v->value.cont, & v_offs->value.cont, cont_src);
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_ADD,
+                          3, & v->value.cont, & v_offs->value.cont, cont_src);
         Value_Unlink(v_offs);
       }
 
@@ -697,8 +697,8 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
       Value *v_unlink = v;
       v = Value_Create(c->cur_proc);
       Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
-      BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
-                         2, & v->value.cont, & v_unlink->value.cont);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
+                        2, & v->value.cont, & v_unlink->value.cont);
       Value_Unlink(v_unlink);
       return v;
     }
@@ -765,11 +765,11 @@ My_Value_Weak_Box(Value *src) {
 
     /* Get a pointer to the object and use it in the boxing operation. */
     v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
-    BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                       2, & ri0, & src_type_id_cont);
-    BoxVMCode_Assemble(cur_proc, BOXGOP_WBOX,
-                       3, & v_dst->value.cont, & v_src_ptr->value.cont,
-                       & ri0);
+    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
+                      2, & ri0, & src_type_id_cont);
+    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_WBOX,
+                      3, & v_dst->value.cont, & v_src_ptr->value.cont,
+                      & ri0);
 
     /* Now release the register, if required. */
     if (v_unlink)
@@ -778,10 +778,10 @@ My_Value_Weak_Box(Value *src) {
     Value_Unlink(v_src_ptr);
 
   } else {
-    BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                       2, & ri0, & src_type_id_cont);
-    BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                       2, & v_dst->value.cont, & ri0);
+    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
+                      2, & ri0, & src_type_id_cont);
+    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_BOX,
+                      2, & v_dst->value.cont, & ri0);
   }
 
   Value_Unlink(src);
@@ -799,8 +799,8 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
     BoxGOp op = ((parent->value.cont.type == BOXCONTTYPE_OBJ
                   && parent->value.cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_MOV : BOXGOP_LEA);
-    BoxVMCode_Assemble(c->cur_proc, op,
-                       2, & c->cont.pass_parent, & parent->value.cont);
+    BoxLIR_Append_GOp(& c->lir, op,
+                      2, & c->cont.pass_parent, & parent->value.cont);
   }
 
   if (child->value.cont.type != BOXCONTTYPE_VOID) {
@@ -808,12 +808,12 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
     BoxGOp op = ((child->value.cont.type == BOXCONTTYPE_OBJ
                   && child->value.cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
-    BoxVMCode_Assemble(c->cur_proc, op,
-                       2, & c->cont.pass_child, & v_to_pass->value.cont);
+    BoxLIR_Append_GOp(& c->lir, op,
+                      2, & c->cont.pass_child, & v_to_pass->value.cont);
     Value_Unlink(v_to_pass);
   }
 
-  BoxVMCode_Assemble_Call(c->cur_proc, call_num);
+  BoxLIR_Append_Op1(& c->lir, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
 }
 
 /* REFERENCES: return: new, parent: 0, child: -1; */
@@ -826,8 +826,8 @@ Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
   //v_parent = Value_Cast_To_Ptr_2(v_parent);
   v_child = Value_Cast_To_Ptr_2(v_child);
 
-  BoxVMCode_Assemble(c->cur_proc, BOXGOP_DYCALL,
-                     2, & v_parent->value.cont, & v_child->value.cont);
+  BoxLIR_Append_GOp(& c->lir, BOXGOP_DYCALL,
+                    2, & v_parent->value.cont, & v_child->value.cont);
   Value_Unlink(v_child);
   return BOXBOOL_TRUE;
 }
@@ -960,7 +960,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
         Value_Unlink(v_ptr);
         v_ptr = Value_New(c->cur_proc);
         Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
-        BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF, 2,
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2,
                            & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, t);
@@ -1040,8 +1040,8 @@ Value *Value_Cast_To_Ptr(Value *v) {
     Value_Unlink(v);
     v = Value_New(c->cur_proc);
     Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
-    BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
-                       2, & v->value.cont, & v_cont_val);
+    BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
+                      2, & v->value.cont, & v_cont_val);
     return v;
   }
 }
@@ -1065,7 +1065,8 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     (void) BoxType_Unlink(t);
 
     assert(v_ret->value.cont.type == BOXCONTTYPE_OBJ);
-    BoxVMCode_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
+    BoxLIR_Append_GOp(& v_ret->proc->cmp->lir, BOXGOP_LEA,
+                      2, & v_ret->value.cont, & cont);
     return v_ret;
 
   } else
@@ -1132,8 +1133,8 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
         BoxCmp *c = v_point->proc->cmp;
         Value *v_memb = Value_New(c->cur_proc);
         Value_Setup_As_Temp(v_memb, Box_Get_Core_Type(BOXTYPEID_PTR));
-        BoxVMCode_Assemble(v_memb->proc, g_op, 2,
-                           & v_memb->value.cont, & v_point->value.cont);
+        BoxLIR_Append_GOp(& c->lir, g_op, 2,
+                          & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);
         v_memb->kind = VALUEKIND_TARGET;
         return Value_Get_Subfield(v_memb, (size_t) 0,
@@ -1274,10 +1275,10 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       Value_Init(& v_type_id, c->cur_proc);
       Value_Setup_As_Imm_Int(& v_type_id, type_id);
       BoxCont_Set(& ri0, "ri", 0);
-      BoxVMCode_Assemble(c->cur_proc, BOXGOP_TYPEOF,
-                         2, & ri0, & v_type_id.value.cont);
-      BoxVMCode_Assemble(c->cur_proc, BOXGOP_RELOC,
-                         3, & dest->value.cont, & src->value.cont, & ri0);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+                        2, & ri0, & v_type_id.value.cont);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_RELOC,
+                        3, & dest->value.cont, & src->value.cont, & ri0);
       Value_Unlink(& v_type_id);
       Value_Unlink(src);
       Value_Unlink(dest);
@@ -1286,13 +1287,13 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
   } else if (dest->value.cont.type == BOXCONTTYPE_PTR) {
     /* For pointers we need to pay special care: reference counts! */
-    BoxVMCode_Assemble(dest->proc, BOXGOP_REF,
-                       2, & dest->value.cont, & src->value.cont);
+    BoxLIR_Append_GOp(& c->lir, BOXGOP_REF,
+                      2, & dest->value.cont, & src->value.cont);
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */
-    BoxVMCode_Assemble(dest->proc, BOXGOP_MOV,
-                       2, & dest->value.cont, & src->value.cont);
+    BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV,
+                      2, & dest->value.cont, & src->value.cont);
   }
 
   Value_Unlink(src);
@@ -1317,8 +1318,8 @@ BoxTask BoxValue_Assign(BoxValue *dst, BoxValue *src) {
     BoxInt reg = src->value.cont.value.reg;
     if (reg > 0) {
       /* We then avoid allocating a dst object and copying src to dst. */
-      BoxVMCode_Assemble(dst->proc, BOXGOP_REF,
-                         2, & dst->value.cont, & src->value.cont);
+      BoxLIR_Append_GOp(& dst->proc->cmp->lir, BOXGOP_REF,
+                        2, & dst->value.cont, & src->value.cont);
       return BOXTASK_OK;
     }
   }
@@ -1525,11 +1526,11 @@ Value_Expand(Value *src, BoxType *t_dst) {
 
         /* Get a pointer to the object and use it in the boxing operation. */
         v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
-        BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                           2, & ri0, & src_type_id_cont);
-        BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                           3, & v_dst->value.cont, & v_src_ptr->value.cont,
-                           & ri0);
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+                          2, & ri0, & src_type_id_cont);
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
+                          3, & v_dst->value.cont, & v_src_ptr->value.cont,
+                          & ri0);
 
         /* Now release the register, if required. */
         if (v_unlink)
@@ -1538,10 +1539,10 @@ Value_Expand(Value *src, BoxType *t_dst) {
         Value_Unlink(v_src_ptr);
 
       } else {
-        BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                           2, & ri0, & src_type_id_cont);
-        BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                           2, & v_dst->value.cont, & ri0);
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+                          2, & ri0, & src_type_id_cont);
+        BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
+                          2, & v_dst->value.cont, & ri0);
       }
 
       Value_Unlink(src);

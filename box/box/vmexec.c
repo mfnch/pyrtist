@@ -1034,7 +1034,8 @@ void BoxOpTable_Destroy(BoxOpTable *ot) {
   Box_Mem_Free(ot->regs);
 }
 
-void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi) {
+void BoxOpInfo_Print(FILE *out, const BoxOpInfo *oi)
+{
   for(; oi != NULL; oi = oi->next) {
     int j;
     const char *sep = " ";
@@ -1056,10 +1057,11 @@ void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi) {
   }
 }
 
-void BoxOpTable_Print(FILE *out, BoxOpTable *ot) {
+void BoxOpTable_Print(FILE *out, const BoxOpTable *ot)
+{
   int i;
   for(i = 0; i < BOX_NUM_GOPS; i++) {
-    BoxOpInfo *oi = & ot->info[i];
+    const BoxOpInfo *oi = & ot->info[i];
     fprintf(out, "Operations for '%s':\n", oi->name);
     BoxOpInfo_Print(out, oi);
   }

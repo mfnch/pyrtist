@@ -134,6 +134,8 @@ static Value *My_Get_Void_Value(BoxCmp *c)
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
+  BoxLIRNodeProc *proc;
+
   c->ast = NULL;
   BoxLIR_Init(& c->lir);
   c->attr.own_vm = (target_vm == NULL);
@@ -145,6 +147,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
   assert(success);
 
   BoxCmp_Init__Operators(c);
+  proc = BoxLIR_Append_Proc(& c->lir);
+  (void) BoxLIR_Set_Target_Proc(& c->lir, proc);
   BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
   BoxVMCode_Set_Alter_Name(& c->main_proc, "main");
   c->cur_proc = & c->main_proc;
@@ -1120,6 +1124,7 @@ static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
 
 static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
 {
+  BoxLIRNodeProc *prev_proc, *proc;
   BoxASTNodeCombDef *comb_def_node;
   BoxASTNode *n_implem;
   Value *v_child, *v_parent, *v_ret = NULL;
@@ -1227,6 +1232,9 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
     /* A BoxVMCode object is used to get the procedure symbol and to register
      * and assemble it.
      */
+    proc = BoxLIR_Append_Proc(& c->lir);
+    assert(proc);
+    prev_proc = BoxLIR_Set_Target_Proc(& c->lir, proc);
     BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
 
     /* Set the call number. */
@@ -1262,6 +1270,7 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
     (void) BoxVMCode_Install(& proc_implem);
 
     BoxVMCode_Finish(& proc_implem);
+    (void) BoxLIR_Set_Target_Proc(& c->lir, prev_proc);
   }
 
   (void) BoxType_Unlink(t_child);
