@@ -59,6 +59,8 @@ typedef enum {
   BOXASTUNOP_RDEC,
   BOXASTUNOP_NOT,
   BOXASTUNOP_BNOT,
+  BOXASTUNOP_RAISE,
+  BOXASTUNOP_REF,
   BOXASTUNOP_NUM_OPS
 } BoxASTUnOp;
 
@@ -415,12 +417,6 @@ BoxAST_Create_VarIdfr(BoxAST *ast, BoxSrc *src,
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value);
-
-/**
- * @brief Create a raise node.
- */
-BOXEXPORT BoxASTNode *
-BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value);
 
 /**
  * @brief Create a new unary operation.

@@ -94,16 +94,6 @@ typedef struct BoxASTNodeIgnore_struct {
 } BoxASTNodeIgnore;
 #endif
 
-/* Node used to mark an expression as ignorable. */
-#ifdef BOXASTNODE_DEF
-BOXASTNODE_DEF(RAISE, Raise)
-#else
-typedef struct BoxASTNodeRaise_struct {
-  BOXASTNODEHEAD
-  BoxASTNode          *value;
-} BoxASTNodeRaise;
-#endif
-
 /* Node used to represent an unary operation. */
 #ifdef BOXASTNODE_DEF
 BOXASTNODE_DEF(UN_OP, UnOp)
@@ -113,6 +103,13 @@ typedef struct BoxASTNodeUnOp_struct {
   BoxASTNode          *value;
   BoxASTUnOp          op;
 } BoxASTNodeUnOp;
+#endif
+
+/* Node used to represent an unary type operation. */
+#ifdef BOXASTNODE_DEF
+BOXASTNODE_DEF(UN_TYPE_OP, UnTypeOp)
+#else
+typedef BoxASTNodeUnOp BoxASTNodeUnTypeOp;
 #endif
 
 /* Node used to represent a binary operation. */

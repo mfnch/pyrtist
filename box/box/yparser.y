@@ -140,6 +140,7 @@ un_op:
   | TOK_INC                   {$$ = BOXASTUNOP_LINC;}
   | TOK_DEC                   {$$ = BOXASTUNOP_LDEC;}
   | '~'                       {$$ = BOXASTUNOP_BNOT;}
+  | '^'                       {$$ = BOXASTUNOP_RAISE;}
   ;
 
 post_op:
@@ -264,7 +265,6 @@ opt_postfix_expr:
 unary_expr:
     postfix_expr                 {$$ = $1;}
   | un_op unary_expr             {$$ = BoxAST_Create_UnOp(ast, $1, $2);}
-  | '^' unary_expr               {$$ = BoxAST_Create_Raise(ast, $2);}
 ;
 
 pow_expr:

@@ -55,6 +55,7 @@ BoxASTUnOp_To_String(BoxASTUnOp op)
   case BOXASTUNOP_RDEC: return "--";
   case BOXASTUNOP_NOT: return "!";
   case BOXASTUNOP_BNOT: return "~";
+  case BOXASTUNOP_RAISE: return "^";
   default: break;
   }
   return "?";
@@ -518,23 +519,14 @@ BoxAST_Create_Ignore(BoxAST *ast, BoxASTNode *value)
   return node;
 }
 
-/* Create a raise node. */
-BoxASTNode *
-BoxAST_Create_Raise(BoxAST *ast, BoxASTNode *value)
-{
-  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_RAISE);
-  if (node) {
-    MY_PROPAGATE_TYPE(node, value);
-    ((BoxASTNodeIgnore *) node)->value = value;
-  }
-  return node;
-}
-
 /* Create a new unary operation. */
 BoxASTNode *
 BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
 {
-  BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_UN_OP);
+  BoxASTNodeType node_type = (BoxASTNode_Is_Type(value)) ?
+    BOXASTNODETYPE_UN_TYPE_OP : BOXASTNODETYPE_UN_OP;
+  BoxASTNode *node = BoxAST_Create_Node(ast, node_type);
+  MY_PROPAGATE_TYPE(node, value);
   if (node) {
     BoxASTNodeUnOp *un_op = (BoxASTNodeUnOp *) node;
     un_op->value = value;

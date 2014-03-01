@@ -207,7 +207,7 @@ void BoxCmp_Log_Err(BoxCmp *c, BoxASTNode *node, const char *fmt, ...)
   const char *msg;
   va_start(ap, fmt);
   msg = Box_VA_Print(fmt, ap);
-  MSG_ERROR("%s\n", msg);
+  MSG_ERROR("%s", msg);
   va_end(ap);
 }
 
@@ -865,21 +865,66 @@ static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node)
   Value_Set_Ignorable(operand, 1);
 }
 
+static void My_Compile_UnTypeOp(BoxCmp *c, BoxASTNode *node)
+{
+  BoxASTNodeUnTypeOp *un_type_op = (BoxASTNodeUnTypeOp *) node;
+  Value *v_type, *v_out_type = NULL;
+
+  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_UN_TYPE_OP);
+
+  My_Compile_Any(c, un_type_op->value);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+    return;
+
+  v_type = BoxCmp_Pop_Value(c);
+  if (Value_Want_Has_Type(v_type)) {
+    BoxType *out_type = NULL;
+
+    switch (un_type_op->op) {
+    case BOXASTUNOP_LINC:
+    case BOXASTUNOP_RAISE:
+      out_type = BoxType_Create_Raised(BoxType_Link(v_type->type));
+      break;
+    default:
+      BoxCmp_Log_Err(c, node, "Cannot apply unary operator %s to type.",
+                     BoxASTUnOp_To_String(un_type_op->op));
+      break;
+    }
+
+    if (out_type) {
+      v_out_type = Value_Create(c->cur_proc);
+      Value_Setup_As_Type(v_out_type, out_type);
+      (void) BoxType_Unlink(out_type);
+    }
+  }
+
+  Value_Unlink(v_type);
+  BoxCmp_Push_Value(c, v_out_type);
+}
+
 static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
 {
+  BoxASTNodeUnOp *un_op = (BoxASTNodeUnOp *) node;
   Value *operand, *v_result = NULL;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_UN_OP);
 
   /* Compile operand and get it from the stack */
-  My_Compile_Any(c, ((BoxASTNodeUnOp *) node)->value);
+  My_Compile_Any(c, un_op->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
   operand = BoxCmp_Pop_Value(c);
-  if (Value_Want_Value(operand))
-    v_result = BoxCmp_Opr_Emit_UnOp(c, ((BoxASTNodeUnOp *) node)->op, operand);
-  else
+  if (Value_Want_Value(operand)) {
+    switch (un_op->op) {
+    case BOXASTUNOP_RAISE:
+      v_result = Value_Raise(operand);
+      break;
+    default:
+      v_result = BoxCmp_Opr_Emit_UnOp(c, un_op->op, operand);
+      break;
+    }
+  } else
     Value_Unlink(operand);
 
   BoxCmp_Push_Value(c, v_result);
@@ -1465,51 +1510,4 @@ static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
     printf("Unexpected compound kind %d", (int) compound->kind);
     abort();
   }
-}
-
-static void My_Compile_Raise_Type(BoxCmp *c, BoxASTNodeRaise *n)
-{
-  Value *v_type, *v_inc_type = NULL;
-
-  My_Compile_Any(c, n->value);
-  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
-    return;
-
-  v_type = BoxCmp_Pop_Value(c);
-  if (Value_Want_Has_Type(v_type)) {
-    BoxType *inc_type = BoxType_Create_Raised(BoxType_Link(v_type->type));
-    v_inc_type = Value_Create(c->cur_proc);
-    Value_Setup_As_Type(v_inc_type, inc_type);
-    (void) BoxType_Unlink(inc_type);
-  }
-
-  BoxCmp_Push_Value(c, v_inc_type);
-}
-
-static void My_Compile_Raise_Value(BoxCmp *c, BoxASTNodeRaise *n)
-{
-  Value *v_operand = NULL;
-
-  My_Compile_Any(c, n->value);
-  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
-    return;
-
-  v_operand = BoxCmp_Pop_Value(c);
-  if (Value_Want_Value(v_operand)) {
-    v_operand = Value_Raise(v_operand);
-  } else {
-    Value_Unlink(v_operand);
-    v_operand = NULL;
-  }
-
-  BoxCmp_Push_Value(c, v_operand);
-}
-
-static void My_Compile_Raise(BoxCmp *c, BoxASTNode *node)
-{
-  assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_RAISE);
-  if (BoxASTNode_Is_Type(node))
-    My_Compile_Raise_Type(c, (BoxASTNodeRaise *) node);
-  else
-    My_Compile_Raise_Value(c, (BoxASTNodeRaise *) node);
 }
