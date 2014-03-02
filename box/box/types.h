@@ -180,7 +180,7 @@ BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Ident(BOXIN BoxType *source, const char *name);
 
 /**
- * @brief Create a new raised type from the type 'source'. 
+ * @brief Create a new raised type from the type 'source'.
  *
  * The new type will be similar to t, but incompatible: BoxType_Compare() will
  * not match the two types. As a consequence, the new raised type will not be
@@ -501,7 +501,7 @@ typedef struct BoxTypeIter_struct {
 } BoxTypeIter;
 
 /**
- * @brief Initialize an iterator for iteration over the members of the given type.
+ * @brief Prepare an iteration over the members of the given type.
  *
  * @param ti Pointer to location of memory to initialize.
  * @param t Iteration is done over the members of this type.

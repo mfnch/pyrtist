@@ -141,6 +141,7 @@ un_op:
   | TOK_DEC                   {$$ = BOXASTUNOP_LDEC;}
   | '~'                       {$$ = BOXASTUNOP_BNOT;}
   | '^'                       {$$ = BOXASTUNOP_RAISE;}
+  | '&'                       {$$ = BOXASTUNOP_REF;}
   ;
 
 post_op:

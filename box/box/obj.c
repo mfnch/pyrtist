@@ -131,7 +131,7 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
         BoxCallable *callable;
         BoxType *node;
         BoxType *rt;
-        
+
         /* Initialise first from the type we are deriving from. */
         rt = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
         if (!My_Init_Obj(src, rt))
@@ -171,7 +171,7 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
          * avoid ending up with a partially initialized structure).
          */
         success = BOXBOOL_TRUE;
- 
+
         for (BoxTypeIter_Init(& ti, t), idx = 0;
              BoxTypeIter_Get_Next(& ti, & node);
              idx++) {
@@ -435,8 +435,12 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
 
     case BOXTYPECLASS_ENUM:
     case BOXTYPECLASS_FUNCTION:
-    case BOXTYPECLASS_POINTER:
       return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_POINTER:
+      BoxPtr_Copy((BoxPtr *) BoxPtr_Get_Target(dst),
+                  (BoxPtr *) BoxPtr_Get_Target(src));
+      return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_ANY:
       BoxAny_Copy((BoxAny *) BoxPtr_Get_Target(dst),
@@ -448,7 +452,7 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
       return BOXBOOL_FALSE;
     }
   }
- 
+
   /* Should never get here... */
   return BOXBOOL_FALSE;
 }
@@ -484,7 +488,7 @@ BoxBool BoxSPtr_Unlink_Begin(BoxSPtr src) {
 void BoxSPtr_Unlink_End(BoxSPtr src) {
   BoxSPtr ret = BoxSPtr_Unlink(src);
   assert(!ret);
-} 
+}
 
 /* Reference the given object. */
 BoxPtr *BoxPtr_Link(BoxPtr *src) {

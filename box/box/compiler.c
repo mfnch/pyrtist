@@ -885,6 +885,9 @@ static void My_Compile_UnTypeOp(BoxCmp *c, BoxASTNode *node)
     case BOXASTUNOP_RAISE:
       out_type = BoxType_Create_Raised(BoxType_Link(v_type->type));
       break;
+    case BOXASTUNOP_REF:
+      out_type = BoxType_Create_Pointer(BoxType_Link(v_type->type));
+      break;
     default:
       BoxCmp_Log_Err(c, node, "Cannot apply unary operator %s to type.",
                      BoxASTUnOp_To_String(un_type_op->op));

@@ -56,6 +56,7 @@ BoxASTUnOp_To_String(BoxASTUnOp op)
   case BOXASTUNOP_NOT: return "!";
   case BOXASTUNOP_BNOT: return "~";
   case BOXASTUNOP_RAISE: return "^";
+  case BOXASTUNOP_REF: return "&";
   default: break;
   }
   return "?";

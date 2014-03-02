@@ -184,6 +184,12 @@ typedef struct BoxPtr_struct {
 #  define BoxPtr_Get_Block(p) ((p)->block)
 
 /**
+ * @brief Copy a pointer.
+ */
+#  define BoxPtr_Copy(dst, src) \
+  (*(dst) = *BoxPtr_Link(src))
+
+/**
  * This macro expands to nothing. It is used in function prototypes to indicate
  * that the declared function steals a reference to the passed object. This
  * macro has hence a purely aesthetical/declarative purpose.
