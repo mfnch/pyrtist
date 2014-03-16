@@ -236,7 +236,7 @@ include BEGIN(include);
  /* Other operators */
 "**"  {return TOK_POW;}
 
-[$]+  { yylval.SelfLevel = yyleng; return TOK_SELF;}
+[$]+  {yylval.Node = MY_NODE(ArgGet, yyleng); return TOK_SELF;}
 
  /* Combination symbols */
 "@"   {yylval.Combine = BOXCOMBTYPE_AT; return TOK_COMBINE;}
@@ -246,11 +246,11 @@ include BEGIN(include);
 "@&"  {yylval.Combine = BOXCOMBTYPE_AT; return TOK_COMBINE;}
 
  /* Special tokens */
-"(.[)" {yylval.TTag = BOXTYPEID_INIT;  return TOK_TTAG;}
-"(].)" {yylval.TTag = BOXTYPEID_FINISH; return TOK_TTAG;}
-"([)"  {yylval.TTag = BOXTYPEID_BEGIN; return TOK_TTAG;}
-"(])"  {yylval.TTag = BOXTYPEID_END; return TOK_TTAG;}
-"(;)"  {yylval.TTag = BOXTYPEID_PAUSE; return TOK_TTAG;}
+"(.[)" {yylval.Node = MY_NODE(TypeTag, BOXTYPEID_INIT); return TOK_TTAG;}
+"(].)" {yylval.Node = MY_NODE(TypeTag, BOXTYPEID_FINISH); return TOK_TTAG;}
+"([)"  {yylval.Node = MY_NODE(TypeTag, BOXTYPEID_BEGIN); return TOK_TTAG;}
+"(])"  {yylval.Node = MY_NODE(TypeTag, BOXTYPEID_END); return TOK_TTAG;}
+"(;)"  {yylval.Node = MY_NODE(TypeTag, BOXTYPEID_PAUSE); return TOK_TTAG;}
 
  /* Number of type Char */
 '(\\'|[^'\n]+)' {

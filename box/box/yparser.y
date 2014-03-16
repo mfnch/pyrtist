@@ -47,14 +47,11 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 
 /* Possible types for the nodes of the tree */
 %union {
-  BoxTypeId     TTag;
   BoxCombType   Combine;
   BoxASTUnOp    UnaryOperator;
   BoxASTBinOp   BinaryOperator;
   BoxASTNodePtr Node;
-  BoxASTNodePtr NewNode;
   BoxASTSep     Sep;
-  uint32_t      SelfLevel;
 }
 
 %code requires {
@@ -78,11 +75,8 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 
 %token TOK_TO TOK_MAPTO
 
-%token <SelfLevel> TOK_SELF
-
 /* List of tokens that have semantical values */
 %token <Combine> TOK_COMBINE
-%token <TTag> TOK_TTAG
 
 /* List of simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
@@ -93,7 +87,7 @@ static void yyerror(BoxParser *parser, BoxAST *ast, char *s);
 %token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR TOK_KEYWORD
+%token <Node> TOK_TYPE_IDFR TOK_VAR_IDFR TOK_KEYWORD TOK_SELF TOK_TTAG
 %token <Node> TOK_CONSTANT TOK_STRING
 %token <BinaryOperator> TOK_LAND TOK_LOR
 
@@ -236,13 +230,13 @@ name:
 
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
-  | TOK_TTAG                     {$$ = BoxAST_Create_TypeTag(ast, $1);}
+  | TOK_TTAG                     {$$ = $1;}
   | TOK_KEYWORD                  {$$ = BoxAST_Create_Keyword(ast, $1);}
   | string_concat                {$$ = $1;}
   | name                         {$$ = $1;}
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
-  | TOK_SELF                     {$$ = BoxAST_Create_ArgGet(ast, $1);}
+  | TOK_SELF                     {$$ = $1;}
   | '(' compound ')'             {$$ = BoxAST_Close_Compound(ast, $2);}
   ;
 

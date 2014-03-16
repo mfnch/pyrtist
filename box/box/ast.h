@@ -484,13 +484,13 @@ BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
  * @brief Create an argument node.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth);
+BoxAST_Create_ArgGet(BoxAST *ast, BoxSrc *src, uint32_t depth);
 
 /**
  * @brief Create a type tag.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id);
+BoxAST_Create_TypeTag(BoxAST *ast, BoxSrc *src, BoxTypeId type_id);
 
 /**
  * @brief Create a subtype.

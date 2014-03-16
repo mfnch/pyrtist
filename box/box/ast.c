@@ -530,6 +530,7 @@ BoxAST_Create_UnOp(BoxAST *ast, BoxASTUnOp op, BoxASTNode *value)
   MY_PROPAGATE_TYPE(node, value);
   if (node) {
     BoxASTNodeUnOp *un_op = (BoxASTNodeUnOp *) node;
+    MY_COPY_SRC(node, value);
     un_op->value = value;
     un_op->op = op;
   }
@@ -544,6 +545,7 @@ BoxAST_Create_BinOp(BoxAST *ast, BoxASTNode *lhs,
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_BIN_OP);
   if (node) {
     BoxASTNodeBinOp *bin_op = (BoxASTNodeBinOp *) node;
+    MY_PROPAGATE_SRC(bin_op, lhs, rhs);
     bin_op->lhs = lhs;
     bin_op->rhs = rhs;
     bin_op->op = op;
@@ -565,6 +567,7 @@ BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_COMPOUND);
   if (node) {
     BoxASTNodeCompound *spec = (BoxASTNodeCompound *) node;
+    MY_COPY_SRC(node, memb);
     spec->kind = BOXASTCOMPOUNDKIND_UNDET;
     spec->sep = BOXASTSEP_NONE;
     spec->memb = NULL;
@@ -580,6 +583,7 @@ BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_MEMBER);
   if (node) {
+    MY_COPY_SRC(node, name);
     ((BoxASTNodeMember *) node)->expr = expr;
     ((BoxASTNodeMember *) node)->name = name;
   }
@@ -620,6 +624,8 @@ BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node, BoxASTSep sep,
 
   if (!memb_node)
     return compound_node;
+
+  MY_PROPAGATE_SRC(compound_node, compound_node, memb_node);
 
   assert(BoxASTNode_Get_Type(memb_node) == BOXASTNODETYPE_MEMBER);
   memb = (BoxASTNodeMember *) memb_node;
@@ -751,8 +757,9 @@ BoxAST_Create_Get(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_GET);
   if (node) {
-    assert(!member_name
-           || BoxASTNode_Get_Type(member_name) == BOXASTNODETYPE_VAR_IDFR);
+    assert(member_name
+           && BoxASTNode_Get_Type(member_name) == BOXASTNODETYPE_VAR_IDFR);
+    MY_PROPAGATE_SRC(node, (parent) ? parent : member_name, member_name);
     ((BoxASTNodeGet *) node)->parent = parent;
     ((BoxASTNodeGet *) node)->name = (BoxASTNodeVarIdfr *) member_name;
   }
@@ -768,6 +775,9 @@ BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_COMB_DEF);
   if (node) {
     BoxASTNodeCombDef *spec = (BoxASTNodeCombDef *) node;
+    BoxASTNode *rightmost = (implem) ? implem : ((c_name) ? c_name : parent);
+    assert(rightmost);
+    MY_PROPAGATE_SRC(node, child, rightmost);
     spec->child = child;
     spec->comb_type = (uint8_t) comb_type;
     spec->parent = parent;
@@ -779,10 +789,11 @@ BoxAST_Create_CombDef(BoxAST *ast, BoxASTNode *child, BoxCombType comb_type,
 
 /* Create an argument node. */
 BoxASTNode *
-BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
+BoxAST_Create_ArgGet(BoxAST *ast, BoxSrc *src, uint32_t depth)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_ARG_GET);
   if (node) {
+    node->head.src = *src;
     ((BoxASTNodeArgGet *) node)->depth = depth;
   }
   return node;
@@ -790,10 +801,11 @@ BoxAST_Create_ArgGet(BoxAST *ast, uint32_t depth)
 
 /* Create a type tag. */
 BoxASTNode *
-BoxAST_Create_TypeTag(BoxAST *ast, BoxTypeId type_id)
+BoxAST_Create_TypeTag(BoxAST *ast, BoxSrc *src, BoxTypeId type_id)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_TYPE_TAG);
   if (node) {
+    node->head.src = *src;
     ((BoxASTNodeTypeTag *) node)->type_id = (uint32_t) type_id;
   }
   return node;
@@ -806,7 +818,7 @@ BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent, BoxASTNode *member_name)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_SUBTYPE);
   if (node) {
     assert(BoxASTNode_Get_Type(member_name) == BOXASTNODETYPE_TYPE_IDFR);
-
+    MY_PROPAGATE_SRC(node, (parent) ? parent : member_name, member_name);
     ((BoxASTNodeSubtype *) node)->parent = parent;
     ((BoxASTNodeSubtype *) node)->name = (BoxASTNodeTypeIdfr *) member_name;
     if (parent)
@@ -822,6 +834,7 @@ BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type)
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_KEYWORD);
   if (node) {
     assert(BoxASTNode_Get_Type(type) == BOXASTNODETYPE_TYPE_IDFR);
+    MY_COPY_SRC(node, type);
     ((BoxASTNodeKeyword *) node)->type = (BoxASTNodeTypeIdfr *) type;
     BoxASTNode_Set_Attr(node, 0, BOXASTNODEATTR_TYPE);
   }
