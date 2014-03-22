@@ -204,11 +204,10 @@ BoxVM *BoxCmp_Steal_VM(BoxCmp *c)
 void BoxCmp_Log_Err(BoxCmp *c, BoxASTNode *node, const char *fmt, ...)
 {
   va_list ap;
-  const char *msg;
   va_start(ap, fmt);
-  msg = Box_VA_Print(fmt, ap);
-  MSG_ERROR("%s", msg);
+  const char *s = Box_Print_VA(fmt, ap);
   va_end(ap);
+  BoxAST_Log(c->ast, & node->head.src, BOXLOGLEVEL_ERROR, s);
 }
 
 /* Function which does all the steps needed to get from a Box source file
@@ -888,6 +887,9 @@ static void My_Compile_UnTypeOp(BoxCmp *c, BoxASTNode *node)
     case BOXASTUNOP_REF:
       out_type = BoxType_Create_Pointer(BoxType_Link(v_type->type));
       break;
+    case BOXASTUNOP_DEREF:
+      out_type = BoxType_Dereference_Pointer(BoxType_Link(v_type->type));
+      break;
     default:
       BoxCmp_Log_Err(c, node, "Cannot apply unary operator %s to type.",
                      BoxASTUnOp_To_String(un_type_op->op));
@@ -922,6 +924,12 @@ static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
     switch (un_op->op) {
     case BOXASTUNOP_RAISE:
       v_result = Value_Raise(operand);
+      break;
+    case BOXASTUNOP_REF:
+      v_result = Value_Reference(operand);
+      break;
+    case BOXASTUNOP_DEREF:
+      v_result = Value_Dereference(operand);
       break;
     default:
       v_result = BoxCmp_Opr_Emit_UnOp(c, un_op->op, operand);
@@ -1095,8 +1103,8 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
   if (!parent) {
     v_struc = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
     if (!v_struc) {
-      MSG_ERROR("Cannot get implicit member '%s'. Default parent is not "
-                "defined in current scope.", member_name);
+      BoxCmp_Log_Err(c, node, "Cannot get implicit member '%s'. Default "
+		     "parent is not defined in current scope.", member_name);
       BoxCmp_Push_Value(c, NULL);
       return;
     }
@@ -1109,8 +1117,8 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
     v_memb = Value_Struc_Get_Member(v_struc, member_name);
     /* No need to unlink v_struc here */
     if (!v_memb)
-      MSG_ERROR("Cannot find the member '%s' of an object with type '%T'.",
-                member_name, v_struc->type);
+      BoxCmp_Log_Err(c, node, "Cannot find the member `%s' of an object with "
+		     "type `%T'.", member_name, v_struc->type);
   } else
     Value_Unlink(v_struc);
 

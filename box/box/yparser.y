@@ -136,6 +136,7 @@ un_op:
   | '~'                       {$$ = BOXASTUNOP_BNOT;}
   | '^'                       {$$ = BOXASTUNOP_RAISE;}
   | '&'                       {$$ = BOXASTUNOP_REF;}
+  | '*'                       {$$ = BOXASTUNOP_DEREF;}
   ;
 
 post_op:

@@ -431,4 +431,16 @@ Value *Value_Expand_Subtype(Value *v);
 /** Raise the value 'v': if 'v = (^Int)[]', '^v' has type 'Int'. */
 Value *Value_Raise(Value *v);
 
+/**
+ * @brief Create a reference to the given object.
+ */
+Value *
+Value_Reference(Value *v);
+
+/**
+ * @brief Dereference the given pointer object.
+ */
+Value *
+Value_Dereference(Value *v);
+
 #endif /* _BOX_VALUE_H */

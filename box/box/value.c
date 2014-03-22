@@ -48,7 +48,9 @@
  *  continuously BoxArr objects for every couple of [ ] the compiler
  *  encounters.
  */
-void Value_Init(Value *v, BoxVMCode *proc) {
+void
+Value_Init(Value *v, BoxVMCode *proc)
+{
   v->proc = proc;
   v->kind = VALUEKIND_ERR;
   v->type = NULL;
@@ -59,7 +61,9 @@ void Value_Init(Value *v, BoxVMCode *proc) {
   v->num_ref = 1;
 }
 
-Value *Value_Create(BoxVMCode *proc) {
+Value *
+Value_Create(BoxVMCode *proc)
+{
   Value *v = Box_Mem_Safe_Alloc(sizeof(Value));
   Value_Init(v, proc);
   v->attr.new_or_init = 1;
@@ -631,7 +635,6 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
     if (v_categ != BOXCONTCATEG_PTR) {
       assert(v_categ == BOXCONTCATEG_LREG || v_categ == BOXCONTCATEG_GREG);
       return v;
-
     } else {
       /* v_categ == BOXCONTCATEG_PTR */
       BoxBool is_greg = v->value.cont.value.ptr.is_greg;
@@ -930,16 +933,17 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
 
   if (v_ptr->num_ref == 1) {
     BoxCont *cont = & v_ptr->value.cont;
+    BoxType *old_type = v_ptr->type;
     BoxTypeId new_cont_type = BoxType_Get_Cont_Type(t);
 
     switch(cont->categ) {
     case BOXCONTCATEG_GREG:
     case BOXCONTCATEG_LREG:
       v_ptr->type = BoxType_Link(t);
+      (void) BoxType_Unlink(old_type);
       cont->type = new_cont_type;
       if (new_cont_type == BOXTYPEID_OBJ || new_cont_type == BOXTYPEID_PTR)
         return v_ptr;
-
       else {
         int is_greg = (cont->categ == BOXCONTCATEG_GREG);
         BoxInt reg = cont->value.reg;
@@ -954,14 +958,13 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
       if (My_Value_Can_Reuse_Reg(v_ptr)) {
         MSG_FATAL("Value_Cast_From_Ptr: cannot reuse register, yet!");
         /* not implemented */
-
       } else {
         BoxCont v_ptr_cont = v_ptr->value.cont;
         Value_Unlink(v_ptr);
-        v_ptr = Value_New(c->cur_proc);
+        v_ptr = Value_Create(c->cur_proc);
         Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2,
-                           & v_ptr->value.cont, & v_ptr_cont);
+			  & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, t);
       }
@@ -1021,18 +1024,17 @@ Value *Value_Cast_To_Ptr(Value *v) {
     if (v->num_ref > 1) {
       MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
       return v;
-
-    } else {
-      assert(v->num_ref == 1);
-      assert(v_cont->categ == BOXCONTCATEG_LREG
-             || v_cont->categ == BOXCONTCATEG_GREG);
-      /* We own the sole reference to v, which is a temporary quantity:
-       * in other words we can do whathever we want with it!
-       */
-      v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_PTR));
-      v_cont->type = BOXCONTTYPE_PTR;
-      return v;
     }
+
+    assert(v->num_ref == 1);
+    assert(v_cont->categ == BOXCONTCATEG_LREG
+	   || v_cont->categ == BOXCONTCATEG_GREG);
+    /* We own the sole reference to v, which is a temporary quantity:
+     * in other words we can do whathever we want with it!
+     */
+    v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_PTR));
+    v_cont->type = BOXCONTTYPE_PTR;
+    return v;
 
   } else {
     /* We have to get the pointer with a lea instruction. */
@@ -1068,9 +1070,9 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     BoxLIR_Append_GOp(& v_ret->proc->cmp->lir, BOXGOP_LEA,
                       2, & v_ret->value.cont, & cont);
     return v_ret;
+  }
 
-  } else
-    return v_obj;
+  return v_obj;
 }
 
 /** Return a sub-field of an object type. 'offset' is the address of the
@@ -1746,16 +1748,55 @@ Value *Value_Raise(Value *v) {
       (void) BoxType_Unlink(v->type);
       v->type = unraised_type;
       return v;
-
     } else {
       Value_Unlink(v);
       MSG_ERROR("Raising operator is applied to a non-raised type.");
       return NULL;
     }
-
   } else {
     Value_Unlink(v);
     MSG_ERROR("Raising operator got invalid operand.");
     return NULL;
   }
+}
+
+Value *
+Value_Reference(Value *v)
+{
+  if (!Value_Is_Value(v)) {
+    MSG_ERROR("Invalid operand to reference operator.");
+    return NULL;
+  }
+
+  v = Value_Cast_To_Ptr_2(v);
+  v->type = BoxType_Create_Pointer(v->type);
+  v->value.cont.type = BOXCONTTYPE_PTR;
+  v->kind = VALUEKIND_TEMP;
+  return v;
+}
+
+Value *
+Value_Dereference(Value *v)
+{
+  BoxCmp *c = v->proc->cmp;
+  BoxType *deref_type;
+
+  if (!Value_Is_Value(v)) {
+    MSG_ERROR("Invalid operand to reference operator.");
+    return NULL;
+  }
+
+  deref_type = BoxType_Dereference_Pointer(v->type);
+  if (!deref_type) {
+    MSG_ERROR("Cannot dereference objects of type  `%T'", v->type);
+    return NULL;
+  }
+
+  v = Value_Cast_From_Ptr(v, deref_type);
+  v->kind = VALUEKIND_TARGET;
+
+  /* Check for NULL pointers. */
+  BoxLIR_Append_GOp(& c->lir, BOXGOP_NOTNUL,
+		    1, & v->value.cont, & v->value.cont);
+  return v;
 }

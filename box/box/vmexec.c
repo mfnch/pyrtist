@@ -555,7 +555,20 @@ static void
 My_Exec_Typeof_I(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxInt *ri0 = (BoxInt *) vmx->local[BOXTYPEID_INT].ptr;
   *ri0 = *((BoxInt *) arg1);
- }
+}
+
+/**
+ * @brief Instruction <tt>notnul roA</tt>.
+ *
+ * This instruction raises an exception if the given pointer is NULL.
+ */
+static void
+My_Exec_NotNul_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  if (BoxPtr_Is_Null((BoxPtr *) arg1)) {
+    BoxVM_Set_Fail_Msg(vmx->vm, "Null pointer");
+    vmx->flags.error = vmx->flags.exit = 1;
+  }
+}
 
 /**
  * @brief Instruction <tt>box dstptr</tt>.
@@ -805,6 +818,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", My_Exec_Jc_I     }, /* jc  ri          */
 
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ri0", "x-", "xx", My_Exec_Typeof_I }, /* typeof reg_i        */
+  {BOXGOP_NOTNUL, "notnul", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_NotNul_O }, /* notnul reg_o        */
   {   BOXGOP_BOX,    "box", 1, 'o',    "ri0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
   {  BOXGOP_WBOX,   "wbox", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_WBox_OO  }, /* wbox reg_o, reg_o   */

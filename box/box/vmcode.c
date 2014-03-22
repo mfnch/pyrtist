@@ -319,6 +319,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
       offset += BoxVMOp_Get_Length(& vm_op);
     }
 
+    /* And now emit the byte code. */
     for (op = proc->first_op; op; op = op->next) {
       switch (op->head.type) {
       case BOXLIRNODETYPE_OP:

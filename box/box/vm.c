@@ -554,10 +554,12 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
   pt->target_proc->status.inhibit = inhibit;
 }
 
-/** Similar to BoxVM_Assemble, but takes a va_list argument as a replacement
+/* Similar to BoxVM_Assemble(), but takes a va_list argument as a replacement
  * for the extra arguments.
  */
-void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
+void
+BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap)
+{
   BoxVMProc *proc = vmp->proc_table.target_proc;
   union {
     BoxChar   val_char;
@@ -680,7 +682,7 @@ void BoxVM_Assemble(BoxVM *vm, BoxOpId instr, ...) {
 
 /****************************************************************************
  * Code to handle the DATA SEGMENT, the region of memory where values for   *
- * strings and other objects is put.                                        *
+ * strings and other objects are stored.                                    *
  ****************************************************************************/
 
 typedef struct {

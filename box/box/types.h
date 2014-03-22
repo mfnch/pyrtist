@@ -347,6 +347,15 @@ BOXEXPORT BoxType *
 BoxType_Create_Pointer(BoxType *target);
 
 /**
+ * @brief Dereference a pointer type.
+ *
+ * @param ptr_type A pointer type.
+ * @return The type referenced by @p target, or @c NULL in case of errors.
+ */
+BOXEXPORT BoxType *
+BoxType_Dereference_Pointer(BoxType *ptr_type);
+
+/**
  * @brief Create a new Any type.
  */
 BOXEXPORT BoxType *

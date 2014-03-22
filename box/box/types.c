@@ -624,7 +624,8 @@ BoxType_Create_Callable(BoxType *parent, BoxType *child) {
 
 /* Get the parent of a callable type. */
 BoxType *
-BoxType_Get_Callable_Parent(BoxType *callable) {
+BoxType_Get_Callable_Parent(BoxType *callable)
+{
   if (callable && callable->type_class == BOXTYPECLASS_FUNCTION) {
     BoxTypeFunction *td = BoxType_Get_Data(callable);
     return td->parent;
@@ -634,7 +635,8 @@ BoxType_Get_Callable_Parent(BoxType *callable) {
 
 /* Get the child of a callable type. */
 BoxType *
-BoxType_Get_Callable_Child(BoxType *callable) {
+BoxType_Get_Callable_Child(BoxType *callable)
+{
   if (callable && callable->type_class == BOXTYPECLASS_FUNCTION) {
     BoxTypeFunction *td = BoxType_Get_Data(callable);
     return td->child;
@@ -643,11 +645,24 @@ BoxType_Get_Callable_Child(BoxType *callable) {
 }
 
 /* Create a new pointer type. */
-BoxType *BoxType_Create_Pointer(BoxType *source) {
+BoxType *
+BoxType_Create_Pointer(BoxType *source)
+{
   BoxType *t;
   BoxTypePointer *td = BoxType_Alloc(& t, BOXTYPECLASS_POINTER);
   td->source = source;
   return t;
+}
+
+/* Dereference a pointer type. */
+BoxType *
+BoxType_Dereference_Pointer(BoxType *ptr_type)
+{
+  if (ptr_type && ptr_type->type_class == BOXTYPECLASS_POINTER) {
+    BoxTypePointer *td = BoxType_Get_Data(ptr_type);
+    return td->source;
+  }
+  return NULL;
 }
 
 /**
@@ -1198,7 +1213,8 @@ BoxType_Get_Cont_Type(BoxType *t)
   stem = BoxType_Get_Stem(t);
 
   /* Char, Int, ... are special types which have their own register types. */
-  if (stem->type_class == BOXTYPECLASS_PRIMARY) {
+  switch (stem->type_class) {
+  case BOXTYPECLASS_PRIMARY: {
     BoxTypePrimary *td = BoxType_Get_Data(stem);
     BoxTypeId id = td->id;
 
@@ -1207,13 +1223,16 @@ BoxType_Get_Cont_Type(BoxType *t)
       return (BoxContType) id;
     else
       return (td->size == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
-
-  } else if (stem->type_class == BOXTYPECLASS_INTRINSIC) {
+  }
+  case BOXTYPECLASS_INTRINSIC: {
     BoxTypeIntrinsic *td = BoxType_Get_Data(stem);
     return (td->size == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
-
-  } else
+  }
+  case BOXTYPECLASS_POINTER:
+    return BOXCONTTYPE_PTR;
+  default:
     return (BoxType_Get_Size(stem) == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
+  }
 }
 
 /* Whether the type is a void type (contains nothing). */
