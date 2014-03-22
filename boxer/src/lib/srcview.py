@@ -100,7 +100,6 @@ class BoxSrcView(object):
     view.set_wrap_mode(gtk.WRAP_WORD)
     view.set_property("has-tooltip", True)
     view.connect("query-tooltip", self._sighandler_query_tooltip)
-    view.connect("undo", self._sighandler_undo)
     buf.connect("insert-text", self._sighandler_insert_text)
     buf.connect("delete-range", self._sighandler_delete_range)
 
@@ -123,9 +122,6 @@ class BoxSrcView(object):
     ins_text = buf.get_text(del_iter_start, del_iter_end)
     self.undoer.record_action(insert_fn, self, ins_text,
                               del_iter_start.get_offset())
-
-  def _sighandler_undo(self, buf):
-    print "undo"
 
   def get_iter_at_coords(self, x, y):
     bx, by = self.view.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
