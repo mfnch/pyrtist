@@ -167,7 +167,7 @@ BoxAST_Destroy(BoxAST *ast)
 BoxBool
 BoxAST_Is_Sane(BoxAST *ast)
 {
-  return ast->is_sane;
+  return ast && ast->is_sane;
 }
 
 /* Message logging. */
