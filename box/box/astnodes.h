@@ -49,6 +49,7 @@ struct BoxASTNodeStatement_struct {
   BOXASTNODEHEAD
   BoxASTNodeStatement *next;
   BoxASTNode          *value;
+  BoxSrcLinPos        sep_pos;
   uint8_t             sep;
 };
 #endif

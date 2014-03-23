@@ -431,7 +431,7 @@ BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val)
 /* Append a statement to the given one. */
 BoxASTNode *
 BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
-                        BoxASTSep sep, BoxASTNode *stmt_val)
+                        BoxSrc *sep_src, BoxASTSep sep, BoxASTNode *stmt_val)
 {
   BoxASTNode *stmt_node = BoxAST_Create_Node(ast, BOXASTNODETYPE_STATEMENT);
   if (stmt_node) {
@@ -440,6 +440,7 @@ BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt_node,
     MY_COPY_SRC(stmt_node, stmt_val);
     stmt->value = stmt_val;
     stmt->next = prev_stmt->next;
+    stmt->sep_pos = sep_src->begin;
     stmt->sep = sep;
     prev_stmt->next = stmt;
   }
@@ -573,7 +574,7 @@ BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb)
     spec->sep = BOXASTSEP_NONE;
     spec->memb = NULL;
     if (memb)
-      return BoxAST_Append_Member(ast, node, BOXASTSEP_NONE, NULL, memb);
+      return BoxAST_Append_Member(ast, node, NULL, BOXASTSEP_NONE, memb);
   }
   return node;
 }
@@ -584,7 +585,7 @@ BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name)
 {
   BoxASTNode *node = BoxAST_Create_Node(ast, BOXASTNODETYPE_MEMBER);
   if (node) {
-    MY_COPY_SRC(node, name);
+    MY_PROPAGATE_SRC(node, (expr) ? expr : name, (name) ? name : expr);
     ((BoxASTNodeMember *) node)->expr = expr;
     ((BoxASTNodeMember *) node)->name = name;
   }
@@ -595,8 +596,8 @@ BoxAST_Create_Member(BoxAST *ast, BoxASTNode *expr, BoxASTNode *name)
 
 /* Append a member to an expression list. */
 BoxASTNode *
-BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node, BoxASTSep sep,
-                     BoxSrc *sep_src, BoxASTNode *memb_node)
+BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node,
+		     BoxSrc *sep_src, BoxASTSep sep, BoxASTNode *memb_node)
 {
   BoxASTNodeCompound *compound;
   BoxASTNodeMember *memb;
@@ -613,14 +614,15 @@ BoxAST_Append_Member(BoxAST *ast, BoxASTNode *compound_node, BoxASTSep sep,
         && compound->sep == BOXASTSEP_NONE) {
       compound->kind = BOXASTCOMPOUNDKIND_STRUCT;
       compound->sep = sep;
+      compound->sep_src = *sep_src;
     }
   } else if (sep > BOXASTSEP_VOID) {
     assert(sep == BOXASTSEP_ARROW);
     if (compound->sep > BOXASTSEP_VOID)
-      BoxAST_Log(ast, & compound->sep_src, BOXLOGLEVEL_ERROR,
+      BoxAST_Log(ast, sep_src, BOXLOGLEVEL_ERROR,
                  "Duplicate separator in compound expression");
     compound->sep = sep;
-    compound->sep_src = (sep_src) ? *sep_src : ((BoxSrc) {0, 0});
+    compound->sep_src = *sep_src;
   }
 
   if (!memb_node)

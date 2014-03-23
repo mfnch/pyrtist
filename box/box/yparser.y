@@ -208,7 +208,7 @@ compound_memb:
 compound:
     compound_memb                {$$ = BoxAST_Create_Compound(ast, $1);}
   | compound compound_sep compound_memb
-                               {$$ = BoxAST_Append_Member(ast, $1, $2, 0, $3);}
+                            {$$ = BoxAST_Append_Member(ast, $1, & @2, $2, $3);}
   ;
 
 /******************************* ARITHMETICS *******************************/
@@ -388,8 +388,8 @@ statement:
   | '\\' expr                    {$$ = BoxAST_Create_Ignore(ast, $2);}
   | '[' statement_list ']'       {$$ = BoxAST_Create_Box(ast, NULL, $2);;}
   | error sep                    {$$ = NULL;
-                                  BoxAST_Log(ast, NULL, BOXLOGLEVEL_ERROR,
-                                             "Syntax error!");
+                                  BoxAST_Log(ast, & @1, BOXLOGLEVEL_ERROR,
+                                             "Syntax error");
                                   assert(yychar == YYEMPTY); yychar = (int) ',';
                                   yyerrok;}
   ;
@@ -397,7 +397,7 @@ statement:
 statement_list:
     statement                    {$$ = BoxAST_Create_Statement(ast, $1);}
   | statement_list sep statement
-                                {$$ = BoxAST_Append_Statement(ast, $1, $2, $3);}
+                         {$$ = BoxAST_Append_Statement(ast, $1, & @2, $2, $3);}
   ;
 
 program:

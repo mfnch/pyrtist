@@ -385,8 +385,8 @@ BoxAST_Create_Statement(BoxAST *ast, BoxASTNode *val);
  * @return The new statement object.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt, BoxASTSep sep,
-                        BoxASTNode *val);
+BoxAST_Append_Statement(BoxAST *ast, BoxASTNode *prev_stmt,
+			BoxSrc *sep_src, BoxASTSep sep, BoxASTNode *val);
 
 /**
  * @brief Create a box node.
@@ -458,8 +458,8 @@ BoxAST_Create_Compound(BoxAST *ast, BoxASTNode *memb);
  * @brief Append a member to a structure/species.
  */
 BOXEXPORT BoxASTNode *
-BoxAST_Append_Member(BoxAST *ast, BoxASTNode *list, BoxASTSep sep,
-                     BoxSrc *sep_src, BoxASTNode *memb);
+BoxAST_Append_Member(BoxAST *ast, BoxASTNode *list,
+		     BoxSrc *sep_src, BoxASTSep sep, BoxASTNode *memb);
 
 /**
  * @brief Perform final checks and adjustments on a compound node.

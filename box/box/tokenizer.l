@@ -57,8 +57,8 @@
  * using MY_EAT_NEWLINES.
  */
 #define YY_USER_ACTION \
-  yyextra->src.begin = yyextra->src.end; \
-  yyextra->src.end += yyleng; \
+  yylloc.begin = yyextra->src.begin = yyextra->src.end; \
+  yylloc.end = yyextra->src.end += yyleng; \
   yyextra->full_pos.col += yyleng;
 
 /* Function used to update the location counters (line, column, etc.) */

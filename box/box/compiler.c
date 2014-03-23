@@ -201,14 +201,21 @@ BoxVM *BoxCmp_Steal_VM(BoxCmp *c)
   return vm;
 }
 
-void BoxCmp_Log_Err(BoxCmp *c, BoxASTNode *node, const char *fmt, ...)
+void BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level,
+		const char *fmt, ...)
 {
   va_list ap;
   va_start(ap, fmt);
   const char *s = Box_Print_VA(fmt, ap);
   va_end(ap);
-  BoxAST_Log(c->ast, & node->head.src, BOXLOGLEVEL_ERROR, s);
+  BoxAST_Log(c->ast, src, BOXLOGLEVEL_ERROR, s);
 }
+
+#define BoxCmp_Log_Warn(c, node, ...) \
+  BoxCmp_Log((c), (& (node)->head.src), BOXLOGLEVEL_WARNING, __VA_ARGS__)
+
+#define BoxCmp_Log_Err(c, node, ...) \
+  BoxCmp_Log((c), (& (node)->head.src), BOXLOGLEVEL_ERROR, __VA_ARGS__)
 
 /* Function which does all the steps needed to get from a Box source file
  * to a VM with the corresponding compiled bytecode.
@@ -392,9 +399,8 @@ static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
   switch (node_type) {
 #include "astnodes.h"
   default:
-    BoxCmp_Log_Err(c, node, "Compilation of node %s (%d) is not implemented, "
-                   " yet!\n", BoxASTNodeType_To_Str(node_type),
-                   (int) node_type);
+    BoxCmp_Log_Err(c, node, "Compilation of node %s (%d) is not implemented "
+                   " yet", BoxASTNodeType_To_Str(node_type), (int) node_type);
     break;
   }
 
@@ -705,9 +711,6 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   for(s = box->first_stmt, state = MYBOXSTATE_INITIAL; s; s = s->next) {
     Value *stmt_val;
 
-    /* Set the source position to the current statement */
-    //Msg_Set_Src(& s->head.src);
-
     if (s->sep == BOXASTSEP_PAUSE && !parent_is_err) {
       BoxTask emit_task;
       Value *v_pause = & c->value.pause;
@@ -715,9 +718,13 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
       v_pause = Value_Emit_Call(parent, v_pause, & emit_task);
 
       if (v_pause) {
+	BoxSrc sep_src;
         assert(emit_task == BOXTASK_FAILURE);
-        MSG_WARNING("Don't know how to use '%T' expressions inside "
-                    "a '%T' box.", v_pause->type, parent->type);
+	sep_src.begin = s->sep_pos;
+	sep_src.end = s->sep_pos + 1; 
+	BoxCmp_Log(c, & sep_src, BOXLOGLEVEL_WARNING, "Don't know "
+		   "how to use `%T' expressions inside a `%T' box.",
+		   v_pause->type, parent->type);
         Value_Unlink(v_pause);
         v_pause = NULL; /* To prevent double unlink */
       }
@@ -729,7 +736,6 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
       stmt_val = BoxCmp_Pop_Value(c);
     } else
       stmt_val = My_Get_Void_Value(c);
-
 
     if (!(parent_is_err || Value_Is_Ignorable(stmt_val))) {
       if (Value_Want_Has_Type(stmt_val)) {
@@ -784,8 +790,9 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
             branch = Value_Emit_CJump(stmt_val);
             branch->target = BoxLIR_Get_Next_Op(& c->lir, begin_label);
           } else {
-            MSG_WARNING("Don't know how to use '%T' expressions inside "
-                        "a '%T' box.", stmt_val->type, parent->type);
+	    BoxCmp_Log_Warn(c, s->value, "Don't know how to use `%T' "
+			    "expressions inside a `%T' box.",
+			    stmt_val->type, parent->type);
             Value_Unlink(stmt_val);
           }
 
@@ -1117,8 +1124,8 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
     v_memb = Value_Struc_Get_Member(v_struc, member_name);
     /* No need to unlink v_struc here */
     if (!v_memb)
-      BoxCmp_Log_Err(c, node, "Cannot find the member `%s' of an object with "
-		     "type `%T'.", member_name, v_struc->type);
+      BoxCmp_Log_Err(c, node, "Cannot find the member `%s' of an object "
+		     "with type `%T'.", member_name, v_struc->type);
   } else
     Value_Unlink(v_struc);
 
@@ -1364,6 +1371,11 @@ static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
     My_Compile_Any(c, memb->expr);
     v_member = BoxCmp_Get_Value(c, 0);
     no_err &= Value_Want_Value(v_member);
+    if (no_err && BoxType_Is_Empty(v_member->type)) {
+      BoxCmp_Log_Err(c, memb->expr, "Invalid structure member of type `%T'",
+		     v_member->type);
+      no_err = 0;
+    }
   }
 
   /* Check for errors */
@@ -1424,10 +1436,17 @@ static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
       Value *v_type;
       My_Compile_Any(c, memb->expr);
       v_type = BoxCmp_Pop_Value(c);
-      if (Value_Want_Has_Type(v_type))
-        previous_type = v_type->type;
-      else
-        err = 1;
+      
+      err = !Value_Want_Has_Type(v_type);
+      if (!err) {
+	previous_type = v_type->type;
+	if (BoxType_Is_Empty(previous_type)) {
+	  BoxCmp_Log_Err(c, memb->expr, "Zero-sized type `%T' not allowed "
+			 "as the member of a structure", previous_type);
+	  err = 1;
+	}
+      }
+
       Value_Unlink(v_type);
     }
 
@@ -1435,8 +1454,8 @@ static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
       /* Check for duplicate structure members */
       if (memb_name) {
         if (BoxType_Find_Structure_Member(struc_type, memb_name))
-          MSG_ERROR("Duplicate member '%s' in structure type definition.",
-                    memb_name);
+	  BoxCmp_Log_Err(c, memb->name, "Duplicate member `%s' in structure "
+			 "type definition.", memb_name);
       }
 
       BoxType_Add_Member_To_Structure(struc_type, previous_type, memb_name);
