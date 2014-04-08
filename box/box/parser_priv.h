@@ -35,7 +35,6 @@
 
 
 struct BoxParser_struct {
-  BoxLogger     *logger;           /**< Destination of logged messages. */
   BoxPaths      *paths;            /**< Paths used to search for files */
   yyscan_t      scanner;           /**< The Lex scanner */
   BoxAST        *ast;              /**< The Abstract Syntax Tree */

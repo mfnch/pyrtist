@@ -75,8 +75,8 @@ Box_Print(const char *fmt, ...);
 BOXEXPORT const char *
 Box_VA_Print(const char *fmt, va_list ap);
 
-#  define Box_Print_VA Box_VA_Print
 #  define printdup(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 #  define Box_SPrintF(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
+#  define Box_Print_VA(fmt, ap) Box_Mem_Strdup(Box_VA_Print((fmt), (ap)))
 
 #endif /* _BOX_PRINT_H */

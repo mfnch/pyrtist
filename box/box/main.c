@@ -84,7 +84,9 @@ static BoxVM *target_vm = NULL;
 static BoxPaths box_paths;
 
 /* Function called with option `--query' to show configuration parameters. */
-static void My_Exec_Query(const char *query) {
+static void
+My_Exec_Query(const char *query)
+{
   char *pkg_path = NULL,
        *lib_path = NULL;
   int exit_status = EXIT_FAILURE;
@@ -151,7 +153,9 @@ static void My_Exec_Query(const char *query) {
 }
 
 /* Show a message and exit the program. */
-void Main_Error_Exit(MyArgParserResult *result, char *msg) {
+void
+Main_Error_Exit(MyArgParserResult *result, char *msg)
+{
   if (msg && !result->flags.silent) {
     fprintf(stderr, msg, result->prog_name);
     fprintf(stderr, "\n");
@@ -161,8 +165,8 @@ void Main_Error_Exit(MyArgParserResult *result, char *msg) {
 }
 
 /* Parser handler. Used with BCArgParser. */
-BoxBool My_Parse_Option(BCArgParser *ap, BCArgParserOption *opt,
-                        const char *arg)
+BoxBool
+My_Parse_Option(BCArgParser *ap, BCArgParserOption *opt, const char *arg)
 {
   MyArgParserResult *result = BCArgParser_Get_Stuff(ap);
 
@@ -243,7 +247,8 @@ BCArgParserOption my_opts[] = {
   {'q', "query", "PARNAME", "Show configuration parameters", My_Parse_Option}
 };
 
-void Main_Show_Help(void) {
+void
+Main_Show_Help(void) {
   printf(
   BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures.\n"
   "Created and implemented by Matteo Franchin.\n\n"
@@ -269,29 +274,31 @@ void Main_Show_Help(void) {
 }
 
 /* Show version information and exit. */
-void Main_Show_Version(void)
+void
+Main_Show_Version(void)
 {
   printf(BOX_VERSTR "\n");
   exit(EXIT_SUCCESS);
 }
 
-static BoxTask My_Stage_Init(void) {
+static void
+My_Stage_Init(void)
+{
   BoxPaths_Init(& box_paths);
   /* Initialisation of the message module */
   Msg_Main_Init(MSG_LEVEL_WARNING);
-  return BOXTASK_OK;
 }
 
-static void My_Stage_Finalize(void) {
-  if (target_vm != NULL)
+static void
+My_Stage_Finish(void)
+{
+  if (target_vm)
     BoxVM_Destroy(target_vm);
-
   BoxPaths_Finish(& box_paths);
-
   Msg_Main_Destroy();
 }
 
-static BoxTask
+static void
 My_Stage_Parse_Command_Line(MyArgParserResult *result,
                             int argc, const char **argv)
 {
@@ -301,8 +308,7 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
 
   MSG_CONTEXT_BEGIN("Reading the command line options");
 
-  ap = BCArgParser_Create(& my_opts[0],
-                          sizeof(my_opts)/sizeof(BCArgParserOption));
+  ap = BCArgParser_Create(& my_opts[0], sizeof(my_opts)/sizeof(my_opts[0]));
   if (!ap)
     MSG_FATAL("Cannot initialize command line argument parser");
 
@@ -337,10 +343,11 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
 
   BCArgParser_Destroy(ap);
   MSG_CONTEXT_END();
-  return BOXTASK_OK;
 }
 
-static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
+static void
+My_Stage_Interpret_Command_Line(MyArgParserResult *result)
+{
   /* Controllo se e' stata specificata l'opzione di help */
   if (result->flags.show_help)
     Main_Show_Help();
@@ -380,18 +387,18 @@ static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
   /* Check wheter the user has provided a setup file. */
   if (result->file_setup)
     MSG_ADVICE("Reading setup file: \"%s\"", result->file_setup);
-
-  return BOXTASK_OK;
 }
 
-static BoxTask My_Stage_Add_Default_Paths(MyArgParserResult *result) {
+static void
+My_Stage_Add_Default_Paths(MyArgParserResult *result)
+{
   BoxPaths_Set_All_From_Env(& box_paths);
   BoxPaths_Add_Script_Path_To_Inc_Dir(& box_paths, result->file_input);
-  return BOXTASK_OK;
 }
 
-static BoxTask My_Stage_Compilation(MyArgParserResult *result,
-                                    BoxVMCallNum *main_module) {
+static void
+My_Stage_Compilation(MyArgParserResult *result, BoxVMCallNum *main_module)
+{
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
@@ -401,17 +408,19 @@ static BoxTask My_Stage_Compilation(MyArgParserResult *result,
                                 /*file*/ NULL,
                                 /*filename*/ result->file_input,
                                 /*setup_file_name*/ result->file_setup,
-                                /*paths*/ & box_paths);
+                                /*paths*/ & box_paths,
+				/*logger*/ NULL);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS);
 
   MSG_CONTEXT_END();
-  return BOXTASK_OK;
 }
 
 /* Enter symbol resolution stage */
-static BoxTask My_Stage_Symbol_Resolution(MyArgParserResult *result) {
+static BoxBool
+My_Stage_Symbol_Resolution(MyArgParserResult *result)
+{
   int all_resolved;
   BoxTask status = BOXTASK_OK;
 
@@ -421,26 +430,29 @@ static BoxTask My_Stage_Symbol_Resolution(MyArgParserResult *result) {
                                   BoxPaths_Get_Lib_Dir(& box_paths),
                                   BoxPaths_Get_Libs(& box_paths));
   if (status != BOXTASK_OK)
-    return status;
+    return BOXBOOL_FALSE;
 
   status = BoxVMSym_Resolve_All(target_vm);
   if (status != BOXTASK_OK)
-    return status;
+    return BOXBOOL_FALSE;
 
   BoxVMSym_Ref_Check(target_vm, & all_resolved);
   if (!all_resolved) {
     BoxVMSym_Ref_Report(target_vm);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     result->flags.execute = 0;
-    status = BOXTASK_ERROR;
+    MSG_CONTEXT_END();
+    return BOXBOOL_FALSE;
   }
 
   MSG_CONTEXT_END();
-  return status;
+  return BOXBOOL_TRUE;
 }
 
 
-BoxTask Main_Execute(MyArgParserResult *result, BoxUInt main_module) {
+BoxTask
+Main_Execute(MyArgParserResult *result, BoxUInt main_module)
+{
   BoxTask t;
   t = BoxVM_Module_Execute(target_vm, main_module);
   if (t == BOXTASK_FAILURE && !result->flags.silent)
@@ -448,26 +460,27 @@ BoxTask Main_Execute(MyArgParserResult *result, BoxUInt main_module) {
   return t;
 }
 
-static BoxTask My_Stage_Execution(MyArgParserResult *result,
-                                  BoxUInt main_module) {
+static BoxBool
+My_Stage_Execution(MyArgParserResult *result, BoxUInt main_module)
+{
   BoxTask status;
-  /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
+
   if (!result->flags.execute)
-    return BOXTASK_OK;
+    return BOXBOOL_TRUE;
 
   if (MSG_GT_WARNINGS > 0) {
     if (result->flags.force_exec) {
       if (MSG_GT_ERRORS > 0) {
         result->flags.execute = 0;
         MSG_ADVICE("Errors found: Skipping execution.");
-        return BOXTASK_ERROR;
+        return BOXBOOL_FALSE;
       } else {
         MSG_ADVICE("Warnings found: Execution forced.");
       }
     } else {
       result->flags.execute = 0;
       MSG_ADVICE("Warnings/errors found: Skipping execution!" );
-      return BOXTASK_ERROR;
+      return BOXBOOL_FALSE;
     }
   }
 
@@ -477,10 +490,12 @@ static BoxTask My_Stage_Execution(MyArgParserResult *result,
   MSG_ADVICE("Execution finished. %U errors and %U warnings were found.",
               MSG_GT_ERRORS, MSG_NUM_WARNINGS);
   MSG_CONTEXT_END();
-  return status;
+  return (status == BOXTASK_OK) ? BOXBOOL_TRUE : BOXBOOL_FALSE;
 }
 
-static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
+static BoxBool
+My_Stage_Write_Asm(MyArgParserResult *result)
+{
   const char *file_output = result->file_output;
   /* Fase di output */
   if (file_output) {
@@ -496,7 +511,7 @@ static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
       if (!out) {
         MSG_ERROR("Cannot open '%s' for writing: %s",
                   file_output, strerror(errno));
-        return BOXTASK_ERROR;
+        return BOXBOOL_FALSE;
       }
       close_file = 1;
     }
@@ -510,7 +525,7 @@ static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
         BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
                        BOXVM_ATTR_DASM_WITH_HEX);
       if (BoxVM_Proc_Disassemble_All(target_vm, out) != BOXTASK_OK)
-        return BOXTASK_FAILURE;
+        return BOXBOOL_FALSE;
     }
 
 
@@ -518,7 +533,7 @@ static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
       (void) fclose(out);
   }
 
-  return BOXTASK_OK;
+  return BOXBOOL_TRUE;
 }
 
 /******************************************************************************/
@@ -527,33 +542,23 @@ static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
 int main(int argc, const char **argv) {
   BoxUInt main_module;
   int exit_status = EXIT_SUCCESS;
-  BoxTask status;
   MyArgParserResult result;
 
-  if (My_Stage_Init() != BOXTASK_OK)
-    Main_Error_Exit(& result, "Initialization failed!");
+  My_Stage_Init();
+  My_Stage_Parse_Command_Line(& result, argc, argv);
+  My_Stage_Interpret_Command_Line(& result);
+  My_Stage_Add_Default_Paths(& result);
 
-  status = My_Stage_Parse_Command_Line(& result, argc, argv);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
+  My_Stage_Compilation(& result, & main_module);
+  if (!My_Stage_Symbol_Resolution(& result))
+    exit_status = EXIT_FAILURE;
 
-  status = My_Stage_Interpret_Command_Line(& result);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
+  if (!My_Stage_Write_Asm(& result))
+    exit_status = EXIT_FAILURE;
 
-  status = My_Stage_Add_Default_Paths(& result);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
+  if (!My_Stage_Execution(& result, main_module))
+    exit_status = EXIT_FAILURE;
 
-  status = My_Stage_Compilation(& result, & main_module);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
-
-  status = My_Stage_Symbol_Resolution(& result);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
-
-  status = My_Stage_Write_Asm(& result);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
-
-  status = My_Stage_Execution(& result, main_module);
-  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
-
-  My_Stage_Finalize();
+  My_Stage_Finish();
   exit(exit_status);
 }

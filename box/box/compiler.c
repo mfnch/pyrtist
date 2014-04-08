@@ -138,6 +138,7 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
   c->ast = NULL;
   BoxLIR_Init(& c->lir);
+  c->attr.is_sane = 0;
   c->attr.own_vm = (target_vm == NULL);
   c->vm = (target_vm) ? target_vm : BoxVM_Create();
 
@@ -208,7 +209,9 @@ void BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level,
   va_start(ap, fmt);
   const char *s = Box_Print_VA(fmt, ap);
   va_end(ap);
-  BoxAST_Log(c->ast, src, BOXLOGLEVEL_ERROR, s);
+
+  c->attr.is_sane = 0;
+  BoxAST_Log(c->ast, src, level, s);
 }
 
 #define BoxCmp_Log_Warn(c, node, ...) \
@@ -223,20 +226,20 @@ void BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level,
 BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                                    FILE *file, const char *file_name,
                                    const char *setup_file_name,
-                                   BoxPaths *paths)
+                                   BoxPaths *paths, BoxLogger *logger)
 {
+  BoxAST *ast;
   BoxCmp *compiler;
   BoxVM *vm;
-  BoxVMCallNum dummy_cn;
-
-  if (!main)
-    main = & dummy_cn;
 
   compiler = BoxCmp_Create(target_vm);
-  compiler->ast = Box_Parse_FILE(file, file_name, setup_file_name, paths);
-  if (BoxAST_Is_Sane(compiler->ast))
-    BoxCmp_Compile(compiler, compiler->ast);
-  *main = BoxVMCode_Install(& compiler->main_proc);
+  ast = Box_Parse_FILE(file, file_name, setup_file_name, paths, logger);
+  compiler->ast = ast;
+  if (BoxAST_Is_Sane(ast))
+    BoxCmp_Compile(compiler, ast);
+
+  if (main)
+    *main = BoxVMCode_Install(& compiler->main_proc);
   vm = BoxCmp_Steal_VM(compiler);
   BoxCmp_Destroy(compiler);
   return vm;
@@ -383,6 +386,7 @@ void BoxCmp_Compile(BoxCmp *c, BoxAST *ast)
   if (!root)
     return;
 
+  c->attr.is_sane = 1;
   My_Compile_Any(c, root);
   BoxCmp_Remove_Any(c, 1);
 }
@@ -502,9 +506,8 @@ static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
   } else {
     v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
     if (!v_parent) {
-      BoxAST_Log(c->ast, & node->head.src, BOXLOGLEVEL_ERROR,
-                 "Cannot get implicit method '%s'. Default parent is not "
-                 "defined in current scope.", name);
+      BoxCmp_Log_Err(c, node, "Cannot get implicit method '%s'. Default "
+		     "parent is not defined in current scope.", name);
     }
   }
 

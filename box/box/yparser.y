@@ -414,13 +414,14 @@ static void yyerror(BoxParser *bp, BoxAST *ast, char* s)
 }
 
 BoxAST *Box_Parse_FILE(FILE *in, const char *in_name,
-                       const char *auto_include, BoxPaths *paths)
+                       const char *auto_include, BoxPaths *paths,
+		       BoxLogger *logger)
 {
   BoxAST *ast = NULL;
   BoxBool no_errors = BOXBOOL_TRUE;
   BoxParser *parser;
 
-  parser = BoxParser_Create(paths);
+  parser = BoxParser_Create(paths, logger);
   assert(parser);
 
   in_name = (in_name) ? in_name : "<stdin>";

@@ -46,11 +46,41 @@ typedef struct BoxLogger_struct BoxLogger;
 
 /**
  * @brief Callback function to intercept messages sent to a logger.
+ *
+ * The user can provide its own version of this function to intercept log
+ * messages before they are processed and sent to the destination. The
+ * function can return true to indicate that the message does not need to be
+ * further processed.
  */
-typedef BoxBool (*BoxLoggerCallback)(BoxLogger *logger, BoxLogPos *begin,
-                                     BoxLogPos *end, BoxLogLevel level,
-                                     const char *fmt, va_list ap,
-                                     void *data);
+typedef BoxBool (*BoxLoggerLogFn)(BoxLogger *logger, BoxLogPos *begin,
+				  BoxLogPos *end, BoxLogLevel level,
+				  const char *fmt, va_list ap,
+				  void *data);
+
+/**
+ * @brief Callback function which receives the final string.
+ *
+ * The user can provide its own version of this function to redirect log
+ * messages to another destination.
+ */
+typedef void (*BoxLoggerPutsFn)(BoxLogger *logger, const char *s, void *data);
+
+/**
+ * @brief Create a #BoxLogger object.
+ *
+ * @param log_fn Log message interceptor function (@c NULL for none).
+ * @param puts_fn Output function (@c NULL to use the default, puts()).
+ * @param data Pointer to be passed to @p log_fn and @p puts_fn.
+ * @return The newly created logger or @c NULL in case of failure. 
+ */
+BOXEXPORT BoxLogger *
+BoxLogger_Create(BoxLoggerLogFn log_fn, BoxLoggerPutsFn puts_fn, void *data);
+
+/**
+ * @brief Destroy a #BoxLogger created with BoxLogger_Create().
+ */
+BOXEXPORT void
+BoxLogger_Destroy(BoxLogger *logger);
 
 /**
  * @brief Var-Arg version of BoxLogger_Log().

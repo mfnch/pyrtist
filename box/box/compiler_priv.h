@@ -42,13 +42,8 @@
  * @brief Implementation for #BoxCmp.
  */
 struct BoxCmp_struct {
-  struct {
-    unsigned int
-               own_vm :1; /**< Was the VM created by us, or given from
-                               outside? */
-  }          attr;      /**< Attributes of the compiler */
   BoxAST     *ast;      /**< Abstract syntax tree. */
-  BoxLIR     lir;
+  BoxLIR     lir;       /**< LIR tree. */
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */
@@ -78,6 +73,11 @@ struct BoxCmp_struct {
                           /**< Container used to pass parent to procedures */
   }          cont;        /**< Constant containers (allocated once for all
                                just for efficiency) */
+  struct {
+    unsigned int
+               own_vm :1,  /**< Do we own the VM? */
+               is_sane :1; /**< Is the output of compilation sane? */
+  }          attr;      /**< Attributes of the compiler */
 };
 
 

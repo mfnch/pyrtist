@@ -25,7 +25,7 @@ typedef struct {
 } MyIncludeData;
 
 
-BoxParser *BoxParser_Create(BoxPaths *paths)
+BoxParser *BoxParser_Create(BoxPaths *paths, BoxLogger *logger)
 {
   BoxParser *bp;
 
@@ -35,7 +35,7 @@ BoxParser *BoxParser_Create(BoxPaths *paths)
 
   yylex_init(& bp->scanner);
   yyset_extra(bp, bp->scanner);
-  bp->ast = BoxAST_Create(NULL);
+  bp->ast = BoxAST_Create(logger);
 
   bp->comment_level = 0;
   bp->paths = paths;

@@ -32,6 +32,7 @@
 
 #  include <box/ast.h>
 #  include <box/paths.h>
+#  include <box/logger.h>
 
 
 /**
@@ -44,7 +45,7 @@ typedef struct BoxParser_struct BoxParser;
  * @brief Create a new Box lexer object.
  */
 BOXEXPORT BoxParser *
-BoxParser_Create(BoxPaths *paths);
+BoxParser_Create(BoxPaths *paths, BoxLogger *logger);
 
 /**
  * @brief Destroy a Box parser created with BoxParser_Create().
@@ -68,8 +69,8 @@ BoxParser_Destroy(BoxParser *bp);
  * @reutrn The corresponding abstract syntax tree or @c NULL in case of errors.
  */
 BOXEXPORT BoxAST *
-Box_Parse_FILE(FILE *in, const char *in_name,
-               const char *auto_include, BoxPaths *paths);
+Box_Parse_FILE(FILE *in, const char *in_name, const char *auto_include,
+	       BoxPaths *paths, BoxLogger *logger);
 
 /**
  * @brief Return the next token.

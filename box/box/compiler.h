@@ -31,6 +31,7 @@
 #  include <box/vm_priv.h>
 #  include <box/ast.h>
 #  include <box/paths.h>
+#  include <box/logger.h>
 
 
 /**
@@ -61,7 +62,7 @@ BOXEXPORT BoxVM *
 Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                             FILE *file, const char *file_name,
                             const char *setup_file_name,
-                            BoxPaths *paths);
+                            BoxPaths *paths, BoxLogger *logger);
 
 /**
  * @brief Compile from the give abstract syntax tree.

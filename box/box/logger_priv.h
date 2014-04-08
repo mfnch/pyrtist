@@ -28,8 +28,24 @@
 
 
 struct BoxLogger_struct {
-  BoxLoggerCallback callback;
-  void              *callback_data;
+  BoxLoggerLogFn  log_fn;
+  BoxLoggerPutsFn puts_fn;
+  void            *data;
 };
+
+/**
+ * @brief Create a #BoxLogger object.
+ * @see BoxLogger_Create()
+ * @see BoxLogger_Finish()
+ */
+BOXEXPORT void
+BoxLogger_Init(BoxLogger *logger, BoxLoggerLogFn log_fn,
+	       BoxLoggerPutsFn puts_fn, void *data);
+
+/**
+ * @brief Destroy a logger created with BoxLogger_Init().
+ */
+BOXEXPORT void
+BoxLogger_Finish(BoxLogger *logger);
 
 #endif /* _BOX_LOGGER_PRIV_H */

@@ -18,50 +18,108 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 
-#include <box/logger.h>
+#include <box/logger_priv.h>
+#include <box/print.h>
 
 
-#if 0
-char *BoxSrc_To_Str(BoxLogPos *begin, BoxLogPos *end)
+void
+BoxLogger_Init(BoxLogger *logger, BoxLoggerLogFn log_fn,
+	       BoxLoggerPutsFn puts_fn, void *data)
 {
-  uint32_t bl = loc->begin.line, bc = loc->begin.col,
-       el = loc->end.line, ec = loc->end.col;
-  const char *fn = (loc->begin.file_name ?
-                    Box_SPrintF("\"%s\", ", loc->begin.file_name) :
-                    Box_Mem_Strdup(""));
+  logger->log_fn = log_fn;
+  logger->puts_fn = puts_fn;
+  logger->data = data;
+}
 
-  if (bl == 0)
-    return Box_SPrintF("%~stext ending at line %ld col %ld", fn, el, ec);
+void
+BoxLogger_Finish(BoxLogger *logger)
+{
+  // Nothing to do.
+}
 
-  if (el == 0)
-    return Box_SPrintF("%~sfrom line %ld col %ld", fn, bl, bc);
+BoxLogger *
+BoxLogger_Create(BoxLoggerLogFn log_fn, BoxLoggerPutsFn puts_fn, void *data)
+{
+  BoxLogger *logger = (BoxLogger *) Box_Mem_Alloc(sizeof(BoxLogger));
+  if (logger)
+    BoxLogger_Init(logger, log_fn, puts_fn, data);
+  return logger;
+}
 
-  if (bl == el) {
-    if (loc->begin.col >= loc->end.col - 1)
-      return Box_SPrintF("%~sline %ld col %ld", fn, bl, bc);
-    else
-      return Box_SPrintF("%~sline %ld cols %ld-%ld", fn, bl, bc, ec);
+void
+BoxLogger_Destroy(BoxLogger *logger)
+{
+  BoxLogger_Finish(logger);
+  Box_Mem_Free(logger);
+}
+
+char *
+BoxLogger_Process_Msg(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+		      BoxLogLevel lev, const char *fmt, va_list ap)
+{
+  const char *prefix = "Fatal error";
+  char *s;
+
+  switch (lev) {
+  case BOXLOGLEVEL_ADVICE: prefix = "Note"; break;
+  case BOXLOGLEVEL_WARNING: prefix = "Warning"; break;
+  case BOXLOGLEVEL_ERROR: prefix = "Error"; break;
   }
 
-  return Box_SPrintF("%~sline %ld-%ld cols %ld-%ld", fn, bl, el, bc, ec);
+  s = Box_Print_VA(fmt, ap);
+
+  if (begin && end) {
+    const char *file_name = "", *sep = ", ";
+    char pos_part[64];
+
+    if (begin->file_name)
+      file_name = begin->file_name;
+    else if (end->file_name)
+      file_name = end->file_name;
+    else
+      sep = "";
+
+    if (begin->line < end->line)
+      snprintf(pos_part, sizeof(pos_part), "%s%u:%u-%u:%u",
+	       sep, begin->line + 1, begin->col + 1,
+	       end->line + 1, end->col + 1);
+    else if (begin->col < end->col)
+      snprintf(pos_part, sizeof(pos_part), "%s%u:%u-%u",
+	       sep, begin->line + 1, begin->col + 1, end->col + 1);
+    else 
+      snprintf(pos_part, sizeof(pos_part), "%s%u:%u",
+	       sep, begin->line + 1, begin->col + 1);
+
+    return Box_SPrintF("%s (%s%s): %~s", prefix, file_name, pos_part, s);
+  }
+
+  return Box_SPrintF("%s: %~s", prefix, s);
 }
-#endif
 
 void
 BoxLogger_Log_VA(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
                  BoxLogLevel lev, const char *fmt, va_list ap)
 {
-  if (begin && end) {
-    printf("Error (%s, %d-%d, %d-%d): ",
-           begin->file_name, begin->line, end->line, begin->col, end->col);
-    (void) vprintf(fmt, ap);
-    printf("\n");
-  } else {
-    printf("Error: ");
-    (void) vprintf(fmt, ap);
-    printf("\n");
+  char *s;
+  if (logger && logger->log_fn) {
+    if (logger->log_fn(logger, begin, end, lev, fmt, ap, logger->data))
+      return;
   }
+
+  s = BoxLogger_Process_Msg(logger, begin, end, lev, fmt, ap);
+
+  if (logger && logger->puts_fn)
+    logger->puts_fn(logger, s, logger->data);
+  else
+    puts(s);
+
+  if (s)
+    Box_Mem_Free(s);
+
+  if (lev == BOXLOGLEVEL_FATAL)
+    abort();
 }
 
 void
@@ -73,3 +131,34 @@ BoxLogger_Log(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
   BoxLogger_Log_VA(logger, begin, end, lev, fmt, ap);
   va_end(ap);
 }
+
+#if 0
+void
+My_Wrapper_Puts_Fn(BoxLogger *logger, const char *s, void *data)
+{
+  BoxLogger *src = (BoxLogger *) data;
+  if (src && src->puts_fn)
+    src->puts_fn(src, s, src->data);
+}
+
+BoxBool
+My_Wrapper_Log_Fn(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
+		  BoxLogLevel level, const char *fmt, va_list ap, void *data)
+{
+  BoxLogger *src = (BoxLogger *) data;
+  if (src && src->log_fn)
+    return src->log_fn(src, begin, end, level, fmt, ap, src->data);
+  return BOXBOOL_FALSE;
+}
+
+typedef struct {
+  BoxLogger wrapper,
+            logger;
+} BoxLoggerWrapper;
+
+void
+BoxLogger_Init_Wrapper(BoxLoggerWrapper *dst, BoxLogger *src)
+{
+  BoxLogger_Init(dst, My_Log_Fn, My_Puts_Fn, src);
+}
+#endif
