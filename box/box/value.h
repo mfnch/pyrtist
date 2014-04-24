@@ -115,15 +115,6 @@ typedef enum {
 /** Return the name (a string) corresponding to the given ValueKind. */
 const char *ValueKind_To_Str(ValueKind vk);
 
-/** Check that the given value is of the wanted kind. 'wanted' is a pointer
- * to an array of 'num_wanted' ValueKind items. This array specifies what
- * kinds the Value 'v' is expected to have.
- * If the value has one of the wanted kind, returns 1, otherwise print an
- * error message (such as "Got a x expression, but expecting w, y or z.")
- * and returns 0.
- */
-int Value_Want(Value *v, int num_wanted, ValueKind *wanted);
-
 /** Check that the given value 'v' has both type and value.
  * Return 1 if 'v' has type and value, otherwise return 0.
  */

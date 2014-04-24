@@ -164,64 +164,36 @@ const char *ValueKind_To_Str(ValueKind vk) {
   }
 }
 
-int Value_Want(Value *v, int num_wanted, ValueKind *wanted) {
-  char *wanted_str = NULL;
-  int i;
-
-  for(i = 0; i < num_wanted; i++)
-    if (v->kind == wanted[i]) return 1;
-
-  for(i = 0; i < num_wanted; i++) {
-    if (i == 0)
-      wanted_str = printdup("%s", ValueKind_To_Str(wanted[i]));
-    else {
-      char *sep = (i < num_wanted - 1) ? ", " : " or ";
-      wanted_str = printdup("%~s%s%s", wanted_str, sep,
-                            ValueKind_To_Str(wanted[i]));
-    }
-  }
-
-  MSG_ERROR("Expected %~s, but got %s.",
-            wanted_str, ValueKind_To_Str(v->kind));
-  return 0;
-}
-
 int Value_Want_Value(Value *v) {
   if (Value_Is_Value(v))
     return 1;
 
-  else if (Value_Is_Err(v)) {
+  if (Value_Is_Err(v))
     return 0;
 
-  } else {
-    if (v->name != NULL) {
-      MSG_ERROR("'%s' is undefined: an expression with both value and type is"
-                " expected here.", v->name);
-    } else {
-      MSG_ERROR("Got '%s', but an expression with both value and type is "
-                "expected here.", ValueKind_To_Str(v->kind));
-    }
-    return 0;
-  }
+  if (v->name)
+    BoxCmp_Log_Err(v->proc->cmp, "`%s' is undefined: an expression with both "
+                   "value and type is expected here.", v->name);
+  else
+    BoxCmp_Log_Err(v->proc->cmp, "Got `%s', but an expression with both value "
+                   "and type is expected here.", ValueKind_To_Str(v->kind));
+  return 0;
 }
 
 int Value_Want_Has_Type(Value *v) {
   if (Value_Has_Type(v))
     return 1;
 
-  else if (Value_Is_Err(v)) {
+  if (Value_Is_Err(v))
     return 0;
 
-  } else {
-    if (v->name != NULL) {
-      MSG_ERROR("'%s' is undefined: an expression with defined type is "
-                "expected here.", v->name);
-    } else {
-      MSG_ERROR("Got '%s', but an expression with defined type is "
-                "expected here.", ValueKind_To_Str(v->kind));
-    }
-    return 0;
-  }
+  if (v->name)
+    BoxCmp_Log_Err(v->proc->cmp, "`%s' is undefined: an expression with "
+                   "defined type is expected here.", v->name);
+  else
+    BoxCmp_Log_Err(v->proc->cmp, "Got `%s', but an expression with defined "
+                   "type is expected here.", ValueKind_To_Str(v->kind));
+  return 0;
 }
 
 /** Whether we can change the content of the register associated with v
@@ -517,8 +489,8 @@ Value *Value_To_Temp(Value *v) {
 
   case VALUEKIND_VAR_NAME:
   case VALUEKIND_TYPE_NAME:
-    MSG_ERROR("Got %s ('%s'), but a defined type or value is expected here!",
-              ValueKind_To_Str(v->kind), v->name);
+    BoxCmp_Log_Err(c, "Got %s ('%s'), but a defined type or value is expected "
+                   "here!", ValueKind_To_Str(v->kind), v->name);
     return Value_Recycle(v); /* Return an error value (Value_Recycle
                                 leaves v with an error, if not initialised
                                 with a Value_Setup_* function) */
@@ -964,7 +936,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
         v_ptr = Value_Create(c->cur_proc);
         Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2,
-			  & v_ptr->value.cont, & v_ptr_cont);
+                          & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, t);
       }
@@ -1028,7 +1000,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
 
     assert(v->num_ref == 1);
     assert(v_cont->categ == BOXCONTCATEG_LREG
-	   || v_cont->categ == BOXCONTCATEG_GREG);
+           || v_cont->categ == BOXCONTCATEG_GREG);
     /* We own the sole reference to v, which is a temporary quantity:
      * in other words we can do whathever we want with it!
      */
@@ -1240,8 +1212,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   BoxCmp *c = src->proc->cmp;
   BoxTypeCmp match = BoxType_Compare(dest->type, src->type);
   if (match == BOXTYPECMP_DIFFERENT) {
-    MSG_ERROR("Cannot move objects of type '%T' into objects of type '%T'",
-              src->type, dest->type);
+    BoxCmp_Log_Err(c, "Cannot move objects of type '%T' into objects of type "
+                   "'%T'", src->type, dest->type);
     return BOXTASK_ERROR;
   }
 
@@ -1352,8 +1324,8 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
       return v_dest;
 
     else {
-      MSG_ERROR("Don't know how to convert objects of type %T to %T.",
-                src->type, dest);
+      BoxCmp_Log_Warn(c, "Don't know how to convert objects of type %T to %T.",
+                      src->type, dest);
       Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
       return NULL;
     }
@@ -1627,8 +1599,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
       if (!v_parent)
         return NULL;
     } else {
-      MSG_ERROR("Type '%T' has not a subtype of name '%s'",
-                v_parent->type, subtype_name);
+      BoxCmp_Log_Err(c, "Type '%T' has not a subtype of name '%s'",
+                     v_parent->type, subtype_name);
       Value_Unlink(v_parent);
       return NULL;
     }
@@ -1709,8 +1681,8 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
 
     } else {
       const char *what = get_child ? "child" : "parent";
-      MSG_ERROR("Cannot get the %s of '%T': this is not a subtype!",
-                what, v_subtype->type);
+      BoxCmp_Log_Err(c, "Cannot get the %s of '%T': this is not a subtype!",
+                     what, v_subtype->type);
     }
   }
 
@@ -1749,13 +1721,14 @@ Value *Value_Raise(Value *v) {
       v->type = unraised_type;
       return v;
     } else {
+      BoxCmp_Log_Err(v->proc->cmp, "Raising operator is applied to a "
+                     "non-raised type.");
       Value_Unlink(v);
-      MSG_ERROR("Raising operator is applied to a non-raised type.");
       return NULL;
     }
   } else {
+    BoxCmp_Log_Err(v->proc->cmp, "Raising operator got invalid operand.");
     Value_Unlink(v);
-    MSG_ERROR("Raising operator got invalid operand.");
     return NULL;
   }
 }
@@ -1764,7 +1737,7 @@ Value *
 Value_Reference(Value *v)
 {
   if (!Value_Is_Value(v)) {
-    MSG_ERROR("Invalid operand to reference operator.");
+    BoxCmp_Log_Err(v->proc->cmp, "Invalid operand to reference operator.");
     return NULL;
   }
 
@@ -1782,13 +1755,14 @@ Value_Dereference(Value *v)
   BoxType *deref_type;
 
   if (!Value_Is_Value(v)) {
-    MSG_ERROR("Invalid operand to reference operator.");
+    BoxCmp_Log_Err(v->proc->cmp, "Invalid operand to reference operator.");
     return NULL;
   }
 
   deref_type = BoxType_Dereference_Pointer(v->type);
   if (!deref_type) {
-    MSG_ERROR("Cannot dereference objects of type  `%T'", v->type);
+    BoxCmp_Log_Err(v->proc->cmp, "Cannot dereference objects of type  `%T'",
+                   v->type);
     return NULL;
   }
 
@@ -1797,6 +1771,6 @@ Value_Dereference(Value *v)
 
   /* Check for NULL pointers. */
   BoxLIR_Append_GOp(& c->lir, BOXGOP_NOTNUL,
-		    1, & v->value.cont, & v->value.cont);
+                    1, & v->value.cont, & v->value.cont);
   return v;
 }

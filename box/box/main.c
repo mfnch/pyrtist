@@ -76,11 +76,11 @@ typedef struct {
                  *file_output,
                  *file_setup,
                  *query;
+  BoxVM          *vm;
 } MyArgParserResult;
 
 
 /* The BoxVM object where the source is compiled */
-static BoxVM *target_vm = NULL;
 static BoxPaths box_paths;
 
 /* Function called with option `--query' to show configuration parameters. */
@@ -290,10 +290,10 @@ My_Stage_Init(void)
 }
 
 static void
-My_Stage_Finish(void)
+My_Stage_Finish(MyArgParserResult *result)
 {
-  if (target_vm)
-    BoxVM_Destroy(target_vm);
+  if (result->vm)
+    BoxVM_Destroy(result->vm);
   BoxPaths_Finish(& box_paths);
   Msg_Main_Destroy();
 }
@@ -325,6 +325,7 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
   result->file_output = NULL;
   result->file_setup = NULL;
   result->query = NULL;
+  result->vm = NULL;
   BCArgParser_Set_Stuff(ap, result);
 
   if (!BCArgParser_Parse(ap, argv, argc)) {
@@ -396,25 +397,22 @@ My_Stage_Add_Default_Paths(MyArgParserResult *result)
   BoxPaths_Add_Script_Path_To_Inc_Dir(& box_paths, result->file_input);
 }
 
-static void
+static BoxBool
 My_Stage_Compilation(MyArgParserResult *result, BoxVMCallNum *main_module)
 {
   Msg_Main_Counter_Clear_All();
-  MSG_CONTEXT_BEGIN("Compilation");
 
-  target_vm =
-    Box_Compile_To_VM_From_File(main_module,
-                                /*target_vm*/ NULL,
-                                /*file*/ NULL,
-                                /*filename*/ result->file_input,
-                                /*setup_file_name*/ result->file_setup,
-                                /*paths*/ & box_paths,
-				/*logger*/ NULL);
+  result->vm = BoxVM_Create();
+  if (!result->vm)
+    return BOXBOOL_FALSE;
 
-  MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
-             MSG_GT_ERRORS, MSG_NUM_WARNINGS);
-
-  MSG_CONTEXT_END();
+  return Box_Compile_To_VM_From_File(main_module,
+                                     /*target_vm*/ result->vm,
+                                     /*file*/ NULL,
+                                     /*filename*/ result->file_input,
+                                     /*setup_file_name*/ result->file_setup,
+                                     /*paths*/ & box_paths,
+                                     /*logger*/ NULL);
 }
 
 /* Enter symbol resolution stage */
@@ -426,19 +424,19 @@ My_Stage_Symbol_Resolution(MyArgParserResult *result)
 
   MSG_CONTEXT_BEGIN("Symbol resolution");
 
-  status = BoxVMSym_Resolve_CLibs(target_vm,
+  status = BoxVMSym_Resolve_CLibs(result->vm,
                                   BoxPaths_Get_Lib_Dir(& box_paths),
                                   BoxPaths_Get_Libs(& box_paths));
   if (status != BOXTASK_OK)
     return BOXBOOL_FALSE;
 
-  status = BoxVMSym_Resolve_All(target_vm);
+  status = BoxVMSym_Resolve_All(result->vm);
   if (status != BOXTASK_OK)
     return BOXBOOL_FALSE;
 
-  BoxVMSym_Ref_Check(target_vm, & all_resolved);
+  BoxVMSym_Ref_Check(result->vm, & all_resolved);
   if (!all_resolved) {
-    BoxVMSym_Ref_Report(target_vm);
+    BoxVMSym_Ref_Report(result->vm);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     result->flags.execute = 0;
     MSG_CONTEXT_END();
@@ -454,9 +452,9 @@ BoxTask
 Main_Execute(MyArgParserResult *result, BoxUInt main_module)
 {
   BoxTask t;
-  t = BoxVM_Module_Execute(target_vm, main_module);
+  t = BoxVM_Module_Execute(result->vm, main_module);
   if (t == BOXTASK_FAILURE && !result->flags.silent)
-    BoxVM_Backtrace_Print(target_vm, stderr);
+    BoxVM_Backtrace_Print(result->vm, stderr);
   return t;
 }
 
@@ -518,13 +516,13 @@ My_Stage_Write_Asm(MyArgParserResult *result)
 
     /* If the file name ends with '.c' then we produce a C file. */
     if (Box_CStr_Ends_With(file_output, ".c"))
-      BoxVM_Export_To_C_Code(target_vm, out);
+      BoxVM_Export_To_C_Code(result->vm, out);
     else {
       /* If the file name ends with '.bvmx' then we also include the hex. */
       if (Box_CStr_Ends_With(file_output, ".bvmx"))
-        BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
+        BoxVM_Set_Attr(result->vm, BOXVM_ATTR_DASM_WITH_HEX,
                        BOXVM_ATTR_DASM_WITH_HEX);
-      if (BoxVM_Proc_Disassemble_All(target_vm, out) != BOXTASK_OK)
+      if (BoxVM_Proc_Disassemble_All(result->vm, out) != BOXTASK_OK)
         return BOXBOOL_FALSE;
     }
 
@@ -538,8 +536,9 @@ My_Stage_Write_Asm(MyArgParserResult *result)
 
 /******************************************************************************/
 
-/* main function of the program. */
-int main(int argc, const char **argv) {
+int
+Box_Main(int argc, const char **argv)
+{
   BoxUInt main_module;
   int exit_status = EXIT_SUCCESS;
   MyArgParserResult result;
@@ -549,16 +548,21 @@ int main(int argc, const char **argv) {
   My_Stage_Interpret_Command_Line(& result);
   My_Stage_Add_Default_Paths(& result);
 
-  My_Stage_Compilation(& result, & main_module);
-  if (!My_Stage_Symbol_Resolution(& result))
+  if (!(My_Stage_Compilation(& result, & main_module)
+        && My_Stage_Symbol_Resolution(& result)
+        && My_Stage_Execution(& result, main_module)))
     exit_status = EXIT_FAILURE;
 
   if (!My_Stage_Write_Asm(& result))
     exit_status = EXIT_FAILURE;
 
-  if (!My_Stage_Execution(& result, main_module))
-    exit_status = EXIT_FAILURE;
+  My_Stage_Finish(& result);
+  return exit_status;
+}
 
-  My_Stage_Finish();
-  exit(exit_status);
+/* main function of the program. */
+int
+main(int argc, const char **argv)
+{
+  exit(Box_Main(argc, argv));
 }

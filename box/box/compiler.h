@@ -46,6 +46,15 @@ BoxCmp_Create(BoxVM *target_vm);
 BOXEXPORT void
 BoxCmp_Destroy(BoxCmp *c);
 
+BOXEXPORT void
+BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level, const char *fmt, ...);
+
+#define BoxCmp_Log_Warn(c, ...) \
+  BoxCmp_Log((c), & (c)->ast_node->head.src, BOXLOGLEVEL_WARNING, __VA_ARGS__)
+
+#define BoxCmp_Log_Err(c, ...) \
+  BoxCmp_Log((c), & (c)->ast_node->head.src, BOXLOGLEVEL_ERROR, __VA_ARGS__)
+
 /**
  * Steal the VM which is being used as the target for the compilation.
  */
@@ -58,7 +67,7 @@ BoxCmp_Steal_VM(BoxCmp *c);
  * and putting in '*main' the BoxVMCallNum of the main procedure of the
  * compiled source.
  */
-BOXEXPORT BoxVM *
+BOXEXPORT BoxBool
 Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                             FILE *file, const char *file_name,
                             const char *setup_file_name,
@@ -69,8 +78,9 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
  *
  * @param c Compiler to use.
  * @param program Abstract syntax tree of the program to compile.
+ * @return Whether it is safe to execute the compiled code.
  */
-BOXEXPORT void
+BOXEXPORT BoxBool
 BoxCmp_Compile(BoxCmp *c, BoxAST *ast);
 
 #endif /* _BOX_COMPILER_H */

@@ -43,6 +43,7 @@
  */
 struct BoxCmp_struct {
   BoxAST     *ast;      /**< Abstract syntax tree. */
+  BoxASTNode *ast_node; /**< Current source AST node. */
   BoxLIR     lir;       /**< LIR tree. */
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
@@ -54,7 +55,6 @@ struct BoxCmp_struct {
   Operator   convert,   /**< Conversion operator */
              bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
              un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
-  BoxSrcPos  src_pos;   /**< Recent position in source while parsing AST */
   struct {
     Value      error,     /**< Error value */
                void_val,  /**< Void value */
