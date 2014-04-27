@@ -19,9 +19,9 @@
 
 /** Data used to handle files included with "include". */
 typedef struct {
+  FILE          *owned_file;
   char          *script_dir;
   BoxSrcFullPos full_pos;
-  BoxUInt       num_errs, num_warns;
 } MyIncludeData;
 
 
@@ -109,7 +109,7 @@ BoxBool BoxParser_Begin_Include(BoxParser *bl, const char *fn)
     return BOXBOOL_FALSE;
   }
 
-  if (BoxParser_Begin_Include_FILE(bl, f, fn)) {
+  if (BoxParser_Begin_Include_FILE(bl, fn, f, /*do_fclose*/BOXBOOL_TRUE)) {
     MyIncludeData *cur = BoxArr_Get_Last_Item_Ptr(& bl->include_list);
     Box_Split_Path(& cur->script_dir, NULL, full_path);
     return BOXBOOL_TRUE;
@@ -121,4 +121,67 @@ BoxBool BoxParser_Begin_Include(BoxParser *bl, const char *fn)
 BoxAST *BoxParser_Get_AST(BoxParser *bp)
 {
   return bp->ast;
+}
+
+int BoxParser_Get_Next_Token(BoxParser *bl)
+{
+  if (BoxArr_Num_Items(& bl->include_list) > 0)
+    return yylex(bl->scanner);
+  BoxAST_Log(bl->ast, NULL, BOXLOGLEVEL_ERROR,
+             "BoxParser_Next_Token: the source file has not been "
+             "specified. Use BoxParser_Begin_Include to set it.");
+  abort();
+}
+
+BoxBool
+BoxParser_Begin_Include_FILE(BoxParser *bl, const char *fn, FILE *f,
+                             BoxBool do_fclose)
+{
+  size_t include_level = BoxArr_Num_Items(& bl->include_list);
+  YY_BUFFER_STATE buffer;
+  MyIncludeData *cur;
+
+  if (include_level >= bl->max_include_level) {
+    BoxAST_Log(bl->ast, & bl->src, BOXLOGLEVEL_ERROR,
+               "Cannot include \"%s\": too many files included.", fn);
+    return BOXBOOL_FALSE;
+  }
+
+  cur = BoxArr_Push(& bl->include_list, NULL);
+  cur->owned_file = (do_fclose) ? f : NULL;
+  cur->full_pos = bl->full_pos;
+  cur->script_dir = NULL;
+
+  buffer = yy_create_buffer(f, YY_BUF_SIZE, bl->scanner);
+  assert(buffer != NULL);
+  yypush_buffer_state(buffer, bl->scanner);
+
+  bl->src.begin = ++bl->src.end;
+  bl->full_pos.file_num = BoxAST_Get_File_Num(bl->ast, fn);
+  bl->full_pos.line = bl->full_pos.col = 0;
+  BoxAST_Store_Src_Map(bl->ast, bl->src.begin, & bl->full_pos);
+  return BOXBOOL_TRUE;
+}
+
+BoxBool BoxParser_End_Include(BoxParser *bl)
+{
+  size_t include_level = BoxArr_Num_Items(& bl->include_list);
+  if (include_level > 0) {
+    MyIncludeData cur;
+
+    /* Retrieve the last include data block and remove it from the stack. */
+    BoxArr_Pop(& bl->include_list, & cur);
+
+    /* Return to the previous buffer and restore the previous position. */
+    yypop_buffer_state(bl->scanner);
+    bl->src.begin = ++bl->src.end;
+    bl->full_pos = cur.full_pos;
+    BoxAST_Store_Src_Map(bl->ast, bl->src.begin, & bl->full_pos);
+    Box_Mem_Free(cur.script_dir);
+    if (cur.owned_file)
+      fclose(cur.owned_file);
+    return (include_level == 1);
+  }
+
+  return BOXBOOL_TRUE;
 }

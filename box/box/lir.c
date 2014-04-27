@@ -432,12 +432,12 @@ My_Unsafe_Assemble(BoxLIR *lir, BoxOpId op, int num_args, const BoxCont **cs)
 }
 
 static void
-My_Gather_Implicit_Input_Regs(BoxLIR *lir, int num_regs, BoxOpReg *regs,
+My_Gather_Implicit_Input_Regs(BoxLIR *lir, int num_regs, const BoxOpReg *regs,
                               const BoxCont **args)
 {
   int i;
   for(i = 0; i < num_regs; i++) {
-    BoxOpReg *reg = & regs[i];
+    const BoxOpReg *reg = & regs[i];
     if (reg->kind == 'r') {
       if (reg->io == 'i' || reg->io == 'b') {
         const BoxCont *src = args[i];
@@ -455,12 +455,12 @@ My_Gather_Implicit_Input_Regs(BoxLIR *lir, int num_regs, BoxOpReg *regs,
 }
 
 static void
-My_Scatter_Implicit_Input_Regs(BoxLIR *lir, int num_regs, BoxOpReg *regs,
+My_Scatter_Implicit_Input_Regs(BoxLIR *lir, int num_regs, const BoxOpReg *regs,
                                const BoxCont **args)
 {
   int i;
   for(i = 0; i < num_regs; i++) {
-    BoxOpReg *reg = & regs[i];
+    const BoxOpReg *reg = & regs[i];
     if (reg->kind == 'r') {
       if (reg->io == 'o' || reg->io == 'b') {
         BoxTypeId t = BoxContType_From_Char(reg->type);
@@ -515,7 +515,7 @@ My_Find_Op(MyFoundOp *info, BoxGOp g_op, int num_args,
       ro0_input_conflict = 0;
       signature = BOXOPSIGNATURE_NONE;
       for(i = 0; i < num_args; i++) {
-        BoxOpReg *reg = & oi->regs[i];
+        const BoxOpReg *reg = & oi->regs[i];
         BoxContType t = BoxContType_From_Char(reg->type);
         if (!My_ContTypes_Match(t, args[i]->type))
           break; /* Exit if type for this arg does not match */
@@ -567,13 +567,13 @@ My_Find_Op(MyFoundOp *info, BoxGOp g_op, int num_args,
 }
 
 static void
-My_Load_Immediates(BoxLIR *lir, int num_regs, BoxOpReg *regs,
+My_Load_Immediates(BoxLIR *lir, int num_regs, const BoxOpReg *regs,
                    const BoxCont **args, MyFoundOp *op)
 {
   int i, j;
   for(i = 0; i < num_regs; i++) {
     const BoxCont *src = args[i];
-    BoxOpReg *reg = & regs[i];
+    const BoxOpReg *reg = & regs[i];
     if (src->categ == BOXCONTCATEG_IMM && (reg->io == 'i' || reg->io == 'b')) {
       if (src->type == BOXCONTTYPE_INT && sizeof(BoxInt) > sizeof(int32_t)) {
         BoxInt value = src->value.imm.box_int;

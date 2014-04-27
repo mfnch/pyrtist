@@ -320,6 +320,8 @@ typedef BoxName BoxData;
 #  define ASSERT_TASK(x) \
   do {BoxTask t = (x); assert(t == BOXTASK_OK);} while(0)
 
+#  define BOX_SIZEOF_ARRAY(array) (sizeof(array)/sizeof((array)[0]))
+
 typedef struct BoxCoreTypes_struct BoxCoreTypes;
 
 /**

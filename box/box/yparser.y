@@ -426,7 +426,7 @@ BoxAST *Box_Parse_FILE(FILE *in, const char *in_name,
 
   in_name = (in_name) ? in_name : "<stdin>";
   in = (in) ? in : stdin;
-  no_errors = BoxParser_Begin_Include_FILE(parser, in, in_name);
+  no_errors = BoxParser_Begin_Include_FILE(parser, in_name, in, BOXBOOL_FALSE);
 
   if (auto_include && no_errors)
     no_errors = BoxParser_Begin_Include(parser, auto_include);

@@ -91,17 +91,16 @@ struct BoxOpInfo_struct {
   const char *name;        /**< Literal name of the opcode (a string) */
   BoxOpSignature
              signature;    /**< Operation kind (depends on the arguments) */
-  BoxOpDAsm  dasm;         /**< How to disassemble the operation */
   char       arg_type,     /**< Type of the arguments */
              num_args,     /**< Number of arguments */
              num_inputs,   /**< Num. of input registers (explicit+implicit) */
              num_outputs,  /**< Num. of output registers(explicit+implicit) */
              num_regs;     /**< Num. of distinct registers involved by the
                                 operation (this is not just in + out) */
-  BoxOpReg   *regs;        /**< Pointer to the list of input/output regs */
+  BoxOpReg   regs[3];      /**< List of input/output regs. */
   BoxVMOpExecutor
-             executor;    /**< Pointer to the function which implements
-                               the operation */
+             executor;     /**< Pointer to the function which implements
+                                the operation */
 };
 
 /**
@@ -123,7 +122,6 @@ struct BoxOpDesc_struct {
 typedef struct {
   BoxOpInfo info[BOX_NUM_OPS]; /**< Table of BoxOpInfo strucs. One for each
                                     VM operation */
-  BoxOpReg  *regs;             /**< Buffer used by the BoxOpTable.info */
 } BoxOpTable;
 
 /**
@@ -251,9 +249,6 @@ extern const size_t size_of_type[NUM_TYPES];
  * This is quite an internal function.
  */
 void BoxOpTable_Build(BoxOpTable *ot);
-
-/** Destroy a BoxOpTable object created with BoxOpTable_Build */
-void BoxOpTable_Destroy(BoxOpTable *ot);
 
 /** Print the given BoxOpTable to the given stream. */
 void BoxOpTable_Print(FILE *out, const BoxOpTable *ot);

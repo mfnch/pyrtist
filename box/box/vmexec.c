@@ -934,8 +934,7 @@ static int My_Regs_Are_Equal(const BoxOpReg *a, const BoxOpReg *b) {
 void
 BoxOpTable_Build(BoxOpTable *ot)
 {
-  int i, outside_idx, num_regs_to_alloc;
-  BoxOpReg *reg;
+  int i, outside_idx;
 
   /* The following is what we want to achieve here:
    * The info table must contain BOX_NUM_OPS entries: one for each operation.
@@ -956,109 +955,87 @@ BoxOpTable_Build(BoxOpTable *ot)
 
   /* Now we populate the table */
   outside_idx = BOX_NUM_GOPS; /* index to items outside the lower table */
-  num_regs_to_alloc = 0; /* Need to count the total num of input and output
-                            args to allocate properly an array later */
+
   for(i = 0; i < BOX_NUM_OPS; i++) {
-    BoxOpTable4Humans *h_ot = & op_table_for_humans[i];
-    BoxGOp g_opcode = h_ot->g_opcode;
-    BoxOpInfo *oi = & ot->info[g_opcode];
+    BoxOpTable4Humans *src_entry = & op_table_for_humans[i];
+    BoxGOp g_opcode = src_entry->g_opcode;
+    BoxOpInfo *dst_entry = & ot->info[g_opcode];
 
     /* We first check if the entry is free or not */
-    if (oi->name == NULL) {
+    if (dst_entry->name == NULL) {
       /* It is! Then we work on the first part of the table! */
-      oi->next = NULL;
-
+      dst_entry->next = NULL;
     } else {
       /* No, it has been already occupied! We work outside the lower table! */
-      BoxOpInfo *next = oi->next;
-      oi->next = & ot->info[outside_idx++]; /* update the chain */
-      oi = oi->next;
-      oi->next = next;
+      BoxOpInfo *next = dst_entry->next;
+      dst_entry->next = & ot->info[outside_idx++]; /* update the chain */
+      dst_entry = dst_entry->next;
+      dst_entry->next = next;
     }
 
-    oi->name = h_ot->name; /* This also marks the item as occupied */
-    oi->opcode = i;
-    oi->g_opcode = h_ot->g_opcode;
-    oi->signature = My_BoxOpSignature_From_Str(h_ot->assembler);
-    oi->dasm = 0; /* change me */
-    oi->arg_type = h_ot->arg_type;
-    oi->num_args = h_ot->num_args;
-    oi->num_inputs = My_Count_Args(h_ot->input_regs);
-    oi->num_outputs = My_Count_Args(h_ot->output_regs);
-    oi->executor = h_ot->executor;
+    dst_entry->name = src_entry->name;
+    dst_entry->opcode = i;
+    dst_entry->g_opcode = src_entry->g_opcode;
+    dst_entry->signature = My_BoxOpSignature_From_Str(src_entry->assembler);
+    dst_entry->arg_type = src_entry->arg_type;
+    dst_entry->num_args = src_entry->num_args;
+    dst_entry->num_inputs = My_Count_Args(src_entry->input_regs);
+    dst_entry->num_outputs = My_Count_Args(src_entry->output_regs);
+    dst_entry->executor = src_entry->executor;
 
-    num_regs_to_alloc += oi->num_inputs + oi->num_outputs;
+    assert(dst_entry->num_inputs + dst_entry->num_outputs
+           <= BOX_SIZEOF_ARRAY(dst_entry->regs));
   }
-
-  /* Now we can generate, for each operation, the list of input and output
-   * registers
-   */
-
-  reg = ot->regs = Box_Mem_Safe_Alloc(sizeof(BoxOpReg)*num_regs_to_alloc);
 
   for(i = 0; i < BOX_NUM_OPS; i++) {
-    BoxOpInfo *oi = & ot->info[i];
-    BoxOpTable4Humans *h_ot;
+    BoxOpInfo *dst_entry = & ot->info[i];
+    BoxOpTable4Humans *src_entry = & op_table_for_humans[dst_entry->opcode];
+    char arg_type = src_entry->arg_type;
+    int reg_idx = 0, num_out_regs = dst_entry->num_outputs;
     const char *token;
-    int num_regs, num_out_regs;
-
-    assert(oi->name);
-    h_ot = & op_table_for_humans[oi->opcode];
 
     /* Parse the string containing the output registers and transform it into
-     * an array of BoxOpReg structures pointed by oi->regs
+     * an array of BoxOpReg structures pointed by dst_entry->regs.
      */
-    oi->regs = reg;
-    token = h_ot->output_regs;
-    num_regs = 0;
-    while(My_Parse_Reg_List(& token, h_ot->arg_type, 'o', reg)) {
-      ++num_regs;
-      ++reg;
-    }
+    for (reg_idx = 0, token = src_entry->output_regs;
+         reg_idx < num_out_regs; reg_idx++)
+      My_Parse_Reg_List(& token, arg_type, 'o', & dst_entry->regs[reg_idx]);
 
-    assert(num_regs == oi->num_outputs);
-    num_out_regs = num_regs;
-
-    /* Do a similar things for the input registers */
-    token = h_ot->input_regs;
-    while(My_Parse_Reg_List(& token, h_ot->arg_type, 'i', reg)) {
+    /* Do a similar thing for the input registers. */
+    token = src_entry->input_regs;
+    while (My_Parse_Reg_List(& token, arg_type, 'i',
+                             & dst_entry->regs[reg_idx])) {
       int j, found;
-      /* Check if this register was also an output register */
-      found = 0;
-      for(j = 0; j < num_out_regs; j++)
-        if (My_Regs_Are_Equal(reg, & oi->regs[j])) {
-          /* yes. then mark it as input/output */
-          oi->regs[j].io = 'b';
-          found = 1;
+      /* Check if this register was also an output register. */
+      for (j = 0, found = BOXBOOL_FALSE; j < num_out_regs; j++) {
+        if (My_Regs_Are_Equal(& dst_entry->regs[reg_idx],
+                              & dst_entry->regs[j])) {
+          /* Yes. Then re-mark it as input/output. */
+          dst_entry->regs[j].io = 'b';
+          found = BOXBOOL_TRUE;
           break;
         }
-
-      if (!found) {
-        /* no. then add it as input only */
-        ++num_regs;
-        ++reg;
       }
+
+      if (!found)
+        /* No. then add it as input only. */
+        ++reg_idx;
     }
 
-    assert(num_regs <= BOXOP_MAX_NUM_ARGS);
-
-    oi->num_regs = num_regs;
+    assert(reg_idx <= BOX_SIZEOF_ARRAY(dst_entry->regs));
+    dst_entry->num_regs = reg_idx;
   }
-}
-
-void BoxOpTable_Destroy(BoxOpTable *ot) {
-  Box_Mem_Free(ot->regs);
 }
 
 void BoxOpInfo_Print(FILE *out, const BoxOpInfo *oi)
 {
-  for(; oi != NULL; oi = oi->next) {
+  for(; oi; oi = oi->next) {
     int j;
     const char *sep = " ";
     fprintf(out, "  %s", oi->name);
     for(j = 0; j < oi->num_regs; j++) {
       const char *io;
-      BoxOpReg *reg = & oi->regs[j];
+      const BoxOpReg *reg = & oi->regs[j];
       switch(reg->io) {
       case 'i': io = "i"; break;
       case 'o': io = "o"; break;

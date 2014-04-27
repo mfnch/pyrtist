@@ -70,7 +70,7 @@ BoxParser_Destroy(BoxParser *bp);
  */
 BOXEXPORT BoxAST *
 Box_Parse_FILE(FILE *in, const char *in_name, const char *auto_include,
-	       BoxPaths *paths, BoxLogger *logger);
+               BoxPaths *paths, BoxLogger *logger);
 
 /**
  * @brief Return the next token.
@@ -88,7 +88,8 @@ BoxParser_Begin_Include(BoxParser *bp, const char *f);
  * @brief Include a new source file, given its descriptor and file-name.
  */
 BOXEXPORT BoxBool
-BoxParser_Begin_Include_FILE(BoxParser *bp, FILE *f, const char *fn);
+BoxParser_Begin_Include_FILE(BoxParser *bp, const char *fn, FILE *f,
+                             BoxBool do_fclose);
 
 /**
  * @brief Exit from an included source file.
