@@ -230,6 +230,7 @@ Box_Get_VM_Op_Info(BoxGOp g_op)
 
   assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
   BoxOpTable_Build(& op_table);
+  have_op_table = BOXBOOL_TRUE;
   return & op_table.info[g_op];
 }
 
