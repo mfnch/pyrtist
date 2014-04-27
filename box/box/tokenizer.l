@@ -53,8 +53,8 @@
 #include <box/parser_priv.h>
 
 /* Add our own position tracking code. We here assume the token does not
- * contain newline characters. All exceptions have need to be corrected by
- * using MY_EAT_NEWLINES.
+ * contain newline characters. All exceptions need to be corrected by using
+ * MY_EAT_NEWLINES.
  */
 #define YY_USER_ACTION \
   yylloc.begin = yyextra->src.begin = yyextra->src.end; \

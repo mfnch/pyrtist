@@ -163,17 +163,16 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
 void BoxCmp_Finish(BoxCmp *c)
 {
+  if (BoxArr_Num_Items(& c->stack) != 0)
+    BoxCmp_Log_Warn(c, "BoxCmp_Finish: stack is not empty at destruction");
+
   BoxLIR_Finish(& c->lir);
   BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   My_Finish_Const_Values(c);
   BoxVMCode_Finish(& c->main_proc);
-
-  if (BoxArr_Num_Items(& c->stack) != 0)
-    MSG_WARNING("BoxCmp_Finish: stack is not empty at compiler destruction.");
   BoxArr_Finish(& c->stack);
-
   BoxCmp_Finish__Operators(c);
 
   if (c->attr.own_vm)
@@ -348,9 +347,9 @@ Value *BoxCmp_Pop_Value(BoxCmp *c)
     return v;
 
   default:
-    MSG_FATAL("BoxCmp_Pop_Value: want value, but top of stack contains "
-              "incompatible item.");
-    assert(0);
+    BoxCmp_Log_Fatal(c, "BoxCmp_Pop_Value: want value, but top of stack "
+                     "contains incompatible item.");
+    return NULL;
   }
 }
 
@@ -366,9 +365,9 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos)
     return (Value *) si->item;
 
   default:
-    MSG_FATAL("BoxCmp_Get_Value: want value, but top of stack contains "
-              "incompatible item.");
-    assert(0);
+    BoxCmp_Log_Fatal(c, "BoxCmp_Get_Value: want value, but top of stack "
+                     "contains incompatible item.");
+    return NULL;
   }
 }
 
@@ -652,7 +651,8 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
 
     if (BoxASTNode_Is_Type(box->parent)
         && BoxType_Is_Subtype(parent_type->type)) {
-      MSG_ERROR("Cannot instantiate unbound subtype %T", parent_type->type);
+      BoxCmp_Log_Err(c, "Cannot instantiate unbound subtype %T",
+                     parent_type->type);
       parent = Value_Create(c->cur_proc);
       parent_is_err = BOXBOOL_TRUE;
     } else {
@@ -794,9 +794,9 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
 
             } else {
               if (state == MYBOXSTATE_GOT_ELSE)
-                MSG_ERROR("Double 'Else'.");
+                BoxCmp_Log_Err(c, "Double 'Else'.");
               else
-                MSG_ERROR("'Else' without 'If'.");
+                BoxCmp_Log_Err(c, "'Else' without 'If'.");
             }
             Value_Unlink(stmt_val);
             state = MYBOXSTATE_GOT_ELSE;
@@ -1004,8 +1004,8 @@ static Value *My_Compile_Value_Assignment(BoxCmp *c, Value *left, Value *right)
       return left;
 
     } else {
-      MSG_ERROR("Invalid target for assignment (%s).",
-                ValueKind_To_Str(left->kind));
+      BoxCmp_Log_Err(c, "Invalid target for assignment (%s).",
+                     ValueKind_To_Str(left->kind));
       Value_Unlink(left);
       Value_Unlink(right);
       return NULL;
@@ -1018,8 +1018,8 @@ static Value *My_Compile_Value_Assignment(BoxCmp *c, Value *left, Value *right)
   }
 }
 
-static Value *My_Compile_Type_Assignment(BoxCmp *c, Value *v_name,
-                                         Value *v_type)
+static Value *
+My_Compile_Type_Assignment(BoxCmp *c, Value *v_name, Value *v_type)
 {
   Value *v_named_type = NULL;
 
@@ -1049,17 +1049,18 @@ static Value *My_Compile_Type_Assignment(BoxCmp *c, Value *v_name,
           BoxBool success = BoxType_Get_Subtype_Info(t, NULL, NULL, & t_child);
           assert(success);
           if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
-            MSG_ERROR("Inconsistent redefinition of type '%T': was '%T' "
-                      "and is now '%T'", v_name->type, t_child, v_type->type);
-
+            BoxCmp_Log_Err(c, "Inconsistent redefinition of type `%T': was "
+                           "`%T' and is now `%T'", v_name->type, t_child,
+                           v_type->type);
         } else {
           (void) BoxType_Register_Subtype(t, v_type->type);
-          /* ^^^ ignore state of success of operation */
+          /* ^^^ ignore state of success of operation. */
         }
 
       } else if (BoxType_Compare(v_name->type, v_type->type)
                  == BOXTYPECMP_DIFFERENT) {
-        MSG_ERROR("Inconsistent redefinition of type '%T.'", v_name->type);
+        BoxCmp_Log_Err(c, "Inconsistent redefinition of type `%T'.",
+                       v_name->type);
       }
 
       v_named_type = v_type;
@@ -1181,9 +1182,8 @@ static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
     return_weak_copy = 0;
   }
 
-  if (v_self == NULL) {
-    MSG_ERROR("%s not defined in the current scope.", n_self);
-
+  if (!v_self) {
+    BoxCmp_Log_Err(c, "%s not defined in the current scope.", n_self);
   } else {
     /* Return only a weak copy? */
     if (return_weak_copy) {
@@ -1238,7 +1238,8 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
     c_name = ((BoxASTNodeStrImm *) comb_def_node->c_name)->str;
     if (strlen(c_name) < 1) {
       /* NOTE: Should we test any other kind of "badness"? */
-      MSG_ERROR("Empty string in C-name for procedure declaration.");
+      BoxCmp_Log(c, & comb_def_node->c_name->head.src, BOXLOGLEVEL_ERROR,
+                 "Empty string in C-name for procedure declaration.");
       no_err = 0;
     }
   }
@@ -1317,7 +1318,7 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
 
     /* Set the call number. */
     if (!BoxType_Generate_Combination_Call_Num(comb, c->vm, & cn))
-      MSG_FATAL("Cannot generate call number for combination.");
+      BoxCmp_Log_Fatal(c, "Cannot generate call number for combination.");
     proc_implem.have.call_num = 1;
     proc_implem.call_num = cn;
 

@@ -26,7 +26,7 @@
 
 void
 BoxLogger_Init(BoxLogger *logger, BoxLoggerLogFn log_fn,
-	       BoxLoggerPutsFn puts_fn, void *data)
+               BoxLoggerPutsFn puts_fn, void *data)
 {
   logger->log_fn = log_fn;
   logger->puts_fn = puts_fn;
@@ -57,7 +57,7 @@ BoxLogger_Destroy(BoxLogger *logger)
 
 char *
 BoxLogger_Process_Msg(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
-		      BoxLogLevel lev, const char *fmt, va_list ap)
+                      BoxLogLevel lev, const char *fmt, va_list ap)
 {
   const char *prefix = "Fatal error";
   char *s;
@@ -83,14 +83,14 @@ BoxLogger_Process_Msg(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
 
     if (begin->line < end->line)
       snprintf(pos_part, sizeof(pos_part), "%s%u:%u-%u:%u",
-	       sep, begin->line + 1, begin->col + 1,
-	       end->line + 1, end->col + 1);
+               sep, begin->line + 1, begin->col + 1,
+               end->line + 1, end->col);
     else if (begin->col < end->col)
       snprintf(pos_part, sizeof(pos_part), "%s%u:%u-%u",
-	       sep, begin->line + 1, begin->col + 1, end->col + 1);
-    else 
+               sep, begin->line + 1, begin->col + 1, end->col);
+    else
       snprintf(pos_part, sizeof(pos_part), "%s%u:%u",
-	       sep, begin->line + 1, begin->col + 1);
+               sep, begin->line + 1, begin->col + 1);
 
     return Box_SPrintF("%s (%s%s): %~s", prefix, file_name, pos_part, s);
   }
@@ -143,7 +143,7 @@ My_Wrapper_Puts_Fn(BoxLogger *logger, const char *s, void *data)
 
 BoxBool
 My_Wrapper_Log_Fn(BoxLogger *logger, BoxLogPos *begin, BoxLogPos *end,
-		  BoxLogLevel level, const char *fmt, va_list ap, void *data)
+                  BoxLogLevel level, const char *fmt, va_list ap, void *data)
 {
   BoxLogger *src = (BoxLogger *) data;
   if (src && src->log_fn)

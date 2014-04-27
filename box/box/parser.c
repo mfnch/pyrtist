@@ -97,13 +97,15 @@ BoxBool BoxParser_Begin_Include(BoxParser *bl, const char *fn)
   FILE *f = NULL;
 
   if (!full_path) {
-    MSG_ERROR("\"%s\" <-- Cannot find the file!", fn);
+    BoxAST_Log(bl->ast, & bl->src, BOXLOGLEVEL_ERROR,
+               "\"%s\" <-- Cannot find the file!", fn);
     return BOXBOOL_FALSE;
   }
 
   f = fopen(full_path, "rt");
   if (!f) {
-    MSG_ERROR("\"%s\" <-- Cannot open the file!", fn);
+    BoxAST_Log(bl->ast, & bl->src, BOXLOGLEVEL_ERROR,
+               "\"%s\" <-- Cannot open the file!", fn);
     return BOXBOOL_FALSE;
   }
 

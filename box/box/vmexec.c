@@ -931,7 +931,9 @@ static int My_Regs_Are_Equal(const BoxOpReg *a, const BoxOpReg *b) {
   return a->kind == b->kind && a->type == b->type && a->num == b->num;
 }
 
-void BoxOpTable_Build(BoxOpTable *ot) {
+void
+BoxOpTable_Build(BoxOpTable *ot)
+{
   int i, outside_idx, num_regs_to_alloc;
   BoxOpReg *reg;
 
