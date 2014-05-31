@@ -18,14 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* registers.c, agosto 2004
- *
- * Questo file contiene le funzioni necessarie per tener conto dei registri
- * temporanei occupati dal parser nella fase di compilazione.
- */
-
-/*#define DEBUG*/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -54,74 +46,14 @@
 
  */
 typedef struct {
-  BoxInt level, /**< scope level of the variable */
-      chain; /**< 0 means occupied, otherwise contain a link to the next
-                  register in the chain of non occupied registers. */
+  uint32_t level, /**< scope level of the variable */
+           chain; /**< 0 means occupied, otherwise contain a link to the next
+                       register in the chain of non occupied registers. */
 } VarItem;
 
 static BoxTypeId Reg_Type(BoxTypeId type) {
   assert(type >= 0);
   return (type >= NUM_TYPES) ? BOXTYPEID_PTR : type;
-}
-
-static void VarFrame_Init(VarFrame *vf) {
-  BoxArr_Init(& vf->regs, sizeof(VarItem), 32);
-  vf->chain = END_OF_CHAIN;
-  vf->max = 0;
-}
-
-static void VarFrame_Finish(VarFrame *vf) {
-  BoxArr_Finish(& vf->regs);
-}
-
-/* See Var_Occupy */
-static BoxInt VarFrame_Occupy(VarFrame *vf, BoxUInt level) {
-  BoxArr *regs = & vf->regs;
-  VarItem *vi, *last_vi;
-  BoxInt idx;
-
-  /* Scorro la catena delle variabili libere finche'
-   * non ne trovo una di livello non inferiore a level
-   */
-  last_vi = NULL;
-  for (idx = vf->chain; idx != END_OF_CHAIN;) {
-    vi = (VarItem *) BoxArr_Item_Ptr(regs, idx);
-    if (vi->level <= level) {
-      /* Ho trovato quel che cercavo! */
-      /* La variabile non e' piu' libera: la tolgo dalla catena! */
-      if (last_vi == NULL) {
-        vf->chain = vi->chain;
-        vi->chain = OCCUPIED;
-        return idx;
-
-      } else {
-        last_vi->chain = vi->chain;
-        vi->chain = OCCUPIED;
-        return idx;
-      }
-    }
-    idx = vi->chain;
-    last_vi = vi;
-  }
-
-  /* Se la catena delle variabili libere non si puo' sfruttare non resta che
-   * creare una nuova variabile, contrassegnarla come occupata e restituirla.
-   */
-  vi = BoxArr_Push(regs, NULL);
-  vi->chain = OCCUPIED;
-  vi->level = level;
-
-  idx = BoxArr_Num_Items(regs);
-  if (idx > vf->max) vf->max = idx;
-  return idx;
-}
-
-/* See Var_Release */
-static void VarFrame_Release(VarFrame *vf, BoxInt idx) {
-  BoxArr *regs = & vf->regs;
-  VarItem *vi = (VarItem *) BoxArr_Item_Ptr(regs, idx);
-  vi->chain = vf->chain;
-  vf->chain = idx;
 }
 
 /******************************************************************************
@@ -134,18 +66,16 @@ static void VarFrame_Release(VarFrame *vf, BoxInt idx) {
 static void RegFrame_Init(RegFrame *rf) {
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
-    BoxOcc_Init(& rf->reg_occ[i], 0, REG_OCC_TYP_SIZE);
-    VarFrame_Init(& rf->lvar[i]);
+    BoxOcc_Init(& rf->reg_occ[i], 0, 10);
+    rf->lvar[i] = 0;
   }
 }
 
 static void RegFrame_Finish(void *rf_ptr) {
   RegFrame *rf = (RegFrame *) rf_ptr;
   int i;
-  for(i = 0; i < NUM_TYPES; i++) {
+  for(i = 0; i < NUM_TYPES; i++)
     BoxOcc_Finish(& rf->reg_occ[i]);
-    VarFrame_Finish(& rf->lvar[i]);
-  }
 }
 
 /*  Inizializza gli array che tengono nota dei registri occupati
@@ -156,31 +86,13 @@ static void RegFrame_Finish(void *rf_ptr) {
  */
 void Reg_Init(RegAlloc *ra) {
   int i;
-  BoxArr_Init(& ra->reg_frame, sizeof(RegFrame), 2);
-  BoxArr_Set_Finalizer(& ra->reg_frame, RegFrame_Finish);
-  Reg_Frame_Push(ra);
+  RegFrame_Init(& ra->reg_frame);
   for(i = 0; i < NUM_TYPES; i++)
-    VarFrame_Init(& ra->gvar[i]);
+    ra->gvar[i] = 0;
 }
 
 void Reg_Finish(RegAlloc *ra) {
-  int i;
-  BoxArr_Finish(& ra->reg_frame);
-  for(i = 0; i < NUM_TYPES; i++)
-    VarFrame_Finish(& ra->gvar[i]);
-}
-
-void Reg_Frame_Push(RegAlloc *ra) {
-  RegFrame *new_frame = BoxArr_Push(& ra->reg_frame, NULL);
-  RegFrame_Init(new_frame);
-}
-
-void Reg_Frame_Pop(RegAlloc *ra) {
-  BoxArr_Pop(& ra->reg_frame, NULL);
-}
-
-BoxInt Reg_Frame_Get(RegAlloc *ra) {
-  return BoxArr_Num_Items(& ra->reg_frame);
+  RegFrame_Finish(& ra->reg_frame);
 }
 
 /*  Restituisce un numero di registro libero e lo occupa,
@@ -193,113 +105,61 @@ BoxInt Reg_Frame_Get(RegAlloc *ra) {
  *  viene restituito 0 solo in caso di errori.
  */
 BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
-  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   if (t == BOXTYPEID_VOID)
     return 0;
-  else
-    return (BoxInt) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
+  return (BoxInt) BoxOcc_Occupy(& ra->reg_frame.reg_occ[Reg_Type(t)], NULL);
 }
 
 /* Vedi Reg_Occupy.
  */
 void Reg_Release(RegAlloc *ra, BoxInt t, BoxUInt reg_num) {
-  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
+  RegFrame *rf = & ra->reg_frame;
   BoxOcc_Release(& rf->reg_occ[Reg_Type(t)], reg_num);
 }
 
-/* Restituisce il numero di registro massimo fin'ora utilizzato. */
-BoxInt Reg_Num(RegAlloc *ra, BoxInt t) {
-  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
-  return BoxOcc_Max_Index(& rf->reg_occ[Reg_Type(t)]);
-}
-
 static RegFrame *Cur_RegFrame(RegAlloc *ra) {
-  return (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
+  return (RegFrame *) & ra->reg_frame;
 }
 
-/*  Restituisce un numero di variabile libera e lo occupa.
- *  Questo numero non verra' piu' restituito fino a quando la variabile verra'
- *  liberata con una chiamata a Var_Release.
- *  Se la variabile e' libera Var_Occupy puo' restituirla a patto che
- *  il suo precedente livello (il livello che essa possedeva al momento
- *  dell'ultima liberazione con Var_Release) sia superiore a level.
- *  t e' il tipo di registro, per ciascuno dei tipi di registro
- *  Var_Occupy funziona in maniera indipendente.
- * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
- *  viene restituito 0 solo in caso di errori.
- */
 BoxInt Var_Occupy(RegAlloc *ra, BoxTypeId type, BoxInt level) {
+  BoxTypeId t = Reg_Type(type);
   if (type == BOXTYPEID_VOID)
     return 0;
-
-  else {
-    BoxTypeId t = Reg_Type(type);
-    return VarFrame_Occupy(& Cur_RegFrame(ra)->lvar[t], level);
-  }
-}
-
-/* Vedi Var_Occupy. */
-void Var_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum) {
-  BoxInt t = Reg_Type(type);
-  VarFrame_Release(& Cur_RegFrame(ra)->lvar[t], varnum);
-}
-
-/* Restituisce il numero di variabile massimo fin'ora utilizzato.
- */
-BoxInt Var_Num(RegAlloc *ra, BoxInt type) {
-  return Cur_RegFrame(ra)->lvar[Reg_Type(type)].max;
+  return (Cur_RegFrame(ra)->lvar[t])++;
 }
 
 BoxInt GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
   if (type == BOXTYPEID_VOID)
     return 0;
-  else
-    return VarFrame_Occupy(& ra->gvar[Reg_Type(type)], 0);
-}
-
-/* Vedi Var_Occupy. */
-void GVar_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum) {
-  VarFrame_Release(& ra->gvar[Reg_Type(type)], varnum);
-}
-
-BoxInt GReg_Num(RegAlloc *ra, BoxInt type) {
-  switch(type) {
-  case BOXTYPEID_PTR:
-    return 2;
-  default:
-    return 0;
-  }
-}
-
-
-/* Restituisce il numero di variabile massimo fin'ora utilizzato.
- */
-BoxInt GVar_Num(RegAlloc *ra, BoxInt type) {
-  return ra->gvar[Reg_Type(type)].max;
+  return (ra->gvar[Reg_Type(type)])++;
 }
 
 /* This function writes (starting at the address num_var)
  * an array of BoxInt with the number of used variables, and (address num_reg)
  * an array of BoxInt with the number of used registers.
  */
-void Reg_Get_Local_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars) {
+void
+RegAlloc_Get_Local_Nums(RegAlloc *ra, uint32_t *num_regs, uint32_t *num_vars)
+{
   int i;
-  if (num_regs != NULL)
-    for (i = 0; i < NUM_TYPES; i++)
-      *(num_regs++) = Reg_Num(ra, i);
+  if (num_regs)
+    for (i = 0; i < NUM_REGISTER_TYPES; i++)
+      *(num_regs++) = BoxOcc_Max_Index(& ra->reg_frame.reg_occ[Reg_Type(i)]);
 
-  if (num_vars != NULL)
-    for (i = 0; i < NUM_TYPES; i++)
-      *(num_vars++) = Var_Num(ra, i);
+  if (num_vars)
+    for (i = 0; i < NUM_REGISTER_TYPES; i++)
+      *(num_vars++) = Cur_RegFrame(ra)->lvar[Reg_Type(i)];
 }
 
-void Reg_Get_Global_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars) {
+void
+RegAlloc_Get_Global_Nums(RegAlloc *ra, uint32_t *num_regs, uint32_t *num_vars)
+{
   int i;
-  if (num_regs != NULL)
-    for (i = 0; i < NUM_TYPES; i++)
-      *(num_regs++) = GReg_Num(ra, i);
+  if (num_regs)
+    for (i = 0; i < NUM_REGISTER_TYPES; i++)
+      *(num_regs++) = (i == BOXTYPEID_PTR) ? 2 : 0;
 
-  if (num_vars != NULL)
-    for (i = 0; i < NUM_TYPES; i++)
-      *(num_vars++) = GVar_Num(ra, i);
+  if (num_vars)
+    for (i = 0; i < NUM_REGISTER_TYPES; i++)
+      *(num_vars++) = ra->gvar[Reg_Type(i)];
 }

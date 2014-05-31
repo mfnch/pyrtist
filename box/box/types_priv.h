@@ -210,7 +210,7 @@ struct BoxType_struct {
   struct {
     unsigned int can_self_ref : 1, /**< Can reference itself (directly or
                                       indirectly). For garbage collection. */
-                 is_global    : 1; /**< Whether the type is global. Global 
+                 is_global    : 1; /**< Whether the type is global. Global
                                       types do not need to be referenced by
                                       their instances. */
   }              attr;

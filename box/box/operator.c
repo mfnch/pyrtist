@@ -286,7 +286,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     }
 
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                      1, & v_left->value.cont);
+                      1, & v_left->cont);
     result = v_left;
     break;
 
@@ -299,7 +299,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                              by Value_To_Temp */
       v_temp = Value_To_Temp(v_left);
       BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                        1, & v_left->value.cont);
+                        1, & v_left->cont);
       Value_Unlink(v_left); /* We don't need v_left anymore! */
       result = v_temp;
       break;
@@ -341,7 +341,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     }
 
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                      2, & v_left->value.cont, & v_right->value.cont);
+                      2, & v_left->cont, & v_right->cont);
     result = v_left;
     break;
 
@@ -353,8 +353,8 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     v_left = Value_To_Temp_Or_Target(v_left);
     v_right = Value_To_Temp_Or_Target(v_right);
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                      3, & result->value.cont,
-                      & v_left->value.cont, & v_right->value.cont);
+                      3, & result->cont,
+                      & v_left->cont, & v_right->cont);
     Value_Unlink(v_left);
     Value_Unlink(v_right);
     return result;
@@ -373,7 +373,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     Value_Setup_As_Temp(result, opn->type_result);
 
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                      2, & v_left->value.cont, & v_right->value.cont);
+                      2, & v_left->cont, & v_right->cont);
 
     result = v_left;
     break;
@@ -496,7 +496,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                        2, & dest->value.cont, & src->value.cont);
+                        2, & dest->cont, & src->cont);
       Value_Unlink(src);
       Value_Unlink(dest);
       return BOXTASK_OK;

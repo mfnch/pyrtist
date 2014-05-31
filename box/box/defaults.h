@@ -98,17 +98,6 @@
 #define NUM_INTRINSICS 4
 
 /*****************************************************************************
- *                COSTANTI UTILIZZATE NEL FILE registers.c                   *
- *****************************************************************************/
-/** Typical number of registers used in a Box function (for each types)
- */
-#define REG_OCC_TYP_SIZE 10
-
-/** Typical number of variables used in a Box function (for each types)
- */
-#define VAR_OCC_TYP_SIZE 10
-
-/*****************************************************************************
  *                     COSTANTI UTILIZZATE NEL FILE main.c                   *
  *****************************************************************************/
 

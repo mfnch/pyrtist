@@ -55,9 +55,7 @@ typedef struct {
   BoxVMCode *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   *type;            /**< Type of the Value */
-  struct {
-    BoxCont cont;             /**< Container */
-  }         value;            /**< Value of the container */
+  BoxCont   cont;             /**< Container */
   char      *name;            /**< Optional name of the value */
   struct {
     unsigned int

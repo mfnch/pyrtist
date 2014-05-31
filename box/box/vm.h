@@ -296,8 +296,8 @@ BOXEXPORT BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
 
 /** Specifies the number of global registers and variables used by the BoxVM.
  */
-BOXEXPORT BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[],
-                                          BoxInt num_reg[]);
+BOXEXPORT BoxTask
+BoxVM_Alloc_Global_Regs(BoxVM *vm, uint32_t num_var[], uint32_t num_reg[]);
 
 BOXEXPORT void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg,
                                        void *value);

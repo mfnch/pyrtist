@@ -38,12 +38,12 @@ static void
 My_Proc_End(BoxVMCode *p)
 {
   RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
-  BoxInt num_reg[NUM_TYPES], num_var[NUM_TYPES];
+  uint32_t num_temps[NUM_REGISTER_TYPES], num_vars[NUM_REGISTER_TYPES];
 
   /* Global registers are allocated only for main */
   if (p->style == BOXVMCODESTYLE_MAIN) {
-    Reg_Get_Global_Nums(ra, num_reg, num_var);
-    ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_var, num_reg) );
+    RegAlloc_Get_Global_Nums(ra, num_temps, num_vars);
+    ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_vars, num_temps) );
   }
 
   BoxLIR_Append_Op(& p->cmp->lir, BOXOP_RET);
@@ -153,11 +153,9 @@ BoxVMCode_Get_RegAlloc(BoxVMCode *p)
   if (p->have.reg_alloc)
     return & p->reg_alloc;
 
-  else {
-    Reg_Init(& p->reg_alloc);
-    p->have.reg_alloc = 1;
-    return & p->reg_alloc;
-  }
+  Reg_Init(& p->reg_alloc);
+  p->have.reg_alloc = 1;
+  return & p->reg_alloc;
 }
 
 void
@@ -223,19 +221,20 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     BoxLIRNodeOp *op;
     int32_t offset;
     RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
-    BoxInt num_regs[NUM_TYPES], num_vars[NUM_TYPES];
-    BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II,
-                                  BOXOP_NEWP_II, BOXOP_NEWO_II};
+    uint32_t num_temps[NUM_REGISTER_TYPES], num_vars[NUM_REGISTER_TYPES];
+    BoxInt asm_code[NUM_REGISTER_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
+                                           BOXOP_NEWR_II, BOXOP_NEWP_II,
+                                           BOXOP_NEWO_II};
     int i;
 
     /* New procedure. */
     prev_proc_id = BoxVM_Proc_Target_Set(vm, proc_id);
 
     /* Write register allocation instructions. */
-    Reg_Get_Local_Nums(ra, num_regs, num_vars);
+    RegAlloc_Get_Local_Nums(ra, num_temps, num_vars);
     for (i = 0; i < NUM_TYPES; i++) {
       BoxOpId op = asm_code[i];
-      BoxInt nv = num_vars[i], nr = num_regs[i];
+      BoxInt nv = num_vars[i], nr = num_temps[i];
       if (nv || nr)
         BoxVM_Assemble(vm, op, BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
     }
