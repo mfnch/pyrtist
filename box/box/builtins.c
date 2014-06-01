@@ -409,10 +409,11 @@ static void My_Register_Core_Types(BoxCmp *c) {
   };
 
   for(row = & rows[0]; row->name; ++row) {
-    Value *v = Value_Create(c->cur_proc);
-    Value_Setup_As_Type(v, Box_Get_Core_Type(row->type));
-    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, row->name, v);
-    Value_Unlink(v);
+    Value v;
+    Value_Init(& v, c);
+    Value_Setup_As_Type(& v, Box_Get_Core_Type(row->type));
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, row->name, & v);
+    Value_Finish(& v);
   }
 }
 
@@ -631,16 +632,16 @@ static void My_Register_Conversions(BoxCmp *c) {
 BoxType *Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
                              BoxTypeId ret, BoxTypeId arg, BoxVMFunc fn) {
   BoxType *new_type;
-  Value *v;
+  Value v;
 
   new_type = BoxType_Create_Ident(BoxType_Link(Box_Get_Core_Type(ret)), name);
 
   (void) Bltin_Proc_Def_With_Id(new_type, arg, fn);
-  v = Value_Create(c->cur_proc);
-  Value_Setup_As_Type(v, new_type);
+  Value_Init(& v, c);
+  Value_Setup_As_Type(& v, new_type);
   (void) BoxType_Unlink(new_type);
-  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, v);
-  Value_Unlink(v);
+  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, & v);
+  Value_Finish(& v);
   return new_type;
 }
 
@@ -759,15 +760,18 @@ void Bltin_Finish(BoxCmp *c) {
  * Generic procedures for builtin stuff defined inside other files.
  */
 
-BoxType *Bltin_Create_Type(BoxCmp *c, const char *type_name,
-                           size_t type_size, size_t alignment) {
-  Value *v = Value_Create(c->cur_proc);
+BoxType *
+Bltin_Create_Type(BoxCmp *c, const char *type_name, size_t type_size,
+                  size_t alignment)
+{
+  Value v;
   BoxType *t;
   t = BoxType_Create_Ident(BoxType_Create_Intrinsic(type_size, alignment),
                            type_name);
-  Value_Setup_As_Type(v, t);
+  Value_Init(& v, c);
+  Value_Setup_As_Type(& v, t);
   (void) BoxType_Unlink(t);
-  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);
-  Value_Unlink(v);
+  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, & v);
+  Value_Finish(& v);
   return t;
 }

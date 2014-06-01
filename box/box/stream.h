@@ -143,7 +143,7 @@ BOXEXPORT size_t BoxStream_Get_Position(BoxStream *bs);
  * @return
  */
 BOXEXPORT void BoxStream_Seek(BoxStream *bs, BoxStreamOrigin orig,
-                              ssize_t displacement);
+                              intptr_t displacement);
 
 /**
  * Close the given stream, releasing the associated resources.

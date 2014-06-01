@@ -88,20 +88,12 @@ typedef struct {
 } MyCallbackNmspItem;
 
 static void
-My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item) {
+My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item)
+{
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
-    if (((Value *) item->data)->num_ref != 1) {
-      Value *v = (Value *) item->data;
-      if (v->name != NULL)
-        MSG_WARNING("'%s' unlinked, but ref count == %I",
-                    v->name, v->num_ref - 1);
-      else
-        MSG_WARNING("Object unlinked, but ref count == %I", v->num_ref - 1);
-    }
-    Value_Unlink((Value *) item->data);
+    Value_Force_Destroy((Value *) item->data);
     return;
-
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
@@ -110,7 +102,6 @@ My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item) {
       Box_Mem_Free(p);
       return;
     }
-
   case NMSPITEMTYPE_CALLBACK:
     {
       MyCallbackNmspItem *d = (MyCallbackNmspItem *) item->data;
@@ -118,7 +109,6 @@ My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item) {
         d->callback(ns, item, d->data);
       return;
     }
-
   default:
     printf("My_NmspItem_Finish: don't know how to remove item!");
   }
@@ -132,7 +122,7 @@ void Namespace_Floor_Down(Namespace *ns) {
   BoxArr_Pop(& ns->floors, & floor_data);
   floor_idx = BoxArr_Get_Num_Items(& ns->floors);
 
-  for(item = floor_data.first_item; item != NULL;) {
+  for(item = floor_data.first_item; item;) {
     NmspItem *item_to_del = item;
     item = item->next;
     My_NmspItem_Finish(ns, floor_idx, item_to_del);
@@ -144,7 +134,8 @@ void Namespace_Floor_Down(Namespace *ns) {
 }
 
 NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
-                             const char *item_name) {
+                             const char *item_name)
+{
   NmspItem dummy, *new_item;
   BoxHTItem *hi = NULL;
   NmspFloorData *floor_data = My_Get_Floor(ns, floor);
@@ -164,40 +155,49 @@ NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
 }
 
 NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
-                             const char *item_name) {
+                             const char *item_name)
+{
   size_t item_name_len;
   assert(item_name != NULL);
   item_name_len = strlen(item_name) + 1;
   BoxHTItem *ht_item;
-  if (BoxHT_Find(& ns->ht, (char *) item_name, item_name_len, & ht_item)) {
+  if (BoxHT_Find(& ns->ht, (char *) item_name, item_name_len, & ht_item))
     return (NmspItem *) ht_item->object;
-  } else
-    return NULL;
+  return NULL;
 }
 
-/* REFERENCES: v: 0; */
-void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
-                         const char *item_name, Value *v) {
+Value *
+Namespace_Add_Value(Namespace *ns, NmspFloor floor,
+                    const char *item_name, Value *v)
+{
   NmspItem *new_item = Namespace_Add_Item(ns, floor, item_name);
-  assert(new_item != NULL);
+  Value *new_value = Value_Create(v->proc->cmp);
+  assert(new_item && new_value);
+
+  Value_Move(v->proc->cmp, new_value, v);
   new_item->type = NMSPITEMTYPE_VALUE;
-  new_item->data = v;
-  Value_Link(v); /* we now own a further reference to the value */
+  new_item->data = new_value;
+  return Value_Setup_As_Weak_Copy(Value_Create(new_value->proc->cmp),
+                                  new_value);
 }
 
-Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
-                           const char *item_name) {
+Value *
+Namespace_Get_Value(Namespace *ns, NmspFloor floor, const char *item_name)
+{
   NmspItem *new_item = Namespace_Get_Item(ns, floor, item_name);
-  Value *v;
-  if (new_item == NULL) return NULL;
+  Value *v_copy, *v;
+  if (!new_item)
+    return NULL;
   assert(new_item->type == NMSPITEMTYPE_VALUE);
   v = (Value *) new_item->data;
-  Value_Link(v); /* we also return a new reference to the value */
-  return v;
+  v_copy = Value_Create(v->proc->cmp);
+  Value_Setup_As_Weak_Copy(v_copy, v);
+  return v_copy;
 }
 
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxType *parent, BoxType *comb_node) {
+                             BoxType *parent, BoxType *comb_node)
+{
   NmspItem *new_item = Namespace_Add_Item(ns, floor, NULL);
   MyProcedureNmspItem *p = Box_Mem_Safe_Alloc(sizeof(MyProcedureNmspItem));
   assert(new_item);
@@ -208,7 +208,8 @@ void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
 }
 
 void Namespace_Add_Callback(Namespace *ns, NmspFloor floor,
-                            NmspCallback callback, void *data) {
+                            NmspCallback callback, void *data)
+{
   NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
   assert(new_item != NULL);
   new_item->type = NMSPITEMTYPE_CALLBACK;

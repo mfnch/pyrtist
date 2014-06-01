@@ -116,8 +116,9 @@ NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
 /** Use 'Namespace_Add_Item' to add the value 'v' to the namespace.
  * REFERENCES: v: -1;
  */
-void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
-                         const char *item_name, Value *v);
+Value *
+Namespace_Add_Value(Namespace *ns, NmspFloor floor,
+                    const char *item_name, Value *v);
 
 /** Get an item 'item_name' from the namespace, assuming this must be a
  * Value.

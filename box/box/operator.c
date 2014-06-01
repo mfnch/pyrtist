@@ -268,14 +268,15 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  *  requires that.
  * REFERENCES: return: new, v_left: ?, v_right: ?;
  */
-static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
-                          Value *v_left, Value *v_right) {
+static Value *
+My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
+{
   Value *result = NULL;
 
   switch(opn->asm_scheme) {
   case OPASMSCHEME_STD_UN:
     if (!(opn->attr & OPR_ATTR_ASSIGNMENT))
-      v_left = Value_To_Temp(v_left);
+      Value_To_Temp(c, v_left, v_left);
     else {
       if (!Value_Is_Target(v_left)) {
         MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
@@ -294,16 +295,11 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     assert(opn->attr & OPR_ATTR_ASSIGNMENT);
 
     if (Value_Is_Target(v_left)) {
-      Value *v_temp;
-      Value_Link(v_left); /* Make sure v_left is not destroyed
-                             by Value_To_Temp */
-      v_temp = Value_To_Temp(v_left);
-      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                        1, & v_left->cont);
-      Value_Unlink(v_left); /* We don't need v_left anymore! */
-      result = v_temp;
+      BoxCont cont = v_left->cont;
+      Value_To_Temp(c, v_left, v_left);
+      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode, 1, & cont);
+      result = v_left;
       break;
-
     } else {
       MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
                 opn->opr->name, ValueKind_To_Str(v_left->kind));
@@ -337,7 +333,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         }
       }
 
-      v_left = Value_To_Temp(v_left);
+      Value_To_Temp(c, v_left, v_left);
     }
 
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
@@ -346,18 +342,19 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     break;
 
   case OPASMSCHEME_R_LR_BIN:
-    assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
+    {
+      assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
-    result = Value_New(c->cur_proc);
-    Value_Setup_As_Temp(result, opn->type_result);
-    v_left = Value_To_Temp_Or_Target(v_left);
-    v_right = Value_To_Temp_Or_Target(v_right);
-    BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
-                      3, & result->cont,
-                      & v_left->cont, & v_right->cont);
-    Value_Unlink(v_left);
-    Value_Unlink(v_right);
-    return result;
+      result = Value_Create(c);
+      Value_Setup_As_Temp(result, opn->type_result);
+      Value_To_Temp_Or_Target(c, v_left, v_left);
+      Value_To_Temp_Or_Target(c, v_right, v_right);
+      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+                        3, & result->cont, & v_left->cont, & v_right->cont);
+      Value_Unlink(v_left);
+      Value_Unlink(v_right);
+      return result;
+    }
 
   case OPASMSCHEME_RL_R_BIN:
     if (BoxType_Compare(opn->type_result, v_right->type)
@@ -367,9 +364,9 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
       v_right = v_tmp;
     }
 
-    v_left = Value_To_Temp(v_left);
+    Value_To_Temp(c, v_left, v_left);
 
-    result = Value_New(c->cur_proc);
+    result = Value_Create(c);
     Value_Setup_As_Temp(result, opn->type_result);
 
     BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
@@ -380,20 +377,17 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
 
   default:
     MSG_FATAL("Non-native operators are not supported, yet!");
-    assert(0);
+    abort();
   }
 
-  if (opn->attr & OPR_ATTR_IGNORE_RES) {
-    Value_Set_Ignorable(result, 1);
-  }
-  return result;
+  return Value_Set_Ignorable(result, (opn->attr & OPR_ATTR_IGNORE_RES) != 0);
 }
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
+Value *BoxCmp_Opr_Emit_UnOp(Compiler *c, BoxASTUnOp op, Value *v) {
   Operator *opr = BoxCmp_UnOp_Get(c, op);
   Operation *opn;
   OprMatch match;
@@ -411,7 +405,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
     if (match.match_left == BOXTYPECMP_MATCHING)
       v = Value_Expand(v, match.expand_type_left);
 
-    v_result = My_Opn_Emit(c, opn, v, v); /* XXX */
+    v_result = My_Opn_Emit(c, opn, v, v);
 
   } else {
     if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
@@ -523,7 +517,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
  * REFERENCES: return: new, src: -1;
  */
 Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType *t_dest) {
-  Value *v_dest = Value_New(c->cur_proc);
+  Value *v_dest = Value_Create(c);
   Value_Setup_As_Temp(v_dest, t_dest);
   Value_Link(v_dest); /* We want to return a new reference! */
   if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)

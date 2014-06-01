@@ -267,7 +267,7 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value);
  * @param type an integer identifying the type of data.
  */
 BOXEXPORT size_t
-BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, BoxInt type);
+BoxVM_Add_Data(BoxVM *vm, const void *data, size_t size, BoxInt type);
 
 /** Produce a human readable representation of the data segment of 'vm'
  * and send it to the output stream 'stream'.

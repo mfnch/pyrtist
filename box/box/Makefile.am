@@ -32,7 +32,7 @@ INCLUDES = -I$(top_srcdir)
 
 AM_YFLAGS = -d
 
-AM_CFLAGS = -Wall
+AM_CFLAGS = -std=c99 -Wall
 
 AM_CPPFLAGS = $(INCLTDL) \
               '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \

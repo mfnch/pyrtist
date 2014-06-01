@@ -31,6 +31,7 @@
 
 #define END_OF_CHAIN -1
 #define OCCUPIED 0
+#define DEBUG_REGALLOC 0
 
 /****************************************************************************
  * Here we implement the logic to associate registers to variables.         *
@@ -95,6 +96,16 @@ void Reg_Finish(RegAlloc *ra) {
   RegFrame_Finish(& ra->reg_frame);
 }
 
+#if DEBUG_REGALLOC
+static void Reg2Str(BoxInt type, BoxInt n)
+{
+  int t = Reg_Type(type);
+  const char *tcs = "cirpo?";
+  char tc = tcs[(t > 0 && t < 5) ? t : 5];
+  printf("r%c%d", tc, (int)n);
+}
+#endif
+
 /*  Restituisce un numero di registro libero e lo occupa,
  *  in modo tale che questo numero di registro non venga piu' restituito
  *  nelle prossime chiamate a Reg_Occupy, a meno che il registro
@@ -107,7 +118,11 @@ void Reg_Finish(RegAlloc *ra) {
 BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
   if (t == BOXTYPEID_VOID)
     return 0;
-  return (BoxInt) BoxOcc_Occupy(& ra->reg_frame.reg_occ[Reg_Type(t)], NULL);
+  BoxInt reg_num = BoxOcc_Occupy(& ra->reg_frame.reg_occ[Reg_Type(t)], NULL);
+#if DEBUG_REGALLOC
+  printf("%p: Occupied type ", ra); Reg2Str(t, reg_num); printf("\n");
+#endif
+  return reg_num;
 }
 
 /* Vedi Reg_Occupy.
@@ -115,6 +130,9 @@ BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
 void Reg_Release(RegAlloc *ra, BoxInt t, BoxUInt reg_num) {
   RegFrame *rf = & ra->reg_frame;
   BoxOcc_Release(& rf->reg_occ[Reg_Type(t)], reg_num);
+#if DEBUG_REGALLOC
+  printf("%p: Released register ", ra); Reg2Str(t, reg_num); printf("\n");
+#endif
 }
 
 static RegFrame *Cur_RegFrame(RegAlloc *ra) {
@@ -125,13 +143,13 @@ BoxInt Var_Occupy(RegAlloc *ra, BoxTypeId type, BoxInt level) {
   BoxTypeId t = Reg_Type(type);
   if (type == BOXTYPEID_VOID)
     return 0;
-  return (Cur_RegFrame(ra)->lvar[t])++;
+  return ++(Cur_RegFrame(ra)->lvar[t]);
 }
 
 BoxInt GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
   if (type == BOXTYPEID_VOID)
     return 0;
-  return (ra->gvar[Reg_Type(type)])++;
+  return ++(ra->gvar[Reg_Type(type)]);
 }
 
 /* This function writes (starting at the address num_var)
@@ -144,11 +162,11 @@ RegAlloc_Get_Local_Nums(RegAlloc *ra, uint32_t *num_regs, uint32_t *num_vars)
   int i;
   if (num_regs)
     for (i = 0; i < NUM_REGISTER_TYPES; i++)
-      *(num_regs++) = BoxOcc_Max_Index(& ra->reg_frame.reg_occ[Reg_Type(i)]);
+      num_regs[i] = BoxOcc_Max_Index(& ra->reg_frame.reg_occ[Reg_Type(i)]);
 
   if (num_vars)
     for (i = 0; i < NUM_REGISTER_TYPES; i++)
-      *(num_vars++) = Cur_RegFrame(ra)->lvar[Reg_Type(i)];
+      num_vars[i] = Cur_RegFrame(ra)->lvar[Reg_Type(i)];
 }
 
 void
@@ -157,9 +175,9 @@ RegAlloc_Get_Global_Nums(RegAlloc *ra, uint32_t *num_regs, uint32_t *num_vars)
   int i;
   if (num_regs)
     for (i = 0; i < NUM_REGISTER_TYPES; i++)
-      *(num_regs++) = (i == BOXTYPEID_PTR) ? 2 : 0;
+      num_regs[i] = (i == BOXTYPEID_PTR) ? 2 : 0;
 
   if (num_vars)
     for (i = 0; i < NUM_REGISTER_TYPES; i++)
-      *(num_vars++) = ra->gvar[Reg_Type(i)];
+      num_vars[i] = ra->gvar[Reg_Type(i)];
 }

@@ -39,6 +39,8 @@
  */
 typedef struct BoxCmp_struct BoxCmp;
 
+typedef BoxCmp Compiler;
+
 
 BOXEXPORT BoxCmp *
 BoxCmp_Create(BoxVM *target_vm);

@@ -31,127 +31,173 @@
 #include "compiler_priv.h"
 
 
-/* FIXME: there is a flaw in the design of the Value datastructure.
- *  We keep track of references to Value objects, but we shouldn't do this.
- *  We should rather keep track of resources used by Value objects.
- *  For example, we should keep track of registers used by a Value object
- *  (i.e. keep a reference counter for registers, so that we know how many
- *  Value-s are referring to a given register). I think this should simplify
- *  considerably the compiler code and should make the code cleaner.
- *  The notion of weak copy of a Value should then become unnecessary.
- *  Moreover, Value will become much simpler to use: one should need just to
- *  use them as ordinary objects (remember to call _Init and _Finish methods
- *  properly), rather than having to define how many reference counts every
- *  function consumes, etc...
- *  We should redesign registers.c and value.c with this in mind and also
- *  paying attention to make sure we are not initialising and destroying
- *  continuously BoxArr objects for every couple of [ ] the compiler
- *  encounters.
- */
-void
-Value_Init(Value *v, BoxVMCode *proc)
+// FIXME: temporary macro to easy the removal of reference counts for Value.
+#define VALUE_REF_IS_ONE(v) (!(v)->attr.read_only)
+
+Value *
+Value_Init(Value *v, BoxCmp *c)
 {
-  v->proc = proc;
+  v->proc = c->cur_proc;
   v->kind = VALUEKIND_ERR;
   v->type = NULL;
   v->name = NULL;
+  v->attr.read_only = 0;
   v->attr.new_or_init = 0;
   v->attr.own_register = 0;
   v->attr.ignore = 0;
-  v->num_ref = 1;
+  return v;
 }
 
 Value *
-Value_Create(BoxVMCode *proc)
+Value_Create(BoxCmp *c)
 {
   Value *v = Box_Mem_Safe_Alloc(sizeof(Value));
-  Value_Init(v, proc);
+  Value_Init(v, c);
   v->attr.new_or_init = 1;
   return v;
 }
 
-static void My_Value_Finalize(Value *v) {
-  if (v->name != NULL)
+Value *
+Value_Finish(Value *v)
+{
+  Compiler *c = v->proc->cmp;
+  RegAlloc *ra = & c->cur_proc->reg_alloc;
+
+  assert(!v->attr.read_only);
+
+  if (v->name) {
     Box_Mem_Free(v->name);
+    v->name = NULL;
+  }
 
   switch(v->kind) {
-  case VALUEKIND_ERR:
   case VALUEKIND_TYPE_NAME:
   case VALUEKIND_VAR_NAME:
-  case VALUEKIND_TYPE:
-  case VALUEKIND_IMM:
-    return;
-
+    break;
   case VALUEKIND_TARGET:
   case VALUEKIND_TEMP:
     switch (v->cont.categ) {
     case BOXCONTCATEG_LREG:
       if (v->attr.own_register) {
         if (v->cont.value.reg >= 0)
-          Reg_Release(& v->proc->reg_alloc,
-                      v->cont.type, v->cont.value.reg);
+          Reg_Release(ra, v->cont.type, v->cont.value.reg);
       }
-      return;
-
+      break;
     case BOXCONTCATEG_GREG:
-      return;
-
+      break;
     case BOXCONTCATEG_PTR:
       if (v->attr.own_register) {
         assert(!v->cont.value.ptr.is_greg);
-        Reg_Release(& v->proc->reg_alloc,
-                    BOXTYPEID_OBJ, v->cont.value.ptr.reg);
+        Reg_Release(ra, BOXTYPEID_OBJ, v->cont.value.ptr.reg);
       }
-      return;
-
+      break;
     default:
-      MSG_WARNING("My_Value_Finalize: Destruction not implemented!");
-      return;
+      abort();
     }
+    break;
+  default:
+    break;
   }
+
+  v->kind = VALUEKIND_ERR;
+  return v;
+}
+
+extern inline Value *
+Value_Force_Finish(Value *v);
+
+Value *
+Value_Destroy(Value *v)
+{
+  if (!v || v->attr.read_only)
+    return NULL;
+
+  Value_Finish(v);
+  if (v->attr.new_or_init) {
+    Box_Mem_Free(v);
+    return NULL;
+  }
+
+  return v;
+}
+
+extern inline Value *
+Value_Force_Destroy(Value *v);
+
+Value *
+Value_Move(Compiler *c, Value *v_dst, Value *v_src)
+{
+  int new_or_init;
+
+  if (v_dst == v_src)
+    return v_dst;
+
+  if (v_src->attr.read_only)
+    return Value_Setup_As_Weak_Copy(v_dst, v_src);
+
+  new_or_init = v_dst->attr.new_or_init;
+  *v_dst = *v_src;
+  v_dst->attr.new_or_init = new_or_init;
+  v_src->name = NULL;
+  v_src->type = NULL;
+  v_src->kind = VALUEKIND_ERR;
+  return v_dst;
+}
+
+char *
+Value_Steal_Name(Value *src)
+{
+  char *name = src->name;
+  if (src->attr.read_only)
+    return Box_Mem_Strdup(src->name);
+  src->name = NULL;
+  return name;
 }
 
 void Value_Unlink(Value *v) {
-  if (v) {
-    if (v->num_ref > 1)
-      --v->num_ref;
-
-    else {
-      assert(v->num_ref == 1);
-      My_Value_Finalize(v);
-      v->num_ref = 0;
-      if (v->attr.new_or_init)
-        Box_Mem_Free(v);
-    }
-  }
 }
 
 void Value_Link(Value *v) {
-  v->num_ref += 1;
 }
 
-/* Determine if the given value can be recycled, otherwise return Value_New()
- * REFERENCES: return: new, v: -1;
- */
-Value *Value_Recycle(Value *v) {
-  BoxVMCode *proc = v->proc->cmp->cur_proc; /* Be careful! We want to operate on
-                                             the cur_proc, not the proc of the
-                                             old value!!! */
-  if (v->num_ref == 1) {
-    /* one reference means nobody else owns the object, so we can do
-     * whatever we want with it!
-     */
-    int new_or_init = v->attr.new_or_init;
-    Value_Init(v, proc);
-    v->attr.new_or_init = new_or_init;
-    Value_Link(v); /* XXX this seems to be wrong to me */
-    return v;
-
-  } else
-    return Value_New(proc);
+Value *
+Value_Recycle(Value *v)
+{
+  BoxCmp *c = v->proc->cmp;
+  if (!v->attr.read_only)
+    return Value_Finish(v);
+  return Value_Create(c);
 }
 
-const char *ValueKind_To_Str(ValueKind vk) {
+Value *Value_Recycle2(Value *v1, Value *v2)
+{
+  BoxCmp *c = v1->proc->cmp;
+  if (!v1->attr.read_only) {
+    Value_Destroy(v2);
+    return Value_Init(Value_Finish(v1), c);
+  }
+  if (!v2->attr.read_only)
+    return Value_Init(Value_Finish(v2), c);
+  return Value_Create(c);
+}
+
+Value *
+Value_Mark_RO(Value *v)
+{
+  v->attr.read_only = 1;
+  return v;
+}
+
+Value *
+Value_Unmark_RO(Value *v)
+{
+  v->attr.read_only = 0;
+  return v;
+}
+
+const char *
+ValueKind_To_Str(ValueKind vk)
+{
   switch(vk) {
   case VALUEKIND_ERR: return "an error expression";
   case VALUEKIND_VAR_NAME: return "an undefined variable";
@@ -164,12 +210,14 @@ const char *ValueKind_To_Str(ValueKind vk) {
   }
 }
 
-int Value_Want_Value(Value *v) {
+BoxBool
+Value_Want_Value(Value *v)
+{
   if (Value_Is_Value(v))
-    return 1;
+    return BOXBOOL_TRUE;
 
   if (Value_Is_Err(v))
-    return 0;
+    return BOXBOOL_FALSE;
 
   if (v->name)
     BoxCmp_Log_Err(v->proc->cmp, "`%s' is undefined: an expression with both "
@@ -177,7 +225,7 @@ int Value_Want_Value(Value *v) {
   else
     BoxCmp_Log_Err(v->proc->cmp, "Got `%s', but an expression with both value "
                    "and type is expected here.", ValueKind_To_Str(v->kind));
-  return 0;
+  return BOXBOOL_FALSE;
 }
 
 int Value_Want_Has_Type(Value *v) {
@@ -196,70 +244,78 @@ int Value_Want_Has_Type(Value *v) {
   return 0;
 }
 
-/** Whether we can change the content of the register associated with v
- * (if any).
- */
-static int My_Value_Can_Reuse_Reg(Value *v) {
-  return v->num_ref == 1 && v->attr.own_register;
-}
-
-void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
-  v_copy->proc = v->proc;
-  v_copy->kind = v->kind;
+Value *
+Value_Setup_As_Weak_Copy(Value *v_copy, Value *v)
+{
+  *v_copy = *v;
   v_copy->type = BoxType_Link(v->type);
-  v_copy->cont = v->cont;
   v_copy->name = (v->name == NULL) ? NULL : Box_Mem_Strdup(v->name);
   v_copy->attr.own_register = 0;
   v_copy->attr.ignore = 0;
+  return v_copy;
 }
 
-void Value_Setup_As_Var_Name(Value *v, const char *name) {
+void Value_Setup_As_Var_Name(Value *v, const char *name)
+{
   v->kind = VALUEKIND_VAR_NAME;
   v->name = Box_Mem_Strdup(name);
 }
 
-void Value_Setup_As_Type_Name(Value *v, const char *name) {
+Value *
+Value_Setup_As_Type_Name(Value *v, const char *name)
+{
   v->kind = VALUEKIND_TYPE_NAME;
   v->name = Box_Mem_Strdup(name);
+  return v;
 }
 
-void Value_Setup_As_Type(Value *v, BoxType *t) {
+Value *
+Value_Setup_As_Type(Value *v, BoxType *t)
+{
   v->kind = VALUEKIND_TYPE;
   v->type = BoxType_Link(t);
   v->cont.type = BoxType_Get_Cont_Type(v->type);
+  return v;
 }
 
-void Value_Setup_As_Imm_Char(Value *v, BoxChar c) {
+void Value_Setup_As_Imm_Char(Value *v, BoxChar c)
+{
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_CHAR));
   BoxCont_Set(& v->cont, "ic", c);
 }
 
-void Value_Setup_As_Imm_Int(Value *v, BoxInt i) {
+void Value_Setup_As_Imm_Int(Value *v, BoxInt i)
+{
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_SINT));
   BoxCont_Set(& v->cont, "ii", i);
 }
 
-void Value_Setup_As_Imm_Real(Value *v, BoxReal r) {
+void Value_Setup_As_Imm_Real(Value *v, BoxReal r)
+{
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_SREAL));
   BoxCont_Set(& v->cont, "ir", r);
 }
 
-void Value_Setup_As_Void(Value *v) {
+void Value_Setup_As_Void(Value *v)
+{
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_VOID));
   v->cont.type = BOXCONTTYPE_VOID;
 }
 
-void Value_Setup_As_Temp(Value *v, BoxType *t) {
+void Value_Setup_As_Temp(Value *v, BoxType *t)
+{
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   Value_Setup_Container(v, t, & vc);
   Value_Emit_Allocate(v);
 }
 
-void BoxValue_Setup_As_Var(BoxValue *v, BoxType *t) {
+void
+Value_Setup_As_Var(Value *v, BoxType *t)
+{
   BoxCmp *c = v->proc->cmp;
   BoxVMCode *p = c->cur_proc;
   if (BoxVMCode_Get_Style(p) == BOXVMCODESTYLE_MAIN) {
@@ -268,7 +324,6 @@ void BoxValue_Setup_As_Var(BoxValue *v, BoxType *t) {
      */
     ValContainer vc = {VALCONTTYPE_GVAR, -1, 0};
     Value_Setup_Container(v, t, & vc);
-
   } else {
     /* We are not in the main: variables should go into local registers */
     ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
@@ -276,33 +331,38 @@ void BoxValue_Setup_As_Var(BoxValue *v, BoxType *t) {
   }
 }
 
-void Value_Setup_As_String(Value *v_str, const char *str) {
+void
+Value_Setup_As_String(Value *v_str, const char *str)
+{
   BoxTask success;
   BoxCmp *c = v_str->proc->cmp;
   size_t len, addr;
   Value v_str_data;
   ValContainer vc = {VALCONTTYPE_GPTR, 0, 0};
 
+  /* Setup string data. */
   len = strlen(str) + 1;
-  addr = BoxVM_Data_Add(c->vm, str, len, BOXTYPEID_OBJ);
+  addr = BoxVM_Add_Data(c->vm, str, len, BOXTYPEID_OBJ);
   assert(addr >= 0);
-
   vc.addr = addr;
-  Value_Init(& v_str_data, v_str->proc);
+  Value_Init(& v_str_data, c);
   Value_Setup_Container(& v_str_data, Box_Get_Core_Type(BOXTYPEID_OBJ), & vc);
 
+  /* Setup string object. */
   Value_Setup_As_Temp(v_str, Box_Get_Core_Type(BOXTYPEID_STR));
 
-  Value_Unlink(Value_Emit_Call(v_str, & v_str_data, & success));
-  if (success != BOXTASK_OK) {
-    MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
-    assert(0);
-  }
+  /* Populate string object from string data. */
+  Value_Emit_Call(v_str, & v_str_data, & success);
+
+  Value_Finish(& v_str_data);
+  if (success != BOXTASK_OK)
+    BoxCmp_Log_Fatal(c, "Failure while emitting string.");
 }
 
 /* Create a new empty container. */
 void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
-  RegAlloc *ra = & v->proc->reg_alloc;
+  Compiler *c = v->proc->cmp;
+  RegAlloc *ra = & c->cur_proc->reg_alloc;
   int use_greg;
 
   v->type = BoxType_Link(type);
@@ -410,31 +470,30 @@ void Value_Setup_As_LReg(Value *v, BoxType *type) {
 
 void BoxValue_Emit_Allocate(BoxValue *v)
 {
+  BoxCmp *c = v->proc->cmp;
   switch (v->kind) {
   case VALUEKIND_ERR:
     return;
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
     if (v->cont.type == BOXCONTTYPE_OBJ) {
-      BoxCmp *c = v->proc->cmp;
-      BoxVMCode *proc = c->cur_proc;
       BoxTypeId type_id = BoxVM_Install_Type(c->vm, v->type);
 
       /* The 'create' instruction automatically invokes the creator
        * when necessary
        */
       Value v_type_id;
-      Value_Init(& v_type_id, proc);
+      Value_Init(& v_type_id, c);
       Value_Setup_As_Imm_Int(& v_type_id, (BoxInt) type_id);
       BoxLIR_Append_GOp(& c->lir, BOXGOP_CREATE,
                         2, & v->cont, & v_type_id.cont);
+      Value_Finish(& v_type_id);
     }
     return;
-
   default:
-    MSG_FATAL("Value_Emit_Allocate: invalid argument (%s).",
-              ValueKind_To_Str(v->kind));
-    assert(0);
+    BoxCmp_Log_Fatal(c, "Value_Emit_Allocate: invalid argument (%s).",
+                     ValueKind_To_Str(v->kind));
+    abort();
   }
 }
 
@@ -476,69 +535,68 @@ Value_Emit_CJump(Value *v)
   return (BoxLIRNodeOpBranch *) ret;
 }
 
-/* REFERENCES: return: new, v_ptr: -1; */
-Value *Value_To_Temp(Value *v) {
+/* This will call Value_Finish() on v_dst, if necessary. */
+Value *
+Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src)
+{
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-  BoxCmp *c = v->proc->cmp;
 
-  switch (v->kind) {
-  case VALUEKIND_ERR:
-  case VALUEKIND_TEMP:
-    Value_Link(v);
-    return v;
-
+  switch (v_src->kind) {
   case VALUEKIND_VAR_NAME:
   case VALUEKIND_TYPE_NAME:
     BoxCmp_Log_Err(c, "Got %s ('%s'), but a defined type or value is expected "
-                   "here!", ValueKind_To_Str(v->kind), v->name);
-    return Value_Recycle(v); /* Return an error value (Value_Recycle
-                                leaves v with an error, if not initialised
-                                with a Value_Setup_* function) */
-
+                   "here!", ValueKind_To_Str(v_src->kind), v_src->name);
+  case VALUEKIND_ERR:
+    Value_Finish(v_dst);
+    v_dst->kind = VALUEKIND_ERR;
+    break;
+  case VALUEKIND_TEMP:
+    return Value_Move(c, v_dst, v_src);
   case VALUEKIND_TYPE:
     {
-      BoxType *t = BoxType_Link(v->type);
-      v = Value_Recycle(v);
-      Value_Setup_Container(v, t, & vc);
+      BoxType *t = BoxType_Link(v_src->type);
+      Value_Setup_Container(Value_Finish(v_dst), t, & vc);
       (void) BoxType_Unlink(t);
-      Value_Emit_Allocate(v);
-      return v;
+      Value_Emit_Allocate(v_dst);
+      return v_dst;
     }
-
   case VALUEKIND_IMM:
   case VALUEKIND_TARGET:
     {
-      BoxType *t = BoxType_Link(v->type);
-      BoxCont cont = v->cont;
-      v = Value_Recycle(v);
-      Value_Setup_Container(v, t, & vc);
+      BoxType *t = BoxType_Link(v_src->type);
+      BoxCont cont = v_src->cont;
+      Value_Setup_Container(Value_Finish(v_dst), t, & vc);
       (void) BoxType_Unlink(t);
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV,
-                        2, & v->cont, & cont);
-      return v;
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV, 2, & v_dst->cont, & cont);
+      return v_dst;
     }
   }
 
-  assert(0);
+  abort();
   return NULL;
 }
 
-Value *Value_To_Temp_Or_Target(Value *v) {
-  if (v->kind == VALUEKIND_TARGET) {
-    Value_Link(v);
-    return v;
-  }
-  return Value_To_Temp(v);
+Value *
+Value_To_Temp_Or_Target(Compiler *c, Value *v_dst, Value *v_src)
+{
+  if (v_src->kind == VALUEKIND_TARGET)
+    return Value_Move(c, v_dst, v_src);
+  return Value_To_Temp(c, v_dst, v_src);
 }
 
-Value *Value_Promote_Temp_To_Target(Value *v) {
+Value *
+Value_Promote_Temp_To_Target(Value *v)
+{
   if (v->kind == VALUEKIND_TEMP)
     v->kind = VALUEKIND_TARGET;
   return v;
 }
 
-void Value_Set_Ignorable(Value *v, int ignorable) {
+Value *
+Value_Set_Ignorable(Value *v, BoxBool ignorable)
+{
   v->attr.ignore = ignorable;
+  return v;
 }
 
 int Value_Is_Err(Value *v) {
@@ -596,12 +654,9 @@ int Value_Has_Type(Value *v) {
   }
 }
 
-/**
- * 
- */
-Value *Value_Cast_To_Ptr_2(Value *v) {
-  BoxCmp *c = v->proc->cmp;
+Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
   BoxContCateg v_categ = v->cont.categ;
+
   switch (v->cont.type) {
   case BOXCONTTYPE_OBJ:
     if (v_categ != BOXCONTCATEG_PTR) {
@@ -620,24 +675,22 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
          * need to convert the ``o[reg + 0]'' value into a simple ``reg''
          * value.
          */
-        if (v->num_ref == 1) {
+        if (VALUE_REF_IS_ONE(v)) {
           cont_src = & v->cont;
         } else {
-          assert(v->num_ref > 1);
           v_unlink = v;
-          v = Value_Create(v->proc);
+          v = Value_Create(c);
           Value_Setup_As_Weak_Copy(v, v_unlink);
           cont_src = & v->cont;
         }
       } else {
         /* When offset != 0, we need to increment the pointer in v. */
-        if (v->num_ref == 1 && v->attr.own_register) {
+        if (VALUE_REF_IS_ONE(v) && v->attr.own_register) {
           assert(!is_greg);
           cont_src = & v->cont;
         } else {
-          assert(v->num_ref >= 1);
           v_unlink = v;
-          v = Value_Create(v->proc);
+          v = Value_Create(c);
           Value_Setup_As_LReg(v, v_unlink->type);
           cont_src = & cont;
         }
@@ -650,7 +703,7 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
 
       /* Obtain the destination register as base address plus offset. */
       if (offset != 0) {
-        Value *v_offs = Value_Create(c->cur_proc);
+        Value *v_offs = Value_Create(c);
         Value_Setup_As_Imm_Int(v_offs, offset);
         BoxLIR_Append_GOp(& c->lir, BOXGOP_ADD,
                           3, & v->cont, & v_offs->cont, cont_src);
@@ -670,7 +723,7 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
     /* Deal with the fast types by creating a NULL-block pointer. */
     {
       Value *v_unlink = v;
-      v = Value_Create(c->cur_proc);
+      v = Value_Create(c);
       Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
       BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
                         2, & v->cont, & v_unlink->cont);
@@ -690,10 +743,9 @@ My_Value_Weak_Box(Value *src) {
   BoxType *t_src = src->type;
   BoxType *t_dst = Box_Get_Core_Type(BOXTYPEID_ANY);
   BoxCont ri0, src_type_id_cont;
-  BoxCmp *cmp = src->proc->cmp;
-  BoxVMCode *cur_proc = cmp->cur_proc;
+  Compiler *cmp = src->proc->cmp;
   BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
-  Value *v_dst = Value_Create(cur_proc);
+  Value *v_dst = Value_Create(cmp);
 
   if (t_src == t_dst)
     return src;
@@ -705,7 +757,6 @@ My_Value_Weak_Box(Value *src) {
     return src;
 
   assert(BoxType_Get_Class(t_dst) == BOXTYPECLASS_ANY);
-
 
   /* Set up a container representing the register ri0 and one representing
    * the type integer.
@@ -719,8 +770,9 @@ My_Value_Weak_Box(Value *src) {
   /* Generate the boxing instructions. */
   if (!BoxType_Is_Empty(src->type)) {
     /* The object has associated data: get data pointer in v_src_ptr. */
-    Value *v_src_ptr = Value_Create(cur_proc), *v_unlink = NULL;
-    Value_Setup_As_Weak_Copy(v_src_ptr, src);
+    Value v_src_ptr;
+    Value_Init(& v_src_ptr, cmp);
+    Value_Setup_As_Weak_Copy(& v_src_ptr, src);
 
     /* If src is an immediate, we move it into a register, so we can use
      * the lea instruction to build a pointer to it. We then keep the
@@ -728,30 +780,18 @@ My_Value_Weak_Box(Value *src) {
      * Note that the box instruction copies objects passed with NULL-block
      * pointers. This means that fast types are always copied.
      */
-    if (v_src_ptr->kind == VALUEKIND_IMM) {
-      v_src_ptr = Value_To_Temp(v_src_ptr);
-      Value_Unlink(v_src_ptr);
-      /* ^^^ FIXME: this is here for a bug in Value_To_Temp */
-
-      /* Keep the register allocated until the box instruction is exec. */
-      v_unlink = v_src_ptr;
-      Value_Link(v_src_ptr);
-    }
+    if (v_src_ptr.kind == VALUEKIND_IMM)
+      Value_To_Temp(cmp, & v_src_ptr, & v_src_ptr);
 
     /* Get a pointer to the object and use it in the boxing operation. */
-    v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
-    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
-                      2, & ri0, & src_type_id_cont);
-    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_WBOX,
-                      3, & v_dst->cont, & v_src_ptr->cont,
-                      & ri0);
-
-    /* Now release the register, if required. */
-    if (v_unlink)
-      Value_Unlink(v_unlink);
-
-    Value_Unlink(v_src_ptr);
-
+    {
+      Value *v = Value_Cast_To_Ptr_2(cmp, & v_src_ptr);
+      BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
+                        2, & ri0, & src_type_id_cont);
+      BoxLIR_Append_GOp(& cmp->lir, BOXGOP_WBOX,
+                        3, & v_dst->cont, & v->cont, & ri0);
+    }
+    Value_Finish(& v_src_ptr);
   } else {
     BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
                       2, & ri0, & src_type_id_cont);
@@ -779,13 +819,14 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
   }
 
   if (child->cont.type != BOXCONTTYPE_VOID) {
-    Value *v_to_pass = Value_To_Temp_Or_Target(child);
+    Value v_to_pass;
+    Value_Init(& v_to_pass, c);
+    Value_To_Temp_Or_Target(c, & v_to_pass, child);
     BoxGOp op = ((child->cont.type == BOXCONTTYPE_OBJ
                   && child->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
-    BoxLIR_Append_GOp(& c->lir, op,
-                      2, & c->cont.pass_child, & v_to_pass->cont);
-    Value_Unlink(v_to_pass);
+    BoxLIR_Append_GOp(& c->lir, op, 2, & c->cont.pass_child, & v_to_pass.cont);
+    Value_Finish(& v_to_pass);
   }
 
   BoxLIR_Append_Op1(& c->lir, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
@@ -799,7 +840,7 @@ Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
   assert(BoxType_Is_Any(v_parent->type) && BoxType_Is_Any(v_child->type));
 
   //v_parent = Value_Cast_To_Ptr_2(v_parent);
-  v_child = Value_Cast_To_Ptr_2(v_child);
+  v_child = Value_Cast_To_Ptr_2(c, v_child);
 
   BoxLIR_Append_GOp(& c->lir, BOXGOP_DYCALL,
                     2, & v_parent->cont, & v_child->cont);
@@ -807,8 +848,9 @@ Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
   return BOXBOOL_TRUE;
 }
 
-/* REFERENCES: return: new, parent: 0, child: -1; */
-static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
+Value *
+Value_Emit_Call(Value *parent, Value *child, BoxTask *success)
+{
   BoxCmp *c = parent->proc->cmp;
   BoxCallable *cb;
   BoxTask dummy;
@@ -882,17 +924,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
 
   *success = BOXTASK_ERROR;
   Value_Unlink(child);
-  return (Value *) NULL;
-}
-
-Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success) {
-  return My_Emit_Call(parent, child, success);
-}
-
-BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
-  BoxTask t;
-  Value_Unlink(My_Emit_Call(parent, child, & t));
-  return t;
+  return NULL;
 }
 
 /*
@@ -903,7 +935,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
 
   assert(v_ptr->cont.type == BOXCONTTYPE_PTR);
 
-  if (v_ptr->num_ref == 1) {
+  if (VALUE_REF_IS_ONE(v_ptr)) {
     BoxCont *cont = & v_ptr->cont;
     BoxType *old_type = v_ptr->type;
     BoxTypeId new_cont_type = BoxType_Get_Cont_Type(t);
@@ -927,13 +959,10 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
       return v_ptr;
 
     case BOXCONTCATEG_PTR:
-      if (My_Value_Can_Reuse_Reg(v_ptr)) {
-        MSG_FATAL("Value_Cast_From_Ptr: cannot reuse register, yet!");
-        /* not implemented */
-      } else {
+      {
         BoxCont v_ptr_cont = v_ptr->cont;
         Value_Unlink(v_ptr);
-        v_ptr = Value_Create(c->cur_proc);
+        v_ptr = Value_Create(c);
         Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2,
                           & v_ptr->cont, & v_ptr_cont);
@@ -993,12 +1022,6 @@ Value *Value_Cast_To_Ptr(Value *v) {
      *    to a new register.
      *  - the register is fully owned by us, we can recycle it!
      */
-    if (v->num_ref > 1) {
-      MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
-      return v;
-    }
-
-    assert(v->num_ref == 1);
     assert(v_cont->categ == BOXCONTCATEG_LREG
            || v_cont->categ == BOXCONTCATEG_GREG);
     /* We own the sole reference to v, which is a temporary quantity:
@@ -1012,7 +1035,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
     /* We have to get the pointer with a lea instruction. */
     BoxCont v_cont_val = *v_cont;
     Value_Unlink(v);
-    v = Value_New(c->cur_proc);
+    v = Value_Create(c);
     Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
     BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
                       2, & v->cont, & v_cont_val);
@@ -1031,10 +1054,10 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value *v_ret;
     BoxCont cont = v_obj->cont;
     BoxType *t = BoxType_Link(v_obj->type);
-    BoxVMCode *cur_proc = v_obj->proc->cmp->cur_proc;
+    BoxCmp *c = v_obj->proc->cmp;
 
     Value_Unlink(v_obj);
-    v_ret = Value_New(cur_proc);
+    v_ret = Value_Create(c);
     Value_Setup_Container(v_ret, t, & vc);
     (void) BoxType_Unlink(t);
 
@@ -1052,13 +1075,15 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
  * 'subf_type' is the type of the sub-field.
  * REFERENCES: return: new, v_obj: -1;
  */
-Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type) {
+Value *
+Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type)
+{
   BoxCont *cont;
 
-  if (v_obj->num_ref > 1) {
+  if (!VALUE_REF_IS_ONE(v_obj)) {
     /* Here we cannot re-use the register, we have to copy it to a new one */
     BoxCmp *c = v_obj->proc->cmp;
-    Value *v_copy = Value_New(c->cur_proc);
+    Value *v_copy = Value_Create(c);
     Value_Setup_As_Weak_Copy(v_copy, v_obj);
     Value_Unlink(v_obj);
     v_obj = v_copy;
@@ -1105,7 +1130,7 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
       }
       if (g_op != -1) {
         BoxCmp *c = v_point->proc->cmp;
-        Value *v_memb = Value_New(c->cur_proc);
+        Value *v_memb = Value_Create(c);
         Value_Setup_As_Temp(v_memb, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxLIR_Append_GOp(& c->lir, g_op, 2,
                           & v_memb->cont, & v_point->cont);
@@ -1143,7 +1168,8 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   return NULL;
 }
 
-void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc) {
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxCmp *c)
+{
   BoxType *node, *t_struc;
 
   t_struc = BoxType_Get_Stem(v_struc->type);
@@ -1156,7 +1182,7 @@ void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc) {
     Value *v_member;
     size_t offset;
 
-    Value_Init(& vsi->v_member, proc);
+    Value_Init(& vsi->v_member, c);
     Value_Setup_As_Weak_Copy(& vsi->v_member, v_struc);
 
     success = BoxType_Get_Structure_Member(node, NULL, & offset,
@@ -1168,7 +1194,9 @@ void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc) {
   }
 }
 
-void ValueStrucIter_Do_Next(ValueStrucIter *vsi) {
+void
+ValueStrucIter_Do_Next(ValueStrucIter *vsi)
+{
   BoxType *prev_member_type = vsi->t_member;
   BoxType *node;
 
@@ -1190,13 +1218,17 @@ void ValueStrucIter_Do_Next(ValueStrucIter *vsi) {
   }
 }
 
-void ValueStrucIter_Finish(ValueStrucIter *vsi) {
+void
+ValueStrucIter_Finish(ValueStrucIter *vsi)
+{
   Value_Unlink(& vsi->v_member);
 }
 
-ValueStrucIter *ValueStrucIter_New(Value *v_struc, BoxVMCode *proc) {
+ValueStrucIter *
+ValueStrucIter_Create(Value *v_struc, BoxCmp *c)
+{
   ValueStrucIter *vsi = Box_Mem_Safe_Alloc(sizeof(ValueStrucIter));
-  ValueStrucIter_Init(vsi, v_struc, proc);
+  ValueStrucIter_Init(vsi, v_struc, c);
   return vsi;
 }
 
@@ -1246,7 +1278,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       BoxTypeId type_id = BoxVM_Install_Type(c->vm, src->type);
       Value v_type_id;
       BoxCont ri0;
-      Value_Init(& v_type_id, c->cur_proc);
+      Value_Init(& v_type_id, c);
       Value_Setup_As_Imm_Int(& v_type_id, type_id);
       BoxCont_Set(& ri0, "ri", 0);
       BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
@@ -1274,16 +1306,23 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   return BOXTASK_OK;
 }
 
-/*
- * REFERENCES: src: -1, dest: 0;
- */
-BoxTask BoxValue_Assign(BoxValue *dst, BoxValue *src) {
+BoxTask
+Value_Assign(Compiler *c, Value *dst, Value *src)
+{
+  Value *new_var;
+  const char *var_name;
+
   assert(dst->kind == VALUEKIND_VAR_NAME);
 
-  /* Set up dst as a variable. */
-  BoxValue_Setup_As_Var(dst, src->type);
+  var_name = Value_Steal_Name(dst);
+  Value_Finish(dst);
+  Value_Setup_As_Var(dst, src->type);
+  new_var = Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, var_name, dst);
+  Value_Finish(dst);
+  Value_Move(c, dst, new_var);
+  //Value_Destroy(new_var);
 
-  /* We play it safe here: we do not copy src only when src is a temporary
+  /* We play it safe here: we avoid copying src only when src is a temporary
    * value and is stored in register form.
    */
   if (src->kind == VALUEKIND_TEMP &&
@@ -1292,8 +1331,7 @@ BoxTask BoxValue_Assign(BoxValue *dst, BoxValue *src) {
     BoxInt reg = src->cont.value.reg;
     if (reg > 0) {
       /* We then avoid allocating a dst object and copying src to dst. */
-      BoxLIR_Append_GOp(& dst->proc->cmp->lir, BOXGOP_REF,
-                        2, & dst->cont, & src->cont);
+      BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2, & dst->cont, & src->cont);
       return BOXTASK_OK;
     }
   }
@@ -1307,7 +1345,7 @@ BoxTask BoxValue_Assign(BoxValue *dst, BoxValue *src) {
  * REFERENCES: return: new, src: -1;
  */
 static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
-  Value *v_dest = Value_Create(c->cur_proc);
+  Value *v_dest = Value_Create(c);
   Value_Setup_As_Temp(v_dest, dest);
   Value_Link(src);
   Value_Link(v_dest); /* We want to return a new reference! */
@@ -1331,46 +1369,6 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.
  * REFERENCES: return: new, src: -1;
@@ -1433,12 +1431,12 @@ Value_Expand(Value *src, BoxType *t_dst) {
        */
       if (comparison == BOXTYPECMP_MATCHING) { /* need expansion */
         ValueStrucIter dst_iter, src_iter;
-        BoxVMCode *cur_proc = src->proc->cmp->cur_proc;
-        Value *v_dst = Value_Create(cur_proc);
+        BoxCmp *c = src->proc->cmp;
+        Value *v_dst = Value_Create(c);
         Value_Setup_As_Temp(v_dst, t_dst);
 
-        ValueStrucIter_Init(& dst_iter, v_dst, cur_proc);
-        ValueStrucIter_Init(& src_iter, src, cur_proc);
+        ValueStrucIter_Init(& dst_iter, v_dst, c);
+        ValueStrucIter_Init(& src_iter, src, c);
 
         for (; dst_iter.has_next && src_iter.has_next;
              ValueStrucIter_Do_Next(& dst_iter),
@@ -1463,9 +1461,8 @@ Value_Expand(Value *src, BoxType *t_dst) {
     {
       BoxCont ri0, src_type_id_cont;
       BoxCmp *cmp = src->proc->cmp;
-      BoxVMCode *cur_proc = cmp->cur_proc;
       BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
-      Value *v_dst = Value_Create(cur_proc);
+      Value *v_dst = Value_Create(cmp);
 
       /* Set up a container representing the register ri0 and one representing
        * the type integer.
@@ -1479,8 +1476,9 @@ Value_Expand(Value *src, BoxType *t_dst) {
       /* Generate the boxing instructions. */
       if (!BoxType_Is_Empty(src->type)) {
         /* The object has associated data: get data pointer in v_src_ptr. */
-        Value *v_src_ptr = Value_Create(cur_proc), *v_unlink = NULL;
-        Value_Setup_As_Weak_Copy(v_src_ptr, src);
+        Value v_src_ptr;
+        Value_Init(& v_src_ptr, cmp);
+        Value_Setup_As_Weak_Copy(& v_src_ptr, src);
 
         /* If src is an immediate, we move it into a register, so we can use
          * the lea instruction to build a pointer to it. We then keep the
@@ -1488,29 +1486,18 @@ Value_Expand(Value *src, BoxType *t_dst) {
          * Note that the box instruction copies objects passed with NULL-block
          * pointers. This means that fast types are always copied.
          */
-        if (v_src_ptr->kind == VALUEKIND_IMM) {
-          v_src_ptr = Value_To_Temp(v_src_ptr);
-          Value_Unlink(v_src_ptr);
-          /* ^^^ FIXME: this is here for a bug in Value_To_Temp */
-
-          /* Keep the register allocated until the box instruction is exec. */
-          v_unlink = v_src_ptr;
-          Value_Link(v_src_ptr);
-        }
+        if (v_src_ptr.kind == VALUEKIND_IMM)
+          Value_To_Temp(cmp, & v_src_ptr, & v_src_ptr);
 
         /* Get a pointer to the object and use it in the boxing operation. */
-        v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
-                          2, & ri0, & src_type_id_cont);
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
-                          3, & v_dst->cont, & v_src_ptr->cont,
-                          & ri0);
-
-        /* Now release the register, if required. */
-        if (v_unlink)
-          Value_Unlink(v_unlink);
-
-        Value_Unlink(v_src_ptr);
+        {
+          Value *v = Value_Cast_To_Ptr_2(cmp, & v_src_ptr);
+          BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+                            2, & ri0, & src_type_id_cont);
+          BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
+                            3, & v_dst->cont, & v->cont, & ri0);
+        }
+        Value_Finish(& v_src_ptr);
 
       } else {
         BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
@@ -1531,7 +1518,9 @@ Value_Expand(Value *src, BoxType *t_dst) {
   return NULL;
 }
 
-void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
+void
+My_Setup_Parent_Or_Child(Value *v, BoxType *t, int is_parent)
+{
   BoxCmp *c = v->proc->cmp;
 
   assert(v->proc == c->cur_proc);
@@ -1551,28 +1540,28 @@ void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
 }
 
 void Value_Setup_As_Parent(Value *v, BoxType *parent_t) {
-  return My_Family_Setup(v, parent_t, /* is_parent */ 1);
+  return My_Setup_Parent_Or_Child(v, parent_t, /* is_parent */ 1);
 }
 
 void Value_Setup_As_Child(Value *v, BoxType *child_t) {
-  return My_Family_Setup(v, child_t, /* is_parent */ 0);
+  return My_Setup_Parent_Or_Child(v, child_t, /* is_parent */ 0);
 }
 
-static Value *My_Get_Ptr_To_New_Value(BoxVMCode *proc, BoxType *t) {
+static Value *My_Get_Ptr_To_New_Value(BoxCmp *c, BoxType *t) {
   if (BoxType_Is_Fast(t)) {
     /* Create a structure type containing just one item of type t, allocate
      * that and get a pointer to it.
      * NOTE: this can be improved. We should not keep generating new
      *  structures each time the function is called, but rather cache them!
      */
-    Value *v = Value_Create(proc);
+    Value *v = Value_Create(c);
     BoxType *t_struc = BoxType_Create_Structure();
     BoxType_Add_Member_To_Structure(t_struc, t, NULL);
     Value_Setup_As_Temp(v, t_struc);
     return Value_Cast_To_Ptr(v);
 
   } else {
-    Value *v = Value_Create(proc);
+    Value *v = Value_Create(c);
     Value_Setup_As_Temp(v, t);
     return Value_Cast_To_Ptr(v);
   }
@@ -1609,16 +1598,16 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   assert(found_subtype);
 
   /* First, we create the subtype object (a pair of pointers) */
-  v_subtype = Value_Create(c->cur_proc);
+  v_subtype = Value_Create(c);
   Value_Setup_As_Temp(v_subtype, found_subtype);
 
   BoxType *t_child;
   BoxType_Get_Subtype_Info(found_subtype, NULL, NULL, & t_child);
   if (!BoxType_Is_Empty(t_child)) {
     /* Next, we create the child and get a pointer to it */
-    Value *v_ptr = Value_Create(c->cur_proc),
+    Value *v_ptr = Value_Create(c),
           *v_subtype_child;
-    v_subtype_child = My_Get_Ptr_To_New_Value(c->cur_proc, t_child);
+    v_subtype_child = My_Get_Ptr_To_New_Value(c, t_child);
 
     /* We now create a Value corresponding to the first pointer (the child)
      * and transfer the child pointer to the subtype.
@@ -1632,8 +1621,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
 
   /* We now create the value for the parent Pointer in the subtype */
   if (!BoxType_Is_Empty(v_parent->type)) {
-    Value *v_subtype_parent = Value_Create(c->cur_proc),
-          *v_ptr = Value_Create(c->cur_proc);
+    Value *v_subtype_parent = Value_Create(c),
+          *v_ptr = Value_Create(c);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
     v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr),
                                Box_Get_Core_Type(BOXTYPEID_PTR));
@@ -1648,7 +1637,9 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   return v_subtype;
 }
 
-static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
+static Value *
+My_Value_Subtype_Get(Value *v_subtype, int get_child)
+{
   BoxCmp *c = v_subtype->proc->cmp;
   Value *v_ret = NULL;
 
@@ -1660,12 +1651,12 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
       assert(success);
       BoxType *t_ret = get_child ? t_child : t_parent;
       if (BoxType_Is_Empty(t_ret)) {
-        v_ret = Value_Create(c->cur_proc);
+        v_ret = Value_Create(c);
         Value_Setup_As_Temp(v_ret, t_ret);
 
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
-        v_ret = Value_Create(c->cur_proc);
+        v_ret = Value_Create(c);
         /* FIXME: see Value_Init */
         Value_Setup_As_Weak_Copy(v_ret, v_subtype);
         v_ret = Value_Get_Subfield(v_ret, offset,
@@ -1673,7 +1664,7 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
         v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
 
         /* Temporary fix: transfer ownership of register, if needed */
-        if (v_subtype->num_ref == 1) {
+        if (VALUE_REF_IS_ONE(v_subtype)) {
           v_ret->attr.own_register = v_subtype->attr.own_register;
           v_subtype->attr.own_register = 0;
         }
@@ -1686,19 +1677,25 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
     }
   }
 
-  Value_Unlink(v_subtype);
+  Value_Destroy(v_subtype);
   return v_ret;
 }
 
-Value *Value_Subtype_Get_Child(Value *v_subtype) {
+Value *
+Value_Subtype_Get_Child(Value *v_subtype)
+{
   return My_Value_Subtype_Get(v_subtype, 1);
 }
 
-Value *Value_Subtype_Get_Parent(Value *v_subtype) {
+Value *
+Value_Subtype_Get_Parent(Value *v_subtype)
+{
   return My_Value_Subtype_Get(v_subtype, 0);
 }
 
-Value *Value_Expand_Subtype(Value *v) {
+Value *
+Value_Expand_Subtype(Value *v)
+{
   if (Value_Is_Value(v)) {
     if (BoxType_Is_Subtype(v->type)) {
       int subtype_was_target = (v->kind == VALUEKIND_TARGET);
@@ -1741,7 +1738,7 @@ Value_Reference(Value *v)
     return NULL;
   }
 
-  v = Value_Cast_To_Ptr_2(v);
+  v = Value_Cast_To_Ptr_2(v->proc->cmp, v);
   v->type = BoxType_Create_Pointer(v->type);
   v->cont.type = BOXCONTTYPE_PTR;
   v->kind = VALUEKIND_TEMP;

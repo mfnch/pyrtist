@@ -37,6 +37,7 @@
 #  include <box/container.h>
 #  include <box/vmcode.h>
 #  include <box/lir.h>
+#  include <box/compiler.h>
 
 
 typedef enum {
@@ -51,7 +52,6 @@ typedef enum {
 
 /* This datastructure has a major design flaw. See: value.c (Value_Init). */
 typedef struct {
-  int       num_ref;          /**< Number of references to this Value */
   BoxVMCode *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   *type;            /**< Type of the Value */
@@ -59,7 +59,8 @@ typedef struct {
   char      *name;            /**< Optional name of the value */
   struct {
     unsigned int
-            new_or_init   :1, /**< Created with Value_New or Value_Init? */
+            read_only     :1, /**< Value datastructure is read-only. */
+            new_or_init   :1, /**< Created by Value_Create or Value_Init? */
             own_register  :1, /**< Need to release a register during
                                  finalisation? */
             ignore        :1; /**< To be ignored when passed to a Box? */
@@ -69,10 +70,13 @@ typedef struct {
 /* Just for backward "compatibility". */
 typedef BoxValue Value;
 
-/** Initialise a Value 'v' assuming 'v' points to an already allocated memory
- * region able to contain a Value object.
+/**
+ * @brief Initialise a Value.
+ * @param v Pointer to memory to be initialised.
+ * @return Return @param v.
  */
-void Value_Init(Value *v, BoxVMCode *proc);
+Value *
+Value_Init(Value *v, BoxCmp *c);
 
 /**
  * @brief Allocate a Value object and initialise it by calling Value_Init().
@@ -83,21 +87,46 @@ void Value_Init(Value *v, BoxVMCode *proc);
  * with Value_Init()).
  */
 BOXEXPORT Value *
-Value_Create(BoxVMCode *proc);
+Value_Create(BoxCmp *c);
 
-#define Value_New Value_Create
+/**
+ * @brief Finalise a #Value (without deallocating it).
+ * @param v Pointer to a #Value object.
+ * @return Return @param v.
+ */
+Value *
+Value_Finish(Value *v);
+
+/**
+ * @brief Destroy a #Value deallocating it, if necessary.
+ * @param v Pointer to the #Value object to destroy.
+ * @return If the object was deallocated, then @c NULL is returned.
+ *   If the object was only finalised, then @param v is returned.
+ * @note Read-only objects are ignored.
+ */
+Value *
+Value_Destroy(Value *v);
+
+/**
+ * @brief Move the content of one #Value to another #Value.
+ * @return Return @p dst.
+ * @note The source value is invalid after the move.
+ */
+Value *
+Value_Move(Compiler *c, Value *dst, Value *src);
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how
- * it was created (Value_New or Value_Init). If Value_New was used, then the
- * object is freed. If Value_Init was used free() is not called.
+ * it was created (Value_Create or Value_Init). If Value_Create was used, then
+ * the object is freed. If Value_Init was used free() is not called.
  */
 void Value_Unlink(Value *v);
 
 /** Add a reference to the specified Value. */
 void Value_Link(Value *v);
 
-/** Determine if the given value can be recycled, otherwise return Value_New()
+/** Determine if the given value can be recycled, otherwise return
+ * Value_Create()
  */
 Value *Value_Recycle(Value *v);
 
@@ -110,13 +139,46 @@ typedef enum {
   VALCONTTYPE_ARG, VALCONTTYPE_STACK
 } ValContType;
 
+/**
+ * @brief Mark the #Value as read only.
+ * @note Read only values cannot be finished or altered.
+ */
+Value *
+Value_Mark_RO(Value *v);
+
+/**
+ * @brief Undo a call to Value_Mark_RO().
+ */
+Value *
+Value_Unmark_RO(Value *v);
+
 /** Return the name (a string) corresponding to the given ValueKind. */
 const char *ValueKind_To_Str(ValueKind vk);
 
-/** Check that the given value 'v' has both type and value.
+/**
+ * @brief Finish a potentially read-only #Value object.
+ */
+inline Value *
+Value_Force_Finish(Value *v)
+{
+  return Value_Finish(Value_Unmark_RO(v));
+}
+
+/**
+ * @brief Finish a potentially read-only #Value object.
+ */
+inline Value *
+Value_Force_Destroy(Value *v)
+{
+  return Value_Destroy(Value_Unmark_RO(v));
+}
+
+/**
+ * Check that the given value 'v' has both type and value.
  * Return 1 if 'v' has type and value, otherwise return 0.
  */
-int Value_Want_Value(Value *v);
+BoxBool
+Value_Want_Value(Value *v);
 
 /** Check that the given value 'v' has a definite type.
  * Return 1 if 'v' has type, otherwise return 0.
@@ -138,16 +200,23 @@ void Value_Setup_As_Void(Value *v);
  * A weak copy is done when returning a variable, since we just want to access
  * the variable, knowing that we "do not own" it.
  */
-void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v);
+Value *
+Value_Setup_As_Weak_Copy(Value *v_copy, Value *v);
 
 /** Set the value to a variable with the given name. */
 void Value_Setup_As_Var_Name(Value *v, const char *name);
 
-/** Set the value to a type with the given name. */
-void Value_Setup_As_Type_Name(Value *v, const char *name);
+/**
+ * @brief Set the value to a type with the given name.
+ */
+Value *
+Value_Setup_As_Type_Name(Value *v, const char *name);
 
-/** Set the value to represent the given type */
-void Value_Setup_As_Type(Value *v, BoxType *t);
+/**
+ * @brief Set the value to represent the given type.
+ */
+Value *
+Value_Setup_As_Type(Value *v, BoxType *t);
 
 /** Set the value to represent the given immediate char 'c' */
 void Value_Setup_As_Imm_Char(Value *v, BoxChar c);
@@ -177,7 +246,7 @@ Value_Setup_As_LReg(Value *v, BoxType *type);
  * @param t The type of the new variable.
  */
 BOXEXPORT void
-BoxValue_Setup_As_Var(BoxValue *v, BoxType *t);
+Value_Setup_As_Var(BoxValue *v, BoxType *t);
 
 /** Set the value to represent the given string 'str'. */
 void Value_Setup_As_String(Value *v_str, const char *str);
@@ -214,24 +283,33 @@ void Value_Emit_Unlink(Value *v);
 BoxLIRNodeOpBranch *
 Value_Emit_CJump(Value *v);
 
-/** Return a new temporary Value created from the given Value 'v'.
- * NOTE: return a new value created with Value_New() or a new reference
- *  to 'v', if it can be recycled (has just one reference).
+/**
+ * @brief Create a temporary value from the given value.
+ * @param c The compiler object.
+ * @param v_dst Where the output temporary value is to be stored.
+ * @param v_src Where the input value is stored.
+ * @return Return @p v_dst.
  */
-Value *Value_To_Temp(Value *v);
+Value *
+Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src);
 
-/** Similar to 'Value_To_Temp' with just one difference: if v is a target
+/**
+ * Similar to 'Value_To_Temp' with just one difference: if v is a target
  * do nothing (just return v with a new link to it).
  */
-Value *Value_To_Temp_Or_Target(Value *v);
+Value *
+Value_To_Temp_Or_Target(Compiler *c, Value *v_dst, Value *v_src);
 
 /** Promote a temporary expression to a target one.
  * REFERENCES: return: new, v: -1;
  */
 Value *Value_Promote_Temp_To_Target(Value *v);
 
-/** Set the ignorable flag for the value. */
-void Value_Set_Ignorable(Value *v, int ignorable);
+/**
+ * @brief Set the ignorable flag of the given value and return it.
+ */
+Value *
+Value_Set_Ignorable(Value *v, BoxBool ignorable);
 
 /** Return 1 if the value represents an error. */
 int Value_Is_Err(Value *v);
@@ -290,13 +368,6 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
  */
 Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success);
 
-/** Try to call the procedure for the given parent with the given child.
- * If the procedure is not found, than it is blacklisted, so that it won't
- * be possible to define it later.
- * REFERENCES: parent: 0, child: -1;
- */
-BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
-
 /** Cast a generic pointer (type BOXTYPEID_PTR) to the given type.
  * REFERENCES: return: new, v_ptr: -1;
  */
@@ -327,7 +398,7 @@ typedef struct {
  * @see ValueStrucIter_Finish
  * @see ValueStrucIter_Do_Next
  */
-void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc);
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxCmp *c);
 
 /**
  * Convenience function to facilitate iteration of the member of a structure
@@ -348,7 +419,7 @@ void ValueStrucIter_Finish(ValueStrucIter *vsi);
  * @see ValueStrucIter_Init
  * @see ValueStrucIter_Destroy
  */
-ValueStrucIter *ValueStrucIter_New(Value *v_struc, BoxVMCode *proc);
+ValueStrucIter *ValueStrucIter_Create(Value *v_struc, BoxCmp *c);
 
 /**
  * Destructor for #ValueStrucIter_New.
@@ -377,7 +448,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src);
  * @note REFERENCES: src: -1, dest: 0;
  */
 BOXEXPORT BoxTask
-BoxValue_Assign(BoxValue *dst, BoxValue *src);
+Value_Assign(BoxCmp *c, Value *dst, Value *src);
 
 /** Expand the value 'v' in agreement with the provided expansion type.
  * REFERENCES: return: new, src: -1;
