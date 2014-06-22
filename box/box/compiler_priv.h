@@ -44,7 +44,7 @@
 struct BoxCmp_struct {
   BoxAST     *ast;      /**< Abstract syntax tree. */
   BoxASTNode *ast_node; /**< Current source AST node. */
-  BoxLIR     lir;       /**< LIR tree. */
+  BoxLIR     *lir;      /**< LIR tree. */
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */

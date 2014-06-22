@@ -96,6 +96,18 @@ struct BoxLIRNode_struct {
 
 
 /**
+ * @brief Create a new LIR tree.
+ */
+BoxLIR *
+BoxLIR_Create(void);
+
+/**
+ * @brief Destroy an LIR tree created with BoxAST_Create().
+ */
+void
+BoxLIR_Destroy(BoxLIR *lir);
+
+/**
  * @brief Create a new target procedure.
  */
 BOXEXPORT BoxLIRNodeProc *

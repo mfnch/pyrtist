@@ -48,12 +48,27 @@ Value_Init(Value *v, BoxCmp *c)
   return v;
 }
 
+static int num_values_created = 0;
+static int num_values_destroyed = 0;
+
+void
+Value_Stats(void)
+{
+  printf("Num Value created/destroyed = %d/%d\n",
+         num_values_created, num_values_destroyed);
+  printf("Bytes allocated/freed/lost = %lu/%lu/%ld\n",
+         sizeof(Value)*num_values_created,
+         sizeof(Value)*num_values_destroyed,
+         sizeof(Value)*(num_values_created - num_values_destroyed));
+}
+
 Value *
 Value_Create(BoxCmp *c)
 {
   Value *v = Box_Mem_Safe_Alloc(sizeof(Value));
   Value_Init(v, c);
   v->attr.new_or_init = 1;
+  num_values_created++;
   return v;
 }
 
@@ -114,6 +129,7 @@ Value_Destroy(Value *v)
 
   Value_Finish(v);
   if (v->attr.new_or_init) {
+    num_values_destroyed++;
     Box_Mem_Free(v);
     return NULL;
   }
@@ -125,7 +141,7 @@ extern inline Value *
 Value_Force_Destroy(Value *v);
 
 Value *
-Value_Move(Compiler *c, Value *v_dst, Value *v_src)
+Value_Move(BoxCmp *c, Value *v_dst, Value *v_src)
 {
   int new_or_init;
 
@@ -485,7 +501,7 @@ void BoxValue_Emit_Allocate(BoxValue *v)
       Value v_type_id;
       Value_Init(& v_type_id, c);
       Value_Setup_As_Imm_Int(& v_type_id, (BoxInt) type_id);
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_CREATE,
+      BoxLIR_Append_GOp(c->lir, BOXGOP_CREATE,
                         2, & v->cont, & v_type_id.cont);
       Value_Finish(& v_type_id);
     }
@@ -504,7 +520,7 @@ void Value_Emit_Link(Value *v) {
     assert(v->cont.categ == BOXCONTCATEG_LREG
            || v->cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    BoxLIR_Append_GOp(& v->proc->cmp->lir, BOXGOP_MLN, 1, & v->cont);
+    BoxLIR_Append_GOp(v->proc->cmp->lir, BOXGOP_MLN, 1, & v->cont);
   }
 }
 
@@ -517,7 +533,7 @@ void Value_Emit_Unlink(Value *v) {
     assert(v->cont.categ == BOXCONTCATEG_LREG
            || v->cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    BoxLIR_Append_GOp(& v->proc->cmp->lir, BOXGOP_MUNLN, 1, & v->cont);
+    BoxLIR_Append_GOp(v->proc->cmp->lir, BOXGOP_MUNLN, 1, & v->cont);
   }
 }
 
@@ -529,8 +545,8 @@ Value_Emit_CJump(Value *v)
   BoxLIRNodeOp *ret;
   BoxCont ri0_cont;
   BoxCont_Set(& ri0_cont, "ri", 0);
-  BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV, 2, & ri0_cont, & v->cont);
-  ret = BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JC_I, NULL);
+  BoxLIR_Append_GOp(c->lir, BOXGOP_MOV, 2, & ri0_cont, & v->cont);
+  ret = BoxLIR_Append_Op_Branch(c->lir, BOXOP_JC_I, NULL);
   Value_Unlink(v);
   return (BoxLIRNodeOpBranch *) ret;
 }
@@ -567,7 +583,7 @@ Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src)
       BoxCont cont = v_src->cont;
       Value_Setup_Container(Value_Finish(v_dst), t, & vc);
       (void) BoxType_Unlink(t);
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV, 2, & v_dst->cont, & cont);
+      BoxLIR_Append_GOp(c->lir, BOXGOP_MOV, 2, & v_dst->cont, & cont);
       return v_dst;
     }
   }
@@ -705,7 +721,7 @@ Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
       if (offset != 0) {
         Value *v_offs = Value_Create(c);
         Value_Setup_As_Imm_Int(v_offs, offset);
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_ADD,
+        BoxLIR_Append_GOp(c->lir, BOXGOP_ADD,
                           3, & v->cont, & v_offs->cont, cont_src);
         Value_Unlink(v_offs);
       }
@@ -725,7 +741,7 @@ Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
       Value *v_unlink = v;
       v = Value_Create(c);
       Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
+      BoxLIR_Append_GOp(c->lir, BOXGOP_LEA,
                         2, & v->cont, & v_unlink->cont);
       Value_Unlink(v_unlink);
       return v;
@@ -786,16 +802,16 @@ My_Value_Weak_Box(Value *src) {
     /* Get a pointer to the object and use it in the boxing operation. */
     {
       Value *v = Value_Cast_To_Ptr_2(cmp, & v_src_ptr);
-      BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
+      BoxLIR_Append_GOp(cmp->lir, BOXGOP_TYPEOF,
                         2, & ri0, & src_type_id_cont);
-      BoxLIR_Append_GOp(& cmp->lir, BOXGOP_WBOX,
+      BoxLIR_Append_GOp(cmp->lir, BOXGOP_WBOX,
                         3, & v_dst->cont, & v->cont, & ri0);
     }
     Value_Finish(& v_src_ptr);
   } else {
-    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_TYPEOF,
+    BoxLIR_Append_GOp(cmp->lir, BOXGOP_TYPEOF,
                       2, & ri0, & src_type_id_cont);
-    BoxLIR_Append_GOp(& cmp->lir, BOXGOP_BOX,
+    BoxLIR_Append_GOp(cmp->lir, BOXGOP_BOX,
                       2, & v_dst->cont, & ri0);
   }
 
@@ -814,7 +830,7 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
     BoxGOp op = ((parent->cont.type == BOXCONTTYPE_OBJ
                   && parent->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_MOV : BOXGOP_LEA);
-    BoxLIR_Append_GOp(& c->lir, op,
+    BoxLIR_Append_GOp(c->lir, op,
                       2, & c->cont.pass_parent, & parent->cont);
   }
 
@@ -825,11 +841,11 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
     BoxGOp op = ((child->cont.type == BOXCONTTYPE_OBJ
                   && child->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
-    BoxLIR_Append_GOp(& c->lir, op, 2, & c->cont.pass_child, & v_to_pass.cont);
+    BoxLIR_Append_GOp(c->lir, op, 2, & c->cont.pass_child, & v_to_pass.cont);
     Value_Finish(& v_to_pass);
   }
 
-  BoxLIR_Append_Op1(& c->lir, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
+  BoxLIR_Append_Op1(c->lir, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
 }
 
 /* REFERENCES: return: new, parent: 0, child: -1; */
@@ -842,7 +858,7 @@ Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
   //v_parent = Value_Cast_To_Ptr_2(v_parent);
   v_child = Value_Cast_To_Ptr_2(c, v_child);
 
-  BoxLIR_Append_GOp(& c->lir, BOXGOP_DYCALL,
+  BoxLIR_Append_GOp(c->lir, BOXGOP_DYCALL,
                     2, & v_parent->cont, & v_child->cont);
   Value_Unlink(v_child);
   return BOXBOOL_TRUE;
@@ -964,7 +980,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
         Value_Unlink(v_ptr);
         v_ptr = Value_Create(c);
         Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2,
+        BoxLIR_Append_GOp(c->lir, BOXGOP_REF, 2,
                           & v_ptr->cont, & v_ptr_cont);
         assert(v_ptr->cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, t);
@@ -1037,7 +1053,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
     Value_Unlink(v);
     v = Value_Create(c);
     Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
-    BoxLIR_Append_GOp(& c->lir, BOXGOP_LEA,
+    BoxLIR_Append_GOp(c->lir, BOXGOP_LEA,
                       2, & v->cont, & v_cont_val);
     return v;
   }
@@ -1062,7 +1078,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     (void) BoxType_Unlink(t);
 
     assert(v_ret->cont.type == BOXCONTTYPE_OBJ);
-    BoxLIR_Append_GOp(& v_ret->proc->cmp->lir, BOXGOP_LEA,
+    BoxLIR_Append_GOp(v_ret->proc->cmp->lir, BOXGOP_LEA,
                       2, & v_ret->cont, & cont);
     return v_ret;
   }
@@ -1070,28 +1086,23 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
   return v_obj;
 }
 
-/** Return a sub-field of an object type. 'offset' is the address of the
- * subfield with respect to the address of the given object 'v_obj',
- * 'subf_type' is the type of the sub-field.
- * REFERENCES: return: new, v_obj: -1;
+/**
+ * @brief Return a sub-field of an object type.
+ * @param c Compiler object.
+ * @param v_src_dst The parent object (and where the field is stored).
+ * @param offset Offset of the subfield inside @p v_src_dst.
+ * @param subf_type Type of object in subfield.
+ * @return Return @p v_src_dst.
+ * @note This function calls Value_Finish(v_src_dst) and stores the result
+ *   in @p v_src_dst.
  */
 Value *
-Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type)
+Value_Get_Subfield(BoxCmp *c, Value *v_src_dst,
+                   size_t offset, BoxType *subf_type)
 {
-  BoxCont *cont;
+  BoxCont *cont = & v_src_dst->cont;
 
-  if (!VALUE_REF_IS_ONE(v_obj)) {
-    /* Here we cannot re-use the register, we have to copy it to a new one */
-    BoxCmp *c = v_obj->proc->cmp;
-    Value *v_copy = Value_Create(c);
-    Value_Setup_As_Weak_Copy(v_copy, v_obj);
-    Value_Unlink(v_obj);
-    v_obj = v_copy;
-  }
-
-  cont = & v_obj->cont;
-
-  switch(cont->categ) {
+  switch (cont->categ) {
   case BOXCONTCATEG_GREG:
   case BOXCONTCATEG_LREG:
     {
@@ -1102,57 +1113,75 @@ Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type)
       cont->value.ptr.reg = reg;
       cont->value.ptr.is_greg = is_greg;
       cont->type = BoxType_Get_Cont_Type(subf_type);
-      v_obj->type = BoxType_Link(subf_type);
-      return v_obj;
+      v_src_dst->type = BoxType_Link(subf_type);
+      return v_src_dst;
     }
-
   case BOXCONTCATEG_PTR:
     cont->value.ptr.offset += offset;
     cont->type = BoxType_Get_Cont_Type(subf_type);
-    v_obj->type = BoxType_Link(subf_type);
-    return v_obj;
-
+    v_src_dst->type = BoxType_Link(subf_type);
+    return v_src_dst;
   case BOXCONTCATEG_IMM:
+    BoxCmp_Log_Fatal(c, "Immediate objects not supported, yet!");
     break;
   }
-  MSG_FATAL("Value_Get_Subfield: immediate objects not supported, yet!");
+
+  abort();
   return NULL;
 }
 
-static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
-  int first = memb[0];
-  if (first != '\0') {
-    if (memb[1] == '\0') {
-      BoxGOp g_op = -1;
-      switch(first) {
-      case 'x': g_op = BOXGOP_PPTRX; break;
-      case 'y': g_op = BOXGOP_PPTRY; break;
-      }
-      if (g_op != -1) {
-        BoxCmp *c = v_point->proc->cmp;
-        Value *v_memb = Value_Create(c);
-        Value_Setup_As_Temp(v_memb, Box_Get_Core_Type(BOXTYPEID_PTR));
-        BoxLIR_Append_GOp(& c->lir, g_op, 2,
-                          & v_memb->cont, & v_point->cont);
-        Value_Unlink(v_point);
-        v_memb->kind = VALUEKIND_TARGET;
-        return Value_Get_Subfield(v_memb, (size_t) 0,
-                                  Box_Get_Core_Type(BOXTYPEID_SREAL));
-      }
+/**
+ * @brief Extract the member of a point object.
+ * @param c The compiler object.
+ * @param v_dst Where the member is stored.
+ * @param v_src The input point object.
+ * @param memb Name of the member to extract.
+ * @return If successful, return @p v_dst. Otherwise, @p v_dst is destroyed and
+ *   @c NULL is returned.
+ */
+static Value *
+My_Point_Get_Member(BoxCmp *c, Value *v_dst, Value *v_src, const char *memb)
+{
+  char first = memb[0];
+  if (first != '\0' && memb[1] == '\0') {
+    BoxGOp g_op;
+
+    switch(first) {
+    case 'x': g_op = BOXGOP_PPTRX; break;
+    case 'y': g_op = BOXGOP_PPTRY; break;
+    default:
+      return NULL;
     }
+
+    Value_Setup_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_PTR));
+    BoxLIR_Append_GOp(c->lir, g_op, 2, & v_dst->cont, & v_src->cont);
+    v_dst->kind = VALUEKIND_TARGET;
+    return Value_Get_Subfield(c, v_dst, (size_t) 0,
+                              Box_Get_Core_Type(BOXTYPEID_SREAL));
   }
-  Value_Unlink(v_point);
+  Value_Destroy(v_dst);
   return NULL;
 }
 
-Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
+Value *
+Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb)
+{
   /* If v_struc is a subtype, then expand it (subtypes do not have members) */
-  v_struc = Value_Expand_Subtype(v_struc);
+  v_src_dst = Value_Expand_Subtype(v_src_dst);
 
-  if (v_struc->cont.type == BOXCONTTYPE_POINT)
-    return My_Point_Get_Member(v_struc, memb);
+  if (v_src_dst->cont.type == BOXCONTTYPE_POINT) {
+    Value v_dst;
+    Value_Init(& v_dst, c);
+    if (My_Point_Get_Member(c, & v_dst, v_src_dst, memb)) {
+      Value_Finish(v_src_dst);
+      Value_Move(c, v_src_dst, & v_dst);
+      return v_src_dst;
+    }
+    Value_Finish(& v_dst);
+    return NULL;
+  }
 
-  BoxType *struct_type = BoxType_Get_Stem(v_struc->type);
+  BoxType *struct_type = BoxType_Get_Stem(v_src_dst->type);
   BoxType *node_type = BoxType_Find_Structure_Member(struct_type, memb);
 
   if (node_type) {
@@ -1161,10 +1190,9 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
     BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
                                                   & offset, 0, & member_type);
     if (result)
-      return Value_Get_Subfield(v_struc, offset, member_type);
+      return Value_Get_Subfield(c, v_src_dst, offset, member_type);
   }
-
-  Value_Unlink(v_struc);
+  Value_Destroy(v_src_dst);
   return NULL;
 }
 
@@ -1189,7 +1217,7 @@ void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxCmp *c)
                                            NULL, & vsi->t_member);
     assert(success);
 
-    v_member = Value_Get_Subfield(& vsi->v_member, 0, vsi->t_member);
+    v_member = Value_Get_Subfield(c, & vsi->v_member, 0, vsi->t_member);
     assert(v_member == & vsi->v_member);
   }
 }
@@ -1197,6 +1225,7 @@ void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxCmp *c)
 void
 ValueStrucIter_Do_Next(ValueStrucIter *vsi)
 {
+  BoxCmp *c = vsi->v_member.proc->cmp;
   BoxType *prev_member_type = vsi->t_member;
   BoxType *node;
 
@@ -1213,7 +1242,7 @@ ValueStrucIter_Do_Next(ValueStrucIter *vsi)
     assert(success);
 
     v_member =
-      Value_Get_Subfield(& vsi->v_member, delta_offset, vsi->t_member);
+      Value_Get_Subfield(c, & vsi->v_member, delta_offset, vsi->t_member);
     assert(v_member == & vsi->v_member);
   }
 }
@@ -1281,9 +1310,9 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       Value_Init(& v_type_id, c);
       Value_Setup_As_Imm_Int(& v_type_id, type_id);
       BoxCont_Set(& ri0, "ri", 0);
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+      BoxLIR_Append_GOp(c->lir, BOXGOP_TYPEOF,
                         2, & ri0, & v_type_id.cont);
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_RELOC,
+      BoxLIR_Append_GOp(c->lir, BOXGOP_RELOC,
                         3, & dest->cont, & src->cont, & ri0);
       Value_Unlink(& v_type_id);
       Value_Unlink(src);
@@ -1293,12 +1322,12 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
   } else if (dest->cont.type == BOXCONTTYPE_PTR) {
     /* For pointers we need to pay special care: reference counts! */
-    BoxLIR_Append_GOp(& c->lir, BOXGOP_REF,
+    BoxLIR_Append_GOp(c->lir, BOXGOP_REF,
                       2, & dest->cont, & src->cont);
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */
-    BoxLIR_Append_GOp(& c->lir, BOXGOP_MOV,
+    BoxLIR_Append_GOp(c->lir, BOXGOP_MOV,
                       2, & dest->cont, & src->cont);
   }
 
@@ -1331,7 +1360,7 @@ Value_Assign(Compiler *c, Value *dst, Value *src)
     BoxInt reg = src->cont.value.reg;
     if (reg > 0) {
       /* We then avoid allocating a dst object and copying src to dst. */
-      BoxLIR_Append_GOp(& c->lir, BOXGOP_REF, 2, & dst->cont, & src->cont);
+      BoxLIR_Append_GOp(c->lir, BOXGOP_REF, 2, & dst->cont, & src->cont);
       return BOXTASK_OK;
     }
   }
@@ -1492,17 +1521,17 @@ Value_Expand(Value *src, BoxType *t_dst) {
         /* Get a pointer to the object and use it in the boxing operation. */
         {
           Value *v = Value_Cast_To_Ptr_2(cmp, & v_src_ptr);
-          BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+          BoxLIR_Append_GOp(c->lir, BOXGOP_TYPEOF,
                             2, & ri0, & src_type_id_cont);
-          BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
+          BoxLIR_Append_GOp(c->lir, BOXGOP_BOX,
                             3, & v_dst->cont, & v->cont, & ri0);
         }
         Value_Finish(& v_src_ptr);
 
       } else {
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_TYPEOF,
+        BoxLIR_Append_GOp(c->lir, BOXGOP_TYPEOF,
                           2, & ri0, & src_type_id_cont);
-        BoxLIR_Append_GOp(& c->lir, BOXGOP_BOX,
+        BoxLIR_Append_GOp(c->lir, BOXGOP_BOX,
                           2, & v_dst->cont, & ri0);
       }
 
@@ -1613,7 +1642,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
      * and transfer the child pointer to the subtype.
      */
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0,
+    v_ptr = Value_Get_Subfield(c, v_ptr, /* offset */ 0,
                                Box_Get_Core_Type(BOXTYPEID_PTR));
     (void) Value_Move_Content(v_ptr, v_subtype_child);
     Value_Unlink(v_ptr);
@@ -1624,7 +1653,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     Value *v_subtype_parent = Value_Create(c),
           *v_ptr = Value_Create(c);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-    v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr),
+    v_ptr = Value_Get_Subfield(c, v_ptr, /*offset*/ sizeof(BoxPtr),
                                Box_Get_Core_Type(BOXTYPEID_PTR));
     Value_Setup_As_Weak_Copy(v_subtype_parent, v_parent);
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
@@ -1653,23 +1682,17 @@ My_Value_Subtype_Get(Value *v_subtype, int get_child)
       if (BoxType_Is_Empty(t_ret)) {
         v_ret = Value_Create(c);
         Value_Setup_As_Temp(v_ret, t_ret);
-
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
         v_ret = Value_Create(c);
         /* FIXME: see Value_Init */
         Value_Setup_As_Weak_Copy(v_ret, v_subtype);
-        v_ret = Value_Get_Subfield(v_ret, offset,
+        v_ret = Value_Get_Subfield(c, v_ret, offset,
                                    Box_Get_Core_Type(BOXTYPEID_PTR));
         v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
-
-        /* Temporary fix: transfer ownership of register, if needed */
-        if (VALUE_REF_IS_ONE(v_subtype)) {
-          v_ret->attr.own_register = v_subtype->attr.own_register;
-          v_subtype->attr.own_register = 0;
-        }
+        v_ret->attr.own_register = v_subtype->attr.own_register;
+        v_subtype->attr.own_register = 0;
       }
-
     } else {
       const char *what = get_child ? "child" : "parent";
       BoxCmp_Log_Err(c, "Cannot get the %s of '%T': this is not a subtype!",
@@ -1677,7 +1700,6 @@ My_Value_Subtype_Get(Value *v_subtype, int get_child)
     }
   }
 
-  Value_Destroy(v_subtype);
   return v_ret;
 }
 
@@ -1698,7 +1720,7 @@ Value_Expand_Subtype(Value *v)
 {
   if (Value_Is_Value(v)) {
     if (BoxType_Is_Subtype(v->type)) {
-      int subtype_was_target = (v->kind == VALUEKIND_TARGET);
+      BoxBool subtype_was_target = (v->kind == VALUEKIND_TARGET);
       v = Value_Subtype_Get_Child(v);
       if (subtype_was_target)
         v = Value_Promote_Temp_To_Target(v);
@@ -1767,7 +1789,7 @@ Value_Dereference(Value *v)
   v->kind = VALUEKIND_TARGET;
 
   /* Check for NULL pointers. */
-  BoxLIR_Append_GOp(& c->lir, BOXGOP_NOTNUL,
+  BoxLIR_Append_GOp(c->lir, BOXGOP_NOTNUL,
                     1, & v->cont, & v->cont);
   return v;
 }

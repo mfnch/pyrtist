@@ -46,7 +46,7 @@ My_Proc_End(BoxVMCode *p)
     ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_vars, num_temps) );
   }
 
-  BoxLIR_Append_Op(& p->cmp->lir, BOXOP_RET);
+  BoxLIR_Append_Op(p->cmp->lir, BOXOP_RET);
 }
 
 void
@@ -217,7 +217,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     return BOXVMCALLNUM_NONE;
 
   {
-    BoxLIRNodeProc *proc = p->cmp->lir.target;
+    BoxLIRNodeProc *proc = p->cmp->lir->target;
     BoxLIRNodeOp *op;
     int32_t offset;
     RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);

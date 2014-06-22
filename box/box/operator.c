@@ -286,7 +286,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
       Value_Link(v_left);
     }
 
-    BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       1, & v_left->cont);
     result = v_left;
     break;
@@ -297,7 +297,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
     if (Value_Is_Target(v_left)) {
       BoxCont cont = v_left->cont;
       Value_To_Temp(c, v_left, v_left);
-      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode, 1, & cont);
+      BoxLIR_Append_GOp(c->lir, opn->implem.opcode, 1, & cont);
       result = v_left;
       break;
     } else {
@@ -336,7 +336,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
       Value_To_Temp(c, v_left, v_left);
     }
 
-    BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
     result = v_left;
     break;
@@ -349,7 +349,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
       Value_Setup_As_Temp(result, opn->type_result);
       Value_To_Temp_Or_Target(c, v_left, v_left);
       Value_To_Temp_Or_Target(c, v_right, v_right);
-      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+      BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                         3, & result->cont, & v_left->cont, & v_right->cont);
       Value_Unlink(v_left);
       Value_Unlink(v_right);
@@ -369,7 +369,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
     result = Value_Create(c);
     Value_Setup_As_Temp(result, opn->type_result);
 
-    BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
 
     result = v_left;
@@ -489,7 +489,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
       src = Value_Expand(src, match.expand_type_left);
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
-      BoxLIR_Append_GOp(& c->lir, opn->implem.opcode,
+      BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                         2, & dest->cont, & src->cont);
       Value_Unlink(src);
       Value_Unlink(dest);

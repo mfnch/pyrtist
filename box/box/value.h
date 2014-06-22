@@ -80,13 +80,12 @@ Value_Init(Value *v, BoxCmp *c);
 
 /**
  * @brief Allocate a Value object and initialise it by calling Value_Init().
- *
- * Notice that the object is aware of its allocation mode (whether it was
- * created with Value_Init() or Value_Create()) and Value_Unlink() will
- * do the right things (e.g. it does not call free() if the object was created
- * with Value_Init()).
+ * @details Notice that the object is aware of its allocation mode (whether it
+ * was created with Value_Init() or Value_Create()) and Value_Destroy() will
+ * do the right things (e.g. it calls free() only if the object was created
+ * with Value_Create()).
  */
-BOXEXPORT Value *
+Value *
 Value_Create(BoxCmp *c);
 
 /**
@@ -427,12 +426,16 @@ ValueStrucIter *ValueStrucIter_Create(Value *v_struc, BoxCmp *c);
  */
 void ValueStrucIter_Destroy(ValueStrucIter *vsi);
 
-/** Returns the member 'memb' of the given structure 'v_struc'.
- * Try to transform 'v_struc' into 'v_memb' passing to it the responsabilities
- * for deallocation, etc.
- * REFERENCES: return: new, v_struc: -1;
+/**
+ * @brief Extract the member of a structure object.
+ * @param c The compiler object.
+ * @param v_src_dst Used to pass the structure and to get the member.
+ * @param memb Name of the member to extract.
+ * @return If successful, return @p v_src_dst. Otherwise, @p v_dst is destroyed
+ *   and @c NULL is returned.
  */
-Value *Value_Struc_Get_Member(Value *v_struc, const char *memb);
+Value *
+Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb);
 
 /**
  * REFERENCES: dest: 0, src: -1;

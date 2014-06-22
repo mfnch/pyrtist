@@ -126,14 +126,16 @@ static Value *My_Get_Void_Value(BoxCmp *c)
   return & c->value.void_val;
 }
 
-void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
+void
+BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
   BoxLIRNodeProc *proc;
 
   c->ast = NULL;
   c->ast_node = NULL;
 
-  BoxLIR_Init(& c->lir);
+  c->lir = BoxLIR_Create();
+  assert(c->lir);
   c->attr.is_sane = 0;
   c->attr.own_vm = (target_vm == NULL);
   c->vm = (target_vm) ? target_vm : BoxVM_Create();
@@ -144,8 +146,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
   assert(success);
 
   BoxCmp_Init__Operators(c);
-  proc = BoxLIR_Append_Proc(& c->lir);
-  (void) BoxLIR_Set_Target_Proc(& c->lir, proc);
+  proc = BoxLIR_Append_Proc(c->lir);
+  (void) BoxLIR_Set_Target_Proc(c->lir, proc);
   BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
   BoxVMCode_Set_Alter_Name(& c->main_proc, "main");
   c->cur_proc = & c->main_proc;
@@ -160,7 +162,7 @@ void BoxCmp_Finish(BoxCmp *c)
   if (BoxArr_Num_Items(& c->stack) != 0)
     BoxCmp_Log_Warn(c, "BoxCmp_Finish: stack is not empty at destruction");
 
-  BoxLIR_Finish(& c->lir);
+  BoxLIR_Destroy(c->lir);
   BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
@@ -697,7 +699,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     Value_Emit_Call(parent, & c->value.begin, NULL);
 
   /* Create jump-labels for If and For */
-  begin_label = BoxLIR_Get_Last_Op(& c->lir);
+  begin_label = BoxLIR_Get_Last_Op(c->lir);
 
   /* Save previous source position */
   //BoxSrc *prev_src_of_err = Msg_Set_Src(& box->head.src);
@@ -744,7 +746,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
                               Box_Get_Core_Type(BOXTYPEID_IF))) {
             BoxLIRNodeOpBranch *branch;
             if (!else_label)
-              else_label = BoxLIR_Append_Op_Label(& c->lir);
+              else_label = BoxLIR_Append_Op_Label(c->lir);
             branch = Value_Emit_CJump(stmt_val);
             branch->target = else_label;
 
@@ -759,11 +761,11 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
                                      Box_Get_Core_Type(BOXTYPEID_ELSE))) {
             if (state == MYBOXSTATE_GOT_IF) {
               if (!end_label)
-                end_label = BoxLIR_Append_Op_Label(& c->lir);
-              BoxLIR_Append_Op_Branch(& c->lir, BOXOP_JMP_I, end_label);
+                end_label = BoxLIR_Append_Op_Label(c->lir);
+              BoxLIR_Append_Op_Branch(c->lir, BOXOP_JMP_I, end_label);
 
               assert(else_label);
-              BoxLIR_Move_Label_Back(& c->lir, else_label);
+              BoxLIR_Move_Label_Back(c->lir, else_label);
               else_label = NULL;
 
               assert(need_floor_down);
@@ -781,7 +783,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
                                      Box_Get_Core_Type(BOXTYPEID_FOR))) {
             BoxLIRNodeOpBranch *branch;
             branch = Value_Emit_CJump(stmt_val);
-            branch->target = BoxLIR_Get_Next_Op(& c->lir, begin_label);
+            branch->target = BoxLIR_Get_Next_Op(c->lir, begin_label);
           } else {
             BoxCmp_Log_Warn(c, "Don't know how to use `%T' expressions inside "
                             "a `%T' box.", stmt_val->type, parent->type);
@@ -800,11 +802,11 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
   //(void) Msg_Set_Src(prev_src_of_err);
 
   if (end_label)
-    BoxLIR_Move_Label_Back(& c->lir, end_label);
+    BoxLIR_Move_Label_Back(c->lir, end_label);
 
   /* If without else: make If[] jump to the end of the [] block. */
   if (else_label)
-    BoxLIR_Move_Label_Back(& c->lir, else_label);
+    BoxLIR_Move_Label_Back(c->lir, else_label);
 
   /* Invoke the closing procedure */
   if (box->parent)
@@ -1079,7 +1081,8 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
 
 static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
 {
-  Value *v_struc, *v_memb = NULL;
+  BoxType *t;
+  Value *v_struc;
   BoxASTNode *parent;
   const char *member_name;
 
@@ -1100,16 +1103,18 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
     v_struc = BoxCmp_Pop_Value(c);
   }
 
-  if (Value_Want_Value(v_struc)) {
-    v_memb = Value_Struc_Get_Member(v_struc, member_name);
-    /* No need to unlink v_struc here */
-    if (!v_memb)
-      BoxCmp_Log_Err(c, "Cannot find the member `%s' of an object "
-                     "with type `%T'.", member_name, v_struc->type);
-  } else
-    Value_Unlink(v_struc);
+  if (!Value_Want_Value(v_struc)) {
+    Value_Destroy(v_struc);
+    BoxCmp_Push_Error(c, 1);
+  }
 
-  BoxCmp_Push_Value(c, v_memb);
+  t = BoxType_Link(v_struc->type);
+  v_struc = Value_Struc_Get_Member(c, v_struc, member_name);
+  if (!v_struc)
+    BoxCmp_Log_Err(c, "Cannot find the member `%s' of an object "
+                   "with type `%T'.", member_name, t);
+  (void) BoxType_Unlink(t);
+  BoxCmp_Push_Value(c, v_struc);
 }
 
 static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
@@ -1166,7 +1171,7 @@ static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
 
 static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
 {
-  BoxLIRNodeProc *prev_proc, *proc;
+  BoxLIRNodeProc *proc;
   BoxASTNodeCombDef *comb_def_node;
   BoxASTNode *n_implem;
   Value *v_child, *v_parent, *v_ret = NULL;
@@ -1268,6 +1273,7 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
   if (n_implem) {
     /* we have the implementation */
     BoxVMCode *save_cur_proc = c->cur_proc;
+    BoxLIR *save_cur_lir = c->lir;
     Value *v_implem;
     BoxVMCode proc_implem;
     BoxVMCallNum cn;
@@ -1275,13 +1281,15 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
     /* We change target of the compilation to the new procedure */
     BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
     c->cur_proc = & proc_implem;
+    c->lir = BoxLIR_Create();
+    assert(c->lir);
 
     /* A BoxVMCode object is used to get the procedure symbol and to register
      * and assemble it.
      */
-    proc = BoxLIR_Append_Proc(& c->lir);
+    proc = BoxLIR_Append_Proc(c->lir);
     assert(proc);
-    prev_proc = BoxLIR_Set_Target_Proc(& c->lir, proc);
+    BoxLIR_Set_Target_Proc(c->lir, proc);
 
     /* Set the call number. */
     if (!BoxType_Generate_Combination_Call_Num(comb, c->vm, & cn))
@@ -1313,7 +1321,8 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
     (void) BoxVMCode_Install(& proc_implem);
 
     BoxVMCode_Finish(& proc_implem);
-    (void) BoxLIR_Set_Target_Proc(& c->lir, prev_proc);
+    BoxLIR_Destroy(c->lir);
+    c->lir = save_cur_lir;
   }
 
   (void) BoxType_Unlink(t_child);
