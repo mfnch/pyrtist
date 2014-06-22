@@ -233,7 +233,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     /* Write register allocation instructions. */
     RegAlloc_Get_Local_Nums(ra, num_temps, num_vars);
     for (i = 0; i < NUM_TYPES; i++) {
-      BoxOpId op = asm_code[i];
+      BoxOpId op = (BoxOpId) asm_code[i];
       BoxInt nv = num_vars[i], nr = num_temps[i];
       if (nv || nr)
         BoxVM_Assemble(vm, op, BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
@@ -257,7 +257,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     /* First determine the instruction offsets. */
     for (op = proc->first_op, offset = 0; op; op = op->next) {
       BoxVMOp vm_op;
-      vm_op.id = op->op_id;
+      vm_op.id = (BoxOpId) op->op_id;
       vm_op.desc = & vm->exec_table[op->op_id];
       vm_op.next = 0;
       vm_op.format = BOXVMOPFMT_UNDECIDED;
@@ -322,10 +322,10 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p)
     for (op = proc->first_op; op; op = op->next) {
       switch (op->head.type) {
       case BOXLIRNODETYPE_OP:
-        BoxVM_Assemble(vm, op->op_id);
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id);
         break;
       case BOXLIRNODETYPE_OP1:
-        BoxVM_Assemble(vm, op->op_id,
+        BoxVM_Assemble(vm, (BoxOpId) op->op_id,
                        (BoxContCateg) op->cats[0],
                        (BoxInt) ((BoxLIRNodeOp1 *) op)->regs[0]);
         break;

@@ -51,6 +51,8 @@ struct BCArgParserOption_struct {
              fn;       /**< Used to notify that the option has been parsed. */
 };
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Create a new argument parser.
  *
@@ -134,5 +136,7 @@ BCArgParser_Get_Stuff(BCArgParser *ap);
 BOXEXPORT BoxBool
 BCArgParser_Get_Args_Left(BCArgParser *ap,
                           const char ***args_left, int *num_args_left);
+
+BOX_END_DECLS
 
 #endif /* _BOX_ARGPARSE_H */

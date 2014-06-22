@@ -39,12 +39,14 @@ typedef struct {
 /** Just for compatibility */
 typedef BoxStr Str;
 
+BOX_BEGIN_DECLS
+
 BOXEXPORT void BoxStr_Init(BoxStr *s);
 
 BOXEXPORT void BoxStr_Finish(BoxStr *s);
 
 /** Set 'dest' with the content of 'src', deleting whatever was in 'dest'
- * before. 
+ * before.
  * NOTE: this requires 'dest' to be a properly initialized BoxStr object.
  */
 BOXEXPORT BoxTask BoxStr_Set(BoxStr *dest, const BoxStr *src);
@@ -82,5 +84,7 @@ BOXEXPORT size_t BoxStr_Get_Size(BoxStr *s);
  * greater than s2.
  */
 BOXEXPORT int BoxStr_Compare(const BoxStr *s1, const BoxStr *s2);
+
+BOX_END_DECLS
 
 #endif /* _BOX_STR_H */

@@ -131,6 +131,8 @@ BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
   BoxLIRNodeProc *proc;
 
+  c->compiler = new Box::Compiler();
+
   c->ast = NULL;
   c->ast_node = NULL;
 
@@ -159,6 +161,11 @@ BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
 void BoxCmp_Finish(BoxCmp *c)
 {
+  if (!c)
+    return;
+
+  delete c->compiler;
+
   if (BoxArr_Num_Items(& c->stack) != 0)
     BoxCmp_Log_Warn(c, "BoxCmp_Finish: stack is not empty at destruction");
 

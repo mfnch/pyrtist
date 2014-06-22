@@ -108,7 +108,7 @@ BoxVMOp_Read(BoxVMOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode)
     /* Long format. */
     op->args_forms = (word1 >> 1) & 0xf;
     op->next = (word1 >> 5) & 0x7ff;
-    op->id = word1 >> 16;
+    op->id = (BoxOpId) (word1 >> 16);
     if (op->id < BOX_NUM_OPS) {
       const BoxOpDesc *idesc = & exec_table[op->id];
       op->desc = idesc;
@@ -131,7 +131,7 @@ BoxVMOp_Read(BoxVMOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode)
     /* Short format. */
     op->args_forms = (word1 >> 1) & 0xf;
     op->next = (word1 >> 5) & 0x7;
-    op->id = (word1 >> 8) & 0xff;
+    op->id = (BoxOpId) ((word1 >> 8) & 0xff);
     if (op->id < BOX_NUM_OPS) {
       const BoxOpDesc *idesc = & exec_table[op->id];
       op->desc = idesc;
@@ -149,6 +149,8 @@ BoxVMOp_Read(BoxVMOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode)
 
   return BOXBOOL_FALSE;
 }
+
+BOX_BEGIN_DECLS
 
 /**
  * @brief Get the length of a VM instruction in words.
@@ -168,5 +170,7 @@ BoxVMOp_Get_Length(BoxVMOp *op);
  */
 BOXEXPORT BoxBool
 BoxVMOp_Write(BoxVMOp *op, BoxVMWord *bytecode);
+
+BOX_END_DECLS
 
 #endif /* _BOX_VMOP_PRIV_H */

@@ -35,6 +35,8 @@
 #  include <box/vm.h>
 #  include <box/callable.h>
 
+BOX_BEGIN_DECLS
+
 /**
  * Initialize the procedure table.
  *
@@ -301,5 +303,7 @@ void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp);
  * 'op' in the procedure 'id'.
  */
 BoxSrcPos *BoxVM_Proc_Get_Source_Of(BoxVM *vm, BoxVMProcID id, BoxOutPos op);
+
+BOX_END_DECLS
 
 #endif /* _BOX_VMPROC_H */

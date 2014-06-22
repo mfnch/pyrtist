@@ -52,21 +52,21 @@ boxinc_HEADERS = version.h defaults.h core.h logger.h types.h integers.h obj.h \
   hashtable.h list.h vm_priv.h vmproc.h vmsym.h vmdasm.h vm2txt.h vm2c.h       \
   vmserial.h vmstore.h bltinarray.h lir.h
 
-libboxcore0_4_la_SOURCES = types.c core.c logger.c types.h types_priv.h	     \
-  combs.c combs.h obj.c obj.h exception.c exception.h callable.c callable.h  \
-  callable_priv.h core.h coremath.c coremath.h core_priv.h error.c mem.c     \
-  mem.h allocpool.c allocpool.h allocpool_priv.h array.c array.h stream.c    \
-  stream.h stream_priv.h filestream.c occupation.c occupation.h strutils.c   \
-  print.c srcpos.c srcmap.c index.c index_priv.h msgbase.c messages.c	     \
-  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h container.c    \
-  container.h vm.c vm.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c \
-  vmserial.c vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c  \
-  vmproc.h vmproc_priv.h vmsym.c vmsym.h vmopregs.c vmopregs_priv.h vmop.c   \
-  vmop_priv.h str.c str.h bltinarray.c bltinarray_priv.h vmcode.c ast.c	     \
-  ast_priv.h ast.h value.cc compiler.cc operator.c namespace.c builtins.c    \
-  bltinstr.c bltinio.c fileutils.c tokenizer.l macro.c yparser.y	     \
-  parser_priv.h parser.h registers.c paths.c fileutils.h registers.h macro.h \
-  paths.h vmcode.h value.h compiler_priv.h compiler.h operator.h namespace.h \
+libboxcore0_4_la_SOURCES = value.cc compiler.cc operator.cc namespace.cc      \
+  vmcode.cc builtins.cc types.c core.c logger.c types.h types_priv.h combs.c  \
+  combs.h obj.c obj.h exception.c exception.h callable.c callable.h           \
+  callable_priv.h core.h coremath.c coremath.h core_priv.h error.c mem.c      \
+  mem.h allocpool.c allocpool.h allocpool_priv.h array.c array.h stream.c     \
+  stream.h stream_priv.h filestream.c occupation.c occupation.h strutils.c    \
+  print.c srcpos.c srcmap.c index.c index_priv.h msgbase.c messages.c         \
+  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h container.c     \
+  container.h vm.c vm.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c  \
+  vmserial.c vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c   \
+  vmproc.h vmproc_priv.h vmsym.c vmsym.h vmopregs.c vmopregs_priv.h vmop.c    \
+  vmop_priv.h str.c str.h bltinarray.c bltinarray_priv.h ast.c ast_priv.h     \
+  ast.h bltinstr.c bltinio.c fileutils.c tokenizer.l macro.c yparser.y        \
+  parser_priv.h parser.h registers.c paths.c fileutils.h registers.h macro.h  \
+  paths.h vmcode.h value.h compiler_priv.h compiler.h operator.h namespace.h  \
   builtins.h bltinstr.h bltinio.h lir.c lir_priv.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
@@ -80,7 +80,7 @@ dist_boxpkg_DATA=core.dox
 # *** box compiler ***
 noinst_HEADERS = vmdasm_priv.h
 
-box_SOURCES = argparse.c argparse.h argparse_priv.h main.c
+box_SOURCES = argparse.cc argparse.h argparse_priv.h main.c
 
 box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static

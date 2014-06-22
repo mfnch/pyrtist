@@ -55,7 +55,7 @@ void BCArgParser_Finish(BCArgParser *ap)
 
 BCArgParser *BCArgParser_Create(BCArgParserOption *options, int num_options)
 {
-  BCArgParser *ap = Box_Mem_Alloc(sizeof(BCArgParser));
+  BCArgParser *ap = (BCArgParser *) Box_Mem_Alloc(sizeof(BCArgParser));
   if (ap)
     BCArgParser_Init(ap, options, num_options);
   return ap;

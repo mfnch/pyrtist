@@ -45,14 +45,14 @@
 /*******************************BOX-PROCEDURES********************************/
 
 static BoxTask My_Subtype_Init(BoxVMX *vmx) {
-  BoxSubtype *s = BoxVMX_Get_Parent_Target(vmx);
+  BoxSubtype *s = (BoxSubtype *) BoxVMX_Get_Parent_Target(vmx);
   BoxPtr_Nullify(& s->parent);
   BoxPtr_Nullify(& s->child);
   return BOXTASK_OK;
 }
 
 static BoxTask My_Subtype_Finish(BoxVMX *vmx) {
-  BoxSubtype *s = BoxVMX_Get_Parent_Target(vmx);
+  BoxSubtype *s = (BoxSubtype *) BoxVMX_Get_Parent_Target(vmx);
   (void) BoxPtr_Unlink(& s->parent);
   (void) BoxPtr_Unlink(& s->child);
   return BOXTASK_OK;
@@ -88,14 +88,14 @@ Box_Runtime_REAL_At_Print(BoxPtr *parent, BoxPtr *child){
 
 BOXEXPORT BoxException *
 Box_Runtime_Point_At_Print(BoxPtr *parent, BoxPtr *child){
-  BoxPoint *p = BoxPtr_Get_Target(child);
+  BoxPoint *p = (BoxPoint *) BoxPtr_Get_Target(child);
   printf(SPoint, p->x, p->y);
   return NULL;
 }
 
 BOXEXPORT BoxException *
 Box_Runtime_Str_At_Print(BoxPtr *parent, BoxPtr *child) {
-  BoxStr *s = BoxPtr_Get_Target(child);
+  BoxStr *s = (BoxStr *) BoxPtr_Get_Target(child);
   if (s->ptr != NULL)
     fputs(s->ptr, stdout);
   return NULL;
@@ -121,7 +121,7 @@ MY_DEFINE_FN_REAL_AT_REAL(My_Math_Atan, atan)
 
 
 static BoxTask My_Math_Atan2(BoxVMX *vmx) {
-  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = (BoxPoint *) BoxVMX_Get_Child_Target(vmx);
   *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = atan2(p->y, p->x);
   return BOXTASK_OK;
 }
@@ -135,13 +135,13 @@ MY_DEFINE_FN_REAL_AT_REAL(My_Math_Floor, floor)
 MY_DEFINE_FN_REAL_AT_REAL(My_Math_Abs, fabs)
 
 static BoxTask My_Math_Norm(BoxVMX *vmx) {
-  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = (BoxPoint *) BoxVMX_Get_Child_Target(vmx);
   *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = sqrt(p->x*p->x + p->y*p->y);
   return BOXTASK_OK;
 }
 
 static BoxTask My_Math_Norm2(BoxVMX *vmx) {
-  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = (BoxPoint *) BoxVMX_Get_Child_Target(vmx);
   *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = p->x*p->x + p->y*p->y;
   return BOXTASK_OK;
 }
@@ -152,7 +152,7 @@ static BoxTask My_Min_Open(BoxVMX *vmx) {
 }
 
 static BoxTask My_Min_Real(BoxVMX *vmx) {
-  BoxReal *cp = BoxVMX_Get_Parent_Target(vmx), c = *cp,
+  BoxReal *cp = (BoxReal *) BoxVMX_Get_Parent_Target(vmx), c = *cp,
           x = *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
   *cp = (x < c) ? x : c;
   return BOXTASK_OK;
@@ -164,23 +164,23 @@ static BoxTask My_Max_Open(BoxVMX *vmx) {
 }
 
 static BoxTask My_Max_Real(BoxVMX *vmx) {
-  BoxReal *cp = BoxVMX_Get_Parent_Target(vmx), c = *cp,
+  BoxReal *cp = (BoxReal *) BoxVMX_Get_Parent_Target(vmx), c = *cp,
           x = *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
   *cp = (x > c) ? x : c;
   return BOXTASK_OK;
 }
 
 static BoxTask My_Vec_Real(BoxVMX *vmx) {
-  BoxReal *angle = BoxVMX_Get_Child_Target(vmx);
-  BoxPoint *p = BoxVMX_Get_Parent_Target(vmx);
+  BoxReal *angle = (BoxReal *) BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = (BoxPoint *) BoxVMX_Get_Parent_Target(vmx);
   p->x = cos(*angle);
   p->y = sin(*angle);
   return BOXTASK_OK;
 }
 
 static BoxTask My_Point_At_Ort(BoxVMX *vm) {
-  BoxPoint *p_out = BoxVMX_Get_Parent_Target(vm);
-  BoxPoint *p_in = BoxVMX_Get_Child_Target(vm);
+  BoxPoint *p_out = (BoxPoint *) BoxVMX_Get_Parent_Target(vm);
+  BoxPoint *p_in = (BoxPoint *) BoxVMX_Get_Child_Target(vm);
   p_out->x = -p_in->y;
   p_out->y = p_in->x;
   return BOXTASK_OK;
@@ -215,7 +215,7 @@ static BoxTask My_Fail(BoxVMX *vmx) {
 }
 
 static BoxTask My_Fail_Msg(BoxVMX *vmx) {
-  BoxStr *s = BoxVMX_Get_Child_Target(vmx);
+  BoxStr *s = (BoxStr *) BoxVMX_Get_Child_Target(vmx);
   char *msg = BoxStr_To_C_String(s);
   BoxVM_Set_Fail_Msg(vmx->vm, msg);
   Box_Mem_Free(msg);
@@ -223,26 +223,26 @@ static BoxTask My_Fail_Msg(BoxVMX *vmx) {
 }
 
 static BoxTask My_Num_Init(BoxVMX *vm) {
-  BoxInt *length = BoxVMX_Get_Parent_Target(vm);
+  BoxInt *length = (BoxInt *) BoxVMX_Get_Parent_Target(vm);
   *length = 0;
   return BOXTASK_OK;
 }
 
 static BoxTask My_IsValid_Init(BoxVMX *vm) {
-  BoxInt *valid = BoxVMX_Get_Parent_Target(vm);
+  BoxInt *valid = (BoxInt *) BoxVMX_Get_Parent_Target(vm);
   *valid = 1;
   return BOXTASK_OK;
 }
 
 static BoxTask My_Int_At_IsValid(BoxVMX *vm) {
-  BoxInt *valid = BoxVMX_Get_Parent_Target(vm);
-  BoxInt *child = BoxVMX_Get_Child_Target(vm);
+  BoxInt *valid = (BoxInt *) BoxVMX_Get_Parent_Target(vm);
+  BoxInt *child = (BoxInt *) BoxVMX_Get_Child_Target(vm);
   *valid = (*valid && *child);
   return BOXTASK_OK;
 }
 
 static BoxTask My_Compare_Init(BoxVMX *vm) {
-  BoxInt *compare = BoxVMX_Get_Parent_Target(vm);
+  BoxInt *compare = (BoxInt *) BoxVMX_Get_Parent_Target(vm);
   *compare = 0;
   return BOXTASK_OK;
 }
@@ -443,7 +443,7 @@ static OprAttr My_OprAttr_Of_Str(const char *s) {
     return OPR_ATTR_ALL;
 
   else {
-    OprAttr a = 0;
+    int a = 0;
     for(;*s != '\0'; s++) {
       switch(*s) {
       case 'a': a |= OPR_ATTR_ASSIGNMENT; break;
@@ -453,10 +453,10 @@ static OprAttr My_OprAttr_Of_Str(const char *s) {
       default:
         MSG_FATAL("My_OprAttr_Of_Str: error parsing string.");
         assert(0);
-        return BOXTYPEID_NONE;
+        return OPR_ATTR_INVALID;
       }
     }
-    return a;
+    return (OprAttr) a;
   }
 }
 
@@ -466,12 +466,11 @@ static void My_Register_UnOps(BoxCmp *c) {
     const char *types; /* Two characters describing the types of the result
                           and of the operand, following the map character->type
                           implemented by My_Type_Of_Char) */
-    BoxASTUnOp op;     /* Operator to which the operation refers */
+    int        op;     /* Operator to which the operation refers */
     const char *mask,  /* Mask of attributes (a string which is converted
                           to an OprAttr by calling My_OprAttr_Of_Str) */
                *attr;  /* Attributes to set */
-    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
-
+    int        g_op;   /* Generic opcode to use for assembling the operation */
   } *unop, unops[] = {
     { "Pp",  BOXASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
     { "Rr",  BOXASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
@@ -490,28 +489,28 @@ static void My_Register_UnOps(BoxCmp *c) {
   };
 
   for(unop = & unops[0]; unop->types != NULL; ++unop) {
-    Operator *opr = BoxCmp_UnOp_Get(c, unop->op);
+    Operator *opr = BoxCmp_UnOp_Get(c, (BoxASTUnOp) unop->op);
     BoxType *result = My_Type_Of_Char(c, unop->types[0]),
             *operand = My_Type_Of_Char(c, unop->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(unop->mask),
             attr = My_OprAttr_Of_Str(unop->attr);
     Operation *opn = Operator_Add_Opn(opr, operand, NULL, result);
     Operation_Attr_Set(opn, mask, attr);
-    opn->implem.opcode = unop->g_op;
+    opn->implem.opcode = (BoxGOp) unop->g_op;
   }
 }
 
 /* Register all the core binary operations for the Box compiler. */
 static void My_Register_BinOps(BoxCmp *c) {
   struct {
-    const char  *types; /* Three characters describing the types of the result,
-                           of the left and right operands (following the map
-                           character->type implemented by My_Type_Of_Char) */
-    BoxASTBinOp op;     /* Operator to which the operation refers */
-    const char  *mask,  /* Mask of attributes (a string which is converted
-                           to an OprAttr by calling My_OprAttr_Of_Str) */
-                *attr;  /* Attributes to set */
-    BoxGOp      g_op;   /* Generic opcode to use for assembling the operation */
+    const char *types; /* Three characters describing the types of the result,
+                          of the left and right operands (following the map
+                          character->type implemented by My_Type_Of_Char) */
+    int        op;     /* Operator to which the operation refers */
+    const char *mask,  /* Mask of attributes (a string which is converted
+                          to an OprAttr by calling My_OprAttr_Of_Str) */
+               *attr;  /* Attributes to set */
+    int        g_op;   /* Generic opcode to use for assembling the operation */
 
   } *binop, binops[] = {
     {"Ppp", BOXASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
@@ -575,7 +574,7 @@ static void My_Register_BinOps(BoxCmp *c) {
   };
 
   for(binop = & binops[0]; binop->types != NULL; ++binop) {
-    Operator *opr = BoxCmp_BinOp_Get(c, binop->op);
+    Operator *opr = BoxCmp_BinOp_Get(c, (BoxASTBinOp) binop->op);
     BoxType *result = My_Type_Of_Char(c, binop->types[0]),
             *left = My_Type_Of_Char(c, binop->types[1]),
             *right = My_Type_Of_Char(c, binop->types[2]);
@@ -583,7 +582,7 @@ static void My_Register_BinOps(BoxCmp *c) {
             attr = My_OprAttr_Of_Str(binop->attr);
     Operation *opn = Operator_Add_Opn(opr, left, right, result);
     Operation_Attr_Set(opn, mask, attr);
-    opn->implem.opcode = binop->g_op;
+    opn->implem.opcode = (BoxGOp) binop->g_op;
   }
 }
 
@@ -599,7 +598,7 @@ static void My_Register_Conversions(BoxCmp *c) {
     const char *mask,  /* Mask of attributes (a string which is converted
                           to an OprAttr by calling My_OprAttr_Of_Str) */
                *attr;  /* Attributes to set */
-    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
+    int        g_op;   /* Generic opcode to use for assembling the operation */
 
   } *conv, convs[] = {
     { "IR",   "", NULL, BOXGOP_REAL},
@@ -616,7 +615,7 @@ static void My_Register_Conversions(BoxCmp *c) {
             attr = My_OprAttr_Of_Str(conv->attr);
     Operation *opn = Operator_Add_Opn(convert, src, NULL, dst);
     Operation_Attr_Set(opn, mask, attr);
-    opn->implem.opcode = conv->g_op;
+    opn->implem.opcode = (BoxGOp) conv->g_op;
   }
 
   /* Conversion (Real, Real) -> Point */

@@ -30,10 +30,14 @@
 #  include <box/types.h>
 #  include <box/compiler.h>
 
+BOX_BEGIN_DECLS
+
 /** Register the builtin IO functions. */
 void Bltin_IO_Register(BoxCmp *c);
 
 /** To be called when destroying the compiler data structures. */
 void Bltin_IO_Unregister(BoxCmp *c);
+
+BOX_END_DECLS
 
 #endif

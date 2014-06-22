@@ -75,7 +75,7 @@ Value_Create(BoxCmp *c)
 Value *
 Value_Finish(Value *v)
 {
-  Compiler *c = v->proc->cmp;
+  BoxCmp *c = v->proc->cmp;
   RegAlloc *ra = & c->cur_proc->reg_alloc;
 
   assert(!v->attr.read_only);
@@ -377,7 +377,7 @@ Value_Setup_As_String(Value *v_str, const char *str)
 
 /* Create a new empty container. */
 void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
-  Compiler *c = v->proc->cmp;
+  BoxCmp *c = v->proc->cmp;
   RegAlloc *ra = & c->cur_proc->reg_alloc;
   int use_greg;
 
@@ -553,7 +553,7 @@ Value_Emit_CJump(Value *v)
 
 /* This will call Value_Finish() on v_dst, if necessary. */
 Value *
-Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src)
+Value_To_Temp(BoxCmp *c, Value *v_dst, Value *v_src)
 {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
 
@@ -593,7 +593,7 @@ Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src)
 }
 
 Value *
-Value_To_Temp_Or_Target(Compiler *c, Value *v_dst, Value *v_src)
+Value_To_Temp_Or_Target(BoxCmp *c, Value *v_dst, Value *v_src)
 {
   if (v_src->kind == VALUEKIND_TARGET)
     return Value_Move(c, v_dst, v_src);
@@ -670,7 +670,7 @@ int Value_Has_Type(Value *v) {
   }
 }
 
-Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
+Value *Value_Cast_To_Ptr_2(BoxCmp *c, Value *v) {
   BoxContCateg v_categ = v->cont.categ;
 
   switch (v->cont.type) {
@@ -759,7 +759,7 @@ My_Value_Weak_Box(Value *src) {
   BoxType *t_src = src->type;
   BoxType *t_dst = Box_Get_Core_Type(BOXTYPEID_ANY);
   BoxCont ri0, src_type_id_cont;
-  Compiler *cmp = src->proc->cmp;
+  BoxCmp *cmp = src->proc->cmp;
   BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
   Value *v_dst = Value_Create(cmp);
 
@@ -1338,7 +1338,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 }
 
 BoxTask
-Value_Assign(Compiler *c, Value *dst, Value *src)
+Value_Assign(BoxCmp *c, Value *dst, Value *src)
 {
   Value *new_var;
   const char *var_name;

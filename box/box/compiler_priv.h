@@ -37,11 +37,24 @@
 
 #  include <box/lir_priv.h>
 
+namespace Box {
+  class Compiler {
+  private:
+    int stuff;
+
+  public:
+    Compiler() {}
+    ~Compiler() {}
+  };
+}
 
 /**
  * @brief Implementation for #BoxCmp.
  */
 struct BoxCmp_struct {
+  /* This object will eventually swallow all the content of BoxCmp. */
+  Box::Compiler *compiler;
+
   BoxAST     *ast;      /**< Abstract syntax tree. */
   BoxASTNode *ast_node; /**< Current source AST node. */
   BoxLIR     *lir;      /**< LIR tree. */

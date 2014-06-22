@@ -67,6 +67,8 @@ typedef struct {
 typedef int (*BoxHTIterator)(BoxHTItem *item, void *pass_data);
 typedef BoxTask (*BoxHTIterator2)(BoxHTItem *item, void *pass_data);
 
+BOX_BEGIN_DECLS
+
 BOXEXPORT unsigned int BoxHT_Default_Hash(const void *key, size_t key_size);
 BOXEXPORT int BoxHT_Default_Cmp(const void *key1, const void *key2,
                                 size_t size1, size_t size2);
@@ -231,5 +233,7 @@ BOXEXPORT void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set);
 #define BoxHT_Find(ht, key, key_size, item) \
   BoxHT_Iter((ht), (ht)->mask & (ht)->hash((key), (key_size)), \
              (key), (key_size), (item), BoxHT_Default_Action, NULL)
+
+BOX_END_DECLS
 
 #endif /* _BOX_HASHTABLE_H */

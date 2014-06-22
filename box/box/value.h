@@ -114,7 +114,7 @@ Value_Destroy(Value *v);
  * @note The source value is invalid after the move.
  */
 Value *
-Value_Move(Compiler *c, Value *dst, Value *src);
+Value_Move(BoxCmp *c, Value *dst, Value *src);
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how
@@ -292,14 +292,14 @@ Value_Emit_CJump(Value *v);
  * @return Return @p v_dst.
  */
 Value *
-Value_To_Temp(Compiler *c, Value *v_dst, Value *v_src);
+Value_To_Temp(BoxCmp *c, Value *v_dst, Value *v_src);
 
 /**
  * Similar to 'Value_To_Temp' with just one difference: if v is a target
  * do nothing (just return v with a new link to it).
  */
 Value *
-Value_To_Temp_Or_Target(Compiler *c, Value *v_dst, Value *v_src);
+Value_To_Temp_Or_Target(BoxCmp *c, Value *v_dst, Value *v_src);
 
 /** Promote a temporary expression to a target one.
  * REFERENCES: return: new, v: -1;

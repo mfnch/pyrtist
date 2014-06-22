@@ -54,7 +54,7 @@ void Namespace_Finish(Namespace *ns) {
 }
 
 Namespace *Namespace_New(void) {
-  Namespace *ns = Box_Mem_Safe_Alloc(sizeof(Namespace));
+  Namespace *ns = (Namespace *) Box_Mem_Safe_Alloc(sizeof(Namespace));
   Namespace_Init(ns);
   return ns;
 }
@@ -199,7 +199,8 @@ void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
                              BoxType *parent, BoxType *comb_node)
 {
   NmspItem *new_item = Namespace_Add_Item(ns, floor, NULL);
-  MyProcedureNmspItem *p = Box_Mem_Safe_Alloc(sizeof(MyProcedureNmspItem));
+  MyProcedureNmspItem *p =
+    (MyProcedureNmspItem *) Box_Mem_Safe_Alloc(sizeof(MyProcedureNmspItem));
   assert(new_item);
   new_item->type = NMSPITEMTYPE_PROCEDURE;
   new_item->data = p;
@@ -213,5 +214,5 @@ void Namespace_Add_Callback(Namespace *ns, NmspFloor floor,
   NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
   assert(new_item != NULL);
   new_item->type = NMSPITEMTYPE_CALLBACK;
-  new_item->data = callback;
+  new_item->data = (void *) callback;
 }

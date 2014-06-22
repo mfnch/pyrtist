@@ -272,7 +272,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  * REFERENCES: return: new, v_left: ?, v_right: ?;
  */
 static Value *
-My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
+My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
 {
   Value *result = NULL;
 
@@ -390,7 +390,7 @@ My_Opn_Emit(Compiler *c, Operation *opn, Value *v_left, Value *v_right)
  * the operator is opr.
  * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(Compiler *c, BoxASTUnOp op, Value *v) {
+Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
   Operator *opr = BoxCmp_UnOp_Get(c, op);
   Operation *opn;
   OprMatch match;
