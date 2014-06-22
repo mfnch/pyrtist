@@ -44,7 +44,7 @@
 /* Create a new operator */
 void Operator_Init(Operator *opr, BoxCmp *c, const char *name) {
   opr->cmp = c;
-  opr->attr = 0;
+  opr->attr = OPR_ATTR_INVALID;
   opr->name = name;
   opr->first_operation = NULL;
 }
@@ -52,9 +52,9 @@ void Operator_Init(Operator *opr, BoxCmp *c, const char *name) {
 void Operator_Finish(Operator *opr) {
   Operation *opn = opr->first_operation;
   while (opn != NULL) { /* Destroy the chain of operations */
-    Operation *this = opn;
+    Operation *cur = opn;
     opn = opn->next;
-    Box_Mem_Free(this);
+    Box_Mem_Free(cur);
   }
 }
 
@@ -98,14 +98,14 @@ static void My_Guess_AsmScheme(Operation *opn) {
  * 'value' tells how to change them.
  */
 void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr) {
-  opr->attr = (opr->attr & (~mask)) | (attr & mask);
+  opr->attr = (OprAttr) ((opr->attr & (~mask)) | (attr & mask));
 }
 
 /** Change attributes for operation. 'mask' tells what attributes to change,
  * 'value' tells how to change them.
  */
 void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr) {
-  opn->attr = (opn->attr & (~mask)) | (attr & mask);
+  opn->attr = (OprAttr) ((opn->attr & (~mask)) | (attr & mask));
   My_Guess_AsmScheme(opn);
 }
 
@@ -171,23 +171,26 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   int i;
 
   for(i = 0; i < BOXASTUNOP_NUM_OPS; i++) {
-    OprAttr attr;
-    Operator *opr = BoxCmp_UnOp_Get(c, i);
-    Operator_Init(opr, c, BoxASTUnOp_To_String(i));
-    attr = OPR_ATTR_NATIVE |
-           (BoxASTUnOp_Is_Right(i) ? OPR_ATTR_UN_RIGHT : 0);
+    BoxASTUnOp un_op = (BoxASTUnOp) i;
+    Operator *opr = (Operator *) BoxCmp_UnOp_Get(c, un_op);
+    Operator_Init(opr, c, BoxASTUnOp_To_String(un_op));
+    OprAttr attr = (OprAttr) (OPR_ATTR_NATIVE |
+			      (BoxASTUnOp_Is_Right(un_op) ?
+			       OPR_ATTR_UN_RIGHT : 0));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
   }
 
   for(i = 0; i < BOXASTBINOP_NUM_OPS; i++) {
-    Operator *opr = BoxCmp_BinOp_Get(c, i);
-    Operator_Init(opr, c, BoxASTBinOp_To_String(i));
-    Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
+    BoxASTBinOp un_op = (BoxASTBinOp) i;
+    Operator *opr = BoxCmp_BinOp_Get(c, un_op);
+    Operator_Init(opr, c, BoxASTBinOp_To_String(un_op));
+    Operator_Attr_Set(opr, OPR_ATTR_ALL,
+		      (OprAttr) (OPR_ATTR_BINARY | OPR_ATTR_NATIVE));
   }
 
   Operator_Init(& c->convert, c, "(->)");
   Operator_Attr_Set(& c->convert, OPR_ATTR_ALL,
-                    OPR_ATTR_NATIVE | OPR_ATTR_MATCH_RESULT);
+                    (OprAttr) (OPR_ATTR_NATIVE | OPR_ATTR_MATCH_RESULT));
 }
 
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
@@ -195,10 +198,10 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
   int i;
 
   for(i = 0; i < BOXASTUNOP_NUM_OPS; i++)
-    Operator_Finish(BoxCmp_UnOp_Get(c, i));
+    Operator_Finish(BoxCmp_UnOp_Get(c, (BoxASTUnOp) i));
 
   for(i = 0; i < BOXASTBINOP_NUM_OPS; i++)
-    Operator_Finish(BoxCmp_BinOp_Get(c, i));
+    Operator_Finish(BoxCmp_BinOp_Get(c, (BoxASTBinOp) i));
 
   Operator_Finish(& c->convert);
 }

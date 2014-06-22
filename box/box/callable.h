@@ -124,6 +124,8 @@ typedef enum {
  */
 #define BoxCallable_Unlink(t) ((BoxCallable *) BoxSPtr_Unlink(t))
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Create an undefined callable.
  *
@@ -250,5 +252,7 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child);
 
 BOXEXPORT BoxTask
 BoxCallable_CallOld(BoxCallable *cb, BoxVMX *vmx);
+
+BOX_END_DECLS
 
 #endif /* _BOX_CALLABLE_H */

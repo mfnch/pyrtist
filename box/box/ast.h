@@ -107,6 +107,8 @@ typedef enum {
  */
 typedef BoxInt ASTSelfLevel;
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Return the string representation of the given unary operator.
  */
@@ -505,5 +507,7 @@ BoxAST_Create_Subtype(BoxAST *ast, BoxASTNode *parent,
  */
 BOXEXPORT BoxASTNode *
 BoxAST_Create_Keyword(BoxAST *ast, BoxASTNode *type);
+
+BOX_END_DECLS
 
 #endif /* _BOX_AST_H */

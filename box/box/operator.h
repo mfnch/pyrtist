@@ -32,6 +32,7 @@
 #  include "vm_priv.h"
 
 typedef enum {
+  OPR_ATTR_INVALID     = 0,  /**< Invalid value. */
   OPR_ATTR_NATIVE      = 1,  /**< Is it a native operation: does the VM
                                   implement the operation with dedicated
                                   instruction or should we use a procedure? */

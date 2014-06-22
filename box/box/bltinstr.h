@@ -32,10 +32,14 @@
 #  include <box/types.h>
 #  include <box/compiler.h>
 
+BOX_BEGIN_DECLS
+
 void Bltin_Str_Register_Procs(BoxCmp *c);
 
 BoxTask Bltin_Str_Init(void);
 
 void Bltin_Str_Destroy(void);
+
+BOX_END_DECLS
 
 #endif

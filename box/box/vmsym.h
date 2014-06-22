@@ -115,6 +115,8 @@ typedef struct {
           code_gen;
 } BoxVMSymCodeRef;
 
+BOX_BEGIN_DECLS
+
 /** Initialize the symbol table of the program.
  * @param vmp is the VM-program.
  */
@@ -288,5 +290,7 @@ BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);
 
 BoxBool
 BoxVMSym_Reference_Proc(BoxVM *vm, BoxCallable *cb);
+
+BOX_END_DECLS
 
 #endif /* _BOX_VMSYM_H */

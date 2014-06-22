@@ -40,6 +40,7 @@
  */
 typedef struct BoxParser_struct BoxParser;
 
+BOX_BEGIN_DECLS
 
 /**
  * @brief Create a new Box lexer object.
@@ -117,5 +118,7 @@ BoxParser_Was_Provided(BoxParser *bp, const char *feature, int length);
  */
 BOXEXPORT BoxAST *
 BoxParser_Get_AST(BoxParser *bp);
+
+BOX_END_DECLS
 
 #endif /* _BOX_PARSER_H */

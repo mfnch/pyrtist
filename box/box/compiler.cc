@@ -177,7 +177,7 @@ void BoxCmp_Finish(BoxCmp *c)
 
 BoxCmp *BoxCmp_Create(BoxVM *target_vm)
 {
-  BoxCmp *c = Box_Mem_Alloc(sizeof(BoxCmp));
+  BoxCmp *c = (BoxCmp *) Box_Mem_Alloc(sizeof(BoxCmp));
   if (c)
     BoxCmp_Init(c, target_vm);
   return c;
@@ -330,7 +330,7 @@ void BoxCmp_Push_Value(BoxCmp *c, Value *v)
  */
 Value *BoxCmp_Pop_Value(BoxCmp *c)
 {
-  StackItem *si = BoxArr_Last_Item_Ptr(& c->stack);
+  StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
   Value *v;
 
   switch(si->type) {
@@ -351,7 +351,7 @@ Value *BoxCmp_Pop_Value(BoxCmp *c)
 Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos)
 {
   BoxInt n = BoxArr_Num_Items(& c->stack);
-  StackItem *si = BoxArr_Item_Ptr(& c->stack, n - pos);
+  StackItem *si = (StackItem *) BoxArr_Item_Ptr(& c->stack, n - pos);
   switch(si->type) {
   case STACKITEM_ERROR:
     return My_Value_New_Error(c); /* return an error value */
@@ -400,7 +400,7 @@ BoxCmp_Compile(BoxCmp *c, BoxAST *ast)
 
 static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
 {
-  BoxASTNodeType node_type = BoxASTNode_Get_Type(node);
+  BoxASTNodeType node_type = (BoxASTNodeType) BoxASTNode_Get_Type(node);
   BoxASTNode *prev_ast_node = BoxCmp_Set_Cur_Node(c, node);
 
 #define BOXASTNODE_DEF(NODE, Node) \

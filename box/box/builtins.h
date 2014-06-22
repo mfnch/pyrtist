@@ -38,6 +38,8 @@ typedef struct {
           subtype_finish;
 } BltinStuff;
 
+BOX_BEGIN_DECLS
+
 void Bltin_Init(BoxCmp *c);
 
 void Bltin_Finish(BoxCmp *c);
@@ -82,5 +84,7 @@ BoxType *Bltin_Create_Type(BoxCmp *c, const char *type_name,
 /** Convenient function to define a new intrinsic type from a given C type. */
 #define BLTIN_CREATE_TYPE(c, type_name, type) \
   Bltin_Create_Type((c), (type_name), sizeof(type), __alignof__(type))
+
+BOX_END_DECLS
 
 #endif

@@ -54,6 +54,8 @@ typedef struct {
   BoxArrFinalizer fin; /**< Used to finalize elements before destruction */
 } BoxArr;
 
+BOX_BEGIN_DECLS
+
 /** Initialize the (already allocated) BoxArr object 'arr' as a new array.
  * The BoxArr object implements the automatic resizeable array. The array
  * has an the provided 'initial_size' and when elements are added a check
@@ -269,7 +271,7 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 /** Returns the pointer to the last item stored in the array.
  */
 #define BoxArr_Get_Last_Item_Ptr(arr) \
-  ((arr)->ptr + ((arr)->numel - 1)*((BoxUInt) (arr)->elsize))
+  ((char *) (arr)->ptr + ((arr)->numel - 1)*((BoxUInt) (arr)->elsize))
 
 #define BoxArr_Last_Item_Ptr BoxArr_Get_Last_Item_Ptr
 
@@ -282,5 +284,7 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 
 #  define BoxArr_Init(...) BOXARR_MACRO2(BoxArr_Init, __VA_ARGS__)
 #endif
+
+BOX_END_DECLS
 
 #endif /* _BOX_ARRAY_H */
