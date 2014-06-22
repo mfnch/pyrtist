@@ -55,6 +55,41 @@ namespace Box {
     bool Compile(BoxAST *ast);
 
   private:
+    /**
+     * @brief Remove items from the compiler stack.
+     */
+    void Remove_Any(int num_items_to_remove);
+
+    /**
+     * @brief Used to push an error into the stack.
+     * @details Errors are propagated. For example: a binary operation where
+     * one of the two arguments is an error returns silently an error into the
+     * stack.
+     */
+    void Push_Error(int num_errors);
+
+    /**
+     * @brief Manage the compiler stack in case of errors.
+     * @details Check the last @p items_to_pop stack entries for errors. If all
+     * these entries have no errors, then do nothing and return true. If one or
+     * more of these entries have errors, then removes all of them from the
+     * stack, push the given number of errors and return true.
+     */
+    bool Pop_Errors(int items_to_pop, int errors_to_push);
+
+    /**
+     * @brief Pushes the given value into the compiler stack.
+     */
+    void Push_Value(Value *v);
+
+    /**
+     * @brief Pops the last value in the compiler stack and returns it.
+     */
+    Value *Pop_Value();
+
+    Value *Get_Value(int pos);
+
+    // Support methods for the AST node methods.
     void Compile_Any(BoxASTNode *node);
     void Compile_Subtype_Value(BoxASTNodeSubtype *node);
     void Compile_Subtype_Type(BoxASTNodeSubtype *node);
@@ -67,6 +102,7 @@ namespace Box {
     void Compile_Species_Type(BoxASTNodeCompound *compound);
     void Compile_Paren(BoxASTNode *expr);
 
+    // AST node methods (each method compiles the corresponding AST node).
 #  define BOXASTNODE_DEF(NODE, Node) \
     void Compile_##Node(BoxASTNode *node);
 #  include "astnodes.h"
