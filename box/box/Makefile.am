@@ -63,7 +63,7 @@ libboxcore0_4_la_SOURCES = types.c core.c logger.c types.h types_priv.h        \
   vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h      \
   vmproc_priv.h vmsym.c vmsym.h vmopregs.c vmopregs_priv.h vmop.c vmop_priv.h  \
   str.c str.h bltinarray.c bltinarray_priv.h vmcode.c ast.c ast_priv.h ast.h   \
-  value.c compiler.c operator.c namespace.c builtins.c bltinstr.c bltinio.c    \
+  value.cc compiler.c operator.c namespace.c builtins.c bltinstr.c bltinio.c   \
   fileutils.c tokenizer.l macro.c yparser.y parser_priv.h parser.h registers.c \
   paths.c fileutils.h registers.h macro.h paths.h vmcode.h value.h             \
   compiler_priv.h compiler.h operator.h namespace.h builtins.h bltinstr.h      \

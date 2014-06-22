@@ -43,7 +43,7 @@ typedef enum {
 /**
  * @brief Enumeration of the possible types of operands.
  */
-typedef enum {
+enum {
   BOXCONTTYPE_CHAR  = BOXTYPEID_CHAR,
   BOXCONTTYPE_INT   = BOXTYPEID_INT,
   BOXCONTTYPE_REAL  = BOXTYPEID_REAL,
@@ -51,7 +51,9 @@ typedef enum {
   BOXCONTTYPE_PTR   = BOXTYPEID_PTR,
   BOXCONTTYPE_OBJ   = BOXTYPEID_OBJ,
   BOXCONTTYPE_VOID  = BOXTYPEID_VOID
-} BoxContType;
+};
+
+typedef BoxTypeId BoxContType;
 
 typedef struct BoxCont_struct BoxCont;
 
@@ -69,6 +71,8 @@ struct BoxCont_struct {
     }           ptr;        /**< Data necessary to identify a pointer Value */
   }             value;      /**< Union of all possible vals for a Container */
 };
+
+BOX_BEGIN_DECLS
 
 /**
  * Convert a container type character to a proper #BoxType.
@@ -110,5 +114,7 @@ BoxCont_Set(BoxCont *c, const char *cont_type, ...);
  */
 BOXEXPORT char *
 BoxCont_To_String(const BoxCont *c);
+
+BOX_END_DECLS
 
 #endif /* _BOX_CONTAINER_H */

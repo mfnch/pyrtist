@@ -32,6 +32,8 @@
 #  include <box/types.h>
 #  include <box/callable.h>
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Define a combination and associate a callable to it.
  *
@@ -241,5 +243,7 @@ BoxCombDef_Define(BoxCombDef *defs, size_t num_defs);
 #define BOXCOMBDEF_T_TO_T(child, parent, fn)       \
   {(parent), (child), BOXTYPEID_NONE, BOXTYPEID_NONE, \
    BOXCOMBTYPE_COPY, #fn, (fn)}
+
+BOX_END_DECLS
 
 #endif /* _BOX_COMBS_H */

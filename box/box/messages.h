@@ -60,11 +60,15 @@ BoxSrc *Msg_Set_Src(BoxSrc *src_of_err);
 /** Type of the function called when a fatal error message is reported */
 typedef void (*FatalHandler)(void);
 
+BOX_BEGIN_DECLS
+
 /** Function used to set the fatal error message handler */
 void Msg_Set_Fatal_Handler(FatalHandler fh);
 
 /** Used by MSG_FATAL to terminate the program */
 void Msg_Call_Fatal_Handler(void);
+
+BOX_END_DECLS
 
 /** Finalize the main message handler */
 #  define Msg_Main_Destroy() Msg_Destroy(msg_main_stack)

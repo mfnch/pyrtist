@@ -94,6 +94,7 @@ struct BoxLIRNode_struct {
 /* Define all nodes types. */
 #  include <box/lirnodes.h>
 
+BOX_BEGIN_DECLS
 
 /**
  * @brief Create a new LIR tree.
@@ -206,5 +207,7 @@ BoxLIR_Move_Label_Back(BoxLIR *lir, BoxLIRNodeOp *label_op);
  */
 BOXEXPORT void
 BoxLIR_Append_GOp(BoxLIR *lir, BoxGOp g_op, int num_args, ...);
+
+BOX_END_DECLS
 
 #endif /* _BOX_LIR_H */

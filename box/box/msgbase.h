@@ -80,6 +80,8 @@ typedef struct {
   FILE *out;
 } MsgStack;
 
+BOX_BEGIN_DECLS
+
 /** Initialization of the message module */
 BoxTask Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level);
 
@@ -114,5 +116,7 @@ void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf);
 void Msg_Context_End(MsgStack *ms, BoxUInt repeat);
 
 void Msg_Add(MsgStack *ms, BoxUInt level, const char *msg);
+
+BOX_END_DECLS
 
 #endif

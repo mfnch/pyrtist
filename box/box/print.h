@@ -35,6 +35,8 @@
 
 #  define BOX_PRINT_BUF_SIZE 512
 
+BOX_BEGIN_DECLS
+
 /**
  * To be called when exiting, to release memory allocated by Box_Print().
  */
@@ -74,6 +76,8 @@ Box_Print(const char *fmt, ...);
  */
 BOXEXPORT const char *
 Box_VA_Print(const char *fmt, va_list ap);
+
+BOX_END_DECLS
 
 #  define printdup(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 #  define Box_SPrintF(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))

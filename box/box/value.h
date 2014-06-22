@@ -70,6 +70,8 @@ typedef struct {
 /* Just for backward "compatibility". */
 typedef BoxValue Value;
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Initialise a Value.
  * @param v Pointer to memory to be initialised.
@@ -505,5 +507,7 @@ Value_Reference(Value *v);
  */
 Value *
 Value_Dereference(Value *v);
+
+BOX_END_DECLS
 
 #endif /* _BOX_VALUE_H */

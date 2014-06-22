@@ -109,6 +109,8 @@ typedef struct {
 #if !defined(_OPERATOR_H_FNS) && !defined(_BOX_NDECL_FNS)
 #  define _OPERATOR_H_FNS
 
+BOX_BEGIN_DECLS
+
 /** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
 void BoxCmp_Init__Operators(BoxCmp *c);
 
@@ -169,5 +171,7 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest);
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
                                     BoxType *type_left, BoxType *type_right,
                                     BoxType *type_result);
+
+BOX_END_DECLS
 
 #endif /* _OPERATOR_H_FNS */

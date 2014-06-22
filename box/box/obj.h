@@ -31,6 +31,8 @@
 #include <box/types.h>
 #include <box/exception.h>
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Initialize a subtype.
  *
@@ -291,5 +293,7 @@ Box_Combine(BoxType *t_parent, BoxPtr *parent,
  */
 BOXEXPORT BoxBool
 Box_Combine_Any(BoxAny *parent, BoxAny *child, BoxException **except);
+
+BOX_END_DECLS
 
 #endif /* _BOX_OBJ_H */

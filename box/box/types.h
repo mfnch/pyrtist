@@ -108,6 +108,8 @@ typedef enum {
   BOXTYPERESOLVE_SUBTYPE = 0x10
 } BoxTypeResolve;
 
+BOX_BEGIN_DECLS
+
 /*****************************************************************************
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
@@ -631,5 +633,7 @@ BoxType_Is_Fast(BoxType *t);
  */
 BOXEXPORT char *
 BoxType_Get_Repr(BoxType *t);
+
+BOX_END_DECLS
 
 #endif /* _BOX_TYPES_H */

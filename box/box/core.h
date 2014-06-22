@@ -30,7 +30,7 @@
 #  include <float.h>
 #  include <stdlib.h>
 
-/* Detect whether we are being compiled on MS Windows platforms */
+/* Detect whether we are being compiled on MS Windows platforms. */
 #  ifndef __WINDOWS__
 #    if defined(WIN32) || defined(_WIN32)
 #      define __WINDOWS__
@@ -45,6 +45,15 @@
 #    define BOXEXPORT extern __declspec(dllexport)
 #  else
 #    define BOXEXPORT extern
+#  endif
+
+/* Macros which simplify writing headers compatible between C/C++. */
+#  ifdef __cplusplus
+#    define BOX_BEGIN_DECLS extern "C" {
+#    define BOX_END_DECLS }
+#  else
+#    define BOX_BEGIN_DECLS
+#    define BOX_END_DECLS
 #  endif
 
 /**
@@ -324,6 +333,8 @@ typedef BoxName BoxData;
 
 typedef struct BoxCoreTypes_struct BoxCoreTypes;
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Initialize the core types of Box.
  */
@@ -383,5 +394,7 @@ Box_Get_Core_Type(BoxTypeId id);
  */
 BOXEXPORT void
 BoxCoreTypes_Install_Type(BoxCoreTypes *ct, BoxTypeId id, BoxType *t);
+
+BOX_END_DECLS
 
 #endif /* _BOX_CORE_H */

@@ -65,7 +65,7 @@ Value_Stats(void)
 Value *
 Value_Create(BoxCmp *c)
 {
-  Value *v = Box_Mem_Safe_Alloc(sizeof(Value));
+  Value *v = (Value *) Box_Mem_Safe_Alloc(sizeof(Value));
   Value_Init(v, c);
   v->attr.new_or_init = 1;
   num_values_created++;
@@ -319,7 +319,7 @@ void Value_Setup_As_Void(Value *v)
 {
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_VOID));
-  v->cont.type = BOXCONTTYPE_VOID;
+  v->cont.type = BOXTYPEID_VOID;
 }
 
 void Value_Setup_As_Temp(Value *v, BoxType *t)
@@ -492,7 +492,7 @@ void BoxValue_Emit_Allocate(BoxValue *v)
     return;
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
-    if (v->cont.type == BOXCONTTYPE_OBJ) {
+    if (v->cont.type == BOXTYPEID_OBJ) {
       BoxTypeId type_id = BoxVM_Install_Type(c->vm, v->type);
 
       /* The 'create' instruction automatically invokes the creator
@@ -674,7 +674,7 @@ Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
   BoxContCateg v_categ = v->cont.categ;
 
   switch (v->cont.type) {
-  case BOXCONTTYPE_OBJ:
+  case BOXTYPEID_OBJ:
     if (v_categ != BOXCONTCATEG_PTR) {
       assert(v_categ == BOXCONTCATEG_LREG || v_categ == BOXCONTCATEG_GREG);
       return v;
@@ -714,7 +714,7 @@ Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
 
       /* Set cont_src to the register containing the base address. */
       cont_src->categ = (is_greg) ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
-      cont_src->type = BOXCONTTYPE_OBJ;
+      cont_src->type = BOXTYPEID_OBJ;
       cont_src->value.reg = reg;
 
       /* Obtain the destination register as base address plus offset. */
@@ -732,7 +732,7 @@ Value *Value_Cast_To_Ptr_2(Compiler *c, Value *v) {
     }
     break;
 
-  case BOXCONTTYPE_PTR:
+  case BOXTYPEID_PTR:
     return v;
 
   default:
@@ -767,7 +767,8 @@ My_Value_Weak_Box(Value *src) {
     return src;
 
   t_src = BoxType_Resolve(t_src,
-                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
+     static_cast<BoxTypeResolve>(BOXTYPERESOLVE_IDENT
+                                 | BOXTYPERESOLVE_SPECIES), 0);
 
   if (t_src == t_dst)
     return src;
@@ -826,19 +827,19 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
 
   assert(parent && child && c == child->proc->cmp);
 
-  if (parent->cont.type != BOXCONTTYPE_VOID) {
-    BoxGOp op = ((parent->cont.type == BOXCONTTYPE_OBJ
+  if (parent->cont.type != BOXTYPEID_VOID) {
+    BoxGOp op = ((parent->cont.type == BOXTYPEID_OBJ
                   && parent->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_MOV : BOXGOP_LEA);
     BoxLIR_Append_GOp(c->lir, op,
                       2, & c->cont.pass_parent, & parent->cont);
   }
 
-  if (child->cont.type != BOXCONTTYPE_VOID) {
+  if (child->cont.type != BOXTYPEID_VOID) {
     Value v_to_pass;
     Value_Init(& v_to_pass, c);
     Value_To_Temp_Or_Target(c, & v_to_pass, child);
-    BoxGOp op = ((child->cont.type == BOXCONTTYPE_OBJ
+    BoxGOp op = ((child->cont.type == BOXTYPEID_OBJ
                   && child->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
     BoxLIR_Append_GOp(c->lir, op, 2, & c->cont.pass_child, & v_to_pass.cont);
@@ -949,7 +950,7 @@ Value_Emit_Call(Value *parent, Value *child, BoxTask *success)
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
   BoxCmp *c = v_ptr->proc->cmp;
 
-  assert(v_ptr->cont.type == BOXCONTTYPE_PTR);
+  assert(v_ptr->cont.type == BOXTYPEID_PTR);
 
   if (VALUE_REF_IS_ONE(v_ptr)) {
     BoxCont *cont = & v_ptr->cont;
@@ -1030,7 +1031,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
   BoxCmp *c = v->proc->cmp;
   BoxCont *v_cont = & v->cont;
 
-  if (v_cont->type == BOXCONTTYPE_OBJ && v_cont->categ != BOXCONTCATEG_PTR) {
+  if (v_cont->type == BOXTYPEID_OBJ && v_cont->categ != BOXCONTCATEG_PTR) {
     /* This is the case where we already have the pointer to the object
      * stored inside a register. We then have two cases:
      *  - such register is already in use. we cannot just change the
@@ -1044,7 +1045,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
      * in other words we can do whathever we want with it!
      */
     v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_PTR));
-    v_cont->type = BOXCONTTYPE_PTR;
+    v_cont->type = BOXTYPEID_PTR;
     return v;
 
   } else {
@@ -1063,7 +1064,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
  * REFERENCES: return: new, v_obj: -1;
  */
 Value *Value_To_Straight_Ptr(Value *v_obj) {
-  assert(v_obj->cont.type == BOXCONTTYPE_OBJ);
+  assert(v_obj->cont.type == BOXTYPEID_OBJ);
 
   if (v_obj->cont.categ == BOXCONTCATEG_PTR) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
@@ -1077,7 +1078,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value_Setup_Container(v_ret, t, & vc);
     (void) BoxType_Unlink(t);
 
-    assert(v_ret->cont.type == BOXCONTTYPE_OBJ);
+    assert(v_ret->cont.type == BOXTYPEID_OBJ);
     BoxLIR_Append_GOp(v_ret->proc->cmp->lir, BOXGOP_LEA,
                       2, & v_ret->cont, & cont);
     return v_ret;
@@ -1169,7 +1170,7 @@ Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb)
   /* If v_struc is a subtype, then expand it (subtypes do not have members) */
   v_src_dst = Value_Expand_Subtype(v_src_dst);
 
-  if (v_src_dst->cont.type == BOXCONTTYPE_POINT) {
+  if (v_src_dst->cont.type == BOXTYPEID_POINT) {
     Value v_dst;
     Value_Init(& v_dst, c);
     if (My_Point_Get_Member(c, & v_dst, v_src_dst, memb)) {
@@ -1256,7 +1257,8 @@ ValueStrucIter_Finish(ValueStrucIter *vsi)
 ValueStrucIter *
 ValueStrucIter_Create(Value *v_struc, BoxCmp *c)
 {
-  ValueStrucIter *vsi = Box_Mem_Safe_Alloc(sizeof(ValueStrucIter));
+  ValueStrucIter *vsi =
+    (ValueStrucIter *) Box_Mem_Safe_Alloc(sizeof(ValueStrucIter));
   ValueStrucIter_Init(vsi, v_struc, c);
   return vsi;
 }
@@ -1281,7 +1283,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   if (match == BOXTYPECMP_MATCHING)
     src = Value_Expand(src, dest->type);
 
-  if (dest->cont.type == BOXCONTTYPE_OBJ) {
+  if (dest->cont.type == BOXTYPEID_OBJ) {
     /* Object types must be copied and destoyed */
 
     /* Put addresses in registers. EXAMPLE: o[ro2 + 4] is transformed to ro3
@@ -1320,7 +1322,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       return BOXTASK_OK;
     }
 
-  } else if (dest->cont.type == BOXCONTTYPE_PTR) {
+  } else if (dest->cont.type == BOXTYPEID_PTR) {
     /* For pointers we need to pay special care: reference counts! */
     BoxLIR_Append_GOp(c->lir, BOXGOP_REF,
                       2, & dest->cont, & src->cont);
@@ -1355,7 +1357,7 @@ Value_Assign(Compiler *c, Value *dst, Value *src)
    * value and is stored in register form.
    */
   if (src->kind == VALUEKIND_TEMP &&
-      src->cont.type == BOXCONTTYPE_OBJ &&
+      src->cont.type == BOXTYPEID_OBJ &&
       src->cont.categ == BOXCONTCATEG_LREG) {
     BoxInt reg = src->cont.value.reg;
     if (reg > 0) {
@@ -1411,7 +1413,8 @@ Value_Expand(Value *src, BoxType *t_dst) {
     return src;
 
   t_src = BoxType_Resolve(t_src,
-                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
+    static_cast<BoxTypeResolve>(BOXTYPERESOLVE_IDENT
+                                | BOXTYPERESOLVE_SPECIES), 0);
   t_dst = BoxType_Resolve(t_dst, BOXTYPERESOLVE_IDENT, 0);
 
   if (t_src == t_dst)
@@ -1762,7 +1765,7 @@ Value_Reference(Value *v)
 
   v = Value_Cast_To_Ptr_2(v->proc->cmp, v);
   v->type = BoxType_Create_Pointer(v->type);
-  v->cont.type = BOXCONTTYPE_PTR;
+  v->cont.type = BOXTYPEID_PTR;
   v->kind = VALUEKIND_TEMP;
   return v;
 }

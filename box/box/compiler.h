@@ -41,6 +41,7 @@ typedef struct BoxCmp_struct BoxCmp;
 
 typedef BoxCmp Compiler;
 
+BOX_BEGIN_DECLS
 
 BOXEXPORT BoxCmp *
 BoxCmp_Create(BoxVM *target_vm);
@@ -87,5 +88,7 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
  */
 BOXEXPORT BoxBool
 BoxCmp_Compile(BoxCmp *c, BoxAST *ast);
+
+BOX_END_DECLS
 
 #endif /* _BOX_COMPILER_H */

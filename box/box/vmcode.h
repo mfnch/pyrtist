@@ -100,6 +100,8 @@ struct BoxVMCode_struct {
   BoxCallable  *callable;
 };
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Initialise the object.
  * @param p A pointer to the space where the #BoxVMCode object will be stored.
@@ -162,5 +164,7 @@ RegAlloc *BoxVMCode_Get_RegAlloc(BoxVMCode *p);
  */
 BOXEXPORT BoxVMCallNum
 BoxVMCode_Install(BoxVMCode *p);
+
+BOX_END_DECLS
 
 #endif /* _BOX_BOXVMCODE_H */

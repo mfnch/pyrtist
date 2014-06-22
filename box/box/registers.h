@@ -66,6 +66,8 @@ typedef struct {
   uint32_t gvar[NUM_TYPES]; /**< Global variables */
 } RegAlloc;
 
+BOX_BEGIN_DECLS
+
 void Reg_Init(RegAlloc *ra);
 void Reg_Finish(RegAlloc *ra);
 BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t);
@@ -88,5 +90,7 @@ RegAlloc_Get_Local_Nums(RegAlloc *ra, uint32_t *num_regs, uint32_t *num_vars);
  */
 void
 RegAlloc_Get_Global_Nums(RegAlloc *ra, uint32_t *num_temps, uint32_t *num_vars);
+
+BOX_END_DECLS
 
 #endif /* _BOX_REGISTERS_H */

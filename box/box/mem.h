@@ -33,6 +33,8 @@
 /** Integer type used to count references */
 typedef size_t BoxRefCount;
 
+BOX_BEGIN_DECLS
+
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
 BOXEXPORT size_t Box_Mem_Size_Align(size_t n);
 
@@ -132,6 +134,8 @@ BOXEXPORT BoxRefCount Box_Mem_RC_Get_Num_Refs(void *ptr);
  *   0 otherwise.
  */
 BOXEXPORT int Box_Mem_RC_Unlink(void *ptr);
+
+BOX_END_DECLS
 
 /*#define BOXMEM_DEBUG_MACROS*/
 

@@ -193,6 +193,8 @@ typedef struct BoxVMOp_struct BoxVMOp;
  */
 typedef struct BoxOpDesc_struct BoxOpDesc;
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Allocate space for a #BoxVM object and initialise it with
  *   BoxVM_Init().
@@ -319,5 +321,7 @@ BOXEXPORT char *BoxVM_Get_Fail_Msg(BoxVM *vm, BoxBool steal);
  *   the error condition for the VM executor is reset.
  */
 BOXEXPORT void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
+
+BOX_END_DECLS
 
 #endif /* _BOX_VM_H */

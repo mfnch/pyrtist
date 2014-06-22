@@ -72,6 +72,8 @@ typedef void (*NmspAction)(Namespace *ns, void *data);
  */
 typedef void (*NmspCallback)(Namespace *ns, NmspItem *item, void *data);
 
+BOX_BEGIN_DECLS
+
 /** Initialise a new Namespace object, in the space already allocated
  * and pointed by ns. Namespace_Finish should be called to finalize
  * the object.
@@ -146,5 +148,6 @@ void Namespace_Plug(Namespace *ns, const char *name, Namespace *ns_to_plug);
 void Namespace_Unplug(Namespace *ns, const char *name);
 */
 
-#endif /* _NAMESPACE_H */
+BOX_END_DECLS
 
+#endif /* _NAMESPACE_H */
