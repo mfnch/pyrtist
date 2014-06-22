@@ -40,11 +40,37 @@
 namespace Box {
   class Compiler {
   private:
-    int stuff;
+    // Old compiler.
+    BoxCmp *c;
 
   public:
-    Compiler() {}
+    Compiler(BoxCmp *old_compiler) : c(old_compiler) {}
     ~Compiler() {}
+
+    /**
+     * @brief Compile from the given abstract syntax tree.
+     * @param ast Abstract syntax tree of the program to compile.
+     * @return Whether it is safe to execute the compiled code.
+     */
+    bool Compile(BoxAST *ast);
+
+  private:
+    void Compile_Any(BoxASTNode *node);
+    void Compile_Subtype_Value(BoxASTNodeSubtype *node);
+    void Compile_Subtype_Type(BoxASTNodeSubtype *node);
+    void Compile_Box_Generic(BoxASTNode *box_node,
+                             BoxType *t_child, BoxType *t_parent);
+    Value *Compile_Value_Assignment(Value *left, Value *right);
+    Value *Compile_Type_Assignment(Value *v_name, Value *v_type);
+    void Compile_Struct_Value(BoxASTNodeCompound *compound);
+    void Compile_Struct_Type(BoxASTNodeCompound *compound);
+    void Compile_Species_Type(BoxASTNodeCompound *compound);
+    void Compile_Paren(BoxASTNode *expr);
+
+#  define BOXASTNODE_DEF(NODE, Node) \
+    void Compile_##Node(BoxASTNode *node);
+#  include "astnodes.h"
+#  undef BOXASTNODE_DEF
   };
 }
 

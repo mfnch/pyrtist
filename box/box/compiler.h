@@ -39,8 +39,6 @@
  */
 typedef struct BoxCmp_struct BoxCmp;
 
-typedef BoxCmp Compiler;
-
 BOX_BEGIN_DECLS
 
 BOXEXPORT BoxCmp *

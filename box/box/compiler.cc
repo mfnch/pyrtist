@@ -131,7 +131,7 @@ BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 {
   BoxLIRNodeProc *proc;
 
-  c->compiler = new Box::Compiler();
+  c->compiler = new Box::Compiler(c);
 
   c->ast = NULL;
   c->ast_node = NULL;
@@ -240,7 +240,7 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
 
   ast = Box_Parse_FILE(file, file_name, setup_file_name, paths, logger);
   compiler->ast = ast;
-  if (!(BoxAST_Is_Sane(ast) && BoxCmp_Compile(compiler, ast))) {
+  if (!(BoxAST_Is_Sane(ast) && compiler->compiler->Compile(ast))) {
     BoxCmp_Destroy(compiler);
     return BOXBOOL_FALSE;
   }
@@ -373,15 +373,10 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos)
   }
 }
 
-/* Forward declarations. */
-#define BOXASTNODE_DEF(NODE, Node) \
-  static void My_Compile_##Node(BoxCmp *, BoxASTNode *);
-static void My_Compile_Any(BoxCmp *c, BoxASTNode *node);
-#include "astnodes.h"
-#undef BOXASTNODE_DEF
+namespace Box {
 
-BoxBool
-BoxCmp_Compile(BoxCmp *c, BoxAST *ast)
+bool
+Compiler::Compile(BoxAST *ast)
 {
   BoxASTNode *root;
 
@@ -400,18 +395,19 @@ BoxCmp_Compile(BoxCmp *c, BoxAST *ast)
    */
   c->attr.is_sane = 1;
 
-  My_Compile_Any(c, root);
+  Compile_Any(root);
   BoxCmp_Remove_Any(c, 1);
   return (c->attr.is_sane == 1);
 }
 
-static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_Any(BoxASTNode *node)
 {
   BoxASTNodeType node_type = (BoxASTNodeType) BoxASTNode_Get_Type(node);
   BoxASTNode *prev_ast_node = BoxCmp_Set_Cur_Node(c, node);
 
 #define BOXASTNODE_DEF(NODE, Node) \
-  case BOXASTNODETYPE_##NODE: My_Compile_##Node(c, node); break;
+  case BOXASTNODETYPE_##NODE: Compile_##Node(node); break;
 
   switch (node_type) {
 #include "astnodes.h"
@@ -426,7 +422,8 @@ static void My_Compile_Any(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Set_Cur_Node(c, prev_ast_node);
 }
 
-static void My_Compile_CharImm(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_CharImm(BoxASTNode *node)
 {
   Value *v = Value_Create(c);
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_CHAR_IMM);
@@ -434,7 +431,8 @@ static void My_Compile_CharImm(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-static void My_Compile_IntImm(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_IntImm(BoxASTNode *node)
 {
   Value *v = Value_Create(c);
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_INT_IMM);
@@ -442,7 +440,8 @@ static void My_Compile_IntImm(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-static void My_Compile_RealImm(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_RealImm(BoxASTNode *node)
 {
   Value *v = Value_Create(c);
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_REAL_IMM);
@@ -450,7 +449,8 @@ static void My_Compile_RealImm(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-static void My_Compile_StrImm(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_StrImm(BoxASTNode *node)
 {
   Value *v = Value_Create(c);
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_STR_IMM);
@@ -458,7 +458,8 @@ static void My_Compile_StrImm(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-static void My_Compile_TypeIdfr(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_TypeIdfr(BoxASTNode *node)
 {
   Value *v;
   char *type_name;
@@ -479,7 +480,8 @@ static void My_Compile_TypeIdfr(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-static void My_Compile_TypeTag(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_TypeTag(BoxASTNode *node)
 {
   Value *v;
   BoxTypeId type_id;
@@ -493,7 +495,8 @@ static void My_Compile_TypeTag(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v);
 }
 
-static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
+void
+Compiler::Compile_Subtype_Value(BoxASTNodeSubtype *node)
 {
   const char *name;
   Value *v_parent = NULL, *v_result = NULL;
@@ -503,7 +506,7 @@ static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
   name = node->name->name;
 
   if (node->parent) {
-    My_Compile_Any(c, node->parent);
+    Compile_Any(node->parent);
     if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
       return;
     v_parent = BoxCmp_Pop_Value(c);
@@ -524,7 +527,8 @@ static void My_Compile_Subtype_Value(BoxCmp *c, BoxASTNodeSubtype *node)
   BoxCmp_Push_Value(c, v_result);
 }
 
-static void My_Compile_Subtype_Type(BoxCmp *c, BoxASTNodeSubtype *node)
+void
+Compiler::Compile_Subtype_Type(BoxASTNodeSubtype *node)
 {
   Value *parent_type;
   BoxType *new_subtype = NULL;
@@ -534,7 +538,7 @@ static void My_Compile_Subtype_Type(BoxCmp *c, BoxASTNodeSubtype *node)
          == BOXASTNODETYPE_TYPE_IDFR);
   name = node->name->name;
 
-  My_Compile_Any(c, node->parent);
+  Compile_Any(node->parent);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
@@ -570,23 +574,25 @@ static void My_Compile_Subtype_Type(BoxCmp *c, BoxASTNodeSubtype *node)
   }
 }
 
-static void My_Compile_Subtype(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_Subtype(BoxASTNode *node)
 {
   BoxASTNodeSubtype *subtype_node;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_SUBTYPE);
   subtype_node = (BoxASTNodeSubtype *) node;
   if (subtype_node->parent && BoxASTNode_Is_Type(subtype_node->parent))
-    My_Compile_Subtype_Type(c, subtype_node);
+    Compile_Subtype_Type(subtype_node);
   else
-    My_Compile_Subtype_Value(c, subtype_node);
+    Compile_Subtype_Value(subtype_node);
 }
 
-static void My_Compile_Keyword(Compiler *c, BoxASTNode *node)
+void
+Compiler::Compile_Keyword(BoxASTNode *node)
 {
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_KEYWORD);
 
-  My_Compile_Any(c, (BoxASTNode *) ((BoxASTNodeKeyword *) node)->type);
+  Compile_Any((BoxASTNode *) ((BoxASTNodeKeyword *) node)->type);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push */ 1))
     return;
   else {
@@ -595,12 +601,14 @@ static void My_Compile_Keyword(Compiler *c, BoxASTNode *node)
   }
 }
 
-static void My_Compile_Statement(BoxCmp *c, BoxASTNode *s)
+void
+Compiler::Compile_Statement(BoxASTNode *s)
 {
   abort();
 }
 
-static void My_Compile_Member(BoxCmp *c, BoxASTNode *s)
+void
+Compiler::Compile_Member(BoxASTNode *s)
 {
   abort();
 }
@@ -611,8 +619,9 @@ typedef enum {
   MYBOXSTATE_GOT_ELSE
 } MyBoxState;
 
-static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
-                                   BoxType *t_child, BoxType *t_parent)
+void
+Compiler::Compile_Box_Generic(BoxASTNode *box_node,
+                              BoxType *t_child, BoxType *t_parent)
 {
   BoxASTNodeBox *box;
   BoxASTNodeStatement *s;
@@ -636,7 +645,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
 
   } else {
     Value *parent_type;
-    My_Compile_Any(c, box->parent);
+    Compile_Any(box->parent);
     parent_type = BoxCmp_Pop_Value(c);
     assert(parent_type);
 
@@ -735,7 +744,7 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     }
 
     if (s->value) {
-      My_Compile_Any(c, s->value);
+      Compile_Any(s->value);
       stmt_val = BoxCmp_Pop_Value(c);
     } else
       stmt_val = My_Get_Void_Value(c);
@@ -825,12 +834,14 @@ static void My_Compile_Box_Generic(BoxCmp *c, BoxASTNode *box_node,
     Value_Unlink(outer_parent);
 }
 
-static void My_Compile_Box(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_Box(BoxASTNode *node)
 {
-  My_Compile_Box_Generic(c, node, NULL, NULL);
+  Compile_Box_Generic(node, NULL, NULL);
 }
 
-static void My_Compile_VarIdfr(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_VarIdfr(BoxASTNode *node)
 {
   Value *v;
   char *item_name;
@@ -848,26 +859,27 @@ static void My_Compile_VarIdfr(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-static void My_Compile_Ignore(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_Ignore(BoxASTNode *node)
 {
   Value *operand;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IGNORE);
 
   /* Compile operand and get it from the stack */
-  My_Compile_Any(c, ((BoxASTNodeIgnore *) node)->value);
+  Compile_Any(((BoxASTNodeIgnore *) node)->value);
   operand = BoxCmp_Get_Value(c, 0);
   Value_Set_Ignorable(operand, BOXBOOL_TRUE);
 }
 
-static void My_Compile_UnTypeOp(BoxCmp *c, BoxASTNode *node)
+void Compiler::Compile_UnTypeOp(BoxASTNode *node)
 {
   BoxASTNodeUnTypeOp *un_type_op = (BoxASTNodeUnTypeOp *) node;
   Value *v_type, *v_out_type = NULL;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_UN_TYPE_OP);
 
-  My_Compile_Any(c, un_type_op->value);
+  Compile_Any(un_type_op->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
@@ -903,7 +915,8 @@ static void My_Compile_UnTypeOp(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v_out_type);
 }
 
-static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_UnOp(BoxASTNode *node)
 {
   BoxASTNodeUnOp *un_op = (BoxASTNodeUnOp *) node;
   Value *operand, *v_result = NULL;
@@ -911,7 +924,7 @@ static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_UN_OP);
 
   /* Compile operand and get it from the stack */
-  My_Compile_Any(c, un_op->value);
+  Compile_Any(un_op->value);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
@@ -940,7 +953,8 @@ static void My_Compile_UnOp(BoxCmp *c, BoxASTNode *node)
 /** Deal with assignments.
  * REFERENCES: result: new, left: -1, right: -1;
  */
-static Value *My_Compile_Value_Assignment(BoxCmp *c, Value *left, Value *right)
+Value *
+Compiler::Compile_Value_Assignment(Value *left, Value *right)
 {
   if (Value_Want_Value(right)) {
     /* Subtypes are always expanded in assignments */
@@ -989,8 +1003,8 @@ static Value *My_Compile_Value_Assignment(BoxCmp *c, Value *left, Value *right)
   }
 }
 
-static Value *
-My_Compile_Type_Assignment(BoxCmp *c, Value *v_name, Value *v_type)
+Value *
+Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
 {
   Value *v_named_type = NULL;
 
@@ -1046,14 +1060,15 @@ My_Compile_Type_Assignment(BoxCmp *c, Value *v_name, Value *v_type)
   return v_named_type;
 }
 
-static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_BinOp(BoxASTNode *node)
 {
   BoxASTNodeBinOp *bin_op_node = (BoxASTNodeBinOp *) node;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_BIN_OP);
 
-  My_Compile_Any(c, bin_op_node->lhs);
-  My_Compile_Any(c, bin_op_node->rhs);
+  Compile_Any(bin_op_node->lhs);
+  Compile_Any(bin_op_node->rhs);
   if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1))
     return;
 
@@ -1069,9 +1084,9 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
     if (op == BOXASTBINOP_ASSIGN) {
       if (BoxASTNode_Is_Type(bin_op_node->lhs)
           && BoxASTNode_Is_Type(bin_op_node->rhs))
-        result = My_Compile_Type_Assignment(c, left, right);
+        result = Compile_Type_Assignment(left, right);
       else
-        result = My_Compile_Value_Assignment(c, left, right);
+        result = Compile_Value_Assignment(left, right);
     } else {
       if (Value_Want_Value(left) & Value_Want_Value(right))
         /* NOTE: ^^^ We use & rather than &&*/
@@ -1086,7 +1101,8 @@ static void My_Compile_BinOp(BoxCmp *c, BoxASTNode *node)
   }
 }
 
-static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_Get(BoxASTNode *node)
 {
   BoxType *t;
   Value *v_struc;
@@ -1106,7 +1122,7 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
       return;
     }
   } else {
-    My_Compile_Any(c, parent);
+    Compile_Any(parent);
     v_struc = BoxCmp_Pop_Value(c);
   }
 
@@ -1124,7 +1140,8 @@ static void My_Compile_Get(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v_struc);
 }
 
-static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_ArgGet(BoxASTNode *node)
 {
   Value *v_self = NULL;
   const char *n_self = NULL;
@@ -1176,7 +1193,8 @@ static void My_Compile_ArgGet(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v_self);
 }
 
-static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
+void
+Compiler::Compile_CombDef(BoxASTNode *node)
 {
   BoxLIRNodeProc *proc;
   BoxASTNodeCombDef *comb_def_node;
@@ -1193,9 +1211,9 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
   n_implem = comb_def_node->implem;
 
   /* first, get the type of child and parent */
-  My_Compile_Any(c, comb_def_node->child);
+  Compile_Any(comb_def_node->child);
   v_child = BoxCmp_Pop_Value(c);
-  My_Compile_Any(c, comb_def_node->parent);
+  Compile_Any(comb_def_node->parent);
   v_parent = BoxCmp_Pop_Value(c);
   comb_type = (BoxCombType) comb_def_node->comb_type;
 
@@ -1318,7 +1336,7 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
                             !BoxType_Is_Empty(t_child),
                             !BoxType_Is_Empty(t_parent));
 
-    My_Compile_Box_Generic(c, n_implem, t_child, t_parent);
+    Compile_Box_Generic(n_implem, t_child, t_parent);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
@@ -1346,7 +1364,8 @@ static void My_Compile_CombDef(BoxCmp *c, BoxASTNode *node)
   BoxCmp_Push_Value(c, v_ret);
 }
 
-static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
+void
+Compiler::Compile_Struct_Value(BoxASTNodeCompound *compound)
 {
   int i, num_members;
   BoxASTNodeMember *memb;
@@ -1365,7 +1384,7 @@ static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
     assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
     assert(memb->expr);
 
-    My_Compile_Any(c, memb->expr);
+    Compile_Any(memb->expr);
     v_member = BoxCmp_Get_Value(c, 0);
     no_err &= Value_Want_Value(v_member);
     if (no_err && BoxType_Is_Empty(v_member->type)) {
@@ -1407,7 +1426,8 @@ static void My_Compile_Struct_Value(BoxCmp *c, BoxASTNodeCompound *compound)
   BoxCmp_Push_Value(c, v_struc);
 }
 
-static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
+void
+Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
 {
   int err;
   BoxASTNodeMember *memb;
@@ -1432,7 +1452,7 @@ static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
 
     if (memb->expr) {
       Value *v_type;
-      My_Compile_Any(c, memb->expr);
+      Compile_Any(memb->expr);
       v_type = BoxCmp_Pop_Value(c);
 
       err = !Value_Want_Has_Type(v_type);
@@ -1472,7 +1492,8 @@ static void My_Compile_Struct_Type(BoxCmp *c, BoxASTNodeCompound *compound)
   BoxCmp_Push_Value(c, v_struc_type);
 }
 
-static void My_Compile_Species_Type(BoxCmp *c, BoxASTNodeCompound *compound)
+void
+Compiler::Compile_Species_Type(BoxASTNodeCompound *compound)
 {
   BoxType *spec_type;
   Value *v_spec_type;
@@ -1487,7 +1508,7 @@ static void My_Compile_Species_Type(BoxCmp *c, BoxASTNodeCompound *compound)
     assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER
            && !memb->name);
 
-    My_Compile_Any(c, memb->expr);
+    Compile_Any(memb->expr);
     v_type = BoxCmp_Pop_Value(c);
 
     if (Value_Want_Has_Type(v_type)) {
@@ -1506,15 +1527,17 @@ static void My_Compile_Species_Type(BoxCmp *c, BoxASTNodeCompound *compound)
   BoxCmp_Push_Value(c, v_spec_type);
 }
 
-static void My_Compile_Paren(BoxCmp *c, BoxASTNode *expr)
+void
+Compiler::Compile_Paren(BoxASTNode *expr)
 {
   Value *v;
-  My_Compile_Any(c, expr);
+  Compile_Any(expr);
   v = BoxCmp_Get_Value(c, 0);
   Value_Set_Ignorable(v, BOXBOOL_FALSE);
 }
 
-static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
+void
+Compiler::Compile_Compound(BoxASTNode *compound_node)
 {
   BoxASTNodeCompound *compound;
 
@@ -1523,19 +1546,21 @@ static void My_Compile_Compound(BoxCmp *c, BoxASTNode *compound_node)
 
   switch (compound->kind) {
   case BOXASTCOMPOUNDKIND_IDENTITY:
-    My_Compile_Paren(c, compound->memb->expr);
+    Compile_Paren(compound->memb->expr);
     return;
   case BOXASTCOMPOUNDKIND_SPECIES:
-    My_Compile_Species_Type(c, compound);
+    Compile_Species_Type(compound);
     return;
   case BOXASTCOMPOUNDKIND_STRUCT:
     if (BoxASTNode_Is_Type(compound_node))
-      My_Compile_Struct_Type(c, compound);
+      Compile_Struct_Type(compound);
     else
-      My_Compile_Struct_Value(c, compound);
+      Compile_Struct_Value(compound);
     return;
   default:
     printf("Unexpected compound kind %d", (int) compound->kind);
     abort();
   }
+}
+
 }
