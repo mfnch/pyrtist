@@ -75,27 +75,19 @@ static void My_Init_Const_Values(BoxCmp *c)
   int i;
   struct {
     BoxTypeId type_id;
-    Value *value;
+    Value **value;
   } ids[] = {
     {BOXTYPEID_INIT, & c->value.create},
-    {BOXTYPEID_FINISH, & c->value.destroy},
     {BOXTYPEID_BEGIN, & c->value.begin},
     {BOXTYPEID_END, & c->value.end},
     {BOXTYPEID_PAUSE, & c->value.pause}
   };
 
-  Value_Init(& c->value.error, c);
-  Value_Mark_RO(& c->value.error);
-
   for (i = 0; i < BOX_SIZEOF_ARRAY(ids); i++) {
-    Value_Init(ids[i].value, c);
-    Value_Setup_As_Type(ids[i].value, Box_Get_Core_Type(ids[i].type_id));
-    Value_Mark_RO(ids[i].value);
+    *ids[i].value = c->compiler->Create_Value();
+    Value_Setup_As_Type(*ids[i].value, Box_Get_Core_Type(ids[i].type_id));
+    Value_Mark_RO(*ids[i].value);
   }
-
-  Value_Init(& c->value.void_val, c);
-  Value_Setup_As_Void(& c->value.void_val);
-  Value_Mark_RO(& c->value.void_val);
 
   BoxCont_Set(& c->cont.pass_child, "go", 2);
   BoxCont_Set(& c->cont.pass_parent, "go", 1);
@@ -103,11 +95,8 @@ static void My_Init_Const_Values(BoxCmp *c)
 
 void My_Finish_Const_Values(BoxCmp *c)
 {
-  Value_Force_Finish(& c->value.error);
-  Value_Force_Finish(& c->value.void_val);
-  Value_Force_Finish(& c->value.create);
-  Value_Force_Finish(& c->value.destroy);
-  Value_Force_Finish(& c->value.pause);
+  c->compiler->Destroy_Value(c->value.create);
+  c->compiler->Destroy_Value(c->value.pause);
 }
 
 /** Return a new error value (actually a new reference to it,
@@ -115,7 +104,7 @@ void My_Finish_Const_Values(BoxCmp *c)
  */
 Value *My_Value_New_Error(BoxCmp *c)
 {
-  return & c->value.error; /* return an error value */
+  return c->compiler->Create_Value();
 }
 
 /* We may optimize this later, by just passing a reference to a Value
@@ -123,7 +112,9 @@ Value *My_Value_New_Error(BoxCmp *c)
  */
 static Value *My_Get_Void_Value(BoxCmp *c)
 {
-  return & c->value.void_val;
+  Value *v = c->compiler->Create_Value();
+  Value_Setup_As_Void(v);
+  return v;
 }
 
 void
@@ -253,6 +244,75 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
 
 namespace Box {
 
+Compiler::Compiler(BoxCmp *old_compiler) : c(old_compiler) {
+  BoxArr_Init(& active_values_, sizeof(Value *), 32);
+  BoxArr_Init(& value_pos_, sizeof(int), 32);
+}
+
+Compiler::~Compiler() {
+  BoxArr_Finish(& active_values_);
+  BoxArr_Finish(& value_pos_);
+}
+
+Value *
+Compiler::Track_Value(Value *v)
+{
+  if (BoxArr_Get_Num_Items(& value_pos_) == 0)
+    return v;
+
+  assert(v->attr.new_or_init);
+
+  BoxArr_Push(& active_values_, & v);
+  return v;
+}
+
+Value *
+Compiler::Untrack_Value(Value *v)
+{
+  if (BoxArr_Get_Num_Items(& value_pos_) == 0)
+    return v;
+
+  assert(v->attr.new_or_init);
+
+  int pos = *((int *) BoxArr_Get_Last_Item_Ptr(& value_pos_));
+  Value **vs = (Value **) BoxArr_First_Item_Ptr(& active_values_);
+  for (int i = pos; i < BoxArr_Get_Num_Items(& active_values_); i++) {
+    if (v == vs[i]) {
+      vs[i] = NULL;
+      return v;
+    }
+  }
+
+  abort();
+  return v;
+}
+
+void
+Compiler::Begin_Leak_Check()
+{
+  int pos = BoxArr_Get_Num_Items(& active_values_);
+  BoxArr_Push(& value_pos_, & pos);
+}
+
+int
+Compiler::End_Leak_Check()
+{
+  int pos;
+  assert(BoxArr_Get_Num_Items(& value_pos_) > 0);
+  BoxArr_Pop(& value_pos_, & pos);
+
+  int num_leaked_values = 0;
+  int num_items = BoxArr_Get_Num_Items(& active_values_);
+  Value **vs = (Value **) BoxArr_First_Item_Ptr(& active_values_);
+  for (int i = pos; i < num_items; i++) {
+    if (vs[i])
+      num_leaked_values++;
+  }
+  BoxArr_MPop(& active_values_, NULL, num_items - pos);
+  assert(BoxArr_Get_Num_Items(& active_values_) == pos);
+  return num_leaked_values;
+}
+
 void
 Compiler::Remove_Any(int num_items_to_remove)
 {
@@ -260,7 +320,7 @@ Compiler::Remove_Any(int num_items_to_remove)
   for(i = 0; i < num_items_to_remove; i++) {
     StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
     if (si->type == STACKITEM_VALUE)
-      Value_Destroy((Value *) si->item);
+      Destroy_Value(Track_Value((Value *) si->item));
     if (si->destructor)
       si->destructor(si->item);
     (void) BoxArr_Pop(& c->stack, NULL);
@@ -316,6 +376,7 @@ Compiler::Push_Value(Value *v)
     si->type = STACKITEM_VALUE;
     si->item = v;
     si->destructor = NULL;
+    Untrack_Value(v);
   } else
     Push_Error(1);
 }
@@ -329,11 +390,11 @@ Compiler::Pop_Value()
   switch(si->type) {
   case STACKITEM_ERROR:
     (void) BoxArr_Pop(& c->stack, NULL);
-    return My_Value_New_Error(c); /* return an error value */
+    return My_Value_New_Error(c);
   case STACKITEM_VALUE:
     v = (Value *) si->item; /* return the value and its reference */
     (void) BoxArr_Pop(& c->stack, NULL);
-    return v;
+    return Track_Value(v);
   default:
     BoxCmp_Log_Fatal(c, "BoxCmp_Pop_Value: want value, but top of stack "
                      "contains incompatible item.");
@@ -391,6 +452,8 @@ Compiler::Compile_Any(BoxASTNode *node)
   BoxASTNodeType node_type = (BoxASTNodeType) BoxASTNode_Get_Type(node);
   BoxASTNode *prev_ast_node = BoxCmp_Set_Cur_Node(c, node);
 
+  Begin_Leak_Check();
+
 #define BOXASTNODE_DEF(NODE, Node) \
   case BOXASTNODETYPE_##NODE: Compile_##Node(node); break;
 
@@ -404,13 +467,18 @@ Compiler::Compile_Any(BoxASTNode *node)
 
 #undef BOXASTNODE_DEF
 
+  int num_leaks = End_Leak_Check();
+  if (num_leaks != 0)
+    BoxCmp_Log_Warn(c, "%d Value objects leaked in node %s",
+                    num_leaks, BoxASTNodeType_To_Str(node_type));
+
   BoxCmp_Set_Cur_Node(c, prev_ast_node);
 }
 
 void
 Compiler::Compile_CharImm(BoxASTNode *node)
 {
-  Value *v = Value_Create(c);
+  Value *v = Create_Value();
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_CHAR_IMM);
   Value_Setup_As_Imm_Char(v, ((BoxASTNodeCharImm *) node)->value);
   Push_Value(v);
@@ -419,7 +487,7 @@ Compiler::Compile_CharImm(BoxASTNode *node)
 void
 Compiler::Compile_IntImm(BoxASTNode *node)
 {
-  Value *v = Value_Create(c);
+  Value *v = Create_Value();
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_INT_IMM);
   Value_Setup_As_Imm_Int(v, ((BoxASTNodeIntImm *) node)->value);
   Push_Value(v);
@@ -428,7 +496,7 @@ Compiler::Compile_IntImm(BoxASTNode *node)
 void
 Compiler::Compile_RealImm(BoxASTNode *node)
 {
-  Value *v = Value_Create(c);
+  Value *v = Create_Value();
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_REAL_IMM);
   Value_Setup_As_Imm_Real(v, ((BoxASTNodeRealImm *) node)->value);
   Push_Value(v);
@@ -437,7 +505,7 @@ Compiler::Compile_RealImm(BoxASTNode *node)
 void
 Compiler::Compile_StrImm(BoxASTNode *node)
 {
-  Value *v = Value_Create(c);
+  Value *v = Create_Value();
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_STR_IMM);
   Value_Setup_As_String(v, ((BoxASTNodeStrImm *) node)->str);
   Push_Value(v);
@@ -475,7 +543,7 @@ Compiler::Compile_TypeTag(BoxASTNode *node)
 
   /* Should we use c->value.create, etc. ? */
   type_id = (BoxTypeId) ((BoxASTNodeTypeTag *) node)->type_id;
-  v = Value_Create(c);
+  v = Create_Value();
   Value_Setup_As_Type(v, Box_Get_Core_Type(type_id));
   Push_Value(v);
 }
@@ -506,7 +574,7 @@ Compiler::Compile_Subtype_Value(BoxASTNodeSubtype *node)
     if (Value_Want_Value(v_parent))
       v_result = Value_Subtype_Build(v_parent, name);
     else
-      Value_Destroy(v_parent);
+      Destroy_Value(v_parent);
   }
 
   Push_Value(v_result);
@@ -554,7 +622,7 @@ Compiler::Compile_Subtype_Type(BoxASTNodeSubtype *node)
     (void) BoxType_Unlink(new_subtype);
     Push_Value(v);
   } else {
-    Value_Destroy(parent_type);
+    Destroy_Value(parent_type);
     Push_Error(1);
   }
 }
@@ -657,7 +725,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     Value_Init(& v_child, c);
     Value_Setup_As_Child(& v_child, t_child);
     v_tmp = Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$", & v_child);
-    Value_Destroy(v_tmp);
+    Destroy_Value(v_tmp);
     Value_Finish(& v_child);
   }
 
@@ -682,7 +750,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
      *
      * NOTE: the following works also when parent = ERROR
      */
-    Value *v_parent = Value_Create(c);
+    Value *v_parent = Create_Value();
     Value_Setup_As_Weak_Copy(v_parent, parent);
     v_parent = Value_Promote_Temp_To_Target(v_parent);
     /* ^^^ Promote # (the Box object) to a target so that it can be
@@ -692,12 +760,12 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     /* ^^^ adding # to the namespace removes all spurious error messages
      *     for parent == NULL.
      */
-    Value_Destroy(v_parent);
+    Destroy_Value(v_parent);
   }
 
   /* Invoke the opening procedure */
   if (box->parent)
-    Value_Emit_Call(parent, & c->value.begin, NULL);
+    Value_Emit_Call(parent, c->value.begin, NULL);
 
   /* Create jump-labels for If and For */
   begin_label = BoxLIR_Get_Last_Op(c->lir);
@@ -714,7 +782,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
 
     if (s->sep == BOXASTSEP_PAUSE && !parent_is_err) {
       BoxTask emit_task;
-      Value *v_pause = & c->value.pause;
+      Value *v_pause = c->value.pause;
       v_pause = Value_Emit_Call(parent, v_pause, & emit_task);
 
       if (v_pause) {
@@ -793,7 +861,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
       }
     }
 
-    Value_Destroy(stmt_val);
+    Destroy_Value(stmt_val);
   }
 
   if (need_floor_down)
@@ -811,7 +879,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
 
   /* Invoke the closing procedure */
   if (box->parent)
-    Value_Emit_Call(parent, & c->value.end, NULL);
+    Value_Emit_Call(parent, c->value.end, NULL);
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
 
@@ -838,7 +906,7 @@ Compiler::Compile_VarIdfr(BoxASTNode *node)
   if (v) {
     Push_Value(v);
   } else {
-    Value *new_v = Value_Create(c);
+    Value *new_v = Create_Value();
     Value_Setup_As_Var_Name(new_v, item_name);
     Push_Value(new_v);
   }
@@ -857,7 +925,8 @@ Compiler::Compile_Ignore(BoxASTNode *node)
   Value_Set_Ignorable(operand, BOXBOOL_TRUE);
 }
 
-void Compiler::Compile_UnTypeOp(BoxASTNode *node)
+void
+Compiler::Compile_UnTypeOp(BoxASTNode *node)
 {
   BoxASTNodeUnTypeOp *un_type_op = (BoxASTNodeUnTypeOp *) node;
   Value *v_type, *v_out_type = NULL;
@@ -890,13 +959,13 @@ void Compiler::Compile_UnTypeOp(BoxASTNode *node)
     }
 
     if (out_type) {
-      v_out_type = Value_Create(c);
+      v_out_type = Create_Value();
       Value_Setup_As_Type(v_out_type, out_type);
       (void) BoxType_Unlink(out_type);
     }
   }
 
-  Value_Destroy(v_type);
+  Destroy_Value(v_type);
   Push_Value(v_out_type);
 }
 
@@ -930,7 +999,7 @@ Compiler::Compile_UnOp(BoxASTNode *node)
       break;
     }
   } else
-    Value_Destroy(operand);
+    Destroy_Value(operand);
 
   Push_Value(v_result);
 }
@@ -976,8 +1045,8 @@ Compiler::Compile_Value_Assignment(Value *left, Value *right)
     } else {
       BoxCmp_Log_Err(c, "Invalid target for assignment (%s).",
                      ValueKind_To_Str(left->kind));
-      Value_Destroy(left);
-      Value_Destroy(right);
+      Destroy_Value(left);
+      Destroy_Value(right);
       return NULL;
     }
 
@@ -1009,7 +1078,7 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
       (void) BoxType_Unlink(ident_type);
 
       /* Return a copy of the created type. */
-      v_named_type = Value_Create(c);
+      v_named_type = Create_Value();
       Value_Setup_As_Weak_Copy(v_named_type, & v);
 
     } else if (Value_Has_Type(v_name)) {
@@ -1112,7 +1181,7 @@ Compiler::Compile_Get(BoxASTNode *node)
   }
 
   if (!Value_Want_Value(v_struc)) {
-    Value_Destroy(v_struc);
+    Destroy_Value(v_struc);
     Push_Error(1);
   }
 
@@ -1165,7 +1234,7 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
   } else {
     /* Return only a weak copy? */
     if (return_weak_copy) {
-      Value *v_copy = Value_Create(c);
+      Value *v_copy = Create_Value();
       Value_Setup_As_Weak_Copy(v_copy, v_self);
       Value_Unlink(v_self);
       v_self = v_copy;
@@ -1207,8 +1276,8 @@ Compiler::Compile_CombDef(BoxASTNode *node)
   /* Get the types from the values, and destroy the latters. */
   t_child = BoxType_Link(v_child->type);
   t_parent = BoxType_Link(v_parent->type);
-  Value_Destroy(v_child);
-  Value_Destroy(v_parent);
+  Destroy_Value(v_child);
+  Destroy_Value(v_parent);
 
   /* now get the C-name, if present */
   if (comb_def_node->c_name) {
@@ -1395,7 +1464,7 @@ Compiler::Compile_Struct_Value(BoxASTNodeCompound *compound)
   }
 
   /* create and populate the structure */
-  v_struc = Value_Create(c);
+  v_struc = Create_Value();
   Value_Setup_As_Temp(v_struc, t_struc);
 
   for(ValueStrucIter_Init(& vsi, v_struc, c);
@@ -1471,7 +1540,7 @@ Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
     return;
   }
 
-  v_struc_type = Value_Create(c);
+  v_struc_type = Create_Value();
   Value_Setup_As_Type(v_struc_type, struc_type);
   (void) BoxType_Unlink(struc_type);
   Push_Value(v_struc_type);
@@ -1505,7 +1574,7 @@ Compiler::Compile_Species_Type(BoxASTNodeCompound *compound)
     Value_Unlink(v_type);
   }
 
-  v_spec_type = Value_Create(c);
+  v_spec_type = Create_Value();
   Value_Setup_As_Type(v_spec_type, spec_type);
   (void) BoxType_Unlink(spec_type);
 

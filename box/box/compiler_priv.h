@@ -43,9 +43,15 @@ namespace Box {
     // Old compiler.
     BoxCmp *c;
 
+    /// Pool of #Value objects currently allocated by the compiler.
+    BoxArr active_values_;
+
+    /// Position in the active_value_ array at the beginning of tracking.
+    BoxArr value_pos_;
+
   public:
-    Compiler(BoxCmp *old_compiler) : c(old_compiler) {}
-    ~Compiler() {}
+    Compiler(BoxCmp *old_compiler);
+    ~Compiler();
 
     /**
      * @brief Compile from the given abstract syntax tree.
@@ -53,6 +59,16 @@ namespace Box {
      * @return Whether it is safe to execute the compiled code.
      */
     bool Compile(BoxAST *ast);
+
+    // Value maniputation (implemented in value.cc).
+    Value *Create_Value();
+    Value *Destroy_Value(Value *v);
+
+    // Leak check functions.
+    void Begin_Leak_Check();
+    int End_Leak_Check();
+    Value *Track_Value(Value *v);
+    Value *Untrack_Value(Value *v);
 
   private:
     /**
@@ -87,9 +103,12 @@ namespace Box {
      */
     Value *Pop_Value();
 
+    /**
+     * @brief Get a value from the compiler stack.
+     */
     Value *Get_Value(int pos);
 
-    // Support methods for the AST node methods.
+    // Support for the AST node compilation.
     void Compile_Any(BoxASTNode *node);
     void Compile_Subtype_Value(BoxASTNodeSubtype *node);
     void Compile_Subtype_Type(BoxASTNodeSubtype *node);
@@ -131,28 +150,25 @@ struct BoxCmp_struct {
              bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
              un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
   struct {
-    Value      error,     /**< Error value */
-               void_val,  /**< Void value */
-               create,    /**< Value for BOXTYPE_CREATE */
-               destroy,   /**< Value for BOXTYPE_DESTROY */
-               begin,     /**< Value for BOXTYPE_BEGIN */
-               end,       /**< Value for BOXTYPE_END */
-               pause;     /**< Value for BOXTYPE_PAUSE */
-  } value;                /**< Bunch of values, which we do not want
+    Value    *create,   /**< Value for BOXTYPE_CREATE */
+             *begin,    /**< Value for BOXTYPE_BEGIN */
+             *end,      /**< Value for BOXTYPE_END */
+             *pause;    /**< Value for BOXTYPE_PAUSE */
+  }          value;     /**< Bunch of values, which we do not want
                              to allocate again and again (just to make the
                              compiler a little bit faster and memory
                              efficient). */
   struct {
-    BoxCont    pass_child,/**< Container used to pass child to procedures */
-               pass_parent;
+    BoxCont  pass_child,  /**< Container used to pass child to procedures */
+             pass_parent;
                           /**< Container used to pass parent to procedures */
   }          cont;        /**< Constant containers (allocated once for all
                                just for efficiency) */
   struct {
     unsigned int
-               own_vm :1,  /**< Do we own the VM? */
-               is_sane :1; /**< Is the output of compilation sane? */
-  }          attr;      /**< Attributes of the compiler */
+             own_vm :1,   /**< Do we own the VM? */
+             is_sane :1;  /**< Is the output of compilation sane? */
+  }          attr;        /**< Attributes of the compiler */
 };
 
 BOX_BEGIN_DECLS

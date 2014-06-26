@@ -29,6 +29,8 @@
 #include "value.h"
 #include "combs.h"
 
+#include "compiler_priv.h"
+
 typedef struct {
   NmspItem *first_item;
 } NmspFloorData;
@@ -92,8 +94,11 @@ My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item)
 {
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
-    Value_Force_Destroy((Value *) item->data);
-    return;
+    {
+      Value *v = (Value *) item->data;
+      Value_Force_Destroy(v->proc->cmp->compiler->Track_Value(v));
+      return;
+    }
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
@@ -170,11 +175,12 @@ Value *
 Namespace_Add_Value(Namespace *ns, NmspFloor floor,
                     const char *item_name, Value *v)
 {
+  BoxCmp *c = v->proc->cmp;
   NmspItem *new_item = Namespace_Add_Item(ns, floor, item_name);
-  Value *new_value = Value_Create(v->proc->cmp);
+  Value *new_value = c->compiler->Untrack_Value(Value_Create(v->proc->cmp));
   assert(new_item && new_value);
 
-  Value_Move(v->proc->cmp, new_value, v);
+  Value_Move(c, new_value, v);
   new_item->type = NMSPITEMTYPE_VALUE;
   new_item->data = new_value;
   return Value_Setup_As_Weak_Copy(Value_Create(new_value->proc->cmp),

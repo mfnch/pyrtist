@@ -77,16 +77,6 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                             const char *setup_file_name,
                             BoxPaths *paths, BoxLogger *logger);
 
-/**
- * @brief Compile from the give abstract syntax tree.
- *
- * @param c Compiler to use.
- * @param program Abstract syntax tree of the program to compile.
- * @return Whether it is safe to execute the compiled code.
- */
-BOXEXPORT BoxBool
-BoxCmp_Compile(BoxCmp *c, BoxAST *ast);
-
 BOX_END_DECLS
 
 #endif /* _BOX_COMPILER_H */

@@ -34,6 +34,36 @@
 // FIXME: temporary macro to easy the removal of reference counts for Value.
 #define VALUE_REF_IS_ONE(v) (!(v)->attr.read_only)
 
+namespace Box {
+
+Value *
+Compiler::Create_Value()
+{
+  Value *v = (Value *) Box_Mem_Safe_Alloc(sizeof(Value));
+  Value_Init(v, c);
+  v->attr.new_or_init = 1;
+  Track_Value(v);
+  return v;
+}
+
+Value *
+Compiler::Destroy_Value(Value *v)
+{
+  if (!v || v->attr.read_only)
+    return NULL;
+
+  Value_Finish(v);
+  if (v->attr.new_or_init) {
+    Untrack_Value(v);
+    Box_Mem_Free(v);
+    return NULL;
+  }
+
+  return v;
+}
+
+}
+
 Value *
 Value_Init(Value *v, BoxCmp *c)
 {
@@ -48,28 +78,10 @@ Value_Init(Value *v, BoxCmp *c)
   return v;
 }
 
-static int num_values_created = 0;
-static int num_values_destroyed = 0;
-
-void
-Value_Stats(void)
-{
-  printf("Num Value created/destroyed = %d/%d\n",
-         num_values_created, num_values_destroyed);
-  printf("Bytes allocated/freed/lost = %lu/%lu/%ld\n",
-         sizeof(Value)*num_values_created,
-         sizeof(Value)*num_values_destroyed,
-         sizeof(Value)*(num_values_created - num_values_destroyed));
-}
-
 Value *
 Value_Create(BoxCmp *c)
 {
-  Value *v = (Value *) Box_Mem_Safe_Alloc(sizeof(Value));
-  Value_Init(v, c);
-  v->attr.new_or_init = 1;
-  num_values_created++;
-  return v;
+  return c->compiler->Create_Value();
 }
 
 Value *
@@ -124,17 +136,7 @@ Value_Force_Finish(Value *v);
 Value *
 Value_Destroy(Value *v)
 {
-  if (!v || v->attr.read_only)
-    return NULL;
-
-  Value_Finish(v);
-  if (v->attr.new_or_init) {
-    num_values_destroyed++;
-    Box_Mem_Free(v);
-    return NULL;
-  }
-
-  return v;
+  return v->proc->cmp->compiler->Destroy_Value(v);
 }
 
 extern inline Value *
@@ -263,8 +265,10 @@ int Value_Want_Has_Type(Value *v) {
 Value *
 Value_Setup_As_Weak_Copy(Value *v_copy, Value *v)
 {
-  *v_copy = *v;
+  v_copy->proc = v->proc;
+  v_copy->kind = v->kind;
   v_copy->type = BoxType_Link(v->type);
+  v_copy->cont = v->cont;
   v_copy->name = (v->name == NULL) ? NULL : Box_Mem_Strdup(v->name);
   v_copy->attr.own_register = 0;
   v_copy->attr.ignore = 0;
