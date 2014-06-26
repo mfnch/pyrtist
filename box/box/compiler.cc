@@ -155,8 +155,6 @@ void BoxCmp_Finish(BoxCmp *c)
   if (!c)
     return;
 
-  delete c->compiler;
-
   if (BoxArr_Num_Items(& c->stack) != 0)
     BoxCmp_Log_Warn(c, "BoxCmp_Finish: stack is not empty at destruction");
 
@@ -171,6 +169,8 @@ void BoxCmp_Finish(BoxCmp *c)
 
   if (c->attr.own_vm)
     BoxVM_Destroy(c->vm);
+
+  delete c->compiler;
 }
 
 BoxCmp *BoxCmp_Create(BoxVM *target_vm)
@@ -468,7 +468,7 @@ Compiler::Compile_Any(BoxASTNode *node)
 #undef BOXASTNODE_DEF
 
   int num_leaks = End_Leak_Check();
-  if (num_leaks != 0)
+  if (true && num_leaks != 0)
     BoxCmp_Log_Warn(c, "%d Value objects leaked in node %s",
                     num_leaks, BoxASTNodeType_To_Str(node_type));
 
@@ -1063,11 +1063,12 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
   Value *v_named_type = NULL;
 
   if (Value_Want_Has_Type(v_type)) {
+    BoxType *t_type = BoxType_Link(v_type->type);
+
     if (Value_Is_Type_Name(v_name)) {
-      Value v;
       /* Create the new identity type. */
-      BoxType *ident_type =
-        BoxType_Create_Ident(BoxType_Link(v_type->type), v_name->name);
+      Value v;
+      BoxType *ident_type = BoxType_Create_Ident(t_type, v_name->name);
 
       /* Register the type in the proper namespace. */
       Value_Init(& v, c);
@@ -1077,9 +1078,9 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
       Value_Finish(& v);
       (void) BoxType_Unlink(ident_type);
 
-      /* Return a copy of the created type. */
-      v_named_type = Create_Value();
-      Value_Setup_As_Weak_Copy(v_named_type, & v);
+      Destroy_Value(v_type);
+      Destroy_Value(v_name);
+      return v_named_type;
 
     } else if (Value_Has_Type(v_name)) {
       BoxType *t = v_name->type;
@@ -1103,14 +1104,13 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
                        v_name->type);
       }
 
-      v_named_type = v_type;
-      Value_Link(v_type);
+      Destroy_Value(v_name);
+      return v_type;
     }
   }
 
-  Value_Unlink(v_type);
-  Value_Unlink(v_name);
-
+  Value_Destroy(v_type);
+  Value_Destroy(v_name);
   return v_named_type;
 }
 
@@ -1137,10 +1137,11 @@ Compiler::Compile_BinOp(BoxASTNode *node)
     op = bin_op_node->op;
     if (op == BOXASTBINOP_ASSIGN) {
       if (BoxASTNode_Is_Type(bin_op_node->lhs)
-          && BoxASTNode_Is_Type(bin_op_node->rhs))
+          && BoxASTNode_Is_Type(bin_op_node->rhs)) {
         result = Compile_Type_Assignment(left, right);
-      else
+      } else {
         result = Compile_Value_Assignment(left, right);
+      }
     } else {
       if (Value_Want_Value(left) & Value_Want_Value(right))
         /* NOTE: ^^^ We use & rather than &&*/
@@ -1200,7 +1201,8 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
   Value *v_self = NULL;
   const char *n_self = NULL;
   ASTSelfLevel self_level = ((BoxASTNodeArgGet *) node)->depth;
-  int i, promote_to_target = 0, return_weak_copy = 0;
+  bool promote_to_target = false, return_weak_copy = false;
+  int i;
 
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_ARG_GET);
 
@@ -1208,15 +1210,14 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
   case 1:
     n_self = "$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$");
-    return_weak_copy = 1;
+    return_weak_copy = true;
     break;
 
   case 2:
     n_self = "$$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
-//     v_self = Value_Subtype_Get_Child(v_self); /* WARNING remove that later */
-    promote_to_target = 1;
-    return_weak_copy = 1;
+    promote_to_target = true;
+    return_weak_copy = true;
     break;
 
   default:
@@ -1225,8 +1226,8 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
     for (i = 2; i < self_level && v_self; i++)
       v_self = Value_Subtype_Get_Parent(v_self);
       /* FIXME: see Value_Init */
-    promote_to_target = 1;
-    return_weak_copy = 0;
+    promote_to_target = true;
+    return_weak_copy = false;
   }
 
   if (!v_self) {
@@ -1392,8 +1393,7 @@ Compiler::Compile_CombDef(BoxASTNode *node)
 
     Compile_Box_Generic(n_implem, t_child, t_parent);
     v_implem = Pop_Value();
-    /* NOTE: we should double check that this is void! */
-    Value_Unlink(v_implem);
+    //Destroy_Value(v_implem);
 
     c->cur_proc = save_cur_proc;
 

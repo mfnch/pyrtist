@@ -70,6 +70,10 @@ namespace Box {
     Value *Track_Value(Value *v);
     Value *Untrack_Value(Value *v);
 
+    // Value manipulation functionality.
+    Value *Value_To_Straight_Ptr(Value *v_obj);
+    BoxTask Value_Move_Content(Value *dest, Value *src);
+
   private:
     /**
      * @brief Remove items from the compiler stack.

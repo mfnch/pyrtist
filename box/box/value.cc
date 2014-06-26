@@ -944,7 +944,7 @@ Value_Emit_Call(Value *parent, Value *child, BoxTask *success)
   }
 
   *success = BOXTASK_ERROR;
-  Value_Unlink(child);
+  //Value_Destroy(child);
   return NULL;
 }
 
@@ -1064,10 +1064,14 @@ Value *Value_Cast_To_Ptr(Value *v) {
   }
 }
 
+namespace Box {
+
 /*
- * REFERENCES: return: new, v_obj: -1;
+ * @note Destroy the given value and return a new one.
  */
-Value *Value_To_Straight_Ptr(Value *v_obj) {
+Value *
+Compiler::Value_To_Straight_Ptr(Value *v_obj)
+{
   assert(v_obj->cont.type == BOXTYPEID_OBJ);
 
   if (v_obj->cont.categ == BOXCONTCATEG_PTR) {
@@ -1075,10 +1079,9 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value *v_ret;
     BoxCont cont = v_obj->cont;
     BoxType *t = BoxType_Link(v_obj->type);
-    BoxCmp *c = v_obj->proc->cmp;
 
-    Value_Unlink(v_obj);
-    v_ret = Value_Create(c);
+    //Value_Destroy(v_obj);
+    v_ret = Create_Value();
     Value_Setup_Container(v_ret, t, & vc);
     (void) BoxType_Unlink(t);
 
@@ -1089,6 +1092,8 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
   }
 
   return v_obj;
+}
+
 }
 
 /**
@@ -1272,11 +1277,14 @@ void ValueStrucIter_Destroy(ValueStrucIter *vsi) {
   Box_Mem_Free(vsi);
 }
 
+namespace Box {
+
 /*
  * REFERENCES: src: -1, dest: 0;
  */
-BoxTask Value_Move_Content(Value *dest, Value *src) {
-  BoxCmp *c = src->proc->cmp;
+BoxTask
+Compiler::Value_Move_Content(Value *dest, Value *src)
+{
   BoxTypeCmp match = BoxType_Compare(dest->type, src->type);
   if (match == BOXTYPECMP_DIFFERENT) {
     BoxCmp_Log_Err(c, "Cannot move objects of type '%T' into objects of type "
@@ -1294,8 +1302,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
      * through "lea ro3, o[ro2 + 4]"
      */
     Value_Link(dest);
-    src = Value_To_Straight_Ptr(src);
-    dest = Value_To_Straight_Ptr(dest);
+    src = c->compiler->Value_To_Straight_Ptr(src);
+    dest = c->compiler->Value_To_Straight_Ptr(dest);
 
     /* We try to use the method provided by the user, if possible */
     Value_Link(src);
@@ -1341,6 +1349,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   return BOXTASK_OK;
 }
 
+}
+
 BoxTask
 Value_Assign(BoxCmp *c, Value *dst, Value *src)
 {
@@ -1373,7 +1383,7 @@ Value_Assign(BoxCmp *c, Value *dst, Value *src)
 
   /* Otherwise go for a full copy of the object. */
   BoxValue_Emit_Allocate(dst);
-  return Value_Move_Content(dst, src);
+  return c->compiler->Value_Move_Content(dst, src);
 }
 
 /** Emits the conversion from the source expression 'v', to the given type 't'
@@ -1478,7 +1488,8 @@ Value_Expand(Value *src, BoxType *t_dst) {
              ValueStrucIter_Do_Next(& dst_iter),
                ValueStrucIter_Do_Next(& src_iter)) {
           Value_Link(& src_iter.v_member);
-          Value_Move_Content(& dst_iter.v_member, & src_iter.v_member);
+          c->compiler->Value_Move_Content(& dst_iter.v_member,
+                                          & src_iter.v_member);
         }
 
         assert(dst_iter.has_next == src_iter.has_next);
@@ -1651,8 +1662,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
     v_ptr = Value_Get_Subfield(c, v_ptr, /* offset */ 0,
                                Box_Get_Core_Type(BOXTYPEID_PTR));
-    (void) Value_Move_Content(v_ptr, v_subtype_child);
-    Value_Unlink(v_ptr);
+    c->compiler->Value_Move_Content(v_ptr, v_subtype_child);
+    //Value_Destroy(v_ptr);
   }
 
   /* We now create the value for the parent Pointer in the subtype */
@@ -1664,11 +1675,11 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
                                Box_Get_Core_Type(BOXTYPEID_PTR));
     Value_Setup_As_Weak_Copy(v_subtype_parent, v_parent);
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
-    (void) Value_Move_Content(v_ptr, v_subtype_parent);
-    Value_Unlink(v_ptr);
+    c->compiler->Value_Move_Content(v_ptr, v_subtype_parent);
+    //Value_Destroy(v_ptr);
   }
 
-  Value_Unlink(v_parent);
+  //Value_Destroy(v_parent);
 
   return v_subtype;
 }
