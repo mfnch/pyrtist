@@ -63,6 +63,7 @@ namespace Box {
     // Value maniputation (implemented in value.cc).
     Value *Create_Value();
     Value *Destroy_Value(Value *v);
+    Value *Weak_Copy_Value(Value *v_src);
 
     // Leak check functions.
     void Begin_Leak_Check();
@@ -70,9 +71,22 @@ namespace Box {
     Value *Track_Value(Value *v);
     Value *Untrack_Value(Value *v);
 
-    // Value manipulation functionality.
+    // Value manipulation functionality (value.cc).
+    void Emit_Value_Alloc(Value *v);
+    Value *Emit_Value_Cast(Value *v_ptr, BoxType *t);
+    BoxTask Value_Emit_Call(Value *parent, BoxTypeId tid_child);
+    BoxTask Value_Emit_Call(Value *parent, Value *child);
     Value *Value_To_Straight_Ptr(Value *v_obj);
-    BoxTask Value_Move_Content(Value *dest, Value *src);
+    Value *Emit_Struc_Member_Get(Value *v_src, const char *memb);
+    Value *Emit_Reduce_Ptr_Offset(Value *v_obj);
+    Value *Emit_Value_Move(Value *v_dst, Value *v_src);
+    Value *Emit_Value_Assignment(Value *v_dst, Value *v_src);
+    Value *Emit_Value_Expansion(Value *src, BoxType *t_dst);
+    Value *Emit_Get_Subtype_Child(Value *v_subtype);
+    Value *Emit_Subtype_Expansion(Value *v_src);
+
+    // Operator functionality (operator.cc).
+    Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
 
   private:
     /**
@@ -153,15 +167,6 @@ struct BoxCmp_struct {
   Operator   convert,   /**< Conversion operator */
              bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
              un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
-  struct {
-    Value    *create,   /**< Value for BOXTYPE_CREATE */
-             *begin,    /**< Value for BOXTYPE_BEGIN */
-             *end,      /**< Value for BOXTYPE_END */
-             *pause;    /**< Value for BOXTYPE_PAUSE */
-  }          value;     /**< Bunch of values, which we do not want
-                             to allocate again and again (just to make the
-                             compiler a little bit faster and memory
-                             efficient). */
   struct {
     BoxCont  pass_child,  /**< Container used to pass child to procedures */
              pass_parent;

@@ -367,12 +367,7 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
  * NULL.
  * REFERENCES: return: new, parent: 0, child: -1;
  */
-Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success);
-
-/** Cast a generic pointer (type BOXTYPEID_PTR) to the given type.
- * REFERENCES: return: new, v_ptr: -1;
- */
-Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *type);
+BoxTask Value_Emit_Call(Value *parent, Value *child);
 
 /**
  * @brief Object used to iterate over the member of a structure.
@@ -438,11 +433,6 @@ void ValueStrucIter_Destroy(ValueStrucIter *vsi);
  */
 Value *
 Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb);
-
-/**
- * REFERENCES: dest: 0, src: -1;
- */
-BoxTask Value_Move_Content(Value *dest, Value *src);
 
 /**
  * @brief Assign a value to a variable.

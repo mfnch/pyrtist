@@ -175,8 +175,8 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     Operator *opr = (Operator *) BoxCmp_UnOp_Get(c, un_op);
     Operator_Init(opr, c, BoxASTUnOp_To_String(un_op));
     OprAttr attr = (OprAttr) (OPR_ATTR_NATIVE |
-			      (BoxASTUnOp_Is_Right(un_op) ?
-			       OPR_ATTR_UN_RIGHT : 0));
+                              (BoxASTUnOp_Is_Right(un_op) ?
+                               OPR_ATTR_UN_RIGHT : 0));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
   }
 
@@ -185,7 +185,7 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     Operator *opr = BoxCmp_BinOp_Get(c, un_op);
     Operator_Init(opr, c, BoxASTBinOp_To_String(un_op));
     Operator_Attr_Set(opr, OPR_ATTR_ALL,
-		      (OprAttr) (OPR_ATTR_BINARY | OPR_ATTR_NATIVE));
+                      (OprAttr) (OPR_ATTR_BINARY | OPR_ATTR_NATIVE));
   }
 
   Operator_Init(& c->convert, c, "(->)");
@@ -313,15 +313,14 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
   case OPASMSCHEME_STD_BIN:
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
     if (opn->attr & OPR_ATTR_ASSIGNMENT) {
-      if (Value_Is_Target(v_left))
-        Value_Link(v_left);
-
-      else {
-        MSG_ERROR("Binary operator '%s' cannot modify its left operand (%s)",
-                  opn->opr->name, ValueKind_To_Str(v_left->kind));
+      if (!Value_Is_Target(v_left)) {
+        Value_Destroy(v_left);
+        Value_Destroy(v_right);
+        BoxCmp_Log_Err(c, "Binary operator '%s' cannot modify its left "
+                       "operand (%s)", opn->opr->name,
+                       ValueKind_To_Str(v_left->kind));
         return NULL;
       }
-
     } else {
       /* If the operation is commutative and v_left is not an intermediate
        * value, then we check if the v_right is a temporary value.
@@ -342,6 +341,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
     result = v_left;
+    Value_Destroy(v_right);
     break;
 
   case OPASMSCHEME_R_LR_BIN:
@@ -354,8 +354,8 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
       Value_To_Temp_Or_Target(c, v_right, v_right);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                         3, & result->cont, & v_left->cont, & v_right->cont);
-      Value_Unlink(v_left);
-      Value_Unlink(v_right);
+      Value_Destroy(v_left);
+      Value_Destroy(v_right);
       return result;
     }
 
@@ -368,18 +368,14 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
     }
 
     Value_To_Temp(c, v_left, v_left);
-
-    result = Value_Create(c);
-    Value_Setup_As_Temp(result, opn->type_result);
-
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
-
+    Value_Destroy(v_right);
     result = v_left;
     break;
 
   default:
-    MSG_FATAL("Non-native operators are not supported, yet!");
+    BoxCmp_Log_Fatal(c, "Non-native operators are not supported, yet!");
     abort();
   }
 
@@ -399,26 +395,26 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
-  v = Value_Expand_Subtype(v);
+  v = c->compiler->Emit_Subtype_Expansion(v);
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v->type, NULL, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == BOXTYPECMP_MATCHING)
-      v = Value_Expand(v, match.expand_type_left);
+      v = c->compiler->Emit_Value_Expansion(v, match.expand_type_left);
 
     v_result = My_Opn_Emit(c, opn, v, v);
 
   } else {
     if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
-      MSG_ERROR("%~s%s <-- Operation has not been defined!",
-                BoxType_Get_Repr(v->type), opr->name);
+      BoxCmp_Log_Err(c, "%~s%s <-- Operation has not been defined!",
+                     BoxType_Get_Repr(v->type), opr->name);
       return NULL;
 
     } else {
-      MSG_ERROR("%s%~s <-- Operation has not been defined!",
-                opr->name, BoxType_Get_Repr(v->type));
+      BoxCmp_Log_Err(c, "%s%~s <-- Operation has not been defined!",
+                     opr->name, BoxType_Get_Repr(v->type));
     }
   }
 
@@ -426,12 +422,15 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
   return v_result;
 }
 
-/** Compiles an operation between the two expression e1 and e2, where
+namespace Box {
+/**
+ * Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
- * REFERENCES: return: new, v_left: -1, v_right: -1;
+ * @note Destroy @p v_left, @p v_right and return a new Value.
  */
-Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
-                             Value *v_left, Value *v_right) {
+Value *
+Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
+{
   Operator *opr = BoxCmp_BinOp_Get(c, op);
   Operation *opn;
   OprMatch match;
@@ -440,8 +439,8 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
-  v_left = Value_Expand_Subtype(v_left);
-  v_right = Value_Expand_Subtype(v_right);
+  v_left = Emit_Subtype_Expansion(v_left);
+  v_right = Emit_Subtype_Expansion(v_right);
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v_left->type,
@@ -449,23 +448,24 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
   if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == BOXTYPECMP_MATCHING)
-      v_left = Value_Expand(v_left, match.expand_type_left);
+      v_left = Emit_Value_Expansion(v_left, match.expand_type_left);
 
     if (match.match_right == BOXTYPECMP_MATCHING)
-      v_right = Value_Expand(v_right, match.expand_type_right);
+      v_right = Emit_Value_Expansion(v_right, match.expand_type_right);
 
-    /* XXX */
     v_result = My_Opn_Emit(c, opn, v_left, v_right);
 
   } else {
-    MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
-              BoxType_Get_Repr(v_left->type), opr->name,
-              BoxType_Get_Repr(v_right->type));
-  }
+    BoxCmp_Log_Err(c, "%~s %s %~s <-- Operation has not been defined!",
+                   BoxType_Get_Repr(v_left->type), opr->name,
+                   BoxType_Get_Repr(v_right->type));
+    Value_Destroy(v_left);
+    Value_Destroy(v_right);
+ }
 
-  Value_Unlink(v_left);
-  Value_Unlink(v_right);
   return v_result;
+}
+
 }
 
 /** Map an object 'src' to an object 'dest' with (possibly) different type.
@@ -489,7 +489,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
   if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == BOXTYPECMP_MATCHING)
-      src = Value_Expand(src, match.expand_type_left);
+      src = c->compiler->Emit_Value_Expansion(src, match.expand_type_left);
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode,

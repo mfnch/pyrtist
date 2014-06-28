@@ -83,7 +83,7 @@ Curve@Path[
        Obj[const.raw.curve_to, prev_tri.pout, tri.pin, tri.p]
        prev_tri = tri
      i += 1, For[1]]
-   
+
      [If[$.close]
        Obj[const.raw.curve_to, prev_tri.pout, first_tri.pin, first_tri.p]]
      $$.empty = 0
