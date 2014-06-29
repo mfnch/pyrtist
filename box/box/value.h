@@ -116,16 +116,6 @@ Value_Destroy(Value *v);
 Value *
 Value_Move(BoxCmp *c, Value *dst, Value *src);
 
-/** Remove one reference to the Value object 'v', destroying it if there are
- * no more reference to the Value. The object is destroyed coherently to how
- * it was created (Value_Create or Value_Init). If Value_Create was used, then
- * the object is freed. If Value_Init was used free() is not called.
- */
-void Value_Unlink(Value *v);
-
-/** Add a reference to the specified Value. */
-void Value_Link(Value *v);
-
 /** Determine if the given value can be recycled, otherwise return
  * Value_Create()
  */

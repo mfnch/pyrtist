@@ -176,12 +176,6 @@ Value_Steal_Name(Value *src)
   return name;
 }
 
-void Value_Unlink(Value *v) {
-}
-
-void Value_Link(Value *v) {
-}
-
 Value *
 Value_Recycle(Value *v)
 {
@@ -535,9 +529,6 @@ void Value_Emit_Link(Value *v) {
   }
 }
 
-/* Doesn't unlink v, since the function is called by Value_Unlink in the
- * finalisation.
- */
 void Value_Emit_Unlink(Value *v) {
   BoxTypeId cont_type = v->cont.type;
   if (cont_type == BOXTYPEID_OBJ || cont_type == BOXTYPEID_PTR) {
@@ -558,7 +549,6 @@ Value_Emit_CJump(Value *v)
   BoxCont_Set(& ri0_cont, "ri", 0);
   BoxLIR_Append_GOp(c->lir, BOXGOP_MOV, 2, & ri0_cont, & v->cont);
   ret = BoxLIR_Append_Op_Branch(c->lir, BOXOP_JC_I, NULL);
-  Value_Unlink(v);
   return (BoxLIRNodeOpBranch *) ret;
 }
 
@@ -1299,7 +1289,7 @@ ValueStrucIter_Do_Next(ValueStrucIter *vsi)
 void
 ValueStrucIter_Finish(ValueStrucIter *vsi)
 {
-  Value_Unlink(& vsi->v_member);
+  Value_Finish(& vsi->v_member);
 }
 
 ValueStrucIter *
@@ -1345,21 +1335,22 @@ Compiler::Emit_Value_Move(Value *v_dst, Value *v_src)
     v_dst = Emit_Reduce_Ptr_Offset(v_dst);
 
     // We try to use the method provided by the user, if possible.
-    if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dst, v_src) != BOXTASK_OK) {
-      // OK, we couldn't find a user defined conversion.
-      // We leave the copy operation to the Box memory management system.
-      BoxTypeId type_id = BoxVM_Install_Type(c->vm, v_src->type);
-      Value v_type_id;
-      BoxCont ri0;
-      Value_Init(& v_type_id, c);
-      Value_Setup_As_Imm_Int(& v_type_id, type_id);
-      BoxCont_Set(& ri0, "ri", 0);
-      BoxLIR_Append_GOp(c->lir, BOXGOP_TYPEOF,
-                        2, & ri0, & v_type_id.cont);
-      BoxLIR_Append_GOp(c->lir, BOXGOP_RELOC,
-                        3, & v_dst->cont, & v_src->cont, & ri0);
-      Value_Finish(& v_type_id);
-    }
+    if (Try_Emit_Conversion(v_dst, v_src))
+      return v_dst;
+
+    // OK, we couldn't find a user defined conversion.
+    // We leave the copy operation to the Box memory management system.
+    BoxTypeId type_id = BoxVM_Install_Type(c->vm, v_src->type);
+    Value v_type_id;
+    BoxCont ri0;
+    Value_Init(& v_type_id, c);
+    Value_Setup_As_Imm_Int(& v_type_id, type_id);
+    BoxCont_Set(& ri0, "ri", 0);
+    BoxLIR_Append_GOp(c->lir, BOXGOP_TYPEOF,
+                      2, & ri0, & v_type_id.cont);
+    BoxLIR_Append_GOp(c->lir, BOXGOP_RELOC,
+                      3, & v_dst->cont, & v_src->cont, & ri0);
+    Value_Finish(& v_type_id);
 
   } else if (v_dst->cont.type == BOXTYPEID_PTR) {
     /* For pointers we need to pay special care: reference counts! */
@@ -1424,16 +1415,15 @@ My_Expand_Species(BoxCmp *c, Value *v_src, BoxType *t_dst)
   Value *v_dst = Value_Create(c);
   Value_Setup_As_Temp(v_dst, t_dst);
 
-  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dst, v_src) == BOXTASK_OK) {
-    Value_Destroy(v_src);
+  if (c->compiler->Try_Emit_Conversion(v_dst, v_src))
     return v_dst;
-  }
 
   if (c->compiler->Value_Emit_Call(v_dst, v_src) == BOXTASK_OK)
     return v_dst;
 
   BoxCmp_Log_Err(c, "Don't know how to convert objects of type %T to %T.",
                  v_src->type, t_dst);
+  Value_Destroy(v_src);
   return v_dst;
 }
 
@@ -1459,7 +1449,7 @@ Compiler::Emit_Value_Expansion(Value *v_src, BoxType *t_dst)
 
   switch (BoxType_Get_Class(t_dst)) {
   case BOXTYPECLASS_INTRINSIC:
-    BoxCmp_Log_Fatal(c, "Type forbidden in species conversions.");
+    LOG_FATAL("Type forbidden in species conversions.");
     abort();
 
   case BOXTYPECLASS_SPECIES:
@@ -1476,8 +1466,7 @@ Compiler::Emit_Value_Expansion(Value *v_src, BoxType *t_dst)
         }
       }
 
-      BoxCmp_Log_Fatal(c, "type '%T' is not compatible with '%T'.",
-                       t_src, t_dst);
+      LOG_FATAL("type '%T' is not compatible with '%T'.", t_src, t_dst);
       abort();
     }
 
@@ -1487,7 +1476,7 @@ Compiler::Emit_Value_Expansion(Value *v_src, BoxType *t_dst)
 
       /* We check that the comparison can actually be done */
       if (comparison == BOXTYPECMP_DIFFERENT) {
-        BoxCmp_Log_Fatal(c, "Expansion involves incompatible types!");
+        LOG_FATAL("Expansion involves incompatible types!");
         abort();
       }
 
@@ -1511,7 +1500,7 @@ Compiler::Emit_Value_Expansion(Value *v_src, BoxType *t_dst)
 
         assert(dst_iter.has_next == src_iter.has_next);
 
-        Value_Unlink(v_src);
+        Value_Destroy(v_src);
         ValueStrucIter_Finish(& dst_iter);
         ValueStrucIter_Finish(& src_iter);
         return v_dst;
@@ -1571,7 +1560,7 @@ Compiler::Emit_Value_Expansion(Value *v_src, BoxType *t_dst)
     }
 
   default:
-    BoxCmp_Log_Fatal(c, "Emit_Value_Expansion not fully implemented!");
+    LOG_FATAL("Emit_Value_Expansion not fully implemented!");
     abort();
   }
 
@@ -1820,7 +1809,9 @@ Compiler::Emit_Subtype_Expansion(Value *v_src)
 
 }
 
-Value *Value_Raise(Value *v) {
+Value *
+Value_Raise(Value *v)
+{
   if (Value_Is_Value(v)) {
     BoxType *t = BoxType_Resolve(v->type, BOXTYPERESOLVE_IDENT, 0);
     BoxType *unraised_type = BoxType_Unraise(t);
@@ -1831,12 +1822,12 @@ Value *Value_Raise(Value *v) {
     } else {
       BoxCmp_Log_Err(v->proc->cmp, "Raising operator is applied to a "
                      "non-raised type.");
-      Value_Unlink(v);
+      Value_Destroy(v);
       return NULL;
     }
   } else {
     BoxCmp_Log_Err(v->proc->cmp, "Raising operator got invalid operand.");
-    Value_Unlink(v);
+    Value_Destroy(v);
     return NULL;
   }
 }

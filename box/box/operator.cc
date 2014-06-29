@@ -286,7 +286,6 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
                   opn->opr->name, ValueKind_To_Str(v_left->kind));
         return NULL;
       }
-      Value_Link(v_left);
     }
 
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
@@ -418,7 +417,6 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
     }
   }
 
-  Value_Unlink(v);
   return v_result;
 }
 
@@ -466,70 +464,39 @@ Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
   return v_result;
 }
 
-}
-
-/** Map an object 'src' to an object 'dest' with (possibly) different type.
- * REFERENCES: return: new, dest: -1, src: -1;
+/**
+ * @brief Convert a given object to an object with (possibly) different type.
+ * @note Destroy @p v_src, but only when @c true is returned.
  */
-BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
+bool
+Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
+{
   Operation *opn;
   OprMatch match;
 
-#if 0
-  /* Subtypes cannot be used for operator overloading, so we expand
-   * them anyway!
-   */
-  Expr_Resolve_Subtype(v);
-#endif
-
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
-                                 src->type, NULL, dest->type);
+                                 v_src->type, NULL, v_dst->type);
 
-  if (opn) {
-    /* Now we expand the types, if necessary */
-    if (match.match_left == BOXTYPECMP_MATCHING)
-      src = c->compiler->Emit_Value_Expansion(src, match.expand_type_left);
+  if (!opn)
+    return false;
 
-    if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
-      BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                        2, & dest->cont, & src->cont);
-      Value_Unlink(src);
-      Value_Unlink(dest);
-      return BOXTASK_OK;
+  /* Now we expand the types, if necessary */
+  if (match.match_left == BOXTYPECMP_MATCHING)
+    v_src = c->compiler->Emit_Value_Expansion(v_src, match.expand_type_left);
 
-    } else if (opn->asm_scheme == OPASMSCHEME_USR_UN) {
-      Value_Emit_Call_From_Call_Num(opn->implem.call_num, dest, src);
-      Value_Unlink(src);
-      Value_Unlink(dest);
-      return BOXTASK_OK;
-
-    } else {
-      MSG_FATAL("BoxCmp_Opr_Emit_Conversion: unexpected asm-scheme!");
-      assert(0);
-    }
-
-  } else {
-    Value_Unlink(src);
-    Value_Unlink(dest);
-    return BOXTASK_FAILURE;
+  if (opn->asm_scheme == OPASMSCHEME_STD_UN)
+    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
+                      2, & v_dst->cont, & v_src->cont);
+  else if (opn->asm_scheme == OPASMSCHEME_USR_UN)
+    Value_Emit_Call_From_Call_Num(opn->implem.call_num, v_dst, v_src);
+  else {
+    LOG_FATAL("Try_Emit_Conversion: unexpected asm-scheme!");
+    abort();
   }
+
+  Value_Destroy(v_src);
+  return true;
 }
 
-/** Emits the conversion from the source expression 'v', to the given type 't'
- * REFERENCES: return: new, src: -1;
- */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType *t_dest) {
-  Value *v_dest = Value_Create(c);
-  Value_Setup_As_Temp(v_dest, t_dest);
-  Value_Link(v_dest); /* We want to return a new reference! */
-  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
-    return v_dest;
-
-  else {
-    MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-              BoxType_Get_Repr(src->type), BoxType_Get_Repr(t_dest));
-    Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
-    return NULL;
-  }
 }

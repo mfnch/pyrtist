@@ -60,6 +60,19 @@ namespace Box {
      */
     bool Compile(BoxAST *ast);
 
+    /**
+     * @brief Submit a compiler message (error, warning, etc).
+     */
+    void Log(BoxLogLevel level, const char *fmt, ...);
+
+    // Shorthands for submitting warning/error messages to the compiler.
+#   define LOG_WARN(...) \
+      Log(BOXLOGLEVEL_WARNING, __VA_ARGS__)
+#   define LOG_ERR(...) \
+      Log(BOXLOGLEVEL_ERROR, __VA_ARGS__)
+#   define LOG_FATAL(...) \
+      Log(BOXLOGLEVEL_FATAL, __VA_ARGS__)
+
     // Value maniputation (implemented in value.cc).
     Value *Create_Value();
     Value *Destroy_Value(Value *v);
@@ -87,6 +100,7 @@ namespace Box {
 
     // Operator functionality (operator.cc).
     Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
+    bool Try_Emit_Conversion(Value *dest, Value *src);
 
   private:
     /**

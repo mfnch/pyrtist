@@ -183,6 +183,26 @@ BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level, const char *fmt, ...)
   BoxAST_Log(c->ast, src, level, s);
 }
 
+namespace Box {
+
+void
+Compiler::Log(BoxLogLevel level, const char *fmt, ...)
+{
+  BoxSrc *src = & c->ast_node->head.src;
+
+  va_list ap;
+  va_start(ap, fmt);
+  const char *s = Box_Print_VA(fmt, ap);
+  va_end(ap);
+
+  if (level >= BOXLOGLEVEL_ERROR)
+    c->attr.is_sane = 0;
+
+  BoxAST_Log(c->ast, src, level, s);
+}
+
+}
+
 /* Function which does all the steps needed to get from a Box source file
  * to a VM with the corresponding compiled bytecode.
  */
@@ -1111,7 +1131,7 @@ Compiler::Compile_BinOp(BoxASTNode *node)
       }
     } else {
       if (Value_Want_Value(left) & Value_Want_Value(right)) {
-        /* NOTE: ^^^ We use & rather than &&*/
+         /* NOTE: ^^^ We use & rather than &&*/
         result = Emit_BinOp(op, left, right);
       } else {
         Value_Destroy(left);
