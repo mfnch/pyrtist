@@ -36,8 +36,22 @@
 #  include <box/builtins.h>
 
 #  include <box/lir_priv.h>
+#  include <box/allocpool_priv.h>
+
+
+// Whether to carry out Value allocation leak checks in the compiler.
+#define BOX_CHECK_VALUE_LEAKS 0
+
+// Whether to cache Value allocation in the compiler.
+#define BOX_USE_VALUE_CACHE 1
+
 
 namespace Box {
+  union ValueOrChain {
+    Value value;
+    ValueOrChain *next_in_chain;
+  };
+
   class Compiler {
   private:
     // Old compiler.
@@ -48,6 +62,12 @@ namespace Box {
 
     /// Position in the active_value_ array at the beginning of tracking.
     BoxArr value_pos_;
+
+    /// Pool of Value which allows to reuse memory.
+    BoxAllocPool value_pool_;
+
+    /// Chain to free Value in the value_pool_ pool.
+    ValueOrChain *free_value_chain_;
 
   public:
     Compiler(BoxCmp *old_compiler);
@@ -103,9 +123,17 @@ namespace Box {
     bool Try_Emit_Conversion(Value *dest, Value *src);
 
   private:
-    /**
-     * @brief Remove items from the compiler stack.
-     */
+    /// @brief Obtain a #Value from the pool.
+    /// @see Free_Value
+    /// @note This function and Free_Value() do the job of malloc() and free(),
+    //    but more efficiently.
+    Value *Alloc_Value();
+
+    /// @brief: release a #Value previously obtained with Alloc_Value().
+    /// @see Alloc_Value
+    void Free_Value(Value *v);
+
+    /// @brief Remove items from the compiler stack.
     void Remove_Any(int num_items_to_remove);
 
     /**

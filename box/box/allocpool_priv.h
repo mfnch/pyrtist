@@ -48,10 +48,14 @@ struct BoxAllocPool_struct {
 };
 
 
+BOX_BEGIN_DECLS
+
 BOXEXPORT BoxAllocPool *
 BoxAllocPool_Init(BoxAllocPool *pool, uint32_t initial_capacity);
 
 BOXEXPORT void
 BoxAllocPool_Finish(BoxAllocPool *pool);
+
+BOX_END_DECLS
 
 #endif /* _BOX_ALLOCPOOL_PRIV_H */

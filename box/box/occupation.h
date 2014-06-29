@@ -18,8 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 /**
  * @file occupation.h
  * @brief A BoxOcc is an BoxArr whose elements can be occupied and released.

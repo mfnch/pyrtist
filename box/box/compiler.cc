@@ -36,8 +36,6 @@
 #include "compiler_priv.h"
 
 
-#define CHECK_VALUE_LEAKS 0
-
 /**
  * @brief Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -233,9 +231,12 @@ namespace Box {
 Compiler::Compiler(BoxCmp *old_compiler) : c(old_compiler) {
   BoxArr_Init(& active_values_, sizeof(Value *), 32);
   BoxArr_Init(& value_pos_, sizeof(int), 32);
+  BoxAllocPool_Init(& value_pool_, sizeof(Value)*32);
+  free_value_chain_ = NULL;
 }
 
 Compiler::~Compiler() {
+  BoxAllocPool_Finish(& value_pool_);
   BoxArr_Finish(& active_values_);
   BoxArr_Finish(& value_pos_);
 }
@@ -438,7 +439,7 @@ Compiler::Compile_Any(BoxASTNode *node)
   BoxASTNodeType node_type = (BoxASTNodeType) BoxASTNode_Get_Type(node);
   BoxASTNode *prev_ast_node = BoxCmp_Set_Cur_Node(c, node);
 
-#if CHECK_VALUE_LEAKS
+#if BOX_CHECK_VALUE_LEAKS
   Begin_Leak_Check();
 #endif
 
@@ -455,7 +456,7 @@ Compiler::Compile_Any(BoxASTNode *node)
 
 #undef BOXASTNODE_DEF
 
-#if CHECK_VALUE_LEAKS
+#if BOX_CHECK_VALUE_LEAKS
   int num_leaks = End_Leak_Check();
   if (true && num_leaks)
     BoxCmp_Log_Err(c, "%d Value objects leaked in node %s",

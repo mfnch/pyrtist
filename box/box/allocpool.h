@@ -43,6 +43,8 @@
  */
 typedef struct BoxAllocPool_struct BoxAllocPool;
 
+BOX_BEGIN_DECLS
+
 /**
  * @brief Create a new allocation pool.
  *
@@ -100,5 +102,7 @@ BoxAllocPool_Str_NDup(BoxAllocPool *pool, const char *str, uint32_t str_length);
  */
 BOXEXPORT void
 BoxAllocPool_Print_Stats(BoxAllocPool *pool, FILE *out);
+
+BOX_END_DECLS
 
 #endif /* _BOX_ALLOCPOOL_H */

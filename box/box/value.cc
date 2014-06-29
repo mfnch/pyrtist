@@ -34,9 +34,42 @@
 namespace Box {
 
 Value *
+Compiler::Alloc_Value()
+{
+  if (free_value_chain_) {
+    // Chain not empty. Get a value from there.
+    Value *v = & free_value_chain_->value;
+    free_value_chain_ = free_value_chain_->next_in_chain;
+    return v;
+  }
+
+  // Chain is empty, we need to get genuine new memory.
+  Value *v = (Value *) BoxAllocPool_Alloc(& value_pool_, sizeof(ValueOrChain));
+  if (v)
+    return v;
+
+  LOG_FATAL("Cannot allocate new Value");
+  return NULL;
+}
+
+void
+Compiler::Free_Value(Value *v)
+{
+  ValueOrChain *vc = (ValueOrChain *) v;
+  assert(& vc->value == v);
+  vc->next_in_chain = free_value_chain_;
+  free_value_chain_ = vc;
+}
+
+Value *
 Compiler::Create_Value()
 {
+#if BOX_USE_VALUE_CACHE
+  Value *v = Alloc_Value();
+#else
   Value *v = (Value *) Box_Mem_Safe_Alloc(sizeof(Value));
+#endif
+
   Value_Init(v, c);
   v->attr.new_or_init = 1;
   Track_Value(v);
@@ -52,7 +85,11 @@ Compiler::Destroy_Value(Value *v)
   Value_Finish(v);
   if (v->attr.new_or_init) {
     Untrack_Value(v);
+#if BOX_USE_VALUE_CACHE
+    Free_Value(v);
+#else
     Box_Mem_Free(v);
+#endif
     return NULL;
   }
 
