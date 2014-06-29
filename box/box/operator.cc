@@ -279,7 +279,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
   switch(opn->asm_scheme) {
   case OPASMSCHEME_STD_UN:
     if (!(opn->attr & OPR_ATTR_ASSIGNMENT))
-      Value_To_Temp(c, v_left, v_left);
+      c->compiler->Emit_Make_Temp(v_left, v_left);
     else {
       if (!Value_Is_Target(v_left)) {
         MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
@@ -298,7 +298,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
 
     if (Value_Is_Target(v_left)) {
       BoxCont cont = v_left->cont;
-      Value_To_Temp(c, v_left, v_left);
+      c->compiler->Emit_Make_Temp(v_left, v_left);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode, 1, & cont);
       result = v_left;
       break;
@@ -334,7 +334,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
         }
       }
 
-      Value_To_Temp(c, v_left, v_left);
+      c->compiler->Emit_Make_Temp(v_left, v_left);
     }
 
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
@@ -348,7 +348,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
       assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
       result = Value_Create(c);
-      Value_Setup_As_Temp(result, opn->type_result);
+      c->compiler->Setup_Value_As_Temp(result, opn->type_result);
       Value_To_Temp_Or_Target(c, v_left, v_left);
       Value_To_Temp_Or_Target(c, v_right, v_right);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
@@ -366,7 +366,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
       v_right = v_tmp;
     }
 
-    Value_To_Temp(c, v_left, v_left);
+    c->compiler->Emit_Make_Temp(v_left, v_left);
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
     Value_Destroy(v_right);
@@ -489,7 +489,7 @@ Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_dst->cont, & v_src->cont);
   else if (opn->asm_scheme == OPASMSCHEME_USR_UN)
-    Value_Emit_Call_From_Call_Num(opn->implem.call_num, v_dst, v_src);
+    Emit_Call(opn->implem.call_num, v_dst, v_src);
   else {
     LOG_FATAL("Try_Emit_Conversion: unexpected asm-scheme!");
     abort();

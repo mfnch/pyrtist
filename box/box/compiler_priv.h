@@ -40,7 +40,7 @@
 
 
 // Whether to carry out Value allocation leak checks in the compiler.
-#define BOX_CHECK_VALUE_LEAKS 0
+#define BOX_CHECK_VALUE_LEAKS 1
 
 // Whether to cache Value allocation in the compiler.
 #define BOX_USE_VALUE_CACHE 1
@@ -104,20 +104,76 @@ namespace Box {
     Value *Track_Value(Value *v);
     Value *Untrack_Value(Value *v);
 
+    ///////////////////////////////////////////////////////////////////////////
     // Value manipulation functionality (value.cc).
+    bool Want_Instance(Value *v);
+    bool Want_Type(Value *v);
+    void Setup_Value_Container(Value *v, BoxType *type, ValContainer *vc);
+    Value *Setup_Value_As_Weak_Copy(Value *v_copy, Value *v);
+    void Setup_Value_As_Var_Name(Value *v, const char *name);
+    Value *Setup_Value_As_Type_Name(Value *v, const char *name);
+    Value *Setup_Value_As_Type(Value *v, BoxType *t);
+    void Setup_Value_As_Imm_Char(Value *v, BoxChar c);
+    void Setup_Value_As_Imm_Int(Value *v, BoxInt i);
+    void Setup_Value_As_Imm_Real(Value *v, BoxReal r);
+    void Setup_Value_As_Void(Value *v);
+    void Setup_Value_As_Temp(Value *v, BoxType *t);
+    void Setup_Value_As_Var(Value *v, BoxType *t);
+    void Setup_Value_As_String(Value *v_str, const char *str);
+    void Setup_Value_As_Parent(Value *v, BoxType *parent_t);
+    void Setup_Value_As_Child(Value *v, BoxType *child_t);
+    void Setup_Value_As_LReg(Value *v, BoxType *type);
     void Emit_Value_Alloc(Value *v);
+    void Emit_Link(Value *v);
+    void Emit_Unlink(Value *v);
+    BoxLIRNodeOpBranch *Emit_Conditional_Jump(Value *v);
+    Value *Emit_Make_Temp(Value *v_dst, Value *v_src);
+    Value *Value_Cast_To_Ptr_2(Value *v);
     Value *Emit_Value_Cast(Value *v_ptr, BoxType *t);
-    BoxTask Value_Emit_Call(Value *parent, BoxTypeId tid_child);
-    BoxTask Value_Emit_Call(Value *parent, Value *child);
+    void Emit_Call(BoxVMCallNum call_num, Value *parent, Value *child);
+    BoxTask Emit_Call(Value *parent, BoxTypeId tid_child);
+    BoxTask Emit_Call(Value *parent, Value *child);
+    Value *Emit_Cast_To_Ptr(Value *v);
     Value *Value_To_Straight_Ptr(Value *v_obj);
     Value *Emit_Struc_Member_Get(Value *v_src, const char *memb);
     Value *Emit_Reduce_Ptr_Offset(Value *v_obj);
     Value *Emit_Value_Move(Value *v_dst, Value *v_src);
     Value *Emit_Value_Assignment(Value *v_dst, Value *v_src);
     Value *Emit_Value_Expansion(Value *src, BoxType *t_dst);
+    Value *Emit_Subtype_Build(Value *v_parent, const char *subtype_name);
+    Value *Emit_Get_Subtype_Parent(Value *v_subtype);
     Value *Emit_Get_Subtype_Child(Value *v_subtype);
     Value *Emit_Subtype_Expansion(Value *v_src);
+    Value *Emit_Raise_Instance(Value *v);
+    Value *Emit_Reference_Instance(Value *v);
+    Value *Emit_Dereference_Instance(Value *v);
 
+    /**
+     * @brief Initialise iteration over the members of a structure.
+     * @details Convenience function to facilitate iteration of the member of
+     * a structure value. Here is and example of how it is supposed to be used:
+     * @code
+     *   ValueStrucIter vsi;
+     *   for(ValueStrucIter_Init(& vsi, v_struc, vmcode);
+     *       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
+     *     // access to 'vsi.member'
+     *   }
+     *   ValueStrucIter_Finish(& vsi);
+     * @endcode
+     * @see ValueStrucIter_Finish
+     * @see ValueStrucIter_Do_Next
+     */
+    void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc);
+
+    /// @brief Iterate to the next member of the structure.
+    /// @see ValueStrucIter_Init
+    void ValueStrucIter_Do_Next(ValueStrucIter *vsi);
+
+    /// @brief Finalise the ValueStrucIter object.
+    /// @see ValueStrucIter_Init
+    void ValueStrucIter_Finish(ValueStrucIter *vsi);
+
+    ///////////////////////////////////////////////////////////////////////////
     // Operator functionality (operator.cc).
     Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
     bool Try_Emit_Conversion(Value *dest, Value *src);

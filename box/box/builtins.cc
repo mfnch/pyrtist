@@ -411,7 +411,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
   for(row = & rows[0]; row->name; ++row) {
     Value v;
     Value_Init(& v, c);
-    Value_Setup_As_Type(& v, Box_Get_Core_Type(row->type));
+    c->compiler->Setup_Value_As_Type(& v, Box_Get_Core_Type(row->type));
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, row->name, & v);
     Value_Finish(& v);
   }
@@ -637,7 +637,7 @@ BoxType *Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 
   (void) Bltin_Proc_Def_With_Id(new_type, arg, fn);
   Value_Init(& v, c);
-  Value_Setup_As_Type(& v, new_type);
+  c->compiler->Setup_Value_As_Type(& v, new_type);
   (void) BoxType_Unlink(new_type);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, & v);
   Value_Finish(& v);
@@ -768,7 +768,7 @@ Bltin_Create_Type(BoxCmp *c, const char *type_name, size_t type_size,
   t = BoxType_Create_Ident(BoxType_Create_Intrinsic(type_size, alignment),
                            type_name);
   Value_Init(& v, c);
-  Value_Setup_As_Type(& v, t);
+  c->compiler->Setup_Value_As_Type(& v, t);
   (void) BoxType_Unlink(t);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, & v);
   Value_Finish(& v);

@@ -116,11 +116,6 @@ Value_Destroy(Value *v);
 Value *
 Value_Move(BoxCmp *c, Value *dst, Value *src);
 
-/** Determine if the given value can be recycled, otherwise return
- * Value_Create()
- */
-Value *Value_Recycle(Value *v);
-
 typedef enum {
   VALCONTTYPE_IMM = 0,
   VALCONTTYPE_LREG, VALCONTTYPE_LVAR,
@@ -371,49 +366,6 @@ typedef struct {
 } ValueStrucIter;
 
 /**
- * Convenience function to facilitate iteration of the member of a structure
- * value. Here is and example of how it is supposed to be used:
- * @code
- *   ValueStrucIter vsi;
- *   for(ValueStrucIter_Init(& vsi, v_struc, vmcode);
- *       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
- *     // access to 'vsi.member'
- *   }
- *   ValueStrucIter_Finish(& vsi);
- * @endcode
- * @see ValueStrucIter_Finish
- * @see ValueStrucIter_Do_Next
- */
-void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxCmp *c);
-
-/**
- * Convenience function to facilitate iteration of the member of a structure
- * value.
- * @see ValueStrucIter_Init
- */
-void ValueStrucIter_Do_Next(ValueStrucIter *vsi);
-
-/**
- * Convenience function to facilitate iteration of the member of a structure
- * value.
- * @see ValueStrucIter_Init
- */
-void ValueStrucIter_Finish(ValueStrucIter *vsi);
-
-/**
- * Creator corresponding to #ValueStrucIter_Init.
- * @see ValueStrucIter_Init
- * @see ValueStrucIter_Destroy
- */
-ValueStrucIter *ValueStrucIter_Create(Value *v_struc, BoxCmp *c);
-
-/**
- * Destructor for #ValueStrucIter_New.
- * @see ValueStrucIter_New
- */
-void ValueStrucIter_Destroy(ValueStrucIter *vsi);
-
-/**
  * @brief Extract the member of a structure object.
  * @param c The compiler object.
  * @param v_src_dst Used to pass the structure and to get the member.
@@ -434,59 +386,6 @@ Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb);
  */
 BOXEXPORT BoxTask
 Value_Assign(BoxCmp *c, Value *dst, Value *src);
-
-/** Expand the value 'v' in agreement with the provided expansion type.
- * REFERENCES: return: new, src: -1;
- */
-Value *Value_Expand(Value *v, BoxType *expansion_type);
-
-/**
- * REFERENCES: v: 0;
- */
-void Value_Setup_As_Parent(Value *v, BoxType *parent_t);
-
-/**
- * REFERENCES: v: 0;
- */
-void Value_Setup_As_Child(Value *v, BoxType *child_t);
-
-/** Build the subtype 'subtype_name' of 'v_parent'.
- * If the subtype is not found and 'v_parent' is itself a subtype, then
- * resolve it to its child and search among its subtypes.
- * If the subtype cannot be built, then return NULL.
- * REFERENCES: return: new, v_parent: -1;
- */
-Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name);
-
-/** Return the child of the subtype 'v_subtype'.
- * REFERENCES: return: new, v_subtype: -1;
- */
-Value *Value_Subtype_Get_Child(Value *v_subtype);
-
-/** Return the parent of the subtype 'v_parent'.
- * REFERENCES: return: new, v_subtype: -1;
- */
-Value *Value_Subtype_Get_Parent(Value *v_subtype);
-
-/** If 'v' is a subtype, returns its child, otherwise return 'v'.
- * REFERENCES: return: new, v: -1;
- */
-Value *Value_Expand_Subtype(Value *v);
-
-/** Raise the value 'v': if 'v = (^Int)[]', '^v' has type 'Int'. */
-Value *Value_Raise(Value *v);
-
-/**
- * @brief Create a reference to the given object.
- */
-Value *
-Value_Reference(Value *v);
-
-/**
- * @brief Dereference the given pointer object.
- */
-Value *
-Value_Dereference(Value *v);
 
 BOX_END_DECLS
 

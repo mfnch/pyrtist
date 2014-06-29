@@ -183,8 +183,7 @@ Namespace_Add_Value(Namespace *ns, NmspFloor floor,
   Value_Move(c, new_value, v);
   new_item->type = NMSPITEMTYPE_VALUE;
   new_item->data = new_value;
-  return Value_Setup_As_Weak_Copy(Value_Create(new_value->proc->cmp),
-                                  new_value);
+  return c->compiler->Setup_Value_As_Weak_Copy(Value_Create(c), new_value);
 }
 
 Value *
@@ -197,7 +196,8 @@ Namespace_Get_Value(Namespace *ns, NmspFloor floor, const char *item_name)
   assert(new_item->type == NMSPITEMTYPE_VALUE);
   v = (Value *) new_item->data;
   v_copy = Value_Create(v->proc->cmp);
-  Value_Setup_As_Weak_Copy(v_copy, v);
+  BoxCmp *c = v->proc->cmp;
+  c->compiler->Setup_Value_As_Weak_Copy(v_copy, v);
   return v_copy;
 }
 
