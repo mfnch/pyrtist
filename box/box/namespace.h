@@ -83,11 +83,6 @@ void Namespace_Init(Namespace *ns);
 /** Finalize an object initialized with Namespace_Init. */
 void Namespace_Finish(Namespace *ns);
 
-/** Allocate space for a Namespace object and call Namespace_Init
- * to initialize it. Namespace_Destroy should be called to destroy the object.
- */
-Namespace *Namespace_New(void);
-
 /** Destroy an object created with Namespace_New. */
 void Namespace_Destroy(Namespace *ns);
 

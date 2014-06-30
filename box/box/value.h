@@ -52,7 +52,6 @@ typedef enum {
 
 /* This datastructure has a major design flaw. See: value.c (Value_Init). */
 typedef struct {
-  BoxVMCode *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   *type;            /**< Type of the Value */
   BoxCont   cont;             /**< Container */
@@ -140,24 +139,6 @@ Value_Unmark_RO(Value *v);
 
 /** Return the name (a string) corresponding to the given ValueKind. */
 const char *ValueKind_To_Str(ValueKind vk);
-
-/**
- * @brief Finish a potentially read-only #Value object.
- */
-inline Value *
-Value_Force_Finish(Value *v)
-{
-  return Value_Finish(Value_Unmark_RO(v));
-}
-
-/**
- * @brief Finish a potentially read-only #Value object.
- */
-inline Value *
-Value_Force_Destroy(Value *v)
-{
-  return Value_Destroy(Value_Unmark_RO(v));
-}
 
 /**
  * Check that the given value 'v' has both type and value.

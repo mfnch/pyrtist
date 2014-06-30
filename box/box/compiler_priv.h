@@ -40,7 +40,7 @@
 
 
 // Whether to carry out Value allocation leak checks in the compiler.
-#define BOX_CHECK_VALUE_LEAKS 1
+#define BOX_CHECK_VALUE_LEAKS 0
 
 // Whether to cache Value allocation in the compiler.
 #define BOX_USE_VALUE_CACHE 1
@@ -57,17 +57,15 @@ namespace Box {
     // Old compiler.
     BoxCmp *c;
 
-    /// Pool of #Value objects currently allocated by the compiler.
-    BoxArr active_values_;
+    // The following objects manage allocation of #Value objects.
+    BoxAllocPool value_pool_;  ///< Pool of allocated Values.
+    BoxArr active_values_;     ///< #Value objects currently tracked.
+    BoxArr value_pos_;         /**< Position in the active_value_ array at the
+                                    beginning of tracking. */
+    ValueOrChain
+          *free_value_chain_;  ///< Chain to free Value in the value_pool_ pool.
 
-    /// Position in the active_value_ array at the beginning of tracking.
-    BoxArr value_pos_;
-
-    /// Pool of Value which allows to reuse memory.
-    BoxAllocPool value_pool_;
-
-    /// Chain to free Value in the value_pool_ pool.
-    ValueOrChain *free_value_chain_;
+    Namespace  ns;             ///< The namespace.
 
   public:
     Compiler(BoxCmp *old_compiler);
@@ -93,19 +91,17 @@ namespace Box {
 #   define LOG_FATAL(...) \
       Log(BOXLOGLEVEL_FATAL, __VA_ARGS__)
 
-    // Value maniputation (implemented in value.cc).
+    ///////////////////////////////////////////////////////////////////////////
+    // Value manipulation functionality (value.cc).
+    Value *Init_Value(Value *v);
+    Value *Finish_Value(Value *v);
     Value *Create_Value();
     Value *Destroy_Value(Value *v);
     Value *Weak_Copy_Value(Value *v_src);
-
-    // Leak check functions.
     void Begin_Leak_Check();
     int End_Leak_Check();
     Value *Track_Value(Value *v);
     Value *Untrack_Value(Value *v);
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Value manipulation functionality (value.cc).
     bool Want_Instance(Value *v);
     bool Want_Type(Value *v);
     void Setup_Value_Container(Value *v, BoxType *type, ValContainer *vc);
@@ -134,7 +130,6 @@ namespace Box {
     BoxTask Emit_Call(Value *parent, BoxTypeId tid_child);
     BoxTask Emit_Call(Value *parent, Value *child);
     Value *Emit_Cast_To_Ptr(Value *v);
-    Value *Value_To_Straight_Ptr(Value *v_obj);
     Value *Emit_Struc_Member_Get(Value *v_src, const char *memb);
     Value *Emit_Reduce_Ptr_Offset(Value *v_obj);
     Value *Emit_Value_Move(Value *v_dst, Value *v_src);
@@ -147,6 +142,16 @@ namespace Box {
     Value *Emit_Raise_Instance(Value *v);
     Value *Emit_Reference_Instance(Value *v);
     Value *Emit_Dereference_Instance(Value *v);
+
+    Value *Value_Force_Finish(Value *v)
+    {
+      return Finish_Value(Value_Unmark_RO(v));
+    }
+
+    Value *Value_Force_Destroy(Value *v)
+    {
+      return Destroy_Value(Value_Unmark_RO(v));
+    }
 
     /**
      * @brief Initialise iteration over the members of a structure.
@@ -178,6 +183,21 @@ namespace Box {
     Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
     bool Try_Emit_Conversion(Value *dest, Value *src);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Name-space functionality (namespace.cc).
+    void Namespace_Init();
+    void Namespace_Finish();
+    void Namespace_Floor_Up();
+    void Namespace_Floor_Down();
+    NmspItem *Namespace_Add_Item(NmspFloor floor, const char *item_name);
+    NmspItem *Namespace_Get_Item(NmspFloor floor, const char *item_name);
+    Value *Namespace_Add_Value(NmspFloor floor,
+                               const char *item_name, Value *v);
+    Value *Namespace_Get_Value(NmspFloor floor, const char *item_name);
+    void Namespace_Add_Procedure(NmspFloor floor,
+                                 BoxType *parent, BoxType *comb_node);
+    void Namespace_Add_Callback(NmspFloor floor,
+                                NmspCallback callback, void *data);
   private:
     /// @brief Obtain a #Value from the pool.
     /// @see Free_Value
@@ -259,7 +279,6 @@ struct BoxCmp_struct {
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */
   BltinStuff bltin;     /**< Builtin types, etc. */
-  Namespace  ns;        /**< The namespace */
   BoxVMCode  main_proc, /**< Main procedure in the module */
              *cur_proc; /**< Procedure on which we are working now */
   Operator   convert,   /**< Conversion operator */

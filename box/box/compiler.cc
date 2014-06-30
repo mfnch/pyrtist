@@ -111,7 +111,6 @@ BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
 
   BoxCont_Set(& c->cont.pass_child, "go", 2);
   BoxCont_Set(& c->cont.pass_parent, "go", 1);
-  Namespace_Init(& c->ns);
   Bltin_Init(c);
 }
 
@@ -126,7 +125,6 @@ void BoxCmp_Finish(BoxCmp *c)
   BoxLIR_Destroy(c->lir);
   BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
-  Namespace_Finish(& c->ns);
   BoxVMCode_Finish(& c->main_proc);
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
@@ -233,9 +231,11 @@ Compiler::Compiler(BoxCmp *old_compiler) : c(old_compiler) {
   BoxArr_Init(& value_pos_, sizeof(int), 32);
   BoxAllocPool_Init(& value_pool_, sizeof(Value)*32);
   free_value_chain_ = NULL;
+  Namespace_Init();
 }
 
 Compiler::~Compiler() {
+  Namespace_Finish();
   BoxAllocPool_Finish(& value_pool_);
   BoxArr_Finish(& active_values_);
   BoxArr_Finish(& value_pos_);
@@ -513,14 +513,14 @@ Compiler::Compile_TypeIdfr(BoxASTNode *node)
 
   type_name = & ((BoxASTNodeTypeIdfr *) node)->name[0];
   f = NMSPFLOOR_DEFAULT;
-  v = Namespace_Get_Value(& c->ns, f, type_name);
+  v = Namespace_Get_Value(f, type_name);
   if (v) {
     Push_Value(v);
   } else {
     Value v;
-    Value_Init(& v, c);
+    Init_Value(& v);
     Setup_Value_As_Type_Name(& v, type_name);
-    Push_Value(Namespace_Add_Value(& c->ns, f, type_name, & v));
+    Push_Value(Namespace_Add_Value(f, type_name, & v));
   }
 }
 
@@ -555,7 +555,7 @@ Compiler::Compile_Subtype_Value(BoxASTNodeSubtype *node)
       return;
     v_parent = Pop_Value();
   } else {
-    v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    v_parent = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
     if (!v_parent)
       BoxCmp_Log_Err(c, "Cannot get implicit method `%s'. Default parent is "
                      "not defined in current scope.", name);
@@ -608,7 +608,7 @@ Compiler::Compile_Subtype_Type(BoxASTNodeSubtype *node)
   }
 
   if (new_subtype) {
-    Value_Destroy(parent_type);
+    Destroy_Value(parent_type);
     Value *v = Create_Value();
     Setup_Value_As_Type(v, new_subtype);
     (void) BoxType_Unlink(new_subtype);
@@ -682,7 +682,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     Value *v_void = My_Get_Void_Value(c);
     Push_Value(v_void);
 
-    parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    parent = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
     if (!parent)
       parent = v_void;
     else
@@ -697,7 +697,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
         && BoxType_Is_Subtype(parent_type->type)) {
       BoxCmp_Log_Err(c, "Cannot instantiate unbound subtype %T",
                      parent_type->type);
-      parent = Value_Finish(parent_type);
+      parent = Finish_Value(parent_type);
       parent_is_err = BOXBOOL_TRUE;
     } else {
       parent = Value_To_Temp_Or_Target(c, parent_type, parent_type);
@@ -706,27 +706,27 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     Push_Value(parent);
   }
 
-  Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
-                                  destroyed when it gets closed! */
+  Namespace_Floor_Up(); // Variables defined in this box will be
+                        // destroyed when it gets closed!
 
   /* Add $ (the child) to namespace */
   if (t_child) {
     Value *v_tmp;
     Value v_child;
-    Value_Init(& v_child, c);
+    Init_Value(& v_child);
     Setup_Value_As_Child(& v_child, t_child);
-    v_tmp = Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$", & v_child);
+    v_tmp = Namespace_Add_Value(NMSPFLOOR_DEFAULT, "$", & v_child);
     Destroy_Value(v_tmp);
-    Value_Finish(& v_child);
+    Finish_Value(& v_child);
   }
 
   /* Add $$ (the parent) to namespace */
   if (t_parent) {
     Value v_parent;
-    Value_Init(& v_parent, c);
+    Init_Value(& v_parent);
     Setup_Value_As_Parent(& v_parent, t_parent);
-    parent = Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$", & v_parent);
-    Value_Finish(& v_parent);
+    parent = Namespace_Add_Value(NMSPFLOOR_DEFAULT, "$$", & v_parent);
+    Finish_Value(& v_parent);
     Destroy_Value(destroy_parent);
     destroy_parent = parent;
   }
@@ -748,8 +748,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     /* ^^^ Promote # (the Box object) to a target so that it can be
      * changed inside the Box
      */
-    Destroy_Value(Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
-                                      "#", v_parent));
+    Destroy_Value(Namespace_Add_Value(NMSPFLOOR_DEFAULT, "#", v_parent));
     /* ^^^ adding # to the namespace removes all spurious error messages
      *     for parent == NULL.
      */
@@ -795,10 +794,10 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
       stmt_val = My_Get_Void_Value(c);
 
     if (parent_is_err || Value_Is_Ignorable(stmt_val)) {
-      Value_Destroy(stmt_val);
+      Destroy_Value(stmt_val);
     } else {
       if (!Want_Type(stmt_val)) {
-        Value_Destroy(stmt_val);
+        Destroy_Value(stmt_val);
       } else {
         BoxTask emit_task = Emit_Call(parent, stmt_val);
         if (emit_task == BOXTASK_FAILURE) {
@@ -813,7 +812,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
 
             if (state != MYBOXSTATE_GOT_IF) {
               assert(!need_floor_down);
-              Namespace_Floor_Up(& c->ns);
+              Namespace_Floor_Up();
               need_floor_down = BOXBOOL_TRUE;
             }
             state = MYBOXSTATE_GOT_IF;
@@ -830,7 +829,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
               else_label = NULL;
 
               assert(need_floor_down);
-              Namespace_Floor_Down(& c->ns);
+              Namespace_Floor_Down();
               need_floor_down = BOXBOOL_FALSE;
 
             } else {
@@ -857,7 +856,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
   }
 
   if (need_floor_down)
-    Namespace_Floor_Down(& c->ns);
+    Namespace_Floor_Down();
 
   /* Restore previous source position */
   //(void) Msg_Set_Src(prev_src_of_err);
@@ -873,7 +872,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
   if (box->parent)
     Emit_Call(parent, BOXTYPEID_END);
 
-  Namespace_Floor_Down(& c->ns); /* close the scope unit */
+  Namespace_Floor_Down(); /* close the scope unit */
 
   if (destroy_parent)
     Destroy_Value(destroy_parent);
@@ -894,7 +893,7 @@ Compiler::Compile_VarIdfr(BoxASTNode *node)
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_VAR_IDFR);
 
   item_name = & ((BoxASTNodeVarIdfr *) node)->name[0];
-  v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
+  v = Namespace_Get_Value(NMSPFLOOR_DEFAULT, item_name);
   if (v) {
     Push_Value(v);
   } else {
@@ -1036,8 +1035,8 @@ Compiler::Compile_Value_Assignment(Value *left, Value *right)
     }
   }
 
-  Value_Destroy(left);
-  Value_Destroy(right);
+  Destroy_Value(left);
+  Destroy_Value(right);
   return NULL;
 }
 
@@ -1059,11 +1058,10 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
       BoxType *ident_type = BoxType_Create_Ident(t_type, v_name->name);
 
       /* Register the type in the proper namespace. */
-      Value_Init(& v, c);
+      Init_Value(& v);
       Setup_Value_As_Type(& v, ident_type);
-      v_named_type = Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
-                                         v_name->name, & v);
-      Value_Finish(& v);
+      v_named_type = Namespace_Add_Value(NMSPFLOOR_DEFAULT, v_name->name, & v);
+      Finish_Value(& v);
       (void) BoxType_Unlink(ident_type);
 
       Destroy_Value(v_type);
@@ -1097,8 +1095,8 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
     }
   }
 
-  Value_Destroy(v_type);
-  Value_Destroy(v_name);
+  Destroy_Value(v_type);
+  Destroy_Value(v_name);
   return v_named_type;
 }
 
@@ -1135,8 +1133,8 @@ Compiler::Compile_BinOp(BoxASTNode *node)
          /* NOTE: ^^^ We use & rather than &&*/
         result = Emit_BinOp(op, left, right);
       } else {
-        Value_Destroy(left);
-        Value_Destroy(right);
+        Destroy_Value(left);
+        Destroy_Value(right);
       }
     }
 
@@ -1157,7 +1155,7 @@ Compiler::Compile_Get(BoxASTNode *node)
   parent = ((BoxASTNodeGet *) node)->parent;
   member_name = ((BoxASTNodeGet *) node)->name->name;
   if (!parent) {
-    v_struc = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    v_struc = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
     if (!v_struc) {
       BoxCmp_Log_Err(c, "Cannot get implicit member '%s'. Default "
                      "parent is not defined in current scope.", member_name);
@@ -1197,18 +1195,18 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
   switch (self_level) {
   case 1:
     n_self = "$";
-    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$");
+    v_self = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "$");
     break;
 
   case 2:
     n_self = "$$";
-    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+    v_self = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "$$");
     promote_to_target = true;
     break;
 
   default:
     n_self = "$$, $3, ...";
-    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+    v_self = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "$$");
     for (i = 2; i < self_level && v_self; i++) {
       v_self = Emit_Get_Subtype_Parent(v_self);
     }
@@ -1316,7 +1314,7 @@ Compiler::Compile_CombDef(BoxASTNode *node)
     comb_callable = BoxCallable_Create_Undefined(t_parent, t_child);
     comb = BoxType_Define_Combination(t_parent, comb_type, t_child,
                                       comb_callable);
-    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_parent, comb);
+    Namespace_Add_Procedure(NMSPFLOOR_DEFAULT, t_parent, comb);
   }
 
   /* Set the C-name of the procedure, if given. */
@@ -1447,7 +1445,7 @@ Compiler::Compile_Struct_Value(BoxASTNodeCompound *compound)
   for(ValueStrucIter_Init(& vsi, v_struc);
       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
     Value *v_member = Get_Value(num_members - vsi.index - 1);
-    Value_Destroy(Emit_Value_Move(Weak_Copy_Value(& vsi.v_member),
+    Destroy_Value(Emit_Value_Move(Weak_Copy_Value(& vsi.v_member),
                                   Weak_Copy_Value(v_member)));
 
   }
@@ -1497,7 +1495,7 @@ Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
         }
       }
 
-      Value_Destroy(v_type);
+      Destroy_Value(v_type);
     }
 
     if (previous_type && !err) {
@@ -1549,7 +1547,7 @@ Compiler::Compile_Species_Type(BoxASTNodeCompound *compound)
       BoxType_Add_Member_To_Species(spec_type, memb_type);
     }
 
-    Value_Destroy(v_type);
+    Destroy_Value(v_type);
   }
 
   v_spec_type = Create_Value();

@@ -313,8 +313,8 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
     if (opn->attr & OPR_ATTR_ASSIGNMENT) {
       if (!Value_Is_Target(v_left)) {
-        Value_Destroy(v_left);
-        Value_Destroy(v_right);
+        c->compiler->Destroy_Value(v_left);
+        c->compiler->Destroy_Value(v_right);
         BoxCmp_Log_Err(c, "Binary operator '%s' cannot modify its left "
                        "operand (%s)", opn->opr->name,
                        ValueKind_To_Str(v_left->kind));
@@ -340,21 +340,21 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
     result = v_left;
-    Value_Destroy(v_right);
+    c->compiler->Destroy_Value(v_right);
     break;
 
   case OPASMSCHEME_R_LR_BIN:
     {
       assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
-      result = Value_Create(c);
+      result = c->compiler->Create_Value();
       c->compiler->Setup_Value_As_Temp(result, opn->type_result);
       Value_To_Temp_Or_Target(c, v_left, v_left);
       Value_To_Temp_Or_Target(c, v_right, v_right);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                         3, & result->cont, & v_left->cont, & v_right->cont);
-      Value_Destroy(v_left);
-      Value_Destroy(v_right);
+      c->compiler->Destroy_Value(v_left);
+      c->compiler->Destroy_Value(v_right);
       return result;
     }
 
@@ -369,7 +369,7 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
     c->compiler->Emit_Make_Temp(v_left, v_left);
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
-    Value_Destroy(v_right);
+    c->compiler->Destroy_Value(v_right);
     result = v_left;
     break;
 
@@ -457,8 +457,8 @@ Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
     BoxCmp_Log_Err(c, "%~s %s %~s <-- Operation has not been defined!",
                    BoxType_Get_Repr(v_left->type), opr->name,
                    BoxType_Get_Repr(v_right->type));
-    Value_Destroy(v_left);
-    Value_Destroy(v_right);
+    Destroy_Value(v_left);
+    Destroy_Value(v_right);
  }
 
   return v_result;
@@ -495,7 +495,7 @@ Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
     abort();
   }
 
-  Value_Destroy(v_src);
+  Destroy_Value(v_src);
   return true;
 }
 
