@@ -124,13 +124,17 @@ namespace Box {
     void Emit_Unlink(Value *v);
     BoxLIRNodeOpBranch *Emit_Conditional_Jump(Value *v);
     Value *Emit_Make_Temp(Value *v_dst, Value *v_src);
+    Value *Emit_Load_Into_Reg(Value *v_dst, Value *v_src);
+    Value *Temp_As_Target(Value *v);
     Value *Value_Cast_To_Ptr_2(Value *v);
     Value *Emit_Value_Cast(Value *v_ptr, BoxType *t);
     void Emit_Call(BoxVMCallNum call_num, Value *parent, Value *child);
     BoxTask Emit_Call(Value *parent, BoxTypeId tid_child);
     BoxTask Emit_Call(Value *parent, Value *child);
     Value *Emit_Cast_To_Ptr(Value *v);
-    Value *Emit_Struc_Member_Get(Value *v_src, const char *memb);
+    Value *Emit_Get_Subfield(Value *v_src_dst, size_t offset,
+                             BoxType *subf_type);
+    Value *Emit_Get_Struc_Member(Value *v_src, const char *memb);
     Value *Emit_Reduce_Ptr_Offset(Value *v_obj);
     Value *Emit_Value_Move(Value *v_dst, Value *v_src);
     Value *Emit_Value_Assignment(Value *v_dst, Value *v_src);
@@ -142,16 +146,6 @@ namespace Box {
     Value *Emit_Raise_Instance(Value *v);
     Value *Emit_Reference_Instance(Value *v);
     Value *Emit_Dereference_Instance(Value *v);
-
-    Value *Value_Force_Finish(Value *v)
-    {
-      return Finish_Value(Value_Unmark_RO(v));
-    }
-
-    Value *Value_Force_Destroy(Value *v)
-    {
-      return Destroy_Value(Value_Unmark_RO(v));
-    }
 
     /**
      * @brief Initialise iteration over the members of a structure.
@@ -180,7 +174,9 @@ namespace Box {
 
     ///////////////////////////////////////////////////////////////////////////
     // Operator functionality (operator.cc).
+    Value *Emit_Operation(Operation *opn, Value *v_left, Value *v_right);
     Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
+    Value *Emit_UnOp(BoxASTUnOp op, Value *v);
     bool Try_Emit_Conversion(Value *dest, Value *src);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -198,6 +194,45 @@ namespace Box {
                                  BoxType *parent, BoxType *comb_node);
     void Namespace_Add_Callback(NmspFloor floor,
                                 NmspCallback callback, void *data);
+
+    bool Is_Var_Name(BoxValue *v) {return (v->kind == VALUEKIND_VAR_NAME);}
+    bool Is_Type_Name(Value *v) {return (v->kind == VALUEKIND_TYPE_NAME);}
+    bool Is_Target(Value *v) {return (v->kind == VALUEKIND_TARGET);}
+    bool Is_Err(Value *v) {return (v->kind == VALUEKIND_ERR);}
+    bool Is_Temp(Value *v) {return (v->kind == VALUEKIND_TEMP);}
+    bool Is_Instance(Value *v) {
+      switch(v->kind) {
+      case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
+        return true;
+      default:
+        return false;
+      }
+    }
+    bool Is_Ignorable(Value *v) {
+      int ignore = ((v->kind == VALUEKIND_ERR)
+                    || (v->kind == VALUEKIND_TYPE)
+                    || v->attr.ignore);
+      if (ignore)
+        return true;
+      if (Is_Instance(v))
+        return (BoxType_Compare(Box_Get_Core_Type(BOXTYPEID_VOID), v->type)
+                != BOXTYPECMP_DIFFERENT);
+      return false;
+    }
+    Value *Set_Ignorable(Value *v, bool ignorable=true) {
+      v->attr.ignore = ignorable;
+      return v;
+    }
+    bool Has_Type(Value *v)
+    {
+      switch(v->kind) {
+      case VALUEKIND_TYPE_NAME: case VALUEKIND_VAR_NAME: case VALUEKIND_ERR:
+        return false;
+      default:
+        return true;
+      }
+    }
+
   private:
     /// @brief Obtain a #Value from the pool.
     /// @see Free_Value

@@ -264,6 +264,8 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
   return NULL;
 }
 
+namespace Box {
+
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
  * NOTE: this function assumes that the two operands have both type and values
@@ -271,19 +273,19 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  *  requires that.
  * REFERENCES: return: new, v_left: ?, v_right: ?;
  */
-static Value *
-My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
+Value *
+Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
 {
   Value *result = NULL;
 
   switch(opn->asm_scheme) {
   case OPASMSCHEME_STD_UN:
     if (!(opn->attr & OPR_ATTR_ASSIGNMENT))
-      c->compiler->Emit_Make_Temp(v_left, v_left);
+      Emit_Make_Temp(v_left, v_left);
     else {
-      if (!Value_Is_Target(v_left)) {
-        MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
-                  opn->opr->name, ValueKind_To_Str(v_left->kind));
+      if (!Is_Target(v_left)) {
+        LOG_ERR("Unary operator '%s' cannot modify its operand (%s)",
+                opn->opr->name, ValueKind_To_Str(v_left->kind));
         return NULL;
       }
     }
@@ -296,15 +298,15 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
   case OPASMSCHEME_RIGHT_UN:
     assert(opn->attr & OPR_ATTR_ASSIGNMENT);
 
-    if (Value_Is_Target(v_left)) {
+    if (Is_Target(v_left)) {
       BoxCont cont = v_left->cont;
-      c->compiler->Emit_Make_Temp(v_left, v_left);
+      Emit_Make_Temp(v_left, v_left);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode, 1, & cont);
       result = v_left;
       break;
     } else {
-      MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
-                opn->opr->name, ValueKind_To_Str(v_left->kind));
+      LOG_ERR("Unary operator '%s' cannot modify its operand (%s)",
+              opn->opr->name, ValueKind_To_Str(v_left->kind));
       return NULL;
     }
     break;
@@ -312,12 +314,11 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
   case OPASMSCHEME_STD_BIN:
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
     if (opn->attr & OPR_ATTR_ASSIGNMENT) {
-      if (!Value_Is_Target(v_left)) {
-        c->compiler->Destroy_Value(v_left);
-        c->compiler->Destroy_Value(v_right);
-        BoxCmp_Log_Err(c, "Binary operator '%s' cannot modify its left "
-                       "operand (%s)", opn->opr->name,
-                       ValueKind_To_Str(v_left->kind));
+      if (!Is_Target(v_left)) {
+        Destroy_Value(v_left);
+        Destroy_Value(v_right);
+        LOG_ERR("Binary operator '%s' cannot modify its left operand (%s)",
+                opn->opr->name, ValueKind_To_Str(v_left->kind));
         return NULL;
       }
     } else {
@@ -326,35 +327,35 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
        * If it is, we exchange the operands, since the op is commutative,
        * and this will save us one VM operation.
        */
-      if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
-        if (Value_Is_Temp(v_right)) {
+      if (opn->attr & OPR_ATTR_COMMUTATIVE && !Is_Temp(v_left)) {
+        if (Is_Temp(v_right)) {
           Value *v = v_left;
           v_left = v_right;
           v_right = v;
         }
       }
 
-      c->compiler->Emit_Make_Temp(v_left, v_left);
+      Emit_Make_Temp(v_left, v_left);
     }
 
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
     result = v_left;
-    c->compiler->Destroy_Value(v_right);
+    Destroy_Value(v_right);
     break;
 
   case OPASMSCHEME_R_LR_BIN:
     {
       assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
-      result = c->compiler->Create_Value();
-      c->compiler->Setup_Value_As_Temp(result, opn->type_result);
-      Value_To_Temp_Or_Target(c, v_left, v_left);
-      Value_To_Temp_Or_Target(c, v_right, v_right);
+      result = Create_Value();
+      Setup_Value_As_Temp(result, opn->type_result);
+      Emit_Load_Into_Reg(v_left, v_left);
+      Emit_Load_Into_Reg(v_right, v_right);
       BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                         3, & result->cont, & v_left->cont, & v_right->cont);
-      c->compiler->Destroy_Value(v_left);
-      c->compiler->Destroy_Value(v_right);
+      Destroy_Value(v_left);
+      Destroy_Value(v_right);
       return result;
     }
 
@@ -366,26 +367,28 @@ My_Opn_Emit(BoxCmp *c, Operation *opn, Value *v_left, Value *v_right)
       v_right = v_tmp;
     }
 
-    c->compiler->Emit_Make_Temp(v_left, v_left);
+    Emit_Make_Temp(v_left, v_left);
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
                       2, & v_left->cont, & v_right->cont);
-    c->compiler->Destroy_Value(v_right);
+    Destroy_Value(v_right);
     result = v_left;
     break;
 
   default:
-    BoxCmp_Log_Fatal(c, "Non-native operators are not supported, yet!");
+    LOG_FATAL("Non-native operators are not supported, yet!");
     abort();
   }
 
-  return Value_Set_Ignorable(result, (opn->attr & OPR_ATTR_IGNORE_RES) != 0);
+  return Set_Ignorable(result, (opn->attr & OPR_ATTR_IGNORE_RES) != 0);
 }
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
+Value *
+Compiler::Emit_UnOp(BoxASTUnOp op, Value *v)
+{
   Operator *opr = BoxCmp_UnOp_Get(c, op);
   Operation *opn;
   OprMatch match;
@@ -394,33 +397,32 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v) {
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
-  v = c->compiler->Emit_Subtype_Expansion(v);
+  v = Emit_Subtype_Expansion(v);
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v->type, NULL, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == BOXTYPECMP_MATCHING)
-      v = c->compiler->Emit_Value_Expansion(v, match.expand_type_left);
+      v = Emit_Value_Expansion(v, match.expand_type_left);
 
-    v_result = My_Opn_Emit(c, opn, v, v);
+    v_result = Emit_Operation(opn, v, v);
 
   } else {
     if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
-      BoxCmp_Log_Err(c, "%~s%s <-- Operation has not been defined!",
-                     BoxType_Get_Repr(v->type), opr->name);
+      LOG_ERR("%~s%s <-- Operation has not been defined!",
+              BoxType_Get_Repr(v->type), opr->name);
       return NULL;
 
     } else {
-      BoxCmp_Log_Err(c, "%s%~s <-- Operation has not been defined!",
-                     opr->name, BoxType_Get_Repr(v->type));
+      LOG_ERR("%s%~s <-- Operation has not been defined!",
+              opr->name, BoxType_Get_Repr(v->type));
     }
   }
 
   return v_result;
 }
 
-namespace Box {
 /**
  * Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
@@ -451,12 +453,12 @@ Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
     if (match.match_right == BOXTYPECMP_MATCHING)
       v_right = Emit_Value_Expansion(v_right, match.expand_type_right);
 
-    v_result = My_Opn_Emit(c, opn, v_left, v_right);
+    v_result = Emit_Operation(opn, v_left, v_right);
 
   } else {
-    BoxCmp_Log_Err(c, "%~s %s %~s <-- Operation has not been defined!",
-                   BoxType_Get_Repr(v_left->type), opr->name,
-                   BoxType_Get_Repr(v_right->type));
+    LOG_ERR("%~s %s %~s <-- Operation has not been defined!",
+            BoxType_Get_Repr(v_left->type), opr->name,
+            BoxType_Get_Repr(v_right->type));
     Destroy_Value(v_left);
     Destroy_Value(v_right);
  }
@@ -483,7 +485,7 @@ Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
 
   /* Now we expand the types, if necessary */
   if (match.match_left == BOXTYPECMP_MATCHING)
-    v_src = c->compiler->Emit_Value_Expansion(v_src, match.expand_type_left);
+    v_src = Emit_Value_Expansion(v_src, match.expand_type_left);
 
   if (opn->asm_scheme == OPASMSCHEME_STD_UN)
     BoxLIR_Append_GOp(c->lir, opn->implem.opcode,

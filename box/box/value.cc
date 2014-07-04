@@ -183,30 +183,6 @@ Value_Move(BoxCmp *c, Value *v_dst, Value *v_src)
   return v_dst;
 }
 
-char *
-Value_Steal_Name(Value *src)
-{
-  char *name = src->name;
-  if (src->attr.read_only)
-    return Box_Mem_Strdup(name);
-  src->name = NULL;
-  return name;
-}
-
-Value *
-Value_Mark_RO(Value *v)
-{
-  v->attr.read_only = 1;
-  return v;
-}
-
-Value *
-Value_Unmark_RO(Value *v)
-{
-  v->attr.read_only = 0;
-  return v;
-}
-
 const char *
 ValueKind_To_Str(ValueKind vk)
 {
@@ -227,10 +203,10 @@ namespace Box {
 bool
 Compiler::Want_Instance(Value *v)
 {
-  if (Value_Is_Value(v))
+  if (Is_Instance(v))
     return true;
 
-  if (Value_Is_Err(v))
+  if (Is_Err(v))
     return false;
 
   if (v->name)
@@ -245,10 +221,10 @@ Compiler::Want_Instance(Value *v)
 bool
 Compiler::Want_Type(Value *v)
 {
-  if (Value_Has_Type(v))
+  if (Has_Type(v))
     return true;
 
-  if (Value_Is_Err(v))
+  if (Is_Err(v))
     return false;
 
   if (v->name)
@@ -594,10 +570,8 @@ Compiler::Emit_Make_Temp(Value *v_dst, Value *v_src)
   return NULL;
 }
 
-}
-
 Value *
-Value_To_Temp_Or_Target(BoxCmp *c, Value *v_dst, Value *v_src)
+Compiler::Emit_Load_Into_Reg(Value *v_dst, Value *v_src)
 {
   if (v_src->kind == VALUEKIND_TARGET)
     return Value_Move(c, v_dst, v_src);
@@ -605,82 +579,12 @@ Value_To_Temp_Or_Target(BoxCmp *c, Value *v_dst, Value *v_src)
 }
 
 Value *
-Value_Promote_Temp_To_Target(Value *v)
+Compiler::Temp_As_Target(Value *v)
 {
   if (v->kind == VALUEKIND_TEMP)
     v->kind = VALUEKIND_TARGET;
   return v;
 }
-
-Value *
-Value_Set_Ignorable(Value *v, BoxBool ignorable)
-{
-  v->attr.ignore = ignorable;
-  return v;
-}
-
-int Value_Is_Err(Value *v) {
-  return (v->kind == VALUEKIND_ERR);
-}
-
-int Value_Is_Temp(Value *v)
-{
-  return (v->kind == VALUEKIND_TEMP);
-}
-
-BoxBool BoxValue_Is_Var_Name(BoxValue *v)
-{
-  return (v->kind == VALUEKIND_VAR_NAME);
-}
-
-int Value_Is_Type_Name(Value *v)
-{
-  return (v->kind == VALUEKIND_TYPE_NAME);
-}
-
-int Value_Is_Target(Value *v)
-{
-  return (v->kind == VALUEKIND_TARGET);
-}
-
-int Value_Is_Value(Value *v)
-{
-  switch(v->kind) {
-  case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-int Value_Is_Ignorable(Value *v) {
-  int ignore =    (v->kind == VALUEKIND_ERR)
-               || (v->kind == VALUEKIND_TYPE)
-               || v->attr.ignore;
-  if (ignore)
-    return 1;
-
-  else if (Value_Is_Value(v))
-    return (BoxType_Compare(Box_Get_Core_Type(BOXTYPEID_VOID), v->type)
-            != BOXTYPECMP_DIFFERENT);
-
-  else
-    return 0;
-}
-
-int Value_Has_Type(Value *v)
-{
-  switch(v->kind) {
-  case VALUEKIND_TYPE_NAME:
-  case VALUEKIND_VAR_NAME:
-  case VALUEKIND_ERR:
-    return 0;
-  default:
-    return 1;
-  }
-}
-
-namespace Box {
 
 /**
  * @note Destroy @p v and return a new Value.
@@ -840,7 +744,7 @@ Compiler::Emit_Call(BoxVMCallNum call_num, Value *parent, Value *child)
   if (child->cont.type != BOXTYPEID_VOID) {
     Value v_to_pass;
     Init_Value(& v_to_pass);
-    Value_To_Temp_Or_Target(c, & v_to_pass, child);
+    Emit_Load_Into_Reg(& v_to_pass, child);
     BoxGOp op = ((child->cont.type == BOXTYPEID_OBJ
                   && child->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
@@ -887,7 +791,7 @@ Compiler::Emit_Call(Value *parent, Value *child)
 
   assert(parent && child);
 
-  if (Value_Is_Err(parent) || Value_Is_Err(child)) {
+  if (Is_Err(parent) || Is_Err(child)) {
     /* In case of error silently exits. */
     Destroy_Value(child);
     return BOXTASK_OK;
@@ -1063,8 +967,6 @@ Compiler::Emit_Reduce_Ptr_Offset(Value *v_src)
   return v_ret;
 }
 
-}
-
 /**
  * @brief Return a sub-field of an object type.
  * @param c Compiler object.
@@ -1076,8 +978,8 @@ Compiler::Emit_Reduce_Ptr_Offset(Value *v_src)
  *   in @p v_src_dst.
  */
 Value *
-Value_Get_Subfield(BoxCmp *c, Value *v_src_dst,
-                   size_t offset, BoxType *subf_type)
+Compiler::Emit_Get_Subfield(Value *v_src_dst, size_t offset,
+                            BoxType *subf_type)
 {
   BoxCont *cont = & v_src_dst->cont;
 
@@ -1135,20 +1037,18 @@ My_Point_Get_Member(BoxCmp *c, Value *v_dst, Value *v_src, const char *memb)
     c->compiler->Setup_Value_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_PTR));
     BoxLIR_Append_GOp(c->lir, g_op, 2, & v_dst->cont, & v_src->cont);
     v_dst->kind = VALUEKIND_TARGET;
-    return Value_Get_Subfield(c, v_dst, (size_t) 0,
-                              Box_Get_Core_Type(BOXTYPEID_SREAL));
+    return c->compiler->Emit_Get_Subfield(v_dst, (size_t) 0,
+                                          Box_Get_Core_Type(BOXTYPEID_SREAL));
   }
   c->compiler->Destroy_Value(v_dst);
   return NULL;
 }
 
-namespace Box {
-
 /**
  * @note Destroy @p v_src and return a new Value.
  */
 Value *
-Compiler::Emit_Struc_Member_Get(Value *v_src, const char *memb)
+Compiler::Emit_Get_Struc_Member(Value *v_src, const char *memb)
 {
   /* If v_struc is a subtype, then expand it (subtypes do not have members) */
   v_src = Emit_Subtype_Expansion(v_src);
@@ -1172,7 +1072,7 @@ Compiler::Emit_Struc_Member_Get(Value *v_src, const char *memb)
     BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
                                                   & offset, 0, & member_type);
     if (result)
-      return Value_Get_Subfield(c, v_src, offset, member_type);
+      return Emit_Get_Subfield(v_src, offset, member_type);
   }
   Destroy_Value(v_src);
   return NULL;
@@ -1199,7 +1099,7 @@ Compiler::ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc)
                                            NULL, & vsi->t_member);
     assert(success);
 
-    v_member = Value_Get_Subfield(c, & vsi->v_member, 0, vsi->t_member);
+    v_member = Emit_Get_Subfield(& vsi->v_member, 0, vsi->t_member);
     assert(v_member == & vsi->v_member);
   }
 }
@@ -1222,8 +1122,7 @@ Compiler::ValueStrucIter_Do_Next(ValueStrucIter *vsi)
                                                    NULL, & vsi->t_member);
     assert(success);
 
-    v_member =
-      Value_Get_Subfield(c, & vsi->v_member, delta_offset, vsi->t_member);
+    v_member = Emit_Get_Subfield(& vsi->v_member, delta_offset, vsi->t_member);
     assert(v_member == & vsi->v_member);
   }
 }
@@ -1291,6 +1190,16 @@ Compiler::Emit_Value_Move(Value *v_dst, Value *v_src)
 
   Destroy_Value(v_src);
   return v_dst;
+}
+
+char *
+Value_Steal_Name(Value *src)
+{
+  char *name = src->name;
+  if (src->attr.read_only)
+    return Box_Mem_Strdup(name);
+  src->name = NULL;
+  return name;
 }
 
 /**
@@ -1592,16 +1501,16 @@ Compiler::Emit_Subtype_Build(Value *v_parent, const char *subtype_name)
      * and transfer the child pointer to the subtype.
      */
     v_ptr = Weak_Copy_Value(v_subtype);
-    v_ptr = Value_Get_Subfield(c, v_ptr, /* offset */ 0,
-                               Box_Get_Core_Type(BOXTYPEID_PTR));
+    v_ptr = Emit_Get_Subfield(v_ptr, /* offset */ 0,
+                              Box_Get_Core_Type(BOXTYPEID_PTR));
     Destroy_Value(Emit_Value_Move(v_ptr, v_subtype_child));
   }
 
   /* We now create the value for the parent Pointer in the subtype */
   if (!BoxType_Is_Empty(v_parent->type)) {
     Value *v_ptr = Weak_Copy_Value(v_subtype);
-    v_ptr = Value_Get_Subfield(c, v_ptr, /*offset*/ sizeof(BoxPtr),
-                               Box_Get_Core_Type(BOXTYPEID_PTR));
+    v_ptr = Emit_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr),
+                              Box_Get_Core_Type(BOXTYPEID_PTR));
     Value *v_subtype_parent = Weak_Copy_Value(v_parent);
     v_subtype_parent = Emit_Cast_To_Ptr(v_subtype_parent);
     Destroy_Value(Emit_Value_Move(v_ptr, v_subtype_parent));
@@ -1633,8 +1542,9 @@ My_Value_Subtype_Get(BoxCmp *c, Value *v_subtype, bool get_child)
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
         v_ret = c->compiler->Weak_Copy_Value(v_subtype);
-        v_ret = Value_Get_Subfield(c, v_ret, offset,
-                                   Box_Get_Core_Type(BOXTYPEID_PTR));
+        v_ret =
+          c->compiler->Emit_Get_Subfield(v_ret, offset,
+                                         Box_Get_Core_Type(BOXTYPEID_PTR));
         v_ret = c->compiler->Emit_Value_Cast(v_ret, t_ret);
         v_ret->attr.own_register = v_subtype->attr.own_register;
         v_subtype->attr.own_register = 0;
@@ -1671,12 +1581,12 @@ Compiler::Emit_Get_Subtype_Child(Value *v_subtype)
 Value *
 Compiler::Emit_Subtype_Expansion(Value *v_src)
 {
-  if (Value_Is_Value(v_src)) {
+  if (Is_Instance(v_src)) {
     if (BoxType_Is_Subtype(v_src->type)) {
       bool subtype_was_target = (v_src->kind == VALUEKIND_TARGET);
       v_src = Emit_Get_Subtype_Child(v_src);
       if (subtype_was_target)
-        v_src = Value_Promote_Temp_To_Target(v_src);
+        v_src = Temp_As_Target(v_src);
       return v_src;
     }
   }
@@ -1687,7 +1597,7 @@ Compiler::Emit_Subtype_Expansion(Value *v_src)
 Value *
 Compiler::Emit_Raise_Instance(Value *v)
 {
-  if (Value_Is_Value(v)) {
+  if (Is_Instance(v)) {
     BoxType *t = BoxType_Resolve(v->type, BOXTYPERESOLVE_IDENT, 0);
     BoxType *unraised_type = BoxType_Unraise(t);
     if (unraised_type) {
@@ -1709,7 +1619,7 @@ Compiler::Emit_Raise_Instance(Value *v)
 Value *
 Compiler::Emit_Reference_Instance(Value *v)
 {
-  if (!Value_Is_Value(v)) {
+  if (!Is_Instance(v)) {
     LOG_ERR("Invalid operand to reference operator.");
     Destroy_Value(v);
     return NULL;
@@ -1727,7 +1637,7 @@ Compiler::Emit_Dereference_Instance(Value *v)
 {
   BoxType *deref_type;
 
-  if (!Value_Is_Value(v)) {
+  if (!Is_Instance(v)) {
     LOG_ERR("Invalid operand to reference operator.");
     return NULL;
   }

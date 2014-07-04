@@ -337,7 +337,7 @@ Compiler::Pop_Errors(int items_to_pop, int errors_to_push)
 
     if (si->type == STACKITEM_VALUE) {
       Value *v = (Value *) si->item;
-      if (Value_Is_Err(v)) {
+      if (Is_Err(v)) {
         ok = BOXBOOL_FALSE;
         break;
       }
@@ -642,7 +642,7 @@ Compiler::Compile_Keyword(BoxASTNode *node)
     return;
   else {
     Value *v = Pop_Value();
-    Push_Value(Value_To_Temp_Or_Target(c, v, v));
+    Push_Value(Emit_Load_Into_Reg(v, v));
   }
 }
 
@@ -700,8 +700,8 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
       parent = Finish_Value(parent_type);
       parent_is_err = BOXBOOL_TRUE;
     } else {
-      parent = Value_To_Temp_Or_Target(c, parent_type, parent_type);
-      parent_is_err = Value_Is_Err(parent);
+      parent = Emit_Load_Into_Reg(parent_type, parent_type);
+      parent_is_err = Is_Err(parent);
     }
     Push_Value(parent);
   }
@@ -744,7 +744,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
      * NOTE: the following works also when parent = ERROR
      */
     Value *v_parent = Weak_Copy_Value(parent);
-    v_parent = Value_Promote_Temp_To_Target(v_parent);
+    v_parent = Temp_As_Target(v_parent);
     /* ^^^ Promote # (the Box object) to a target so that it can be
      * changed inside the Box
      */
@@ -793,7 +793,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     } else
       stmt_val = My_Get_Void_Value(c);
 
-    if (parent_is_err || Value_Is_Ignorable(stmt_val)) {
+    if (parent_is_err || Is_Ignorable(stmt_val)) {
       Destroy_Value(stmt_val);
     } else {
       if (!Want_Type(stmt_val)) {
@@ -913,7 +913,7 @@ Compiler::Compile_Ignore(BoxASTNode *node)
   /* Compile operand and get it from the stack */
   Compile_Any(((BoxASTNodeIgnore *) node)->value);
   operand = Get_Value(0);
-  Value_Set_Ignorable(operand, BOXBOOL_TRUE);
+  Set_Ignorable(operand);
 }
 
 void
@@ -986,7 +986,7 @@ Compiler::Compile_UnOp(BoxASTNode *node)
       v_result = Emit_Dereference_Instance(operand);
       break;
     default:
-      v_result = BoxCmp_Opr_Emit_UnOp(c, un_op->op, operand);
+      v_result = Emit_UnOp(un_op->op, operand);
       break;
     }
   } else
@@ -1024,11 +1024,10 @@ Compiler::Compile_Value_Assignment(Value *left, Value *right)
     /* If the value is an identifier (thing without type, nor value),
      * then we transform it to a proper target.
      */
-    if (BoxValue_Is_Var_Name(left)) {
-      return Value_Set_Ignorable(Emit_Value_Assignment(left, right),
-                                 BOXBOOL_TRUE);
-    } else if (Value_Is_Target(left)) {
-      return Value_Set_Ignorable(Emit_Value_Move(left, right), BOXBOOL_TRUE);
+    if (Is_Var_Name(left)) {
+      return Set_Ignorable(Emit_Value_Assignment(left, right));
+    } else if (Is_Target(left)) {
+      return Set_Ignorable(Emit_Value_Move(left, right));
     } else {
       BoxCmp_Log_Err(c, "Invalid target for assignment (%s).",
                      ValueKind_To_Str(left->kind));
@@ -1052,7 +1051,7 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
   if (Want_Type(v_type)) {
     BoxType *t_type = BoxType_Link(v_type->type);
 
-    if (Value_Is_Type_Name(v_name)) {
+    if (Is_Type_Name(v_name)) {
       /* Create the new identity type. */
       Value v;
       BoxType *ident_type = BoxType_Create_Ident(t_type, v_name->name);
@@ -1068,7 +1067,7 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
       Destroy_Value(v_name);
       return v_named_type;
 
-    } else if (Value_Has_Type(v_name)) {
+    } else if (Has_Type(v_name)) {
       BoxType *t = v_name->type;
       if (BoxType_Is_Subtype(t)) {
         if (BoxType_Is_Registered_Subtype(t)) {
@@ -1173,7 +1172,7 @@ Compiler::Compile_Get(BoxASTNode *node)
   }
 
   t = BoxType_Link(v_struc->type);
-  v_struc = Emit_Struc_Member_Get(v_struc, member_name);
+  v_struc = Emit_Get_Struc_Member(v_struc, member_name);
   if (!v_struc)
     BoxCmp_Log_Err(c, "Cannot find the member `%s' of an object "
                    "with type `%T'.", member_name, t);
@@ -1217,7 +1216,7 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
     BoxCmp_Log_Err(c, "%s not defined in the current scope.", n_self);
   } else {
     if (promote_to_target)
-      v_self = Value_Promote_Temp_To_Target(v_self);
+      v_self = Temp_As_Target(v_self);
   }
 
   Push_Value(v_self);
@@ -1560,10 +1559,8 @@ Compiler::Compile_Species_Type(BoxASTNodeCompound *compound)
 void
 Compiler::Compile_Paren(BoxASTNode *expr)
 {
-  Value *v;
   Compile_Any(expr);
-  v = Get_Value(0);
-  Value_Set_Ignorable(v, BOXBOOL_FALSE);
+  Set_Ignorable(Get_Value(0), false);
 }
 
 void

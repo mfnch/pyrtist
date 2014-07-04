@@ -93,7 +93,7 @@ My_NmspItem_Finish(BoxCmp *c, Namespace *ns, size_t floor_idx, NmspItem *item)
   case NMSPITEMTYPE_VALUE:
     {
       Value *v = (Value *) item->data;
-      c->compiler->Value_Force_Destroy(c->compiler->Track_Value(v));
+      c->compiler->Destroy_Value(c->compiler->Track_Value(v));
       return;
     }
   case NMSPITEMTYPE_PROCEDURE:

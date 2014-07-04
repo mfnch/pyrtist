@@ -124,19 +124,6 @@ typedef enum {
   VALCONTTYPE_ARG, VALCONTTYPE_STACK
 } ValContType;
 
-/**
- * @brief Mark the #Value as read only.
- * @note Read only values cannot be finished or altered.
- */
-Value *
-Value_Mark_RO(Value *v);
-
-/**
- * @brief Undo a call to Value_Mark_RO().
- */
-Value *
-Value_Unmark_RO(Value *v);
-
 /** Return the name (a string) corresponding to the given ValueKind. */
 const char *ValueKind_To_Str(ValueKind vk);
 
