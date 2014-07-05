@@ -219,10 +219,11 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  *  during the search.
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
-Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxType *type_left,
-                                    BoxType *type_right,
-                                    BoxType *type_result) {
+Operation *
+BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
+                         BoxType *type_left, BoxType *type_right,
+                         BoxType *type_result)
+{
   int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0),
       do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
   Operation *opn;
@@ -290,8 +291,7 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
       }
     }
 
-    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                      1, & v_left->cont);
+    Append_LIR1(opn->implem.opcode, & v_left->cont);
     result = v_left;
     break;
 
@@ -301,7 +301,7 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
     if (Is_Target(v_left)) {
       BoxCont cont = v_left->cont;
       Emit_Make_Temp(v_left, v_left);
-      BoxLIR_Append_GOp(c->lir, opn->implem.opcode, 1, & cont);
+      Append_LIR1(opn->implem.opcode, & cont);
       result = v_left;
       break;
     } else {
@@ -338,8 +338,7 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
       Emit_Make_Temp(v_left, v_left);
     }
 
-    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                      2, & v_left->cont, & v_right->cont);
+    Append_LIR2(opn->implem.opcode, & v_left->cont, & v_right->cont);
     result = v_left;
     Destroy_Value(v_right);
     break;
@@ -352,8 +351,8 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
       Setup_Value_As_Temp(result, opn->type_result);
       Emit_Load_Into_Reg(v_left, v_left);
       Emit_Load_Into_Reg(v_right, v_right);
-      BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                        3, & result->cont, & v_left->cont, & v_right->cont);
+      Append_LIR3(opn->implem.opcode, & result->cont, & v_left->cont,
+                  & v_right->cont);
       Destroy_Value(v_left);
       Destroy_Value(v_right);
       return result;
@@ -368,8 +367,7 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
     }
 
     Emit_Make_Temp(v_left, v_left);
-    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                      2, & v_left->cont, & v_right->cont);
+    Append_LIR2(opn->implem.opcode, & v_left->cont, & v_right->cont);
     Destroy_Value(v_right);
     result = v_left;
     break;
@@ -488,8 +486,7 @@ Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
     v_src = Emit_Value_Expansion(v_src, match.expand_type_left);
 
   if (opn->asm_scheme == OPASMSCHEME_STD_UN)
-    BoxLIR_Append_GOp(c->lir, opn->implem.opcode,
-                      2, & v_dst->cont, & v_src->cont);
+    Append_LIR2(opn->implem.opcode, & v_dst->cont, & v_src->cont);
   else if (opn->asm_scheme == OPASMSCHEME_USR_UN)
     Emit_Call(opn->implem.call_num, v_dst, v_src);
   else {

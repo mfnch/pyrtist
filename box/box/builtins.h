@@ -31,12 +31,6 @@
 #  include <box/types.h>
 #  include <box/compiler.h>
 
-/** Builtin types */
-typedef struct {
-  BoxVMCallNum
-          subtype_init,
-          subtype_finish;
-} BltinStuff;
 
 BOX_BEGIN_DECLS
 

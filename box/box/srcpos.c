@@ -130,7 +130,7 @@ void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
   BoxSrcAssoc *sa = NULL;
 
   if (BoxArr_Num_Items(at) > 0) {
-    BoxSrcAssoc *last_sa = BoxArr_Last_Item_Ptr(at);
+    BoxSrcAssoc *last_sa = (BoxSrcAssoc *) BoxArr_Last_Item_Ptr(at);
     if (last_sa->out_pos > op) {
       MSG_FATAL("BoxSrcPosTable_Associate: out positions should be entered "
                 "from the lower to the greater.");

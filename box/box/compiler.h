@@ -41,24 +41,6 @@ typedef struct BoxCmp_struct BoxCmp;
 
 BOX_BEGIN_DECLS
 
-BOXEXPORT BoxCmp *
-BoxCmp_Create(BoxVM *target_vm);
-
-BOXEXPORT void
-BoxCmp_Destroy(BoxCmp *c);
-
-BOXEXPORT void
-BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level, const char *fmt, ...);
-
-#define BoxCmp_Log_Warn(c, ...) \
-  BoxCmp_Log((c), & (c)->ast_node->head.src, BOXLOGLEVEL_WARNING, __VA_ARGS__)
-
-#define BoxCmp_Log_Err(c, ...) \
-  BoxCmp_Log((c), & (c)->ast_node->head.src, BOXLOGLEVEL_ERROR, __VA_ARGS__)
-
-#define BoxCmp_Log_Fatal(c, ...) \
-  BoxCmp_Log((c), & (c)->ast_node->head.src, BOXLOGLEVEL_FATAL, __VA_ARGS__)
-
 /**
  * Steal the VM which is being used as the target for the compilation.
  */

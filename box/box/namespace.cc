@@ -87,13 +87,13 @@ typedef struct {
 } MyCallbackNmspItem;
 
 static void
-My_NmspItem_Finish(BoxCmp *c, Namespace *ns, size_t floor_idx, NmspItem *item)
+My_NmspItem_Finish(Compiler *c, Namespace *ns, size_t floor_idx, NmspItem *item)
 {
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
     {
       Value *v = (Value *) item->data;
-      c->compiler->Destroy_Value(c->compiler->Track_Value(v));
+      c->Destroy_Value(c->Track_Value(v));
       return;
     }
   case NMSPITEMTYPE_PROCEDURE:
@@ -129,7 +129,7 @@ Compiler::Namespace_Floor_Down()
   for(item = floor_data.first_item; item;) {
     NmspItem *item_to_del = item;
     item = item->next;
-    My_NmspItem_Finish(c, & ns, floor_idx, item_to_del);
+    My_NmspItem_Finish(this, & ns, floor_idx, item_to_del);
     if (item_to_del->ht_item != NULL)
       BoxHT_Remove_By_HTItem(& ns.ht, item_to_del->ht_item);
     else
@@ -177,7 +177,7 @@ Compiler::Namespace_Add_Value(NmspFloor floor, const char *item_name, Value *v)
   Value *new_value = Untrack_Value(Create_Value());
   assert(new_item && new_value);
 
-  Value_Move(c, new_value, v);
+  Move_Value(new_value, v);
   new_item->type = NMSPITEMTYPE_VALUE;
   new_item->data = new_value;
   return Setup_Value_As_Weak_Copy(Create_Value(), new_value);

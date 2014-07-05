@@ -313,21 +313,21 @@ static BoxTask My_For_Int(BoxVMX *vmx) {
 #include "namespace.h"
 #include "compiler.h"
 
-BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+BoxVMCallNum Bltin_Proc_Add(Box::Compiler *c, const char *proc_name,
                             BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMCallNum call_num;
 
   /* We finally install the code (a C function) for the procedure */
-  call_num = BoxVM_Allocate_Call_Num(c->vm);
+  call_num = BoxVM_Allocate_Call_Num(c->vm_);
   if (call_num == BOXVMCALLNUM_NONE)
     return BOXVMSYMID_NONE;
 
-  if (!BoxVM_Install_Proc_CCode(c->vm, call_num, c_fn)) {
-    (void) BoxVM_Deallocate_Call_Num(c->vm, call_num);
+  if (!BoxVM_Install_Proc_CCode(c->vm_, call_num, c_fn)) {
+    (void) BoxVM_Deallocate_Call_Num(c->vm_, call_num);
     return BOXVMSYMID_NONE;
   }
 
-  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, proc_name);
+  (void) BoxVM_Set_Proc_Names(c->vm_, call_num, NULL, proc_name);
   return call_num;
 }
 
@@ -624,7 +624,8 @@ static void My_Register_Conversions(BoxCmp *c) {
                      Box_Get_Core_Type(BOXTYPEID_REAL_COUPLE),
                      NULL, My_Type_Of_Char(c, 'P'));
 
-  struc_to_point_call_num = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
+  struc_to_point_call_num = Bltin_Proc_Add(c->compiler, "conv_2r_to_point",
+                                           My_2R_To_P);
   Operation_Set_User_Implem(opn, struc_to_point_call_num);
 }
 
@@ -670,9 +671,8 @@ static void My_Register_Std_Procs(BoxCmp *c) {
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_ELIF,    BOXTYPEID_SINT, My_If_Int);
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_FOR,    BOXTYPEID_SINT, My_For_Int);
 
-  c->bltin.subtype_init = Bltin_Proc_Add(c, "subtype_init", My_Subtype_Init);
-  c->bltin.subtype_finish = Bltin_Proc_Add(c, "subtype_finish",
-                                           My_Subtype_Finish);
+  Bltin_Proc_Add(c->compiler, "subtype_init", My_Subtype_Init);
+  Bltin_Proc_Add(c->compiler, "subtype_finish", My_Subtype_Finish);
 }
 
 static void My_Register_Math(BoxCmp *c) {

@@ -36,6 +36,31 @@
 #include "compiler_priv.h"
 
 
+/* Function which does all the steps needed to get from a Box source file
+ * to a VM with the corresponding compiled bytecode.
+ */
+BoxBool
+Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
+                            FILE *file, const char *file_name,
+                            const char *setup_file_name,
+                            BoxPaths *paths, BoxLogger *logger)
+{
+  Box::Compiler compiler(target_vm);
+
+  BoxAST *ast =
+    Box_Parse_FILE(file, file_name, setup_file_name, paths, logger);
+  compiler.c->ast = ast;
+  if (!(BoxAST_Is_Sane(ast) && compiler.Compile(ast)))
+    return BOXBOOL_FALSE;
+
+  if (main)
+    *main = compiler.Install();
+  return BOXBOOL_TRUE;
+}
+
+
+namespace Box {
+
 /**
  * @brief Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -66,179 +91,103 @@ typedef struct {
 
 /** Return a new error value.
  */
-Value *My_Value_New_Error(BoxCmp *c)
+Value *My_Value_New_Error(Box::Compiler *c)
 {
-  return c->compiler->Create_Value();
+  return c->Create_Value();
 }
 
 /* We may optimize this later, by just passing a reference to a Value
  * object which is created once for all at the beginning!
  */
-static Value *My_Get_Void_Value(BoxCmp *c)
+static Value *My_Get_Void_Value(Box::Compiler *c)
 {
-  Value *v = c->compiler->Create_Value();
-  c->compiler->Setup_Value_As_Void(v);
+  Value *v = c->Create_Value();
+  c->Setup_Value_As_Void(v);
   return v;
 }
 
-void
-BoxCmp_Init(BoxCmp *c, BoxVM *target_vm)
+BoxASTNode *
+Compiler::Set_Cur_Node(BoxASTNode *cur_ast_node)
 {
+  BoxASTNode *prev_ast_node = ast_node_;
+  ast_node_ = cur_ast_node;
+  return prev_ast_node;
+}
+
+Compiler::Compiler(BoxVM *target_vm)
+{
+  c = (BoxCmp *) Box_Mem_Safe_Alloc(sizeof(BoxCmp));
+  c->compiler = this;
+
+  BoxArr_Init(& active_values_, sizeof(Value *), 32);
+  BoxArr_Init(& value_pos_, sizeof(int), 32);
+  BoxAllocPool_Init(& value_pool_, sizeof(Value)*32);
+  free_value_chain_ = NULL;
+  Namespace_Init();
+
   BoxLIRNodeProc *proc;
-
-  c->compiler = new Box::Compiler(c);
-
   c->ast = NULL;
-  c->ast_node = NULL;
+  ast_node_ = NULL;
+  lir_ = BoxLIR_Create();
+  assert(lir_);
+  attr_.is_sane = 0;
+  attr_.own_vm = (target_vm == NULL);
+  vm_ = (target_vm) ? target_vm : BoxVM_Create();
 
-  c->lir = BoxLIR_Create();
-  assert(c->lir);
-  c->attr.is_sane = 0;
-  c->attr.own_vm = (target_vm == NULL);
-  c->vm = (target_vm) ? target_vm : BoxVM_Create();
-
-  BoxArr_Init(& c->stack, sizeof(StackItem), 32);
+  BoxArr_Init(& stack_, sizeof(StackItem), 32);
 
   BoxBool success = Box_Initialize_Type_System();
   assert(success);
 
   BoxCmp_Init__Operators(c);
-  proc = BoxLIR_Append_Proc(c->lir);
-  (void) BoxLIR_Set_Target_Proc(c->lir, proc);
-  BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
-  BoxVMCode_Set_Alter_Name(& c->main_proc, "main");
-  c->cur_proc = & c->main_proc;
+  proc = BoxLIR_Append_Proc(lir_);
+  (void) BoxLIR_Set_Target_Proc(lir_, proc);
+
+  BoxVMCode_Init(& main_proc_, c, BOXVMCODESTYLE_MAIN);
+  BoxVMCode_Set_Alter_Name(& main_proc_, "main");
+  cur_proc_ = & main_proc_;
 
   BoxCont_Set(& c->cont.pass_child, "go", 2);
   BoxCont_Set(& c->cont.pass_parent, "go", 1);
   Bltin_Init(c);
 }
 
-void BoxCmp_Finish(BoxCmp *c)
-{
-  if (!c)
-    return;
+Compiler::~Compiler() {
+  if (BoxArr_Num_Items(& stack_) != 0)
+    LOG_WARN("BoxCmp_Finish: stack is not empty at destruction");
 
-  if (BoxArr_Num_Items(& c->stack) != 0)
-    BoxCmp_Log_Warn(c, "BoxCmp_Finish: stack is not empty at destruction");
-
-  BoxLIR_Destroy(c->lir);
+  BoxLIR_Destroy(lir_);
   BoxAST_Destroy(c->ast);
   Bltin_Finish(c);
-  BoxVMCode_Finish(& c->main_proc);
-  BoxArr_Finish(& c->stack);
+  BoxVMCode_Finish(& main_proc_);
+  BoxArr_Finish(& stack_);
   BoxCmp_Finish__Operators(c);
 
-  if (c->attr.own_vm)
-    BoxVM_Destroy(c->vm);
+  if (attr_.own_vm)
+    BoxVM_Destroy(vm_);
 
-  delete c->compiler;
-}
-
-BoxCmp *BoxCmp_Create(BoxVM *target_vm)
-{
-  BoxCmp *c = (BoxCmp *) Box_Mem_Alloc(sizeof(BoxCmp));
-  if (c)
-    BoxCmp_Init(c, target_vm);
-  return c;
-}
-
-void BoxCmp_Destroy(BoxCmp *c)
-{
-  BoxCmp_Finish(c);
-  Box_Mem_Free(c);
-}
-
-BoxVM *BoxCmp_Steal_VM(BoxCmp *c)
-{
-  BoxVM *vm = c->vm;
-  c->attr.own_vm = 0;
-  c->vm = 0;
-  return vm;
-}
-
-BoxASTNode *
-BoxCmp_Set_Cur_Node(BoxCmp *c, BoxASTNode *cur_ast_node)
-{
-  BoxASTNode *prev_ast_node = c->ast_node;
-  c->ast_node = cur_ast_node;
-  return prev_ast_node;
-}
-
-void
-BoxCmp_Log(BoxCmp *c, BoxSrc *src, BoxLogLevel level, const char *fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  const char *s = Box_Print_VA(fmt, ap);
-  va_end(ap);
-
-  if (level >= BOXLOGLEVEL_ERROR)
-    c->attr.is_sane = 0;
-
-  BoxAST_Log(c->ast, src, level, s);
-}
-
-namespace Box {
-
-void
-Compiler::Log(BoxLogLevel level, const char *fmt, ...)
-{
-  BoxSrc *src = & c->ast_node->head.src;
-
-  va_list ap;
-  va_start(ap, fmt);
-  const char *s = Box_Print_VA(fmt, ap);
-  va_end(ap);
-
-  if (level >= BOXLOGLEVEL_ERROR)
-    c->attr.is_sane = 0;
-
-  BoxAST_Log(c->ast, src, level, s);
-}
-
-}
-
-/* Function which does all the steps needed to get from a Box source file
- * to a VM with the corresponding compiled bytecode.
- */
-BoxBool
-Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
-                            FILE *file, const char *file_name,
-                            const char *setup_file_name,
-                            BoxPaths *paths, BoxLogger *logger)
-{
-  BoxAST *ast;
-  BoxCmp *compiler = BoxCmp_Create(target_vm);
-
-  ast = Box_Parse_FILE(file, file_name, setup_file_name, paths, logger);
-  compiler->ast = ast;
-  if (!(BoxAST_Is_Sane(ast) && compiler->compiler->Compile(ast))) {
-    BoxCmp_Destroy(compiler);
-    return BOXBOOL_FALSE;
-  }
-
-  if (main)
-    *main = BoxVMCode_Install(& compiler->main_proc);
-  BoxCmp_Destroy(compiler);
-  return BOXBOOL_TRUE;
-}
-
-namespace Box {
-
-Compiler::Compiler(BoxCmp *old_compiler) : c(old_compiler) {
-  BoxArr_Init(& active_values_, sizeof(Value *), 32);
-  BoxArr_Init(& value_pos_, sizeof(int), 32);
-  BoxAllocPool_Init(& value_pool_, sizeof(Value)*32);
-  free_value_chain_ = NULL;
-  Namespace_Init();
-}
-
-Compiler::~Compiler() {
   Namespace_Finish();
   BoxAllocPool_Finish(& value_pool_);
   BoxArr_Finish(& active_values_);
   BoxArr_Finish(& value_pos_);
+  Box_Mem_Free(c);
+}
+
+void
+Compiler::Log(BoxSrc *src, BoxLogLevel level, const char *fmt, ...)
+{
+  if (!src)
+    src = & ast_node_->head.src;
+
+  va_list ap;
+  va_start(ap, fmt);
+  const char *s = Box_Print_VA(fmt, ap);
+  va_end(ap);
+
+  if (level >= BOXLOGLEVEL_ERROR)
+    attr_.is_sane = 0;
+
+  BoxAST_Log(c->ast, src, level, s);
 }
 
 Value *
@@ -259,7 +208,7 @@ Compiler::Untrack_Value(Value *v)
   if (BoxArr_Get_Num_Items(& value_pos_) == 0)
     return v;
 
-  //assert(v->attr.new_or_init);
+  assert(v->attr.new_or_init);
 
   int pos = *((int *) BoxArr_Get_Last_Item_Ptr(& value_pos_));
   Value **vs = (Value **) BoxArr_First_Item_Ptr(& active_values_);
@@ -305,12 +254,12 @@ Compiler::Remove_Any(int num_items_to_remove)
 {
   int i;
   for(i = 0; i < num_items_to_remove; i++) {
-    StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
+    StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& stack_);
     if (si->type == STACKITEM_VALUE)
       Destroy_Value(Track_Value((Value *) si->item));
     if (si->destructor)
       si->destructor(si->item);
-    (void) BoxArr_Pop(& c->stack, NULL);
+    (void) BoxArr_Pop(& stack_, NULL);
   }
 }
 
@@ -319,7 +268,7 @@ Compiler::Push_Error(int num_errors)
 {
   int i;
   for(i = 0; i < num_errors; i++) {
-    StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
+    StackItem *si = (StackItem *) BoxArr_Push(& stack_, NULL);
     si->type = STACKITEM_ERROR;
     si->item = NULL;
     si->destructor = NULL;
@@ -329,11 +278,11 @@ Compiler::Push_Error(int num_errors)
 bool
 Compiler::Pop_Errors(int items_to_pop, int errors_to_push)
 {
-  BoxInt n = BoxArr_Num_Items(& c->stack), i;
+  BoxInt n = BoxArr_Num_Items(& stack_), i;
   int ok = BOXBOOL_TRUE;
 
   for(i = 0; i < items_to_pop; i++) {
-    StackItem *si = (StackItem *) BoxArr_Item_Ptr(& c->stack, n - i);
+    StackItem *si = (StackItem *) BoxArr_Item_Ptr(& stack_, n - i);
 
     if (si->type == STACKITEM_VALUE) {
       Value *v = (Value *) si->item;
@@ -359,7 +308,7 @@ void
 Compiler::Push_Value(Value *v)
 {
   if (v) {
-    StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
+    StackItem *si = (StackItem *) BoxArr_Push(& stack_, NULL);
     si->type = STACKITEM_VALUE;
     si->item = v;
     si->destructor = NULL;
@@ -371,20 +320,20 @@ Compiler::Push_Value(Value *v)
 Value *
 Compiler::Pop_Value()
 {
-  StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
+  StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& stack_);
   Value *v;
 
   switch(si->type) {
   case STACKITEM_ERROR:
-    (void) BoxArr_Pop(& c->stack, NULL);
-    return My_Value_New_Error(c);
+    (void) BoxArr_Pop(& stack_, NULL);
+    return My_Value_New_Error(this);
   case STACKITEM_VALUE:
     v = (Value *) si->item; /* return the value and its reference */
-    (void) BoxArr_Pop(& c->stack, NULL);
+    (void) BoxArr_Pop(& stack_, NULL);
     return Track_Value(v);
   default:
-    BoxCmp_Log_Fatal(c, "BoxCmp_Pop_Value: want value, but top of stack "
-                     "contains incompatible item.");
+    LOG_FATAL("BoxCmp_Pop_Value: want value, but top of stack "
+              "contains incompatible item.");
     return NULL;
   }
 }
@@ -392,18 +341,18 @@ Compiler::Pop_Value()
 Value *
 Compiler::Get_Value(int pos)
 {
-  BoxInt n = BoxArr_Num_Items(& c->stack);
-  StackItem *si = (StackItem *) BoxArr_Item_Ptr(& c->stack, n - pos);
+  BoxInt n = BoxArr_Num_Items(& stack_);
+  StackItem *si = (StackItem *) BoxArr_Item_Ptr(& stack_, n - pos);
   switch(si->type) {
   case STACKITEM_ERROR:
-    return My_Value_New_Error(c); /* return an error value */
+    return My_Value_New_Error(this);
 
   case STACKITEM_VALUE:
     return (Value *) si->item;
 
   default:
-    BoxCmp_Log_Fatal(c, "BoxCmp_Get_Value: want value, but top of stack "
-                     "contains incompatible item.");
+    LOG_FATAL("BoxCmp_Get_Value: want value, but top of stack  contains "
+              "incompatible item.");
     return NULL;
   }
 }
@@ -422,22 +371,22 @@ Compiler::Compile(BoxAST *ast)
 
   /*
    * The "sane" attribute is set here to 1 and is reset whenever an error
-   * message is reported via BoxCmp_Log() or derived functions/macros.
+   * message is reported via Log() or derived functions/macros.
    * Based on this attribute, we will decide whether it is safe to execute
    * the compiled code.
    */
-  c->attr.is_sane = 1;
+  attr_.is_sane = 1;
 
   Compile_Any(root);
   Remove_Any(1);
-  return (c->attr.is_sane == 1);
+  return (attr_.is_sane == 1);
 }
 
 void
 Compiler::Compile_Any(BoxASTNode *node)
 {
   BoxASTNodeType node_type = (BoxASTNodeType) BoxASTNode_Get_Type(node);
-  BoxASTNode *prev_ast_node = BoxCmp_Set_Cur_Node(c, node);
+  BoxASTNode *prev_ast_node = Set_Cur_Node(node);
 
 #if BOX_CHECK_VALUE_LEAKS
   Begin_Leak_Check();
@@ -449,8 +398,8 @@ Compiler::Compile_Any(BoxASTNode *node)
   switch (node_type) {
 #include "astnodes.h"
   default:
-    BoxCmp_Log_Err(c, "Compilation of node %s (%d) is not implemented "
-                   " yet", BoxASTNodeType_To_Str(node_type), (int) node_type);
+    LOG_ERR("Compilation of node %s (%d) is not implemented yet",
+            BoxASTNodeType_To_Str(node_type), (int) node_type);
     break;
   }
 
@@ -459,11 +408,11 @@ Compiler::Compile_Any(BoxASTNode *node)
 #if BOX_CHECK_VALUE_LEAKS
   int num_leaks = End_Leak_Check();
   if (true && num_leaks)
-    BoxCmp_Log_Err(c, "%d Value objects leaked in node %s",
-                   num_leaks, BoxASTNodeType_To_Str(node_type));
+    LOG_ERR("%d Value objects leaked in node %s",
+            num_leaks, BoxASTNodeType_To_Str(node_type));
 #endif
 
-  BoxCmp_Set_Cur_Node(c, prev_ast_node);
+  Set_Cur_Node(prev_ast_node);
 }
 
 void
@@ -557,8 +506,8 @@ Compiler::Compile_Subtype_Value(BoxASTNodeSubtype *node)
   } else {
     v_parent = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
     if (!v_parent)
-      BoxCmp_Log_Err(c, "Cannot get implicit method `%s'. Default parent is "
-                     "not defined in current scope.", name);
+      LOG_ERR("Cannot get implicit method `%s'. Default parent is "
+              "not defined in current scope.", name);
   }
 
   if (v_parent) {
@@ -598,8 +547,8 @@ Compiler::Compile_Subtype_Type(BoxASTNodeSubtype *node)
         if (!new_subtype)
           new_subtype = BoxType_Create_Subtype(pt, name, NULL);
       } else
-        BoxCmp_Log_Err(c, "Cannot build subtype `%s' of undefined subtype "
-                       "`%T'.", name, pt);
+        LOG_ERR("Cannot build subtype `%s' of undefined subtype `%T'.",
+                name, pt);
     } else {
       new_subtype = BoxType_Find_Subtype(pt, name);
       if (!new_subtype)
@@ -679,7 +628,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
   box = (BoxASTNodeBox *) box_node;
 
   if (!box->parent) {
-    Value *v_void = My_Get_Void_Value(c);
+    Value *v_void = My_Get_Void_Value(this);
     Push_Value(v_void);
 
     parent = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
@@ -695,8 +644,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
 
     if (BoxASTNode_Is_Type(box->parent)
         && BoxType_Is_Subtype(parent_type->type)) {
-      BoxCmp_Log_Err(c, "Cannot instantiate unbound subtype %T",
-                     parent_type->type);
+      LOG_ERR("Cannot instantiate unbound subtype %T", parent_type->type);
       parent = Finish_Value(parent_type);
       parent_is_err = BOXBOOL_TRUE;
     } else {
@@ -760,7 +708,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
     Emit_Call(parent, BOXTYPEID_BEGIN);
 
   /* Create jump-labels for If and For */
-  begin_label = BoxLIR_Get_Last_Op(c->lir);
+  begin_label = BoxLIR_Get_Last_Op(lir_);
 
   /* Save previous source position */
   //BoxSrc *prev_src_of_err = Msg_Set_Src(& box->head.src);
@@ -770,7 +718,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
   /* Loop over all the statements of the box */
   for(s = box->first_stmt, state = MYBOXSTATE_INITIAL; s; s = s->next) {
     Value *stmt_val;
-    BoxCmp_Set_Cur_Node(c, (BoxASTNode *) s);
+    Set_Cur_Node((BoxASTNode *) s);
 
     if (s->sep == BOXASTSEP_PAUSE && !parent_is_err) {
       BoxTask emit_task;
@@ -781,9 +729,9 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
         BoxSrc sep_src;
         sep_src.begin = s->sep_pos;
         sep_src.end = s->sep_pos + 1;
-        BoxCmp_Log(c, & sep_src, BOXLOGLEVEL_WARNING, "Don't know "
-                   "how to use `%T' expressions inside a `%T' box.",
-                   t_pause, parent->type);
+        Log(& sep_src, BOXLOGLEVEL_WARNING, "Don't know "
+            "how to use `%T' expressions inside a `%T' box.",
+            t_pause, parent->type);
       }
     }
 
@@ -791,7 +739,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
       Compile_Any(s->value);
       stmt_val = Pop_Value();
     } else
-      stmt_val = My_Get_Void_Value(c);
+      stmt_val = My_Get_Void_Value(this);
 
     if (parent_is_err || Is_Ignorable(stmt_val)) {
       Destroy_Value(stmt_val);
@@ -806,7 +754,7 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
                               Box_Get_Core_Type(BOXTYPEID_IF))) {
             BoxLIRNodeOpBranch *branch;
             if (!else_label)
-              else_label = BoxLIR_Append_Op_Label(c->lir);
+              else_label = BoxLIR_Append_Op_Label(lir_);
             branch = Emit_Conditional_Jump(stmt_val);
             branch->target = else_label;
 
@@ -821,11 +769,11 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
                                      Box_Get_Core_Type(BOXTYPEID_ELSE))) {
             if (state == MYBOXSTATE_GOT_IF) {
               if (!end_label)
-                end_label = BoxLIR_Append_Op_Label(c->lir);
-              BoxLIR_Append_Op_Branch(c->lir, BOXOP_JMP_I, end_label);
+                end_label = BoxLIR_Append_Op_Label(lir_);
+              BoxLIR_Append_Op_Branch(lir_, BOXOP_JMP_I, end_label);
 
               assert(else_label);
-              BoxLIR_Move_Label_Back(c->lir, else_label);
+              BoxLIR_Move_Label_Back(lir_, else_label);
               else_label = NULL;
 
               assert(need_floor_down);
@@ -834,19 +782,19 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
 
             } else {
               if (state == MYBOXSTATE_GOT_ELSE)
-                BoxCmp_Log_Err(c, "Double 'Else'.");
+                LOG_ERR("Double 'Else'.");
               else
-                BoxCmp_Log_Err(c, "'Else' without 'If'.");
+                LOG_ERR("'Else' without 'If'.");
             }
             state = MYBOXSTATE_GOT_ELSE;
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_FOR))) {
             BoxLIRNodeOpBranch *branch;
             branch = Emit_Conditional_Jump(stmt_val);
-            branch->target = BoxLIR_Get_Next_Op(c->lir, begin_label);
+            branch->target = BoxLIR_Get_Next_Op(lir_, begin_label);
           } else {
-            BoxCmp_Log_Warn(c, "Don't know how to use `%T' expressions inside "
-                            "a `%T' box.", stmt_val->type, parent->type);
+            LOG_WARN("Don't know how to use `%T' expressions inside "
+                     "a `%T' box.", stmt_val->type, parent->type);
           }
 
           Destroy_Value(stmt_val);
@@ -862,11 +810,11 @@ Compiler::Compile_Box_Generic(BoxASTNode *box_node,
   //(void) Msg_Set_Src(prev_src_of_err);
 
   if (end_label)
-    BoxLIR_Move_Label_Back(c->lir, end_label);
+    BoxLIR_Move_Label_Back(lir_, end_label);
 
   /* If without else: make If[] jump to the end of the [] block. */
   if (else_label)
-    BoxLIR_Move_Label_Back(c->lir, else_label);
+    BoxLIR_Move_Label_Back(lir_, else_label);
 
   /* Invoke the closing procedure */
   if (box->parent)
@@ -944,8 +892,8 @@ Compiler::Compile_UnTypeOp(BoxASTNode *node)
       out_type = BoxType_Dereference_Pointer(BoxType_Link(v_type->type));
       break;
     default:
-      BoxCmp_Log_Err(c, "Cannot apply unary operator %s to type.",
-                     BoxASTUnOp_To_String(un_type_op->op));
+      LOG_ERR("Cannot apply unary operator %s to type.",
+              BoxASTUnOp_To_String(un_type_op->op));
       break;
     }
 
@@ -1029,8 +977,8 @@ Compiler::Compile_Value_Assignment(Value *left, Value *right)
     } else if (Is_Target(left)) {
       return Set_Ignorable(Emit_Value_Move(left, right));
     } else {
-      BoxCmp_Log_Err(c, "Invalid target for assignment (%s).",
-                     ValueKind_To_Str(left->kind));
+      LOG_ERR("Invalid target for assignment (%s).",
+              ValueKind_To_Str(left->kind));
     }
   }
 
@@ -1075,9 +1023,8 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
           BoxBool success = BoxType_Get_Subtype_Info(t, NULL, NULL, & t_child);
           assert(success);
           if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
-            BoxCmp_Log_Err(c, "Inconsistent redefinition of type `%T': was "
-                           "`%T' and is now `%T'", v_name->type, t_child,
-                           v_type->type);
+            LOG_ERR("Inconsistent redefinition of type `%T': was `%T' and is "
+                    "now `%T'", v_name->type, t_child, v_type->type);
         } else {
           (void) BoxType_Register_Subtype(t, v_type->type);
           /* ^^^ ignore state of success of operation. */
@@ -1085,8 +1032,7 @@ Compiler::Compile_Type_Assignment(Value *v_name, Value *v_type)
 
       } else if (BoxType_Compare(v_name->type, v_type->type)
                  == BOXTYPECMP_DIFFERENT) {
-        BoxCmp_Log_Err(c, "Inconsistent redefinition of type `%T'.",
-                       v_name->type);
+        LOG_ERR("Inconsistent redefinition of type `%T'.", v_name->type);
       }
 
       Destroy_Value(v_name);
@@ -1156,8 +1102,8 @@ Compiler::Compile_Get(BoxASTNode *node)
   if (!parent) {
     v_struc = Namespace_Get_Value(NMSPFLOOR_DEFAULT, "#");
     if (!v_struc) {
-      BoxCmp_Log_Err(c, "Cannot get implicit member '%s'. Default "
-                     "parent is not defined in current scope.", member_name);
+      LOG_ERR("Cannot get implicit member '%s'. Default "
+              "parent is not defined in current scope.", member_name);
       Push_Value(NULL);
       return;
     }
@@ -1174,8 +1120,8 @@ Compiler::Compile_Get(BoxASTNode *node)
   t = BoxType_Link(v_struc->type);
   v_struc = Emit_Get_Struc_Member(v_struc, member_name);
   if (!v_struc)
-    BoxCmp_Log_Err(c, "Cannot find the member `%s' of an object "
-                   "with type `%T'.", member_name, t);
+    LOG_ERR("Cannot find the member `%s' of an object with type `%T'.",
+            member_name, t);
   (void) BoxType_Unlink(t);
   Push_Value(v_struc);
 }
@@ -1213,7 +1159,7 @@ Compiler::Compile_ArgGet(BoxASTNode *node)
   }
 
   if (!v_self) {
-    BoxCmp_Log_Err(c, "%s not defined in the current scope.", n_self);
+    LOG_ERR("%s not defined in the current scope.", n_self);
   } else {
     if (promote_to_target)
       v_self = Temp_As_Target(v_self);
@@ -1261,8 +1207,8 @@ Compiler::Compile_CombDef(BoxASTNode *node)
     c_name = ((BoxASTNodeStrImm *) comb_def_node->c_name)->str;
     if (strlen(c_name) < 1) {
       /* NOTE: Should we test any other kind of "badness"? */
-      BoxCmp_Log(c, & comb_def_node->c_name->head.src, BOXLOGLEVEL_ERROR,
-                 "Empty string in C-name for procedure declaration.");
+      Log(& comb_def_node->c_name->head.src, BOXLOGLEVEL_ERROR,
+          "Empty string in C-name for procedure declaration.");
       no_err = 0;
     }
   }
@@ -1320,34 +1266,34 @@ Compiler::Compile_CombDef(BoxASTNode *node)
   if (c_name) {
     BoxCallable_Set_Uid(comb_callable, c_name);
     if (!n_implem)
-      BoxVMSym_Reference_Proc(c->vm, comb_callable);
+      BoxVMSym_Reference_Proc(vm_, comb_callable);
   }
 
   /* If an implementation is also provided, then we define the procedure */
   if (n_implem) {
     /* we have the implementation */
-    BoxVMCode *save_cur_proc = c->cur_proc;
-    BoxLIR *save_cur_lir = c->lir;
+    BoxVMCode *save_cur_proc = cur_proc_;
+    BoxLIR *save_cur_lir = lir_;
     Value *v_implem;
     BoxVMCode proc_implem;
     BoxVMCallNum cn;
 
     /* We change target of the compilation to the new procedure */
     BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
-    c->cur_proc = & proc_implem;
-    c->lir = BoxLIR_Create();
-    assert(c->lir);
+    cur_proc_ = & proc_implem;
+    lir_ = BoxLIR_Create();
+    assert(lir_);
 
     /* A BoxVMCode object is used to get the procedure symbol and to register
      * and assemble it.
      */
-    proc = BoxLIR_Append_Proc(c->lir);
+    proc = BoxLIR_Append_Proc(lir_);
     assert(proc);
-    BoxLIR_Set_Target_Proc(c->lir, proc);
+    BoxLIR_Set_Target_Proc(lir_, proc);
 
     /* Set the call number. */
-    if (!BoxType_Generate_Combination_Call_Num(comb, c->vm, & cn))
-      BoxCmp_Log_Fatal(c, "Cannot generate call number for combination.");
+    if (!BoxType_Generate_Combination_Call_Num(comb, vm_, & cn))
+      LOG_FATAL("Cannot generate call number for combination.");
     proc_implem.have.call_num = 1;
     proc_implem.call_num = cn;
 
@@ -1369,13 +1315,13 @@ Compiler::Compile_CombDef(BoxASTNode *node)
     v_implem = Pop_Value();
     Destroy_Value(v_implem);
 
-    c->cur_proc = save_cur_proc;
+    cur_proc_ = save_cur_proc;
 
-    (void) BoxVMCode_Install(& proc_implem);
+    Install(& proc_implem);
 
     BoxVMCode_Finish(& proc_implem);
-    BoxLIR_Destroy(c->lir);
-    c->lir = save_cur_lir;
+    BoxLIR_Destroy(lir_);
+    lir_ = save_cur_lir;
   }
 
   (void) BoxType_Unlink(t_child);
@@ -1384,7 +1330,7 @@ Compiler::Compile_CombDef(BoxASTNode *node)
   /* NOTE: for now we return Void[]. In future extensions we'll return
    * a function object
    */
-  v_ret = My_Get_Void_Value(c);
+  v_ret = My_Get_Void_Value(this);
 
   /* for now we return v_ret = NULL. We'll return a function, when Box will
    * support functions.
@@ -1407,7 +1353,7 @@ Compiler::Compile_Struct_Value(BoxASTNodeCompound *compound)
   no_err = 1;
   for(memb = compound->memb; memb; memb = memb->next, num_members++) {
     Value *v_member;
-    BoxCmp_Set_Cur_Node(c, (BoxASTNode *) memb);
+    Set_Cur_Node((BoxASTNode *) memb);
 
     assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
     assert(memb->expr);
@@ -1416,8 +1362,7 @@ Compiler::Compile_Struct_Value(BoxASTNodeCompound *compound)
     v_member = Get_Value(0);
     no_err &= Want_Instance(v_member);
     if (no_err && BoxType_Is_Empty(v_member->type)) {
-      BoxCmp_Log_Err(c, "Invalid structure member of type `%T'",
-                     v_member->type);
+      LOG_ERR("Invalid structure member of type `%T'", v_member->type);
       no_err = 0;
     }
   }
@@ -1470,7 +1415,7 @@ Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
   err = 0;
   for (memb = compound->memb; memb; memb = memb->next) {
     char *memb_name = NULL;
-    BoxCmp_Set_Cur_Node(c, (BoxASTNode *) memb);
+    Set_Cur_Node((BoxASTNode *) memb);
 
     assert(BoxASTNode_Get_Type((BoxASTNode *) memb) == BOXASTNODETYPE_MEMBER);
 
@@ -1488,8 +1433,8 @@ Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
       if (!err) {
         previous_type = v_type->type;
         if (BoxType_Is_Empty(previous_type)) {
-          BoxCmp_Log_Err(c, "Zero-sized type `%T' not allowed as the member "
-                         "of a structure", previous_type);
+          LOG_ERR("Zero-sized type `%T' not allowed as the member of a "
+                  "structure", previous_type);
           err = 1;
         }
       }
@@ -1501,8 +1446,8 @@ Compiler::Compile_Struct_Type(BoxASTNodeCompound *compound)
       /* Check for duplicate structure members */
       if (memb_name) {
         if (BoxType_Find_Structure_Member(struc_type, memb_name))
-          BoxCmp_Log_Err(c, "Duplicate member `%s' in structure type "
-                         "definition.", memb_name);
+          LOG_ERR("Duplicate member `%s' in structure type definition.",
+                  memb_name);
       }
 
       BoxType_Add_Member_To_Structure(struc_type, previous_type, memb_name);
@@ -1585,7 +1530,7 @@ Compiler::Compile_Compound(BoxASTNode *compound_node)
       Compile_Struct_Value(compound);
     return;
   default:
-    BoxCmp_Log_Fatal(c, "Unexpected compound kind %d", (int) compound->kind);
+    LOG_FATAL("Unexpected compound kind %d", (int) compound->kind);
     abort();
   }
 }

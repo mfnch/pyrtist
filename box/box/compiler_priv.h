@@ -47,29 +47,85 @@
 
 
 namespace Box {
+
+  /// @brief Return the name (a string) corresponding to the given ValueKind.
+  const char *ValueKind_To_Str(ValueKind vk);
+
   union ValueOrChain {
     Value value;
     ValueOrChain *next_in_chain;
   };
 
   class Compiler {
-  private:
+  public:
     // Old compiler.
     BoxCmp *c;
+    BoxVM        *vm_;         ///< The target of the compilation.
+
+  private:
+    BoxVMCode    main_proc_,   ///< Main procedure in the module.
+                 *cur_proc_;   ///< Procedure on which we are working now.
+    BoxLIR       *lir_;        ///< LIR tree.
+    BoxArr       stack_;       ///< Used during compilation to pass around
+                               ///  expressions.
+    BoxASTNode   *ast_node_;   ///< Current source AST node.
+    Namespace    ns;           ///< The namespace.
 
     // The following objects manage allocation of #Value objects.
     BoxAllocPool value_pool_;  ///< Pool of allocated Values.
-    BoxArr active_values_;     ///< #Value objects currently tracked.
-    BoxArr value_pos_;         /**< Position in the active_value_ array at the
-                                    beginning of tracking. */
-    ValueOrChain
-          *free_value_chain_;  ///< Chain to free Value in the value_pool_ pool.
+    BoxArr       active_values_;
+                               ///< #Value objects currently tracked.
+    BoxArr       value_pos_;   ///< Position in the active_value_ array at the
+                               ///< beginning of tracking.
+    ValueOrChain *free_value_chain_;
+                               ///< Chain to free Value in the value_pool_.
 
-    Namespace  ns;             ///< The namespace.
+    struct {
+      unsigned int
+                 own_vm :1,    ///< Do we own the VM?
+                 is_sane :1;   ///< Is the output of compilation sane?
+    }            attr_;        ///< Attributes of the compiler.
 
   public:
-    Compiler(BoxCmp *old_compiler);
+    Compiler(BoxVM *target_vm);
     ~Compiler();
+
+    /**
+     * @brief Submit a compiler message (error, warning, etc).
+     */
+    void Log(BoxSrc *src, BoxLogLevel level, const char *fmt, ...);
+
+    /// @brief Create and append a 1-argument LIR node.
+    void Append_LIR0(BoxGOp g_op)
+    {
+      BoxLIR_Append_GOp(lir_, g_op, 0);
+    }
+
+    /// @brief Create and append a 1-argument LIR node.
+    void Append_LIR1(BoxGOp g_op, BoxCont *c1)
+    {
+      BoxLIR_Append_GOp(lir_, g_op, 1, c1);
+    }
+
+    /// @brief Create and append a 2-arguments LIR node.
+    void Append_LIR2(BoxGOp g_op, BoxCont *c1, BoxCont *c2)
+    {
+      BoxLIR_Append_GOp(lir_, g_op, 2, c1, c2);
+    }
+
+    /// @brief Create and append a 3-arguments LIR node.
+    void Append_LIR3(BoxGOp g_op, BoxCont *c1, BoxCont *c2, BoxCont *c3)
+    {
+      BoxLIR_Append_GOp(lir_, g_op, 3, c1, c2, c3);
+    }
+
+    /// @brief Set the current node for message position tracking.
+    BoxASTNode *Set_Cur_Node(BoxASTNode *cur_ast_node);
+
+    BoxTypeId Install_Type(BoxType *t)
+    {
+      return BoxVM_Install_Type(vm_, t);
+    }
 
     /**
      * @brief Compile from the given abstract syntax tree.
@@ -79,17 +135,24 @@ namespace Box {
     bool Compile(BoxAST *ast);
 
     /**
-     * @brief Submit a compiler message (error, warning, etc).
+     * @brief Compile and install the main procedure.
+     * @return Return the call number for the installed procedure.
      */
-    void Log(BoxLogLevel level, const char *fmt, ...);
+    BoxVMCallNum Install() {return Install(& main_proc_);}
+
+    /**
+     * @brief Compile and install the given procedure.
+     * @return Return the call number for the installed procedure.
+     */
+    BoxVMCallNum Install(BoxVMCode *p);
 
     // Shorthands for submitting warning/error messages to the compiler.
 #   define LOG_WARN(...) \
-      Log(BOXLOGLEVEL_WARNING, __VA_ARGS__)
+      Log(NULL, BOXLOGLEVEL_WARNING, __VA_ARGS__)
 #   define LOG_ERR(...) \
-      Log(BOXLOGLEVEL_ERROR, __VA_ARGS__)
+      Log(NULL, BOXLOGLEVEL_ERROR, __VA_ARGS__)
 #   define LOG_FATAL(...) \
-      Log(BOXLOGLEVEL_FATAL, __VA_ARGS__)
+      Log(NULL, BOXLOGLEVEL_FATAL, __VA_ARGS__)
 
     ///////////////////////////////////////////////////////////////////////////
     // Value manipulation functionality (value.cc).
@@ -102,6 +165,7 @@ namespace Box {
     int End_Leak_Check();
     Value *Track_Value(Value *v);
     Value *Untrack_Value(Value *v);
+    Value *Move_Value(Value *v_dst, Value *v_src);
     bool Want_Instance(Value *v);
     bool Want_Type(Value *v);
     void Setup_Value_Container(Value *v, BoxType *type, ValContainer *vc);
@@ -116,6 +180,7 @@ namespace Box {
     void Setup_Value_As_Temp(Value *v, BoxType *t);
     void Setup_Value_As_Var(Value *v, BoxType *t);
     void Setup_Value_As_String(Value *v_str, const char *str);
+    void Setup_Value_As_Parent_Or_Child(Value *v, BoxType *t, bool is_parent);
     void Setup_Value_As_Parent(Value *v, BoxType *parent_t);
     void Setup_Value_As_Child(Value *v, BoxType *child_t);
     void Setup_Value_As_LReg(Value *v, BoxType *type);
@@ -140,6 +205,7 @@ namespace Box {
     Value *Emit_Value_Assignment(Value *v_dst, Value *v_src);
     Value *Emit_Value_Expansion(Value *src, BoxType *t_dst);
     Value *Emit_Subtype_Build(Value *v_parent, const char *subtype_name);
+    Value *Emit_Get_Subtype_Parent_Or_Child(Value *v_subtype, bool get_child);
     Value *Emit_Get_Subtype_Parent(Value *v_subtype);
     Value *Emit_Get_Subtype_Child(Value *v_subtype);
     Value *Emit_Subtype_Expansion(Value *v_src);
@@ -195,7 +261,7 @@ namespace Box {
     void Namespace_Add_Callback(NmspFloor floor,
                                 NmspCallback callback, void *data);
 
-    bool Is_Var_Name(BoxValue *v) {return (v->kind == VALUEKIND_VAR_NAME);}
+    bool Is_Var_Name(Value *v) {return (v->kind == VALUEKIND_VAR_NAME);}
     bool Is_Type_Name(Value *v) {return (v->kind == VALUEKIND_TYPE_NAME);}
     bool Is_Target(Value *v) {return (v->kind == VALUEKIND_TARGET);}
     bool Is_Err(Value *v) {return (v->kind == VALUEKIND_ERR);}
@@ -297,6 +363,10 @@ namespace Box {
     void Compile_##Node(BoxASTNode *node);
 #  include "astnodes.h"
 #  undef BOXASTNODE_DEF
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Private value manipulation functionality (value.cc).
+    Value *Emit_Species_Expansion(Value *v_src, BoxType *t_dst);
   };
 }
 
@@ -308,14 +378,6 @@ struct BoxCmp_struct {
   Box::Compiler *compiler;
 
   BoxAST     *ast;      /**< Abstract syntax tree. */
-  BoxASTNode *ast_node; /**< Current source AST node. */
-  BoxLIR     *lir;      /**< LIR tree. */
-  BoxVM      *vm;       /**< The target of the compilation */
-  BoxArr     stack;     /**< Used during compilation to pass around
-                             expressions */
-  BltinStuff bltin;     /**< Builtin types, etc. */
-  BoxVMCode  main_proc, /**< Main procedure in the module */
-             *cur_proc; /**< Procedure on which we are working now */
   Operator   convert,   /**< Conversion operator */
              bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
              un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
@@ -325,25 +387,6 @@ struct BoxCmp_struct {
                           /**< Container used to pass parent to procedures */
   }          cont;        /**< Constant containers (allocated once for all
                                just for efficiency) */
-  struct {
-    unsigned int
-             own_vm :1,   /**< Do we own the VM? */
-             is_sane :1;  /**< Is the output of compilation sane? */
-  }          attr;        /**< Attributes of the compiler */
 };
-
-BOX_BEGIN_DECLS
-
-/**
- * @brief Initialize an unset #BoxCmp structure.
- */
-void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
-
-/**
- * @brief Finalize a #BoxCmp structure initialized with BoxCmp_Init().
- */
-void BoxCmp_Finish(BoxCmp *c);
-
-BOX_END_DECLS
 
 #endif /* _BOX_COMPILER_PRIV_H */

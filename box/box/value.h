@@ -58,16 +58,12 @@ typedef struct {
   char      *name;            /**< Optional name of the value */
   struct {
     unsigned int
-            read_only     :1, /**< Value datastructure is read-only. */
             new_or_init   :1, /**< Created by Value_Create or Value_Init? */
             own_register  :1, /**< Need to release a register during
                                  finalisation? */
             ignore        :1; /**< To be ignored when passed to a Box? */
   }         attr;             /**< Attributes for the Value */
-} BoxValue;
-
-/* Just for backward "compatibility". */
-typedef BoxValue Value;
+} Value;
 
 BOX_BEGIN_DECLS
 
@@ -123,9 +119,6 @@ typedef enum {
   VALCONTTYPE_LRPTR, VALCONTTYPE_LVPTR,
   VALCONTTYPE_ARG, VALCONTTYPE_STACK
 } ValContType;
-
-/** Return the name (a string) corresponding to the given ValueKind. */
-const char *ValueKind_To_Str(ValueKind vk);
 
 /**
  * Check that the given value 'v' has both type and value.
@@ -194,13 +187,13 @@ BOXEXPORT void
 Value_Setup_As_LReg(Value *v, BoxType *type);
 
 /**
- * @brief Set up the #BoxValue to represent a new variable of the given type.
+ * @brief Set up the #Value to represent a new variable of the given type.
  *
- * @param v An initialized #BoxValue object.
+ * @param v An initialized #Value object.
  * @param t The type of the new variable.
  */
 BOXEXPORT void
-Value_Setup_As_Var(BoxValue *v, BoxType *t);
+Value_Setup_As_Var(Value *v, BoxType *t);
 
 /** Set the value to represent the given string 'str'. */
 void Value_Setup_As_String(Value *v_str, const char *str);
@@ -215,9 +208,9 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc);
  * @param v The object to allocate.
  */
 BOXEXPORT void
-BoxValue_Emit_Allocate(Value *v);
+Value_Emit_Allocate(Value *v);
 
-#define Value_Emit_Allocate BoxValue_Emit_Allocate
+#define Value_Emit_Allocate Value_Emit_Allocate
 
 /** Emit a link instruction to the Value 'v' (which is supposed to be
  * an object or a pointer).
@@ -274,10 +267,10 @@ int Value_Is_Err(Value *v);
 int Value_Is_Temp(Value *v);
 
 /**
- * @brief Return whether the #BoxValue is a variable name (has no type/value).
+ * @brief Return whether the #Value is a variable name (has no type/value).
  */
 BOXEXPORT BoxBool
-BoxValue_Is_Var_Name(BoxValue *v);
+Value_Is_Var_Name(Value *v);
 
 /** Return 1 if the value is a type name (has no type/value) */
 int Value_Is_Type_Name(Value *v);
