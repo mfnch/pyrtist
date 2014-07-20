@@ -37,7 +37,6 @@
 #include "builtins.h"
 #include "bltinstr.h"
 #include "str.h"
-#include "bltinio.h"
 
 #include "compiler_priv.h"
 
@@ -376,7 +375,9 @@ void Bltin_Proc_Def_With_Ids(BoxTypeId parent, BoxTypeId child,
 /* Register the core types in the current namespace, so that Box programs
  * can access and use them.
  */
-static void My_Register_Core_Types(BoxCmp *c) {
+static void
+My_Register_Core_Types(Box::Compiler *c)
+{
   struct {
     const char *name;
     BoxTypeId  type;
@@ -410,10 +411,10 @@ static void My_Register_Core_Types(BoxCmp *c) {
 
   for(row = & rows[0]; row->name; ++row) {
     Value v;
-    c->compiler->Init_Value(& v);
-    c->compiler->Setup_Value_As_Type(& v, Box_Get_Core_Type(row->type));
-    c->compiler->Namespace_Add_Value(NMSPFLOOR_DEFAULT, row->name, & v);
-    c->compiler->Finish_Value(& v);
+    c->Init_Value(& v);
+    c->Setup_Value_As_Type(& v, Box_Get_Core_Type(row->type));
+    c->Namespace_Add_Value(NMSPFLOOR_DEFAULT, row->name, & v);
+    c->Finish_Value(& v);
   }
 }
 
@@ -422,8 +423,10 @@ static void My_Register_Core_Types(BoxCmp *c) {
  * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPEID_INT,
  * My_Type_Of_Char(c, 'R') returns BOXTYPEID_REAL, etc.
  */
-static BoxType *My_Type_Of_Char(BoxCmp *c, char t) {
-  switch(t) {
+static BoxType *
+My_Type_Of_Char(char t)
+{
+  switch (t) {
   case ' ': return NULL;
   case 'C': return Box_Get_Core_Type(BOXTYPEID_CHAR);
   case 'I': return Box_Get_Core_Type(BOXTYPEID_INT);
@@ -433,7 +436,7 @@ static BoxType *My_Type_Of_Char(BoxCmp *c, char t) {
   case 'r': return Box_Get_Core_Type(BOXTYPEID_SREAL);
   case 'p': return Box_Get_Core_Type(BOXTYPEID_SPOINT);
   default:
-    MSG_FATAL("My_Type_Of_Char: unexpected character.");
+    abort();
     return NULL;
   }
 }
@@ -461,7 +464,9 @@ static OprAttr My_OprAttr_Of_Str(const char *s) {
 }
 
 /* Register all the core unary operations for the Box compiler. */
-static void My_Register_UnOps(BoxCmp *c) {
+static void
+My_Register_UnOps(Box::Compiler *c)
+{
   struct {
     const char *types; /* Two characters describing the types of the result
                           and of the operand, following the map character->type
@@ -489,9 +494,9 @@ static void My_Register_UnOps(BoxCmp *c) {
   };
 
   for(unop = & unops[0]; unop->types != NULL; ++unop) {
-    Operator *opr = BoxCmp_UnOp_Get(c, (BoxASTUnOp) unop->op);
-    BoxType *result = My_Type_Of_Char(c, unop->types[0]),
-            *operand = My_Type_Of_Char(c, unop->types[1]);
+    Operator *opr = c->Get_Un_Op((BoxASTUnOp) unop->op);
+    BoxType *result = My_Type_Of_Char(unop->types[0]),
+            *operand = My_Type_Of_Char(unop->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(unop->mask),
             attr = My_OprAttr_Of_Str(unop->attr);
     Operation *opn = Operator_Add_Opn(opr, operand, NULL, result);
@@ -501,7 +506,9 @@ static void My_Register_UnOps(BoxCmp *c) {
 }
 
 /* Register all the core binary operations for the Box compiler. */
-static void My_Register_BinOps(BoxCmp *c) {
+static void
+My_Register_BinOps(Box::Compiler *c)
+{
   struct {
     const char *types; /* Three characters describing the types of the result,
                           of the left and right operands (following the map
@@ -574,10 +581,10 @@ static void My_Register_BinOps(BoxCmp *c) {
   };
 
   for(binop = & binops[0]; binop->types != NULL; ++binop) {
-    Operator *opr = BoxCmp_BinOp_Get(c, (BoxASTBinOp) binop->op);
-    BoxType *result = My_Type_Of_Char(c, binop->types[0]),
-            *left = My_Type_Of_Char(c, binop->types[1]),
-            *right = My_Type_Of_Char(c, binop->types[2]);
+    Operator *opr = c->Get_Bin_Op((BoxASTBinOp) binop->op);
+    BoxType *result = My_Type_Of_Char(binop->types[0]),
+            *left = My_Type_Of_Char(binop->types[1]),
+            *right = My_Type_Of_Char(binop->types[2]);
     OprAttr mask = My_OprAttr_Of_Str(binop->mask),
             attr = My_OprAttr_Of_Str(binop->attr);
     Operation *opn = Operator_Add_Opn(opr, left, right, result);
@@ -587,8 +594,9 @@ static void My_Register_BinOps(BoxCmp *c) {
 }
 
 /* Register all the conversion operations for the Box compiler. */
-static void My_Register_Conversions(BoxCmp *c) {
-  Operator *convert = & c->convert;
+static void
+My_Register_Conversions(Box::Compiler *c, Operator *convert)
+{
   BoxVMCallNum struc_to_point_call_num;
 
   struct {
@@ -609,8 +617,8 @@ static void My_Register_Conversions(BoxCmp *c) {
   };
 
   for(conv = & convs[0]; conv->types != NULL; ++conv) {
-    BoxType *src = My_Type_Of_Char(c, conv->types[0]),
-            *dst = My_Type_Of_Char(c, conv->types[1]);
+    BoxType *src = My_Type_Of_Char(conv->types[0]),
+            *dst = My_Type_Of_Char(conv->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(conv->mask),
             attr = My_OprAttr_Of_Str(conv->attr);
     Operation *opn = Operator_Add_Opn(convert, src, NULL, dst);
@@ -622,30 +630,33 @@ static void My_Register_Conversions(BoxCmp *c) {
   Operation *opn =
     Operator_Add_Opn(convert,
                      Box_Get_Core_Type(BOXTYPEID_REAL_COUPLE),
-                     NULL, My_Type_Of_Char(c, 'P'));
+                     NULL, My_Type_Of_Char('P'));
 
-  struc_to_point_call_num = Bltin_Proc_Add(c->compiler, "conv_2r_to_point",
-                                           My_2R_To_P);
+  struc_to_point_call_num = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
   Operation_Set_User_Implem(opn, struc_to_point_call_num);
 }
 
-BoxType *Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
-                             BoxTypeId ret, BoxTypeId arg, BoxVMFunc fn) {
+BoxType *
+Bltin_Simple_Fn_Def(Box::Compiler *c, const char *name,
+                    BoxTypeId ret, BoxTypeId arg, BoxVMFunc fn)
+{
   BoxType *new_type;
   Value v;
 
   new_type = BoxType_Create_Ident(BoxType_Link(Box_Get_Core_Type(ret)), name);
 
   (void) Bltin_Proc_Def_With_Id(new_type, arg, fn);
-  c->compiler->Init_Value(& v);
-  c->compiler->Setup_Value_As_Type(& v, new_type);
+  c->Init_Value(& v);
+  c->Setup_Value_As_Type(& v, new_type);
   (void) BoxType_Unlink(new_type);
-  c->compiler->Namespace_Add_Value(NMSPFLOOR_DEFAULT, name, & v);
-  c->compiler->Finish_Value(& v);
+  c->Namespace_Add_Value(NMSPFLOOR_DEFAULT, name, & v);
+  c->Finish_Value(& v);
   return new_type;
 }
 
-static void My_Register_Std_IO(BoxCmp *c) {
+static void
+My_Register_Std_IO(Box::Compiler *c)
+{
   BoxType *t_print = Box_Get_Core_Type(BOXTYPEID_PRINT);
   BoxCombDef defs[] =
     {BOXCOMBDEF_I_AT_T(BOXTYPEID_PAUSE, t_print, Box_Runtime_Pause_At_Print),
@@ -658,7 +669,9 @@ static void My_Register_Std_IO(BoxCmp *c) {
   (void) BoxCombDef_Define(defs, num_defs);
 }
 
-static void My_Register_Std_Procs(BoxCmp *c) {
+static void
+My_Register_Std_Procs(Box::Compiler *c)
+{
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR, BOXTYPEID_CHAR, My_Char_Char);
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR,  BOXTYPEID_INT, My_Char_Int);
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR, BOXTYPEID_REAL, My_Char_Real);
@@ -671,11 +684,11 @@ static void My_Register_Std_Procs(BoxCmp *c) {
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_ELIF,    BOXTYPEID_SINT, My_If_Int);
   (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_FOR,    BOXTYPEID_SINT, My_For_Int);
 
-  Bltin_Proc_Add(c->compiler, "subtype_init", My_Subtype_Init);
-  Bltin_Proc_Add(c->compiler, "subtype_finish", My_Subtype_Finish);
+  Bltin_Proc_Add(c, "subtype_init", My_Subtype_Init);
+  Bltin_Proc_Add(c, "subtype_finish", My_Subtype_Finish);
 }
 
-static void My_Register_Math(BoxCmp *c) {
+static void My_Register_Math(Box::Compiler *c) {
   BoxTypeId t_real = BOXTYPEID_SREAL,
           t_point = BOXTYPEID_SPOINT;
   struct {
@@ -716,7 +729,7 @@ static void My_Register_Math(BoxCmp *c) {
   }
 }
 
-static void My_Register_Sys(BoxCmp *c) {
+static void My_Register_Sys(Box::Compiler *c) {
   BoxType *fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPEID_VOID,
                                         BOXTYPEID_STR, My_Fail_Msg);
 
@@ -737,40 +750,44 @@ static void My_Register_Sys(BoxCmp *c) {
                                  My_Compare_Init);
 }
 
+namespace Box {
+
 /* Register bultin types, operation and functions */
-void Bltin_Init(BoxCmp *c) {
-  My_Register_Core_Types(c);
-  My_Register_UnOps(c);
-  My_Register_BinOps(c);
-  My_Register_Conversions(c);
-  My_Register_Std_IO(c);
-  My_Register_Std_Procs(c);
-  My_Register_Math(c);
-  My_Register_Sys(c);
-  Bltin_Str_Register_Procs(c);
-  Bltin_IO_Register(c);
+void
+Compiler::Init_Builtins()
+{
+  My_Register_Core_Types(this);
+  My_Register_UnOps(this);
+  My_Register_BinOps(this);
+  My_Register_Conversions(this, & convert_);
+  My_Register_Std_IO(this);
+  My_Register_Std_Procs(this);
+  My_Register_Math(this);
+  My_Register_Sys(this);
+  Bltin_Str_Register_Procs();
+  Register_IO_Builtins();
 }
 
-void Bltin_Finish(BoxCmp *c) {
-  Bltin_IO_Unregister(c);
+void
+Compiler::Finish_Builtins()
+{
+  Unregister_IO_Builtins();
 }
-
-/*****************************************************************************
- * Generic procedures for builtin stuff defined inside other files.
- */
 
 BoxType *
-Bltin_Create_Type(BoxCmp *c, const char *type_name, size_t type_size,
-                  size_t alignment)
+Compiler::Create_Type_Raw(const char *type_name, size_t type_size,
+                          size_t alignment)
 {
   Value v;
   BoxType *t;
   t = BoxType_Create_Ident(BoxType_Create_Intrinsic(type_size, alignment),
                            type_name);
-  c->compiler->Init_Value(& v);
-  c->compiler->Setup_Value_As_Type(& v, t);
+  Init_Value(& v);
+  Setup_Value_As_Type(& v, t);
   (void) BoxType_Unlink(t);
-  c->compiler->Namespace_Add_Value(NMSPFLOOR_DEFAULT, type_name, & v);
-  c->compiler->Finish_Value(& v);
+  Namespace_Add_Value(NMSPFLOOR_DEFAULT, type_name, & v);
+  Finish_Value(& v);
   return t;
+}
+
 }

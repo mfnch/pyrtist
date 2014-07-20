@@ -73,7 +73,7 @@ BOX_BEGIN_DECLS
  * @return Return @param v.
  */
 Value *
-Value_Init(Value *v, BoxCmp *c);
+Value_Init(Value *v);
 
 /**
  * @brief Allocate a Value object and initialise it by calling Value_Init().
@@ -83,7 +83,7 @@ Value_Init(Value *v, BoxCmp *c);
  * with Value_Create()).
  */
 Value *
-Value_Create(BoxCmp *c);
+Value_Create();
 
 /**
  * @brief Finalise a #Value (without deallocating it).
@@ -109,7 +109,7 @@ Value_Destroy(Value *v);
  * @note The source value is invalid after the move.
  */
 Value *
-Value_Move(BoxCmp *c, Value *dst, Value *src);
+Value_Move(Value *dst, Value *src);
 
 typedef enum {
   VALCONTTYPE_IMM = 0,
@@ -238,14 +238,14 @@ Value_Emit_CJump(Value *v);
  * @return Return @p v_dst.
  */
 Value *
-Value_To_Temp(BoxCmp *c, Value *v_dst, Value *v_src);
+Value_To_Temp(Value *v_dst, Value *v_src);
 
 /**
  * Similar to 'Value_To_Temp' with just one difference: if v is a target
  * do nothing (just return v with a new link to it).
  */
 Value *
-Value_To_Temp_Or_Target(BoxCmp *c, Value *v_dst, Value *v_src);
+Value_To_Temp_Or_Target(Value *v_dst, Value *v_src);
 
 /** Promote a temporary expression to a target one.
  * REFERENCES: return: new, v: -1;
@@ -335,7 +335,7 @@ typedef struct {
  *   and @c NULL is returned.
  */
 Value *
-Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb);
+Value_Struc_Get_Member(Value *v_src_dst, const char *memb);
 
 /**
  * @brief Assign a value to a variable.
@@ -346,7 +346,7 @@ Value_Struc_Get_Member(BoxCmp *c, Value *v_src_dst, const char *memb);
  * @note REFERENCES: src: -1, dest: 0;
  */
 BOXEXPORT BoxTask
-Value_Assign(BoxCmp *c, Value *dst, Value *src);
+Value_Assign(Value *dst, Value *src);
 
 BOX_END_DECLS
 

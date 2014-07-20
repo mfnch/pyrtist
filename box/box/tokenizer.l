@@ -39,7 +39,6 @@
 #include "strutils.h"
 #include "vm_priv.h"
 #include "parser.h"
-#include "builtins.h"
 #include "fileutils.h"
 #include "srcpos.h"
 #include "macro.h"

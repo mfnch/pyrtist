@@ -59,10 +59,15 @@ namespace Box {
   class Compiler {
   public:
     // Old compiler.
-    BoxCmp *c;
-    BoxVM        *vm_;         ///< The target of the compilation.
+    BoxVM        *vm_;         ///< The target of compilation.
+    BoxAST       *ast_;        ///< Abstract syntax tree.
 
   private:
+    Operator     convert_,     ///< Conversion operator.
+                 bin_ops_[BOXASTBINOP_NUM_OPS], ///< Table of binary operators.
+                 un_ops_[BOXASTUNOP_NUM_OPS];   ///< Table of unary operators.
+    BoxCont      pass_child_,  ///< Container used to pass child to procedures.
+                 pass_parent_; ///< Container used to pass parent to procedures.
     BoxVMCode    main_proc_,   ///< Main procedure in the module.
                  *cur_proc_;   ///< Procedure on which we are working now.
     BoxLIR       *lir_;        ///< LIR tree.
@@ -240,6 +245,22 @@ namespace Box {
 
     ///////////////////////////////////////////////////////////////////////////
     // Operator functionality (operator.cc).
+    void Init_Operators();
+    void Finish_Operators();
+    /// @brief Get a binary operator.
+    Operator *Get_Bin_Op(BoxASTBinOp bin_op)
+    {
+      assert(bin_op >= 0 && bin_op < BOXASTBINOP_NUM_OPS);
+      return & bin_ops_[bin_op];
+    }
+
+    /// @brief Get a unary operator.
+    Operator *Get_Un_Op(BoxASTUnOp un_op)
+    {
+      assert(un_op >= 0 && un_op < BOXASTUNOP_NUM_OPS);
+      return & un_ops_[un_op];
+    }
+
     Value *Emit_Operation(Operation *opn, Value *v_left, Value *v_right);
     Value *Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right);
     Value *Emit_UnOp(BoxASTUnOp op, Value *v);
@@ -266,7 +287,8 @@ namespace Box {
     bool Is_Target(Value *v) {return (v->kind == VALUEKIND_TARGET);}
     bool Is_Err(Value *v) {return (v->kind == VALUEKIND_ERR);}
     bool Is_Temp(Value *v) {return (v->kind == VALUEKIND_TEMP);}
-    bool Is_Instance(Value *v) {
+    bool Is_Instance(Value *v)
+    {
       switch(v->kind) {
       case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
         return true;
@@ -298,6 +320,24 @@ namespace Box {
         return true;
       }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Built-ins (builtins.cc).
+    void Init_Builtins();
+    void Finish_Builtins();
+    /// @brief Define a new intrinsic type with the given name and size.
+    BoxType *Create_Type_Raw(const char *type_name,
+                             size_t type_size, size_t alignment);
+    /// @brief Define a new intrinsic type from a given C type.
+#   define Create_Type(type_name, type) \
+      Create_Type_Raw((type_name), sizeof(type), __alignof__(type))
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Built-ins (bltinio.cc).
+    /// @brief Register the builtin IO functions.
+    void Register_IO_Builtins();
+    /// @brief To be called when destroying the compiler data structures. */
+    void Unregister_IO_Builtins();
 
   private:
     /// @brief Obtain a #Value from the pool.
@@ -369,24 +409,5 @@ namespace Box {
     Value *Emit_Species_Expansion(Value *v_src, BoxType *t_dst);
   };
 }
-
-/**
- * @brief Implementation for #BoxCmp.
- */
-struct BoxCmp_struct {
-  /* This object will eventually swallow all the content of BoxCmp. */
-  Box::Compiler *compiler;
-
-  BoxAST     *ast;      /**< Abstract syntax tree. */
-  Operator   convert,   /**< Conversion operator */
-             bin_ops[BOXASTBINOP_NUM_OPS], /**< Table of binary operators */
-             un_ops[BOXASTUNOP_NUM_OPS];   /**< Table of unary operators */
-  struct {
-    BoxCont  pass_child,  /**< Container used to pass child to procedures */
-             pass_parent;
-                          /**< Container used to pass parent to procedures */
-  }          cont;        /**< Constant containers (allocated once for all
-                               just for efficiency) */
-};
 
 #endif /* _BOX_COMPILER_PRIV_H */

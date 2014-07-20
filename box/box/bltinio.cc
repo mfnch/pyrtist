@@ -26,9 +26,10 @@
 #include "vm_priv.h"
 #include "builtins.h"
 #include "bltinstr.h"
-#include "bltinio.h"
-#include "compiler.h"
 #include "str.h"
+
+#include "compiler_priv.h"
+
 
 typedef struct {
   unsigned int opened : 1;
@@ -107,14 +108,22 @@ static BoxTask My_File_Str(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-void Bltin_IO_Register(BoxCmp *c) {
+namespace Box {
+
+void
+Compiler::Register_IO_Builtins()
+{
   /* Register the new type File */
-  BoxType *t_file = BLTIN_CREATE_TYPE(c, "File", File);
+  BoxType *t_file = Create_Type("File", File);
   Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_INIT), My_File_Create);
   Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_FINISH), My_File_Destroy);
   Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_END), My_File_Close);
   Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_STR), My_File_Str);
 }
 
-void Bltin_IO_Unregister(BoxCmp *c) {
+void
+Compiler::Unregister_IO_Builtins()
+{
+}
+
 }

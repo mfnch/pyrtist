@@ -88,7 +88,6 @@ struct BoxVMCode_struct {
   } have;
   BoxVMCodeStyle
                style;       /**< Procedure style */
-  BoxCmp       *cmp;        /**< Compiler corresponding to the procedure */
   RegAlloc     reg_alloc;   /**< Register allocator: keeps track of registers
                                  which are being used and of those which are
                                  not used.*/
@@ -107,7 +106,7 @@ BOX_BEGIN_DECLS
  * @param p A pointer to the space where the #BoxVMCode object will be stored.
  */
 BOXEXPORT void
-BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style);
+BoxVMCode_Init(BoxVMCode *p, BoxVMCodeStyle style);
 
 /**
  * @brief Finalise a #BoxVMCode object initialised with BoxVMCode_Init().

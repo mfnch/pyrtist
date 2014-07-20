@@ -84,26 +84,10 @@ struct Operation_struct {
 };
 
 struct Operator_struct {
-  BoxCmp      *cmp;             /**< Compiler to which the operator refers */
   OprAttr     attr;             /**< Operator attributes */
   const char  *name;            /**< Name of the operator */
   Operation   *first_operation;
 };
-
-/**
- * Structure returned by BoxCmp_Operator_Find_Opn containing details about
- * the Operation which was found.
- */
-typedef struct {
-  Operator   *opr;               /**< Operator for which we got the match. */
-  OprAttr    attr;               /**< Attributes of the matched operation */
-  BoxTypeCmp match_left,         /**< How the left operand was matched. */
-             match_right;        /**< How the right operand was matched. */
-  BoxType    *expand_type_left,  /**< Type to which the left operand should be
-                                    expanded */
-             *expand_type_right; /**< Type to which the right operand should be
-                                    expanded */
-} OprMatch;
 
 #endif /* _OPERATOR_H_TYPES */
 
@@ -111,12 +95,6 @@ typedef struct {
 #  define _OPERATOR_H_FNS
 
 BOX_BEGIN_DECLS
-
-/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
-void BoxCmp_Init__Operators(BoxCmp *c);
-
-/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
-void BoxCmp_Finish__Operators(BoxCmp *c);
 
 /** Change attributes for operator. 'mask' tells what attributes to change,
  * 'value' tells how to change them.
@@ -138,28 +116,16 @@ void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
 Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
                             BoxType *type_right, BoxType *type_result);
 
-/** Get the Operator object corresponding to the given ASTBinOp constant. */
-Operator *BoxCmp_BinOp_Get(BoxCmp *c, BoxASTBinOp bin_op);
-
-/** Get the Operator object corresponding to the given ASTUnOp constant. */
-Operator *BoxCmp_UnOp_Get(BoxCmp *c, BoxASTUnOp un_op);
+/** Compiles an operation between the two expression e1 and e2, where
+ * the operator is opr.
+ */
+Value *Opr_Emit_UnOp(BoxASTUnOp op, Value *v);
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
- * REFERENCES: return: new, v: -1;
  */
-Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, BoxASTUnOp op, Value *v);
-
-/** Compiles an operation between the two expression e1 and e2, where
- * the operator is opr.
- * REFERENCES: return: new, v_left: -1, v_right: -1;
- */
-Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, BoxASTBinOp op,
-                             Value *v_left, Value *v_right);
-
-Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxType *type_left, BoxType *type_right,
-                                    BoxType *type_result);
+Value *Opr_Emit_BinOp(BoxASTBinOp op,
+                      Value *v_left, Value *v_right);
 
 BOX_END_DECLS
 

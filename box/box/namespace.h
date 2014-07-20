@@ -56,13 +56,14 @@ typedef enum {
 } NmspItemType;
 
 /** Item which can be inserted into the namespace */
-typedef struct nmsp_item_s {
-  struct nmsp_item_s
-                *next;     /**< Chain of all the names in the same floor */
+typedef struct NmspItem_struct NmspItem;
+
+struct NmspItem_struct {
+  NmspItem      *next;     /**< Chain of all the names in the same floor */
   BoxHTItem     *ht_item;  /**< Corresponding BoxHTItem (for quick removal) */
   NmspItemType  type;      /**< Type of item */
   void          *data;     /**< Pointer to the item data */
-} NmspItem;
+};
 
 /** Function called by Namespace_Floor_Down */
 typedef void (*NmspAction)(Namespace *ns, void *data);

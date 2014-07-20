@@ -34,18 +34,7 @@
 #  include <box/logger.h>
 
 
-/**
- * @brief The Box Compiler.
- */
-typedef struct BoxCmp_struct BoxCmp;
-
 BOX_BEGIN_DECLS
-
-/**
- * Steal the VM which is being used as the target for the compilation.
- */
-BOXEXPORT BoxVM *
-BoxCmp_Steal_VM(BoxCmp *c);
 
 /**
  * Create the compiler and use it to parse the given file, returning the

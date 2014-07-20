@@ -64,10 +64,10 @@ libboxcore0_4_la_SOURCES = value.cc compiler.cc operator.cc namespace.cc      \
   vmserial.c vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c   \
   vmproc.h vmproc_priv.h vmsym.c vmsym.h vmopregs.c vmopregs_priv.h vmop.c    \
   vmop_priv.h str.c str.h bltinarray.c bltinarray_priv.h ast.c ast_priv.h     \
-  ast.h bltinstr.c bltinio.c fileutils.c tokenizer.l macro.c yparser.y        \
+  ast.h bltinstr.c bltinio.cc fileutils.c tokenizer.l macro.c yparser.y       \
   parser_priv.h parser.h registers.c paths.c fileutils.h registers.h macro.h  \
   paths.h vmcode.h value.h compiler_priv.h compiler.h operator.h namespace.h  \
-  builtins.h bltinstr.h bltinio.h lir.c lir_priv.h
+  builtins.h bltinstr.h lir.c lir_priv.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32

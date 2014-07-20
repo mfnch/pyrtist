@@ -47,10 +47,9 @@ Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
 {
   Box::Compiler compiler(target_vm);
 
-  BoxAST *ast =
-    Box_Parse_FILE(file, file_name, setup_file_name, paths, logger);
-  compiler.c->ast = ast;
-  if (!(BoxAST_Is_Sane(ast) && compiler.Compile(ast)))
+  compiler.ast_ = Box_Parse_FILE(file, file_name, setup_file_name,
+                                 paths, logger);
+  if (!(BoxAST_Is_Sane(compiler.ast_) && compiler.Compile(compiler.ast_)))
     return BOXBOOL_FALSE;
 
   if (main)
@@ -116,9 +115,6 @@ Compiler::Set_Cur_Node(BoxASTNode *cur_ast_node)
 
 Compiler::Compiler(BoxVM *target_vm)
 {
-  c = (BoxCmp *) Box_Mem_Safe_Alloc(sizeof(BoxCmp));
-  c->compiler = this;
-
   BoxArr_Init(& active_values_, sizeof(Value *), 32);
   BoxArr_Init(& value_pos_, sizeof(int), 32);
   BoxAllocPool_Init(& value_pool_, sizeof(Value)*32);
@@ -126,7 +122,7 @@ Compiler::Compiler(BoxVM *target_vm)
   Namespace_Init();
 
   BoxLIRNodeProc *proc;
-  c->ast = NULL;
+  ast_ = NULL;
   ast_node_ = NULL;
   lir_ = BoxLIR_Create();
   assert(lir_);
@@ -139,29 +135,29 @@ Compiler::Compiler(BoxVM *target_vm)
   BoxBool success = Box_Initialize_Type_System();
   assert(success);
 
-  BoxCmp_Init__Operators(c);
+  Init_Operators();
   proc = BoxLIR_Append_Proc(lir_);
   (void) BoxLIR_Set_Target_Proc(lir_, proc);
 
-  BoxVMCode_Init(& main_proc_, c, BOXVMCODESTYLE_MAIN);
+  BoxVMCode_Init(& main_proc_, BOXVMCODESTYLE_MAIN);
   BoxVMCode_Set_Alter_Name(& main_proc_, "main");
   cur_proc_ = & main_proc_;
 
-  BoxCont_Set(& c->cont.pass_child, "go", 2);
-  BoxCont_Set(& c->cont.pass_parent, "go", 1);
-  Bltin_Init(c);
+  BoxCont_Set(& pass_child_, "go", 2);
+  BoxCont_Set(& pass_parent_, "go", 1);
+  Init_Builtins();
 }
 
 Compiler::~Compiler() {
   if (BoxArr_Num_Items(& stack_) != 0)
-    LOG_WARN("BoxCmp_Finish: stack is not empty at destruction");
+    LOG_WARN("~Compiler: stack is not empty at destruction");
 
   BoxLIR_Destroy(lir_);
-  BoxAST_Destroy(c->ast);
-  Bltin_Finish(c);
+  BoxAST_Destroy(ast_);
+  Finish_Builtins();
   BoxVMCode_Finish(& main_proc_);
   BoxArr_Finish(& stack_);
-  BoxCmp_Finish__Operators(c);
+  Finish_Operators();
 
   if (attr_.own_vm)
     BoxVM_Destroy(vm_);
@@ -170,7 +166,6 @@ Compiler::~Compiler() {
   BoxAllocPool_Finish(& value_pool_);
   BoxArr_Finish(& active_values_);
   BoxArr_Finish(& value_pos_);
-  Box_Mem_Free(c);
 }
 
 void
@@ -187,7 +182,7 @@ Compiler::Log(BoxSrc *src, BoxLogLevel level, const char *fmt, ...)
   if (level >= BOXLOGLEVEL_ERROR)
     attr_.is_sane = 0;
 
-  BoxAST_Log(c->ast, src, level, s);
+  BoxAST_Log(ast_, src, level, s);
 }
 
 Value *
@@ -332,7 +327,7 @@ Compiler::Pop_Value()
     (void) BoxArr_Pop(& stack_, NULL);
     return Track_Value(v);
   default:
-    LOG_FATAL("BoxCmp_Pop_Value: want value, but top of stack "
+    LOG_FATAL("Pop_Value: want value, but top of stack "
               "contains incompatible item.");
     return NULL;
   }
@@ -351,7 +346,7 @@ Compiler::Get_Value(int pos)
     return (Value *) si->item;
 
   default:
-    LOG_FATAL("BoxCmp_Get_Value: want value, but top of stack  contains "
+    LOG_FATAL("Get_Value: want value, but top of stack  contains "
               "incompatible item.");
     return NULL;
   }
@@ -1279,7 +1274,7 @@ Compiler::Compile_CombDef(BoxASTNode *node)
     BoxVMCallNum cn;
 
     /* We change target of the compilation to the new procedure */
-    BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
+    BoxVMCode_Init(& proc_implem, BOXVMCODESTYLE_SUB);
     cur_proc_ = & proc_implem;
     lir_ = BoxLIR_Create();
     assert(lir_);

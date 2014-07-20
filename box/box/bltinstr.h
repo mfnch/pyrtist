@@ -34,7 +34,7 @@
 
 BOX_BEGIN_DECLS
 
-void Bltin_Str_Register_Procs(BoxCmp *c);
+void Bltin_Str_Register_Procs(void);
 
 BoxTask Bltin_Str_Init(void);
 

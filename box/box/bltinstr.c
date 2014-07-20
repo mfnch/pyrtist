@@ -163,7 +163,7 @@ static BoxTask My_Compare_Str(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-static void My_Register_Compare_Str(BoxCmp *c) {
+static void My_Register_Compare_Str(void) {
   BoxType *str = Box_Get_Core_Type(BOXTYPEID_STR);
   BoxType *str_couple = BoxType_Create_Structure();
   BoxType_Add_Member_To_Structure(str_couple, str, NULL);
@@ -173,7 +173,7 @@ static void My_Register_Compare_Str(BoxCmp *c) {
   (void) BoxType_Unlink(str_couple);
 }
 
-void Bltin_Str_Register_Procs(BoxCmp *c) {
+void Bltin_Str_Register_Procs(void) {
   BoxType *t_str = Box_Get_Core_Type(BOXTYPEID_STR),
           *t_num = Box_Get_Core_Type(BOXTYPEID_NUM);
   BoxCombDef defs[] =
@@ -194,5 +194,5 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   (void) BoxCombDef_Define(defs, num_defs);
 
   /* String comparison */
-  My_Register_Compare_Str(c);
+  My_Register_Compare_Str();
 }

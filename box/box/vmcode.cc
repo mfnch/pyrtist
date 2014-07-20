@@ -34,10 +34,9 @@
 
 
 void
-BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style)
+BoxVMCode_Init(BoxVMCode *p, BoxVMCodeStyle style)
 {
   p->style = style;
-  p->cmp = c;
   p->have.parent = 0;
   p->have.parent_reg = 0;
   p->have.child = 0;

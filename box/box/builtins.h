@@ -31,21 +31,18 @@
 #  include <box/types.h>
 #  include <box/compiler.h>
 
-
 BOX_BEGIN_DECLS
 
-void Bltin_Init(BoxCmp *c);
-
-void Bltin_Finish(BoxCmp *c);
-
+#if 0
 /** Add a C procedure 'c_fn' (of type BoxVMFunc) with name 'proc_name' to
  * the VM and returns its symbol ID, so that it can be called.
  * NOTE: the function is not registered, meaning that Box programs do not
  *  "see" the new function. The function can only be called by the compiler
  *  generated code.
  */
-BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+BoxVMCallNum Bltin_Proc_Add(const char *proc_name,
                             BoxTask (*c_fn)(BoxVMX *));
+#endif
 
 /** Add and register a new C procedure 'c_fn' (of type BoxVMFunc) for the
  * combination 'comb' between the types 'left' and 'right'. After this
@@ -70,14 +67,6 @@ void Bltin_Proc_Def_With_Id(BoxType *parent, BoxTypeId child_id,
  */
 void Bltin_Proc_Def_With_Ids(BoxTypeId parent, BoxTypeId child,
                              BoxTask (*c_fn)(BoxVMX *));
-
-/** Define a new intrinsic type with the given name and size. */
-BoxType *Bltin_Create_Type(BoxCmp *c, const char *type_name,
-                           size_t type_size, size_t alignment);
-
-/** Convenient function to define a new intrinsic type from a given C type. */
-#define BLTIN_CREATE_TYPE(c, type_name, type) \
-  Bltin_Create_Type((c), (type_name), sizeof(type), __alignof__(type))
 
 BOX_END_DECLS
 

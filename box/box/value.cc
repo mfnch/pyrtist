@@ -338,7 +338,7 @@ Compiler::Setup_Value_As_String(Value *v_str, const char *str)
   Setup_Value_As_Temp(v_str, Box_Get_Core_Type(BOXTYPEID_STR));
 
   /* Populate string object from string data. */
-  success = c->compiler->Emit_Call(v_str, & v_str_data);
+  success = Emit_Call(v_str, & v_str_data);
 
   if (success != BOXTASK_OK)
     LOG_FATAL("Failure while emitting string.");
@@ -563,7 +563,7 @@ Compiler::Emit_Load_Into_Reg(Value *v_dst, Value *v_src)
 {
   if (v_src->kind == VALUEKIND_TARGET)
     return Move_Value(v_dst, v_src);
-  return c->compiler->Emit_Make_Temp(v_dst, v_src);
+  return Emit_Make_Temp(v_dst, v_src);
 }
 
 Value *
@@ -720,7 +720,7 @@ Compiler::Emit_Call(BoxVMCallNum call_num, Value *parent, Value *child)
     BoxGOp op = ((parent->cont.type == BOXTYPEID_OBJ
                   && parent->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_MOV : BOXGOP_LEA);
-    Append_LIR2(op, & c->cont.pass_parent, & parent->cont);
+    Append_LIR2(op, & pass_parent_, & parent->cont);
   }
 
   if (child->cont.type != BOXTYPEID_VOID) {
@@ -730,7 +730,7 @@ Compiler::Emit_Call(BoxVMCallNum call_num, Value *parent, Value *child)
     BoxGOp op = ((child->cont.type == BOXTYPEID_OBJ
                   && child->cont.categ != BOXCONTCATEG_PTR) ?
                  BOXGOP_REF : BOXGOP_LEA);
-    Append_LIR2(op, & c->cont.pass_child, & v_to_pass.cont);
+    Append_LIR2(op, & pass_child_, & v_to_pass.cont);
     Finish_Value(& v_to_pass);
   }
 

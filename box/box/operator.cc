@@ -42,8 +42,7 @@
  */
 
 /* Create a new operator */
-void Operator_Init(Operator *opr, BoxCmp *c, const char *name) {
-  opr->cmp = c;
+void Operator_Init(Operator *opr, const char *name) {
   opr->attr = OPR_ATTR_INVALID;
   opr->name = name;
   opr->first_operation = NULL;
@@ -154,26 +153,17 @@ void Operator_Del_Opn(Operator *opr, Operation *opn) {
   Box_Mem_Free(opn);
 }
 
-/** Get the Operator object corresponding to the given BoxASTBinOp constant. */
-Operator *BoxCmp_BinOp_Get(BoxCmp *c, BoxASTBinOp bin_op) {
-  assert(bin_op >= 0 && bin_op < BOXASTBINOP_NUM_OPS);
-  return & c->bin_ops[bin_op];
-}
+namespace Box {
 
-/** Get the Operator object corresponding to the given BoxASTUnOp constant. */
-Operator *BoxCmp_UnOp_Get(BoxCmp *c, BoxASTUnOp un_op) {
-  assert(un_op >= 0 && un_op < BOXASTUNOP_NUM_OPS);
-  return & c->un_ops[un_op];
-}
-
-/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
-void BoxCmp_Init__Operators(BoxCmp *c) {
+void
+Compiler::Init_Operators()
+{
   int i;
 
   for(i = 0; i < BOXASTUNOP_NUM_OPS; i++) {
     BoxASTUnOp un_op = (BoxASTUnOp) i;
-    Operator *opr = (Operator *) BoxCmp_UnOp_Get(c, un_op);
-    Operator_Init(opr, c, BoxASTUnOp_To_String(un_op));
+    Operator *opr = (Operator *) Get_Un_Op(un_op);
+    Operator_Init(opr, BoxASTUnOp_To_String(un_op));
     OprAttr attr = (OprAttr) (OPR_ATTR_NATIVE |
                               (BoxASTUnOp_Is_Right(un_op) ?
                                OPR_ATTR_UN_RIGHT : 0));
@@ -181,31 +171,45 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   }
 
   for(i = 0; i < BOXASTBINOP_NUM_OPS; i++) {
-    BoxASTBinOp un_op = (BoxASTBinOp) i;
-    Operator *opr = BoxCmp_BinOp_Get(c, un_op);
-    Operator_Init(opr, c, BoxASTBinOp_To_String(un_op));
+    BoxASTBinOp bin_op = (BoxASTBinOp) i;
+    Operator *opr = Get_Bin_Op(bin_op);
+    Operator_Init(opr, BoxASTBinOp_To_String(bin_op));
     Operator_Attr_Set(opr, OPR_ATTR_ALL,
                       (OprAttr) (OPR_ATTR_BINARY | OPR_ATTR_NATIVE));
   }
 
-  Operator_Init(& c->convert, c, "(->)");
-  Operator_Attr_Set(& c->convert, OPR_ATTR_ALL,
+  Operator_Init(& convert_, "(->)");
+  Operator_Attr_Set(& convert_, OPR_ATTR_ALL,
                     (OprAttr) (OPR_ATTR_NATIVE | OPR_ATTR_MATCH_RESULT));
 }
 
-/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
-void BoxCmp_Finish__Operators(BoxCmp *c) {
+void
+Compiler::Finish_Operators()
+{
   int i;
 
   for(i = 0; i < BOXASTUNOP_NUM_OPS; i++)
-    Operator_Finish(BoxCmp_UnOp_Get(c, (BoxASTUnOp) i));
+    Operator_Finish(Get_Un_Op((BoxASTUnOp) i));
 
   for(i = 0; i < BOXASTBINOP_NUM_OPS; i++)
-    Operator_Finish(BoxCmp_BinOp_Get(c, (BoxASTBinOp) i));
+    Operator_Finish(Get_Bin_Op((BoxASTBinOp) i));
 
-  Operator_Finish(& c->convert);
+  Operator_Finish(& convert_);
 }
 
+}
+
+/// @brief Details about a operation found by My_Operator_Find_Opn().
+typedef struct {
+  Operator   *opr;               /**< Operator for which we got the match. */
+  OprAttr    attr;               /**< Attributes of the matched operation */
+  BoxTypeCmp match_left,         /**< How the left operand was matched. */
+             match_right;        /**< How the right operand was matched. */
+  BoxType    *expand_type_left,  /**< Type to which the left operand should be
+                                    expanded */
+             *expand_type_right; /**< Type to which the right operand should be
+                                    expanded */
+} OprMatch;
 
 /** Finds the unary or binary operation associated with the operator *opr.
  *  If type1 and type2 are both different from BOXTYPEID_NONE, then the function
@@ -219,10 +223,10 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  *  during the search.
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
-Operation *
-BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                         BoxType *type_left, BoxType *type_right,
-                         BoxType *type_result)
+static Operation *
+My_Operator_Find_Opn(Operator *opr, OprMatch *match,
+                     BoxType *type_left, BoxType *type_right,
+                     BoxType *type_result)
 {
   int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0),
       do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
@@ -387,7 +391,7 @@ Compiler::Emit_Operation(Operation *opn, Value *v_left, Value *v_right)
 Value *
 Compiler::Emit_UnOp(BoxASTUnOp op, Value *v)
 {
-  Operator *opr = BoxCmp_UnOp_Get(c, op);
+  Operator *opr = Get_Un_Op(op);
   Operation *opn;
   OprMatch match;
   Value *v_result = NULL;
@@ -398,7 +402,7 @@ Compiler::Emit_UnOp(BoxASTUnOp op, Value *v)
   v = Emit_Subtype_Expansion(v);
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v->type, NULL, NULL);
+  opn = My_Operator_Find_Opn(opr, & match, v->type, NULL, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == BOXTYPECMP_MATCHING)
@@ -429,7 +433,7 @@ Compiler::Emit_UnOp(BoxASTUnOp op, Value *v)
 Value *
 Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
 {
-  Operator *opr = BoxCmp_BinOp_Get(c, op);
+  Operator *opr = Get_Bin_Op(op);
   Operation *opn;
   OprMatch match;
   Value *v_result = NULL;
@@ -441,7 +445,7 @@ Compiler::Emit_BinOp(BoxASTBinOp op, Value *v_left, Value *v_right)
   v_right = Emit_Subtype_Expansion(v_right);
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v_left->type,
+  opn = My_Operator_Find_Opn(opr, & match, v_left->type,
                                  v_right->type, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
@@ -475,8 +479,8 @@ Compiler::Try_Emit_Conversion(Value *v_dst, Value *v_src)
   OprMatch match;
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
-                                 v_src->type, NULL, v_dst->type);
+  opn = My_Operator_Find_Opn(& convert_, & match,
+                             v_src->type, NULL, v_dst->type);
 
   if (!opn)
     return false;
