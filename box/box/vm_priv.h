@@ -311,7 +311,7 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 #  define BoxVMX_Get_Parent(vmx) ((vmx)->vm->box_vm_current)
 
 /** Get the child of the current combination (this is something with type
- * ``BoxPtr *`` 
+ * ``BoxPtr *``
  */
 #  define BoxVMX_Get_Child(vmx) ((vmx)->vm->box_vm_arg1)
 

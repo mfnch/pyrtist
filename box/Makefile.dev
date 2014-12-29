@@ -1,8 +1,8 @@
-.PHONY: all dev2
+.PHONY: all
 
 all:
 	libtoolize --ltdl
-	aclocal -I ./m4
+	aclocal -I ./m4 -I libltdl/m4
 	autoconf
 	autoheader
 	automake --add-missing

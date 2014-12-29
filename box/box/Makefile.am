@@ -28,13 +28,12 @@ boxcorever=$(ver_major).$(ver_minor)
 
 BUILT_SOURCES = yparser.h
 
-INCLUDES = -I$(top_srcdir)
-
 AM_YFLAGS = -d
 
 AM_CFLAGS = -std=c99 -Wall
 
 AM_CPPFLAGS = $(INCLTDL) \
+              -I$(top_srcdir) \
               '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
               '-DBUILTIN_PKG_PATH="$(boxpkgdir)"' \
               '-DC_LIBRARY_PATH="$(libdir)"' \
