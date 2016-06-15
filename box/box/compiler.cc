@@ -849,14 +849,15 @@ Compiler::Compile_VarIdfr(BoxASTNode *node)
 void
 Compiler::Compile_Ignore(BoxASTNode *node)
 {
-  Value *operand;
-
   assert(BoxASTNode_Get_Type(node) == BOXASTNODETYPE_IGNORE);
 
   /* Compile operand and get it from the stack */
   Compile_Any(((BoxASTNodeIgnore *) node)->value);
-  operand = Get_Value(0);
-  Set_Ignorable(operand);
+
+  if (Pop_Errors(/* pop */ 1, /* push err */ 1))
+    return;
+
+  Set_Ignorable(Get_Value(0));
 }
 
 void
@@ -1049,8 +1050,9 @@ Compiler::Compile_BinOp(BoxASTNode *node)
 
   Compile_Any(bin_op_node->lhs);
   Compile_Any(bin_op_node->rhs);
-  if (Pop_Errors(/* pop */ 2, /* push err */ 1))
+  if (Pop_Errors(/* pop */ 2, /* push err */ 1)) {
     return;
+  }
 
   {
     Value *left, *right, *result = NULL;
@@ -1099,7 +1101,7 @@ Compiler::Compile_Get(BoxASTNode *node)
     if (!v_struc) {
       LOG_ERR("Cannot get implicit member '%s'. Default "
               "parent is not defined in current scope.", member_name);
-      Push_Value(NULL);
+      Push_Error(1);
       return;
     }
   } else {
@@ -1110,6 +1112,7 @@ Compiler::Compile_Get(BoxASTNode *node)
   if (!Want_Instance(v_struc)) {
     Destroy_Value(v_struc);
     Push_Error(1);
+    return;
   }
 
   t = BoxType_Link(v_struc->type);

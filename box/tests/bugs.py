@@ -1,6 +1,6 @@
-from test import TestSession                                                               
-                                                                                           
-#----------------------------------------------------------------------------#             
+from test import TestSession
+
+#----------------------------------------------------------------------------#
 tests = TestSession(title="Bugs")
 
 #----------------------------------------------------------------------------#
@@ -113,3 +113,12 @@ a = FOO[.item1=.item2=0]
 Print["answer=", a]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(0, 0)")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 9")
+test.body = """
+X = Void
+Point@X[ If[1], $.wrong = $, Else, Fail["xxx"] ]
+
+"""
+test.expect(exit_status=1, num_errors=1, num_warnings=0, answer=[])

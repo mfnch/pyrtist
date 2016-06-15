@@ -296,6 +296,10 @@ namespace Box {
         return false;
       }
     }
+
+    /**
+     * @brief Set the ignorable flag of the given value and return it.
+     */
     bool Is_Ignorable(Value *v) {
       int ignore = ((v->kind == VALUEKIND_ERR)
                     || (v->kind == VALUEKIND_TYPE)
@@ -307,6 +311,7 @@ namespace Box {
                 != BOXTYPECMP_DIFFERENT);
       return false;
     }
+
     Value *Set_Ignorable(Value *v, bool ignorable=true) {
       v->attr.ignore = ignorable;
       return v;

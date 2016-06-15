@@ -252,12 +252,6 @@ Value_To_Temp_Or_Target(Value *v_dst, Value *v_src);
  */
 Value *Value_Promote_Temp_To_Target(Value *v);
 
-/**
- * @brief Set the ignorable flag of the given value and return it.
- */
-Value *
-Value_Set_Ignorable(Value *v, BoxBool ignorable);
-
 /** Return 1 if the value represents an error. */
 int Value_Is_Err(Value *v);
 

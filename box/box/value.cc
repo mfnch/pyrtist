@@ -1002,24 +1002,22 @@ static Value *
 My_Point_Get_Member(Compiler *c, Value *v_dst, Value *v_src, const char *memb)
 {
   char first = memb[0];
-  if (first != '\0' && memb[1] == '\0') {
-    BoxGOp g_op;
+  if (first == '\0' || memb[1] != '\0')
+    return NULL;
 
-    switch(first) {
-    case 'x': g_op = BOXGOP_PPTRX; break;
-    case 'y': g_op = BOXGOP_PPTRY; break;
-    default:
-      return NULL;
-    }
-
-    c->Setup_Value_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_PTR));
-    c->Append_LIR2(g_op, & v_dst->cont, & v_src->cont);
-    v_dst->kind = VALUEKIND_TARGET;
-    return c->Emit_Get_Subfield(v_dst, (size_t) 0,
-                                Box_Get_Core_Type(BOXTYPEID_SREAL));
+  BoxGOp g_op;
+  switch(first) {
+  case 'x': g_op = BOXGOP_PPTRX; break;
+  case 'y': g_op = BOXGOP_PPTRY; break;
+  default:
+    return NULL;
   }
-  c->Destroy_Value(v_dst);
-  return NULL;
+
+  c->Setup_Value_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_PTR));
+  c->Append_LIR2(g_op, & v_dst->cont, & v_src->cont);
+  v_dst->kind = VALUEKIND_TARGET;
+  return c->Emit_Get_Subfield(v_dst, (size_t) 0,
+                              Box_Get_Core_Type(BOXTYPEID_SREAL));
 }
 
 /**
@@ -1037,6 +1035,7 @@ Compiler::Emit_Get_Struc_Member(Value *v_src, const char *memb)
       Destroy_Value(v_src);
       return v_dst;
     }
+    Destroy_Value(v_src);
     Destroy_Value(v_dst);
     return NULL;
   }
