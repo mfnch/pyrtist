@@ -122,3 +122,13 @@ Point@X[ If[1], $.wrong = $, Else, Fail["xxx"] ]
 
 """
 test.expect(exit_status=1, num_errors=1, num_warnings=0, answer=[])
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 10")
+test.body = """
+P3 = (Point, Point, Point)
+p3 = P3[]
+p3.x = 0
+
+"""
+test.expect(exit_status=1, num_errors=1, num_warnings=0, answer=[])

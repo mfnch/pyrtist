@@ -532,7 +532,7 @@ BoxType_Find_Structure_Member(BoxType *s, const char *name)
 
   for (BoxTypeIter_Init(& ti, s); BoxTypeIter_Get_Next(& ti, & t);) {
     BoxType_Get_Structure_Member(t, & member_name, NULL, NULL, NULL);
-    if (strcmp(name, member_name) == 0) {
+    if (member_name != NULL && strcmp(name, member_name) == 0) {
       BoxTypeIter_Finish(& ti);
       return t;
     }
