@@ -1,18 +1,15 @@
 #provide "g.rectangle"
 
-Rectangle = ^(Int have_color, have_style, have_gradient, num_corners
-              Color color, OldStyle style, Gradient gradient
+Rectangle = ^(Int num_corners, Style style
               Point corner1, corner2)
 
-(.[)@Rectangle[.num_corners = 0, .have_color = 0, .have_style = 0, .have_gradient = 0]
+(.[)@Rectangle[.num_corners = 0]
 
-Color@Rectangle[.have_color = 1, .color = $]
+Pattern@Rectangle[\ .style[$]]
 
-OldStyle@Rectangle[.have_style = 1, .style = $]
+Style@Rectangle[\ .style[$]]
 
-Style@Rectangle[OldStyle[$]]
-
-Gradient@Rectangle[.have_gradient = 1, .gradient = $]
+Border@Rectangle[\ .style[$]]
 
 Point@Rectangle[have = $$.num_corners++
                 If[have == 0], $$.corner1 = $
@@ -21,12 +18,9 @@ Point@Rectangle[have = $$.num_corners++
 Rectangle@Rectangle[$$ = $]
 
 Rectangle@Window[
-  \ $$[If[$.have_style], $.style]
-  \ $$[If[$.have_color], $.color]
-  \ $$[If[$.have_gradient], $.gradient]
   If[$.num_corners > 1]
-    \ $$.Poly[$.corner1, Point[.x=$.corner1.x, .y=$.corner2.y]
-              $.corner2, Point[.x=$.corner2.x, .y=$.corner1.y]]
+    Poly[$.style, $.corner1, Point[.x=$.corner1.x, .y=$.corner2.y]
+         $.corner2, Point[.x=$.corner2.x, .y=$.corner1.y]]
 ]
 
 Rectangle@Area[diag = $.corner2 - $.corner1, $$ += Abs[diag.x*diag.y]]
