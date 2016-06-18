@@ -127,9 +127,6 @@ Poly@Window[
     CmdStream[$.style]
 ]
 
-///Intro: close a polygon.
-Close = ^Void
-
 ///Intro: close the polygon.
 Close@Poly[.close = 1]
 

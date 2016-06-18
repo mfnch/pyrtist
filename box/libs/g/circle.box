@@ -33,8 +33,11 @@ Circle = ^((Int center, radius) have
 ///Intro: whether the circle is fully specified (has both center and radius).
 Circle@IsValid[$.have.center && $.have.radius]
 
-///Intro: the center of the circle.
+///Intro: set the center of the circle.
 Point@Circle[.center = $, .have.center = 1]
+
+///Intro: return the center of the circle.
+Circle@Point[$.center]
 
 ///Intro: the radius of the circle.
 Real@Circle[
@@ -100,4 +103,3 @@ Circle@Window[
     path.cmdstream
     CmdStream[$.style]
 ]
-

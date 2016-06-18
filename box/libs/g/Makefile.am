@@ -30,16 +30,16 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 
 boxlib_LTLIBRARIES=libg.la
 
-dist_boxlibg_DATA= obj.box const.box gcore.box matrix.box transform.box	      \
+dist_boxlibg_DATA= obj.box const.box gcore.box matrix.box transform.box       \
   option.box raw.box cmdstream.box points.box path.box fill.box stroke.box    \
   style.box poly.box curve.box text.box texts.box circle.box circles.box      \
-  line.box lines.box gradcore.box gradient.box clip.box hot.box		      \
-  constraints.box put.box window.box bbox.box save.box g2.box init.box	      \
+  arc.box line.box lines.box gradcore.box gradient.box clip.box hot.box       \
+  constraints.box put.box window.box bbox.box save.box g2.box init.box        \
   color.box oldstyle.box _gradient.bxh pattern.box _line.bxh _circle.bxh      \
   _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.box axes.box thickline.box \
   image.box
 
-dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.box tools.bxh	   \
+dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.box tools.bxh          \
   _sphere.bxh rectangle.box label.bxh bounce.bxh electric.box guitools.box
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h matrix.c  \
