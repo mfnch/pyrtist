@@ -11,6 +11,25 @@ Circle = ^((Int center, radius) have
 
 (.[)@Circle[.have = (0, 0)]
 
+///Intro: change the circle so that it passes through the given 3 points.
+(Point p1, p2, p3)@Circle[
+  p21 = 2.0*($.p2 - $.p1)
+  p31 = 2.0*($.p3 - $.p1)
+  sq1 = Norm2[$.p1]
+  sq21 = Norm2[$.p2] - sq1
+  sq31 = Norm2[$.p3] - sq1
+
+  det = p21.x * p31.y - p21.y * p31.x
+  [If[det == 0.0]
+     Fail[Str["Cannot find the circle passing through "
+              "the three points"]]]
+
+  $$.center = Point[.y=p21.x*sq31 - p31.x*sq21
+                    .x=p31.y*sq21 - p21.y*sq31] / det
+  $$.radius = $$.radius2 = Norm[$.p1 - $$.center]
+  $$.have.center = $$.have.radius = 1
+]
+
 ///Intro: whether the circle is fully specified (has both center and radius).
 Circle@IsValid[$.have.center && $.have.radius]
 
