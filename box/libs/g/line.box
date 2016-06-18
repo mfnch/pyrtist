@@ -20,6 +20,18 @@ Line = ^((Int close, arrow0, arrow1) have
 ///Intro: number of points of the line.
 Line@Num[$.points]
 
+///Intro: length of the line.
+Line@Norm[
+  np = Num[$]
+  length = 0.0
+  [If[np >= 2]
+    prev = $.points.Get[0]
+    i = 1
+    [length += Norm[$.points.Get[i] - prev]
+     For[++i < np]]]
+  $$ = length
+]
+
 ///Intro: next vertex in the line.
 Point@Line[
   line_vertex = $
