@@ -26,7 +26,7 @@ Real@Deg[$$ = $*0.01745329251994329576]
 
 ///Intro: resolution to be associated to a raster (bitmapped) image.
 // The {type(.)} object is typically used to provide the resolution (points
-// per inch) to be used when saving a figure (see {type(Window)} and
+// per millimeter) to be used when saving a figure (see {type(Window)} and
 // {type(Figure)}) to a raster file format (such as PNG).
 Resolution = ^(Point point,)
 
@@ -53,7 +53,7 @@ Ppi = Resolution
 Point@Ppi[.point = $/25.4]
 
 ///Intro: ``Ppi[real]`` is equivalent to ``Ppi[Point[.x=.y=real]]``.
-Real@Ppi[Point[.x=.y=$]]
+Real@Ppi[Point[.x = .y = $]]
 
 ///Intro: specify a resolution in DPI (Dots Per Inch).
 Dpi = Real

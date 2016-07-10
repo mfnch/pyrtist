@@ -24,7 +24,7 @@ boxlibdir=@boxlibdir@
 boxpkgdir=@boxpkgdir@
 boxlibgdir=$(boxpkgdir)/g
 
-AM_CFLAGS=-Wall @CAIRO_CFLAGS@
+AM_CFLAGS=-Wall -std=gnu99 @CAIRO_CFLAGS@
 AM_CPPFLAGS=-I../../box -I../..
 AM_LDFLAGS=-no-undefined -module -avoid-version
 
@@ -58,4 +58,3 @@ libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.4.la
 if BUILD_WINCAIRO
 libg_la_SOURCES+=wincairo.c wincairo.h
 endif
-

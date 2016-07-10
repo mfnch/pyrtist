@@ -481,7 +481,6 @@ static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
   }
 
   plan.file_name = (char *) file_name;
-  plan.have.file_name = 1;
   plan.type = BoxGWin_Type_From_String(out_type);
   plan.have.type = 1;
   assert(plan.type >= 0);
@@ -980,7 +979,7 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {
   BoxReal sx, sy, rot_angle;
   BoxGWin *dest;
 
-  if (!plan->have.file_name || plan->file_name == NULL) {
+  if (plan->file_name == NULL) {
     g_error("To save the \"fig\" Window you need to provide a filename!");
     return 0;
   }

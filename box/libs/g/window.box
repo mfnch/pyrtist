@@ -73,16 +73,17 @@ Window.Res = Void
 Real@Window.Res "window_res_real" ?
 
 ///Intro: provide separate resolutions for x and y.
-Point@Window.Res "window_res_point" ?
+Point@Window.Res "point_at_window_res" ?
 
 ///Intro: the resolution to use when rasterizing the window.
 // Resolutions are relevant only when operating in a bitmapped (pixellated)
 // window. A higher resolution provides a more detailed image (which is also
-// bigger in size)
-Resolution@Window[
-  [If[!IsValid[$]], Fail["Invalid resolution"]]
-  $$.Res[$.point]
-]
+// bigger in size).
+Resolution@Window[If[IsValid[$]], $$.Res[$.point]]
+
+///Intro: get the resolution associated with the window.
+// IsValid can be used to check whether the resolution was given.
+Window@Resolution "window_at_resolution" ?
 
 ///Intro: provide the coordinate of the origin in the window.
 Window.Origin = Void

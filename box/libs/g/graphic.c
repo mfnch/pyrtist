@@ -761,7 +761,7 @@ BoxGWin *BoxGWin_Create(BoxGWinPlan *plan) {
   if ((must_have & HAVE_RESOLUTION) != 0 && !plan->have.resolution)
     return MY_OPEN_FAILED("window resolution is missing");
 
-  if ((must_have & HAVE_FILE_NAME) != 0 && !plan->have.file_name)
+  if ((must_have & HAVE_FILE_NAME) != 0 && plan->file_name == NULL)
     return MY_OPEN_FAILED("file name is missing");
 
   if ((must_have & HAVE_NUM_LAYERS) != 0 && !plan->have.num_layers)

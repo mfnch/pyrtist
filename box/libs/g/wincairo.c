@@ -1624,7 +1624,7 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
  } else if (win_class == WC_STREAM) {
     double width, height;
 
-    if (! plan->have.file_name) {
+    if (plan->file_name == NULL) {
       *err = BOXGERR_WIN_FILENAME_MISSING;
       return NULL;
     }

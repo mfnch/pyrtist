@@ -116,7 +116,6 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVMX *vm) {
   w->plan.have.resolution = 0;
   w->plan.resolution.x = 2.0;
   w->plan.resolution.y = 2.0;
-  w->plan.have.file_name = 0;
   w->plan.file_name = NULL;
 
   w->save_file_name = NULL;
@@ -356,17 +355,12 @@ BoxTask window_save_window(BoxVMX *vmp) {
     }
 
     if (src->save_file_name != NULL) {
-      dest->plan.have.file_name = 1;
       dest->plan.file_name = Box_Mem_Strdup(src->save_file_name);
     }
-
-    /*printf("Bounding box (%f, %f) - (%f, %f)\n",
-             bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
 
     if (dest->plan.have.origin) {
       translation.x = -bbox.min.x;
       translation.y = -bbox.min.y;
-
     } else{
       dest->plan.origin.x = bbox.min.x;
       dest->plan.origin.y = bbox.min.y;
@@ -376,14 +370,12 @@ BoxTask window_save_window(BoxVMX *vmp) {
     if (dest->plan.have.size) {
       sx = dest->plan.size.x/(bbox.max.x - bbox.min.x);
       sy = dest->plan.size.y/(bbox.max.y - bbox.min.y);
-
     } else {
       dest->plan.size.x = bbox.max.x - bbox.min.x;
       dest->plan.size.y = bbox.max.y - bbox.min.y;
       dest->plan.have.size = 1;
     }
 
-    BoxGWin_Destroy(dest->window);
     dest->window = BoxGWin_Create(& dest->plan);
     if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");
@@ -394,7 +386,6 @@ BoxTask window_save_window(BoxVMX *vmp) {
       g_error("Window.Save: cannot complete the given window!");
       return BOXTASK_FAILURE;
     }
-
   } else {
     BoxGBBox bbox;
     if (!BoxGBBox_Compute(& bbox, src->window)) {
@@ -410,7 +401,7 @@ BoxTask window_save_window(BoxVMX *vmp) {
 
   BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest->window, src->window, & m);
-  if (dest->plan.have.file_name)
+  if (dest->plan.file_name != NULL)
     BoxGWin_Save_To_File(dest->window, dest->plan.file_name);
     /* ^^^ Some terminals require an explicit save! */
 
@@ -511,24 +502,33 @@ BoxTask window_file_string(BoxVMX *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
-  if (w->plan.have.file_name) {
+  if (w->plan.file_name) {
     g_warning("You have already provided a file name for the window.");
     Box_Mem_Free(w->plan.file_name);
   }
-  w->plan.have.file_name = 1;
   w->plan.file_name = Box_Mem_Strdup(s->ptr);
   return BOXTASK_OK;
 }
 
-BoxTask window_res_point(BoxVMX *vmp) {
+BoxTask point_at_window_res(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   BoxPoint *res = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   if (w->plan.have.resolution) {
     g_warning("You have already provided the window resolution.");
   }
-  w->plan.resolution.x = res->x;
-  w->plan.resolution.y = res->y;
+  w->plan.resolution = *res;
   w->plan.have.resolution = 1;
+  return BOXTASK_OK;
+}
+
+BoxTask window_at_resolution(BoxVMX *vmp) {
+  BoxPoint *res = BOX_VM_THIS_PTR(vmp, BoxPoint);
+  Window *w = BOX_VM_ARG1(vmp, WindowPtr);
+  if (w->plan.have.resolution) {
+    *res = w->plan.resolution;
+  } else {
+    res->x = res->y = 0;
+  }
   return BOXTASK_OK;
 }
 
@@ -574,7 +574,6 @@ BoxTask Box_Lib_G_Str_At_Window_Get(BoxVMX *vm) {
   if (found) {
     *point = *found;
     return BOXTASK_OK;
-
   } else {
     BoxVM_Set_Fail_Msg(vm->vm, ("Cannot find hot point with the given name "
                                 "in the Window"));
@@ -591,7 +590,6 @@ BoxTask Box_Lib_G_Int_At_Window_Get(BoxVMX *vm) {
   if (found != NULL) {
     *point = *found;
     return BOXTASK_OK;
-
   } else {
     BoxVM_Set_Fail_Msg(vm->vm, "The Window does not have any hot points");
     return BOXTASK_FAILURE;
@@ -616,7 +614,6 @@ BoxTask Box_Lib_G_Int_At_Window_GetHotPointName(BoxVMX *vm) {
   if (name != NULL) {
     BoxStr_Set_From_C_String(hotpoint_name, name);
     return BOXTASK_OK;
-
   } else {
     BoxVM_Set_Fail_Msg(vm->vm, "The Window Hot point does not have a name");
     return BOXTASK_FAILURE;

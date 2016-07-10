@@ -107,7 +107,7 @@ typedef struct {
 typedef struct {
   struct {
     int type : 1, origin : 1, size : 1,
-        resolution : 1, file_name : 1, num_layers: 1;
+        resolution : 1, num_layers: 1;
   } have;
   int type;
   BoxPoint origin, size,
