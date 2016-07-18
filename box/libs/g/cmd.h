@@ -48,8 +48,12 @@ typedef enum {
   BOXGCMD_EXT_SET_FONT, BOXGCMD_EXT_TEXT_PATH, BOXGCMD_EXT_TRANSFORM,
   BOXGCMD_EXT_BORDER_EXCHANGE, BOXGCMD_EXT_BORDER_SAVE,
   BOXGCMD_EXT_BORDER_RESTORE, BOXGCMD_EXT_FILL_AND_STROKE,
+  BOXGCMD_PATTERN_CREATE_MESH, BOXGCMD_MESH_PATTERN_BEGIN_PATCH,
+  BOXGCMD_MESH_PATTERN_END_PATCH, BOXGCMD_MESH_PATTERN_MOVE_TO,
+  BOXGCMD_MESH_PATTERN_LINE_TO, BOXGCMD_MESH_PATTERN_CURVE_TO,
+  BOXGCMD_MESH_PATTERN_SET_CORNER_COLOR_RGB,
+  BOXGCMD_MESH_PATTERN_SET_CORNER_COLOR_RGBA,
   BOXG_NUM_CMDS
-
 } BoxGCmd;
 
 /** Possible types for arguments of a raw graphical command */
@@ -94,17 +98,18 @@ typedef enum {
   BOXGCMDSIG_PP,
   BOXGCMDSIG_RRR,
   BOXGCMDSIG_PPP,
+  BOXGCMDSIG_IRRR,
   BOXGCMDSIG_PPPS,
   BOXGCMDSIG_RRRR,
+  BOXGCMDSIG_IRRRR,
   BOXGCMDSIG_RRRRR,
   BOXGCMDSIG_PPPRR,
   BOXGCMDSIG_PPPpS,
   BOXGCMDSIG_PPPPRR,
   BOXGCMDSIG_W_
-
 } BoxGCmdSig;
 
-/** Function called while iterating over the commands. 
+/** Function called while iterating over the commands.
  * 'cmd' is the command, 'sig' is the signature, 'num_args' the number of
  * arguments of the command, 'kinds' an array of 'num_args' BoxGCmdArgKind
  * items with the argument kinds, 'args' an array of 'num_args' pointers to

@@ -104,7 +104,15 @@ BoxGCmdSig BoxGCmdSig_Get(BoxGCmd cmd_id) {
     {BOXGCMD_EXT_BORDER_EXCHANGE, BOXGCMDSIG_NONE},
     {BOXGCMD_EXT_BORDER_SAVE, BOXGCMDSIG_NONE},
     {BOXGCMD_EXT_BORDER_RESTORE, BOXGCMDSIG_NONE},
-    {BOXGCMD_EXT_FILL_AND_STROKE, BOXGCMDSIG_NONE}
+    {BOXGCMD_EXT_FILL_AND_STROKE, BOXGCMDSIG_NONE},
+    {BOXGCMD_PATTERN_CREATE_MESH, BOXGCMDSIG_NONE},
+    {BOXGCMD_MESH_PATTERN_BEGIN_PATCH, BOXGCMDSIG_NONE},
+    {BOXGCMD_MESH_PATTERN_END_PATCH, BOXGCMDSIG_NONE},
+    {BOXGCMD_MESH_PATTERN_MOVE_TO, BOXGCMDSIG_P},
+    {BOXGCMD_MESH_PATTERN_LINE_TO, BOXGCMDSIG_P},
+    {BOXGCMD_MESH_PATTERN_CURVE_TO, BOXGCMDSIG_PPP},
+    {BOXGCMD_MESH_PATTERN_SET_CORNER_COLOR_RGB, BOXGCMDSIG_IRRR},
+    {BOXGCMD_MESH_PATTERN_SET_CORNER_COLOR_RGBA, BOXGCMDSIG_IRRRR}
   };
 
   assert(cmd_id >= 0 && cmd_id < BOXG_NUM_CMDS);
@@ -137,6 +145,10 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   case BOXGCMDSIG_PPP:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_POINT;
     return 3;
+  case BOXGCMDSIG_IRRR:
+    kinds[0] = BOXGCMDARGKIND_INT;
+    kinds[1] = kinds[2] = kinds[3] = BOXGCMDARGKIND_REAL;
+    return 4;
   case BOXGCMDSIG_PPPS:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_POINT;
     kinds[3] = BOXGCMDARGKIND_STR;
@@ -144,6 +156,10 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   case BOXGCMDSIG_RRRR:
     kinds[0] = kinds[1] = kinds[2] = kinds[3] = BOXGCMDARGKIND_REAL;
     return 4;
+  case BOXGCMDSIG_IRRRR:
+    kinds[0] = BOXGCMDARGKIND_INT;
+    kinds[1] = kinds[2] = kinds[3] = kinds[4] = BOXGCMDARGKIND_REAL;
+    return 5;
   case BOXGCMDSIG_RRRRR:
     kinds[0] = kinds[1] = kinds[2] = kinds[3] = kinds[4] = BOXGCMDARGKIND_REAL;
     return 5;
