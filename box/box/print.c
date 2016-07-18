@@ -27,6 +27,7 @@
 #include <box/print.h>
 
 static char *msg = NULL;
+static int buf_size = 0;
 
 void Box_Print_Finish(void) {
   Box_Mem_Free(msg);
@@ -45,7 +46,6 @@ void Box_Print_Finish(void) {
  */
 const char *Box_VA_Print(const char *fmt, va_list ap)
 {
-  static int buf_size = 0;
   unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1,
     do_long = 0;
   char *str_dealloc = (char *) NULL;
@@ -184,10 +184,13 @@ const char *Box_VA_Print(const char *fmt, va_list ap)
              * fix.
              */
             char *save_msg = msg;
+            int save_buf_size = buf_size;
             msg = NULL;
+            buf_size = 0;
             str_dealloc = substring = BoxType_Get_Repr(t);
             free(msg);
             msg = save_msg;
+            buf_size = save_buf_size;
           } else
             substring = "(BoxType*)0";
 
@@ -240,6 +243,8 @@ const char *Box_VA_Print(const char *fmt, va_list ap)
         printf("size(%d) > buf_size(%d): expanding buffer\n", size, buf_size);
 #endif
         buf_size *= 2;
+        while (size >= buf_size)
+          buf_size *= 2;
         msg = (char *) realloc(msg, buf_size);
         if (!msg)
           goto print_error;
