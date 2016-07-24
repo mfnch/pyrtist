@@ -282,10 +282,10 @@ class ZoomableArea(gtk.DrawingArea):
     # None means "show the picture in full in the current view".
     self.magnification = None
     self.last_magnification = None  # Magnification of most recent view
-    
+
   def __del__(self):
     self.kill_drawer()
-    
+
   def get_hadjustment(self):
     return self._hadjustment
 

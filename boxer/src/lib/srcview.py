@@ -34,7 +34,7 @@ def insert_fn(_, srcview, ins_text, ins_offs):
   buf.insert(ins_start, ins_text)
   cursor_pos = buf.get_iter_at_offset(ins_offs + len(ins_text))
   buf.place_cursor(cursor_pos)
-  
+
 
 class BoxSrcView(object):
   def _init_textview(self):

@@ -193,7 +193,7 @@ class Boxer(object):
     # Retrieve the menu bar and the tool bar and add them at the top of the
     # VBox
     menubar = merge.get_widget("/MenuBar")
-    vbox.pack_start(menubar, expand=False)    
+    vbox.pack_start(menubar, expand=False)
     toolbar = merge.get_widget("/ToolBar")
 
     toolbar.set_style(gtk.TOOLBAR_ICONS)
@@ -1016,4 +1016,3 @@ def run(filename=None, box_exec=None):
   gtk.main()
 
   threads_leave()
-

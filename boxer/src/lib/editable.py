@@ -380,7 +380,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
     shift_pressed = (state & gtk.gdk.SHIFT_MASK)
     ctrl_pressed = (state & gtk.gdk.CONTROL_MASK)
-    if event.button == self.get_config("button_left"):      
+    if event.button == self.get_config("button_left"):
       if rp != None:
         if ctrl_pressed and not shift_pressed and rp.can_procreate():
           visible_coords = self.get_visible_coords()
@@ -461,7 +461,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
 
-    self.undoer.begin_group()    
+    self.undoer.begin_group()
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
         self.undoer.record_action(move_fn, self, rp_name, rps[rp_name].value)

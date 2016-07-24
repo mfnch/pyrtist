@@ -202,7 +202,7 @@ if __name__ == "__main__":
   import document
   import zoomable
   d = document.Document()
-  d.load_from_file("poly.box")
+  d.load_from_file("../examples/poly.box")
   bd = BoxImageDrawer(d)
   bd.out_fn = sys.stdout.write
   preamble = _box_preamble_common + _box_preamble_centered

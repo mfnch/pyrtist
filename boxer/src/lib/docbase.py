@@ -140,7 +140,7 @@ def refpoint_to_string(rp, version=version):
     return "%s = (%s, %s)" % (rp.name, rp.value[0], rp.value[1])
   elif cmp_version(version, (0, 1, 1)) <= 0:
     return ("%s = Point[.x=%s, .y=%s]"
-            % (rp.name, rp.value[0], rp.value[1]))    
+            % (rp.name, rp.value[0], rp.value[1]))
   else:
     return rp.get_box_source()
 
@@ -354,12 +354,9 @@ class DocumentBase(Configurable):
     while not box_finished:
       time.sleep(0.1)
 
-    return "".join(box_output).rstrip()
+    return ''.join(box_output).rstrip()
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
-    # Have to find a convenient way to pass:
-    # - extra command line arguments
-    # - temporary directory, etc
     fn = self._fns["box_document_execute"]
     if fn != None:
       fn(self, preamble, out_fn, exit_fn)
@@ -439,4 +436,3 @@ if __name__ == "__main__":
   sys.stdout.write("Done\n")
   import time
   time.sleep(0.1)
-
