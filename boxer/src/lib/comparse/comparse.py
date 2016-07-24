@@ -1,19 +1,19 @@
 # Copyright (C) 2012 Matteo Franchin (fnch@users.sourceforge.net)
 #
-# This file is part of Boxer.
+# This file is part of Pyrtist.
 #
-#   Boxer is free software: you can redistribute it and/or modify it
+#   Pyrtist is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Boxer is distributed in the hope that it will be useful,
+#   Pyrtist is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Boxer. If not, see <http://www.gnu.org/licenses/>.
+#   along with Pyrtist. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 
@@ -114,7 +114,7 @@ class Tokenizer(object):
 class Parser(object):
   '''Base parser for Box sources. This parser can go over the sources and
   distinguish comments from source code. This is the basic parser over which
-  the Boxer macro system is built. The parser calls several methods to notify
+  the Pyrtist macro system is built. The parser calls several methods to notify
   the occurrence of several events. The user is expected to inherit from this
   class and redefine the methods: notify_comment_begin, notify_comment_end,
   notify_inline_comment and notify_source.

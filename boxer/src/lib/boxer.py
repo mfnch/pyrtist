@@ -1,19 +1,19 @@
 # Copyright (C) 2008-2013 by Matteo Franchin (fnch@users.sf.net)
 #
-# This file is part of Boxer.
+# This file is part of Pyrtist.
 #
-#   Boxer is free software: you can redistribute it and/or modify it
+#   Pyrtist is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Boxer is distributed in the hope that it will be useful,
+#   Pyrtist is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+#   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 # TODO (for later):
 # - add show all/hide all button
@@ -67,8 +67,8 @@ def create_filechooser(parent, title="Choose a file", action=None,
                              buttons=buttons)
   if add_default_filters:
     flt_box_sources = gtk.FileFilter()
-    flt_box_sources.set_name("Box sources")
-    flt_box_sources.add_pattern("*.box")
+    flt_box_sources.set_name("Python sources")
+    flt_box_sources.add_pattern("*.py")
     flt_all_files = gtk.FileFilter()
     flt_all_files.set_name("All files")
     flt_all_files.add_pattern("*")
@@ -113,7 +113,7 @@ class Settings(object):
     raise KeyError("Property not found in Settings object")
 
 
-class Boxer(object):
+class Pyrtist(object):
   ui_info = \
     '''<ui>
       <menubar name='MenuBar'>
@@ -291,7 +291,7 @@ class Boxer(object):
       ("SaveAs", gtk.STOCK_SAVE, "Save _As...", None,
        "Save to a file", self.menu_file_save_as),
       ("Quit", gtk.STOCK_QUIT, "_Quit", "<control>Q",
-       "Quit Boxer", self.menu_file_quit),
+       "Quit Pyrtist", self.menu_file_quit),
 
       ("EditMenu", None, "_Edit"),
       ("Undo", gtk.STOCK_UNDO, "_Undo", "<control>Z",
@@ -309,7 +309,7 @@ class Boxer(object):
 
       ("LibraryMenu", None, "_Library"),
       ("ConfigureLibrary", gtk.STOCK_PREFERENCES, "_Configure library", None,
-       "Configure the Boxer library", self.menu_library_config),
+       "Configure the Pyrtist library", self.menu_library_config),
 
       ("RunMenu", None, "_Run"),
       ("Execute", gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
@@ -328,10 +328,10 @@ class Boxer(object):
        "Reduce the size of the reference point markers",
        self.menu_view_dec_refpoint),
       ("Remember", None, "R_emember the current window size", None,
-       ("Remember the current window size when launching Boxer "
+       ("Remember the current window size when launching Pyrtist "
         "the next time"), self.menu_view_remember_win_size),
       ("Forget", None, "_Forget the saved window size", None,
-       "Use the default window size when Boxer starts",
+       "Use the default window size when Pyrtist starts",
        self.menu_view_forget_win_size),
 
       ("HelpMenu", None, "_Help"),
@@ -384,7 +384,7 @@ class Boxer(object):
     changes or is set."""
     filename = self.filename or "New file"
     modified_char = " [modified]" if self.undoer.is_modified() else ""
-    self.mainwin.set_title("%s%s - Boxer" % (filename, modified_char))
+    self.mainwin.set_title("%s%s - Pyrtist" % (filename, modified_char))
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
@@ -1012,7 +1012,7 @@ def run(filename=None, box_exec=None):
   threads_init()
   threads_enter()
 
-  main_window = Boxer(filename=filename, box_exec=box_exec)
+  main_window = Pyrtist(filename=filename, box_exec=box_exec)
   gtk.main()
 
   threads_leave()

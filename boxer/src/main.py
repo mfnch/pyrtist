@@ -1,19 +1,19 @@
 # Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
 #
-# This file is part of Boxer.
+# This file is part of Pyrtist.
 #
-#   Boxer is free software: you can redistribute it and/or modify it
+#   Pyrtist is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Boxer is distributed in the hope that it will be useful,
+#   Pyrtist is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+#   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import optparse
@@ -23,14 +23,14 @@ from lib.info import full_name
 option_parser = None
 
 def generate_option_parser():
-  usage = ("boxer [options] [filename.box]") 
+  usage = ("pyrtist [options] [filename.py]")
   version = ("%s -- The Box Graphical User Interface\n" % full_name +
-             "Copyright (C) 2010 Matteo Franchin\n")
+             "Copyright (C) 2010-2016 Matteo Franchin\n")
 
   op = optparse.OptionParser(usage=usage, version=version)
 
   help = ("The executable of the Box compiler to be used. "
-          "If the file is found and can be executed correctly, Boxer "
+          "If the file is found and can be executed correctly, Pyrtist "
           "remembers it in future sessions.")
   op.add_option("--box-exec", type="string", metavar="EXEC-FILE",
                 dest="box_exec", help=help)
@@ -50,7 +50,7 @@ def main(args):
 
   if len(arguments) > 2:
     other_files = ", ".join(arguments[2:])
-    sys.stdout.write("WARNING: Boxer takes just one file from the command "
+    sys.stdout.write("WARNING: Pyrtist takes just one file from the command "
                      "line. Ignoring the files %s." % other_files)
 
   from lib.boxer import run
@@ -59,4 +59,3 @@ def main(args):
 if __name__ == "__main__":
   import sys
   main(sys.argv)
-

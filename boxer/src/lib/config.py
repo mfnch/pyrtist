@@ -1,19 +1,19 @@
 # Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
 #
-# This file is part of Boxer.
+# This file is part of Pyrtist.
 #
-#   Boxer is free software: you can redistribute it and/or modify it
+#   Pyrtist is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Boxer is distributed in the hope that it will be useful,
+#   Pyrtist is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+#   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 import imp
 import sys
@@ -105,7 +105,7 @@ def get_gui_lib_path(filename=None):
   return base if filename == None else os.path.join(base, filename)
 
 def get_example_files():
-  """Return a list of example files for Boxer."""
+  """Return a list of example files for Pyrtist."""
   import glob
   pattern = os.path.join(installation_path(), "examples", "*.box")
   return glob.glob(pattern)
@@ -117,9 +117,9 @@ _tmp_files = [[]] # Current created temporary files
 
 def tmp_new_filename(base, ext="", filenames=None, remember=True):
   try:
-    prefix = "boxer%d%s" % (os.getpid(), base)
+    prefix = "pyrtist%d%s" % (os.getpid(), base)
   except:
-    prefix = "boxer%s" % base
+    prefix = "pyrtist%s" % base
   filename = tempfile.mktemp(prefix=prefix, suffix="." + ext)
   if remember: _tmp_files[0].append(filename)
   if filenames != None:
@@ -362,9 +362,9 @@ def get_configuration():
   # Create Boxer configuration directory
   home_path = os.path.expanduser("~")
   if platform_is_win:
-    cfg_dir = "boxer_settings"
+    cfg_dir = "pyrtist_settings"
   else:
-    cfg_dir = ".boxer"
+    cfg_dir = ".pyrtist"
   cfg_file = "config.cfg"
 
   # Create default box executable path
@@ -396,7 +396,7 @@ def get_configuration():
      IntOption(4, 1, 50, desc='The size of the squares used to mark '
                               'the reference points')),
     ('Library', 'dir',
-     DirOption(desc='Path to the local copy of the Boxer library')),
+     DirOption(desc='Path to the local copy of the Pyrtist library')),
     ('Behaviour', 'button_left',
      IntOption(1, 1, 5, desc='ID of the mouse left button')),
     ('Behaviour', 'button_center',
