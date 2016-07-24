@@ -136,13 +136,7 @@ def refpoint_to_string(rp, version=version):
   """Return a string representation of the RefPoint according to the given
   Boxer version. The returned string can be parsed by 'refpoint_from_string'.
   """
-  if version == (0, 1):
-    return "%s = (%s, %s)" % (rp.name, rp.value[0], rp.value[1])
-  elif cmp_version(version, (0, 1, 1)) <= 0:
-    return ("%s = Point[.x=%s, .y=%s]"
-            % (rp.name, rp.value[0], rp.value[1]))
-  else:
-    return rp.get_box_source()
+  return rp.get_py_source()
 
 def search_first(s, things, start=0):
   found = -1
@@ -282,7 +276,7 @@ class DocumentBase(Configurable):
     raise NotImplementedError("get_part_boot_code")
 
   def get_part_preamble(self, mode=None, boot_code=None):
-    """Return the first part of the Box file, where metainformation such as
+    """Return the first part of the Box file, where meta-information such as
     the version of the file format and the reference points are defined.
     """
     if mode == MODE_STORE:
@@ -290,9 +284,7 @@ class DocumentBase(Configurable):
       part2 = self.get_part_boot_code(boot_code)
       part3 = self.get_part_def_refpoints()
       return endline.join([part1, part2, part3])
-
-    else:
-      return self.get_part_boot_code(boot_code)
+    return self.get_part_boot_code(boot_code)
 
   def get_part_user_code(self, mode=None):
     """Get the user part of the Box source."""
@@ -373,19 +365,8 @@ class DocumentBase(Configurable):
     f.write(presrc_content + '\n' + original_userspace)
     f.close()
 
-    f = open(presrc_filename, "wt")
-    f.write(presrc_content)
-    f.close()
-
-    box_executable = '/usr/bin/python'  #self.get_config("box_executable", "box")
-    box_args = self.get_config("box_extra_args", [])
-    presrc_path, presrc_basename = os.path.split(presrc_filename)
-
-    # Command line arguments to be passed to box
-    args = box_args
-
-    # Include the helper code (which allows communication box-boxer)
-    #args += ("-I", presrc_path, "-S", presrc_basename)
+    box_executable = '/usr/bin/python'
+    #self.get_config("box_executable", "box")
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
@@ -394,9 +375,7 @@ class DocumentBase(Configurable):
     src_path = os.path.split(self.filename or src_filename)[0]
 
     # Directory from which the script should be executed
-    cwd = None
-    if src_path:
-      cwd = src_path
+    cwd = src_path or None
 
     fn = self._fns["box_document_executed"]
     def do_at_exit():
@@ -409,7 +388,7 @@ class DocumentBase(Configurable):
     if out_fn == None:
       out_fn = self._fns["box_exec_output"]
 
-    args.append(src_filename)
+    args = [src_filename]
     return exec_command(box_executable, args,
                         out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
 

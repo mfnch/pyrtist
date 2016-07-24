@@ -22,7 +22,7 @@ from docbase import \
 # File format version handled by this implementation of the DocumentBase class.
 version = (0, 1, 1)
 
-marker_begin = "//!BOXER"
+marker_begin = "#!PYRTIST"
 marker_sep = ":"
 
 def marker_line_parse(line):
@@ -39,34 +39,6 @@ def marker_line_assemble(attrs, newline=True):
   if newline:
     s += endline
   return s
-
-def save_to_str_v0_1_1(document):
-  ml_version = marker_line_assemble(["VERSION", "0", "1", "1"])
-  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
-  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints = [refpoint_to_string(rp)
-               for rp in document.refpoints]
-  refpoints_text = text_writer(refpoints)
-  s = (ml_version +
-       document.get_preamble() + endline +
-       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
-       document.get_user_code())
-  return s
-
-def save_to_str_v0_1(document):
-  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
-  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints = [refpoint_to_string(rp, version=(0, 1))
-               for rp in document.refpoints]
-  refpoints_text = text_writer(refpoints)
-  s = (document.get_preamble() + endline +
-       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
-       document.get_user_code())
-  return s
-
-_save_to_str_fns = {(0, 1): save_to_str_v0_1,
-                    (0, 1, 1): save_to_str_v0_1_1}
-
 
 class Document0(DocumentBase):
   def _get_arg_num(self, arg, possible_args):
@@ -153,9 +125,14 @@ class Document0(DocumentBase):
     return True
 
   def save_to_str(self, version=version):
-    if version in _save_to_str_fns:
-      fn = _save_to_str_fns[version]
-      return fn(self)
-
-    else:
-      raise ValueError("Cannot save document using version %s" % str(version))
+    ml_version = marker_line_assemble(["VERSION", "0", "1", "1"])
+    ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
+    ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
+    refpoints = [refpoint_to_string(rp)
+                 for rp in self.refpoints]
+    refpoints_text = text_writer(refpoints)
+    s = (ml_version +
+         self.get_preamble() + endline +
+         ml_refpoints_begin + refpoints_text + ml_refpoints_end +
+         self.get_user_code())
+    return s

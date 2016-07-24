@@ -35,6 +35,7 @@ from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
 _box_preamble_common = '''
 import sys
 sys.path.append('{gui_lib_path}')
+from pyter2d import *
 '''.format(gui_lib_path=config.get_gui_lib_path())
 
 _box_preamble_void = ''
@@ -156,10 +157,11 @@ class PyImageDrawer(ImageDrawer):
 
   def update(self, pixbuf_output, pix_view, coord_view=None,
              img_out_filename=None):
+    preamble = _box_preamble_common
     if coord_view == None:
       px, py = pix_view
       substs = [("$SX$", px), ("$SY$", py)]
-      preamble = _box_preamble_common + _box_preamble_centered
+      preamble += _box_preamble_centered
     else:
       self.view.reset(pix_view, coord_view.corner1, coord_view.corner2)
       px, py = self.view.view_size
@@ -171,7 +173,8 @@ class PyImageDrawer(ImageDrawer):
       substs = [("$OX$", ox), ("$OY$", oy),
                 ("$RX$", rx), ("$RY$", ry),
                 ("$SX$", sx), ("$SY$", sy)]
-      preamble = _box_preamble_common + _box_preamble_view
+      preamble += _box_preamble_view
+    preamble += self.document.save_to_str()
 
     killer = self._raw_execute(pix_view, pixbuf_output,
                                preamble=preamble,

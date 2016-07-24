@@ -282,7 +282,7 @@ class BoxerMacroContract(MacroExpander):
     return ""
 
 
-class Document1(Document0):
+class Document(Document0):
   def load_from_str(self, src):
     self.version = None
     mc = BoxerMacroContract(src)
@@ -290,18 +290,11 @@ class Document1(Document0):
     mc.parse()
     if self.version:
       return True
-    else:
-      success = Document0.load_from_str(self, src)
-      if success:
-        self.usercode = "###define-all" + endline + self.usercode
-        return True
-
-      else:
-        return False
+    return Document0.load_from_str(self, src)
 
   @inherit_doc
   def get_part_preamble(self, **kwargs):
-    ret = super(Document1, self).get_part_preamble(**kwargs)
+    ret = super(Document, self).get_part_preamble(**kwargs)
     mode = kwargs.get('mode', None)
     if mode == MODE_STORE:
       num_dirpoints = len(self.get_refpoints().get_dirpoints())
@@ -351,4 +344,4 @@ class Document1(Document0):
     rps = self.get_refpoints()
     return endline.join(["###boxer-dirpoints:", dirpoints_to_str(rps), "###end"])
 
-  save_to_str = DocumentBase.save_to_str
+  save_to_str = Document0.save_to_str

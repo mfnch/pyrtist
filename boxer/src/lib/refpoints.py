@@ -136,6 +136,25 @@ class RefPoint(object):
     """Translate the reference point to the given position."""
     self.value = Point(pos)
 
+  def get_py_source(self):
+    if self.kind != REFPOINT_PARENT:
+      v = self.value
+      return ("%s = Point(x=%s, y=%s)" % (self.name, v[0], v[1]))
+
+    children = self.related
+    if children != None:
+      n = len(children)
+      if n > 0:
+        pin = children[0]
+        pout = children[1] if n > 1 else None
+        args = []
+        for i, arg in enumerate((pin, self, pout)):
+          if arg is not None:
+            args.append("Point(x=%s, y=%s)" % tuple(arg.value))
+          elif i == 0:
+            args.append(";")
+        return "%s = Tri(%s)" % (self.name, ", ".join(args))
+
   def get_box_source(self):
     kind = self.kind
     if kind == REFPOINT_PARENT:
