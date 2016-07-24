@@ -3,7 +3,8 @@ from base import Taker, combination
 class Cmd(object):
     names = ('move_to', 'line_to', 'ext_arc_to', 'close_path',
              'set_source_rgb', 'set_source_rgba',
-             'stroke', 'fill', 'save', 'restore')
+             'stroke', 'fill', 'save', 'restore',
+             'set_bbox')
 
     def __init__(self, *args):
         self.args = tuple(args)

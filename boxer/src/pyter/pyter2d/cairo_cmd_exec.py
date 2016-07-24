@@ -32,13 +32,15 @@ class CairoCmdExecutor(object):
         if mode is None:
             raise ValueError('Unknown mode {}'.format(orig_mode))
 
-        self.mode = mode
-        self.size = size = Point(size)
+        # Ensure origin and size are Point objects.
+        size = Point(size)
         origin = Point(self.default_origin if origin is None else origin)
-        self.origin = origin
+
+        self.mode = mode
+        self.size = size
         resolution = (self.default_resolution if resolution is None
                       else resolution)
-        self.resolution = resolution = \
+        resolution = \
           (Point((resolution, resolution))
            if isinstance(resolution, numbers.Number)
            else Point(resolution))
@@ -55,6 +57,12 @@ class CairoCmdExecutor(object):
         context.set_source_rgb(1.0, 1.0, 1.0)
         context.fill()
         context.restore()
+
+        # Flip the y axis.
+        resolution.y = -resolution.y;
+        origin.y += size.y
+        self.resolution = resolution
+        self.origin = origin
 
     def execute(self, cmds):
         for cmd in cmds:

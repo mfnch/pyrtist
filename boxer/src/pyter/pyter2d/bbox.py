@@ -10,10 +10,15 @@ class BBox(Taker):
     def __str__(self):
         return 'BBox({}, {})'.format(self.min_point, self.max_point)
 
+    def __nonzero__(self):
+        return (self.min_point is not None)
+
+@combination(tuple, BBox)
 @combination(Point, BBox)
 def fn(point, bbox):
+    point = Point(point)
     if bbox.min_point is None:
-        bbox.min_point = bbox.max_point = Point(point)
+        bbox.min_point = bbox.max_point = point
     else:
         bbox.min_point = Point(x=min(bbox.min_point.x, point.x),
                                y=min(bbox.min_point.y, point.y))

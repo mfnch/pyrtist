@@ -1,5 +1,5 @@
 from base import Taker, combination
-from cmd_stream import CmdStream
+from cmd_stream import Cmd, CmdStream
 from cairo_cmd_exec import CairoCmdExecutor
 from bbox import BBox
 from point import Point
@@ -30,6 +30,11 @@ def fn(window, bbox):
         for arg in args:
             if isinstance(arg, Point):
                 bbox(arg)
+
+@combination(BBox, Window, 'BBox')
+def fn(bbox, window):
+    if bbox:
+        window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
 
 class Save(object):
     def __init__(self, file_name, size=None, resolution=None,
