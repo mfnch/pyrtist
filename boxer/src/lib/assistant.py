@@ -43,10 +43,10 @@ class CallAction(object):
     self.fn(parent)
 
 
-def rinsert_char(tb, insert=", ", left=False, delims="],"):
+def rinsert_char(tb, insert=", ", left=False, delims="),"):
   return insert_char(tb, insert=insert, left=left, delims=delims)
 
-def insert_char(tb, insert=", ", left=True, delims="[,"):
+def insert_char(tb, insert=", ", left=True, delims="(,"):
   if tb != None:
     it = tb.get_iter_at_mark(tb.get_insert())
     border_reached = it.starts_line if left else it.ends_line

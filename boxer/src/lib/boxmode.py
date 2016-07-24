@@ -88,7 +88,7 @@ gradient_line = \
        tooltip="Select linear gradient",
        statusbar="Enter initial and final point",
        button=Button("Linear", "lingrad.png"),
-       enter_actions=[Paste("$LCOMMA$Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Line($CURSORIN$)$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
        submodes=[exit, gradient_line_help])
@@ -112,7 +112,7 @@ gradient_circle = \
        tooltip="Select radial gradient",
        statusbar="Expecting: circle_centre_1, radius_1; circle_centre_2, radius_2",
        button=Button("Circular", "circgrad.png"),
-       enter_actions=[Paste("$LCOMMA$Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Circle($CURSORIN$)$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
        submodes=[exit, gradient_circle_help])
@@ -122,7 +122,7 @@ gradient = \
        tooltip="Create a color gradient",
        statusbar="Waiting for you to choose between linear and radial gradient",
        button=Button("Gradient", "gradient.png"),
-       enter_actions=[Paste("$LCOMMA$Gradient[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Gradient($CURSORIN$)$CURSOROUT$$RCOMMA$"),
                       push_settings, dont_paste_on_new],
        exit_actions=pop_settings,
        submodes=[gradient_line, gradient_circle, color, exit])
@@ -145,7 +145,7 @@ gradient = \
 #fill = Mode("Fill mode",
 #            tooltip="Select the filling mode for polygons/paths",
 #            button=Button("Fill", "fill.png"),
-#            enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+#            enter_actions=Paste("$LCOMMA$.Fill($CURSORIN$)$CURSOROUT$$RCOMMA$"),
 #            submodes=[fill_void, fill_plain, fill_eo, exit])
 
 border_dash = \
@@ -167,7 +167,7 @@ border = \
   Mode("Border",
        tooltip="Set the color, width and type of border of polygons and paths",
        button=Button("Border", "border.png"),
-       enter_actions=Paste("$LCOMMA$Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=Paste("$LCOMMA$Border($CURSORIN$)$CURSOROUT$$RCOMMA$"),
        submodes=[color, border_width, border_dash, exit])
 
 style = \
@@ -176,7 +176,7 @@ style = \
        tooltip=("Choose the fill and border style for polygons, "
                 "circles, etc."),
        button=Button("Style", "style.png"),
-       enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=Paste("$LCOMMA$Style($CURSORIN$)$CURSOROUT$$RCOMMA$"),
        submodes=[color, gradient, border, exit])
 
 poly_smoothing = \
@@ -199,7 +199,7 @@ poly = \
        statusbar=("Select the vertices by clicking on the image view; "
                   "choose the color and filling style from the toolbox"),
        button=Button("Poly", "poly.png"),
-       enter_actions=[Paste("$LNEWLINE$Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Poly($CURSORIN$)$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, poly_smoothing, exit])
@@ -210,7 +210,7 @@ curve = \
        statusbar=("Select the vertices by clicking on the image view; "
                   "choose the color and filling style from the toolbox"),
        button=Button("Curve", "curve.png"),
-       enter_actions=[Paste("$LNEWLINE$Curve[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Curve($CURSORIN$)$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, exit])
@@ -226,7 +226,7 @@ circle = \
   Mode("Circle",
        tooltip="Create a new circle",
        button=Button("Circle", "circle.png"),
-       enter_actions=[Paste("$LNEWLINE$Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Circle($CURSORIN$)$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, circle_radius, exit])
@@ -309,7 +309,7 @@ line = \
   Mode("Line",
        tooltip="Create a new line with fixed or variable thickness",
        button=Button("Line", "line.png"),
-       enter_actions=[Paste("$LNEWLINE$Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Line($CURSORIN$)$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, line_width,
@@ -380,7 +380,7 @@ font = \
   Mode("Font",
        tooltip="Choose the font (and size) used to render the text",
        button=Button("Font", "font.png"),
-       enter_actions=[Paste("$LCOMMA$Font[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
+       enter_actions=[Paste("$LCOMMA$Font($CURSORIN$)$CURSOROUT$$RCOMMA$")],
        submodes=[font_size, font_select, exit])
 
 text_content = \
@@ -407,7 +407,7 @@ text_from = \
   Mode("From",
        tooltip="Choose the relative position",
        button=Button("From", "textfrom.png"),
-       enter_actions=Paste("$LCOMMA$From[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=Paste("$LCOMMA$From($CURSORIN$)$CURSOROUT$$RCOMMA$"),
        submodes=text_from_submodes)
 
 text = \
@@ -416,7 +416,7 @@ text = \
        statusbar=("Select the font, enter the text, the position "
                   "and relative-positioning"),
        button=Button("Text", "text.png"),
-       enter_actions=[Paste("$LNEWLINE$Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Text($CURSORIN$)$CURSOROUT$$RNEWLINE$"),
                       paste_on_new],
        submodes=[color, gradient, style, font, text_content, text_from, exit])
 

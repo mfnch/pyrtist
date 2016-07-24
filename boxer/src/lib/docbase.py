@@ -92,8 +92,9 @@ def parse_given_eq_smthg(s, fixed_part):
   return None
 
 def refpoint_from_string(s):
-  """Parse a string representation of a GUIPoint and return the corresponding
-  GUIPoint object."""
+  """Parse a string representation of a Point and return the corresponding
+  Point object.
+  """
   try:
     lhs, rhs = s.split("=", 1)
     rhs, s_next = rhs.split(")", 1)
@@ -136,7 +137,7 @@ def match_close(src, start, pars):
     else:
       return next + 1
 
-def get_next_guipoint_string(src, start=0, seps=[",", endline],
+def get_next_guipoint_string(src, start=0, seps=[";", endline],
                              pars={"(": ")", "[": "]"}):
   pos = start
   open_seps = pars.keys()
