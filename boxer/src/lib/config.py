@@ -59,36 +59,16 @@ box_syntax_highlighting = sys.path[0]
 
 # By default this is the text put inside a new program
 # created with File->New
-box_source_of_new = \
-"""##!BOXER:VERSION:0:1:1
-include "g"
-GUI = Void
-Window@GUI[]
+box_source_of_new = '''#!PYRTIST:VERSION:0:1:1
 
-##!BOXER:REFPOINTS:BEGIN
-bbox1 = Point[.x=0.0, .y=50.0]
-bbox2 = Point[.x=100.0, .y=0.0]
-##!BOXER:REFPOINTS:END
+#!PYRTIST:REFPOINTS:BEGIN
+bbox1 = Point(x=0, y=50)
+bbox2 = Point(x=100, y=0)
+#!PYRTIST:REFPOINTS:END
+w = Window()          # Create a new Window and set the
+w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
 
-fg = Figure[
-  BBox[bbox1, bbox2]
-
-  ##!BOXER:CURSOR:HERE
-
-  # Uncomment to save the picture in the script's parent directory
-  #Save["output.png", Window["rgb24", Ppi[200]]]
-]
-
-###view:fg
-"""
-box_source_of_new = '''
-from pyter2d import *
-
-w = Window()
-l = w.Line((1, 2), (1, 4), (5, 4), Close())
-w.Circle((1, 2.5), 5.0)
-
-gui(w)
+gui(w)                # Show the result.
 '''
 
 def installation_path():

@@ -89,48 +89,23 @@ def parse_given_eq_smthg(s, fixed_part):
   left, right = s.split("=", 1)
   if left.strip() == fixed_part:
     return right.strip()
-  else:
-    return None
+  return None
 
-def refpoint_from_string_latest(s):
+def refpoint_from_string(s):
   """Parse a string representation of a GUIPoint and return the corresponding
   GUIPoint object."""
   try:
     lhs, rhs = s.split("=", 1)
-    rhs, s_next = rhs.split("]", 1)
-    point_str, rem_str = rhs.split("[", 1)
+    rhs, s_next = rhs.split(")", 1)
+    point_str, rem_str = rhs.split("(", 1)
     if point_str.strip() != "Point":
       return None
     str_x, str_y = rem_str.split(",", 1)
-    x = float(parse_given_eq_smthg(str_x, ".x"))
-    y = float(parse_given_eq_smthg(str_y, ".y"))
+    x = float(parse_given_eq_smthg(str_x, "x"))
+    y = float(parse_given_eq_smthg(str_y, "y"))
     return RefPoint(lhs.strip(), [x, y])
-
   except:
     return None
-
-def refpoint_from_string_v0_1_0(s):
-  """Similar to parse_guipoint_new, but for Boxer 0.1."""
-  try:
-    lhs, rhs = s.split("=", 1)
-    rem_str, _ = rhs.split(")", 1)
-    rem_str, x_y_str = rem_str.split("(", 1)
-    if rem_str.strip() != "":
-      return None
-    str_x, str_y = x_y_str.split(",", 1)
-    return RefPoint(lhs.strip(), [float(str_x), float(str_y)])
-
-  except Exception as x:
-    return None
-
-def refpoint_from_string(s):
-  """Try to parse a representation of a RefPoint first with parse_guipoint_new
-  and then with parse_guipoint_v0_1_0 if the former failed."""
-  rp = refpoint_from_string_latest(s)
-  if rp != None:
-    return rp
-  else:
-    return refpoint_from_string_v0_1_0(s)
 
 def refpoint_to_string(rp, version=version):
   """Return a string representation of the RefPoint according to the given

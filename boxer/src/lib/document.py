@@ -284,12 +284,6 @@ class BoxerMacroContract(MacroExpander):
 
 class Document(Document0):
   def load_from_str(self, src):
-    self.version = None
-    mc = BoxerMacroContract(src)
-    mc.document = self
-    mc.parse()
-    if self.version:
-      return True
     return Document0.load_from_str(self, src)
 
   @inherit_doc

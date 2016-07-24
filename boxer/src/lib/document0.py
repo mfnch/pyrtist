@@ -30,8 +30,7 @@ def marker_line_parse(line):
   string is not a marker line."""
   if not line.strip().startswith(marker_begin):
     return None
-  else:
-    return [s.strip() for s in line.split(marker_sep)[1:]]
+  return [s.strip() for s in line.split(marker_sep)[1:]]
 
 def marker_line_assemble(attrs, newline=True):
   """Crete a marker line from the given list of attributes."""
@@ -64,47 +63,42 @@ class Document0(DocumentBase):
     lines = boxer_src.splitlines(True)
     for line in lines:
       marker = marker_line_parse(line)
-      if marker == None:
+      if marker is None:
         if context in parts:
           parts[context] += line
         else:
           parts[context] = line
+        continue
 
+      if len(marker) < 1:
+        raise ValueError("Internal error in Document.load_from_src")
+
+      marker_name = marker[0]
+      if not marker_name in marker_wants:
+        self.notify("WARNING", "Unknown marker '%s'" % marker_name)
+        continue
+
+      marker_nargs = marker_wants[marker_name]
+      if marker_nargs is not None and len(marker) < marker_nargs + 1:
+        self.notify("WARNING",
+                    "Marker has less arguments than expected")
+      elif marker_name == "REFPOINTS":
+        arg_num = self._get_arg_num(marker[1], ["BEGIN", "END"])
+        if arg_num is None:
+          return False
+        context = ["refpoints_text", "userspace"][arg_num]
+      elif marker_name == "VERSION":
+        try:
+          assert len(marker) == 4
+          self.version = map(int, marker[1:])
+        except:
+          self.notify("WARNING", "Cannot determine Boxer version which "
+                      "generated the file")
       else:
-        if len(marker) < 1:
-          raise ValueError("Internal error in Document.load_from_src")
-
-        else:
-          marker_name = marker[0]
-          if not marker_name in marker_wants:
-            self.notify("WARNING", "Unknown marker '%s'" % marker_name)
-
-          else:
-            marker_nargs = marker_wants[marker_name]
-            if marker_nargs != None and len(marker) < marker_nargs + 1:
-              self.notify("WARNING",
-                          "Marker has less arguments than expected")
-
-            elif marker_name == "REFPOINTS":
-              arg_num = self._get_arg_num(marker[1], ["BEGIN", "END"])
-              if arg_num == None:
-                return False
-              else:
-                context = ["refpoints_text", "userspace"][arg_num]
-
-            elif marker_name == "VERSION":
-              try:
-                assert len(marker) == 4
-                self.version = map(int, marker[1:])
-              except:
-                self.notify("WARNING", "Cannot determine Boxer version which "
-                            "generated the file")
-
-            else:
-              parts[context] += line
-              # ^^^  note that this requires context to already exist in the
-              #      dictionary. In other words, unrecognized markers cannot
-              #      be the first markers in the file.
+        parts[context] += line
+        # ^^^  note that this requires context to already exist in the
+        #      dictionary. In other words, unrecognized markers cannot
+        #      be the first markers in the file.
 
     refpoints = self.refpoints
     refpoints.remove_all()
@@ -130,9 +124,14 @@ class Document0(DocumentBase):
     ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
     refpoints = [refpoint_to_string(rp)
                  for rp in self.refpoints]
-    refpoints_text = text_writer(refpoints)
+    refpoints_text = text_writer(refpoints, sep='; ')
     s = (ml_version +
          self.get_preamble() + endline +
          ml_refpoints_begin + refpoints_text + ml_refpoints_end +
          self.get_user_code())
     return s
+
+if __name__ == '__main__':
+  d = Document0()
+  d.load_from_file('/tmp/test.py')
+  print(d.save_to_str())
