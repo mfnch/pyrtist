@@ -370,42 +370,33 @@ class DocumentBase(Configurable):
                                             boot_code=preamble)
 
     f = open(src_filename, "wt")
-    f.write(original_userspace)
+    f.write(presrc_content + '\n' + original_userspace)
     f.close()
 
     f = open(presrc_filename, "wt")
     f.write(presrc_content)
     f.close()
 
-    box_executable = self.get_config("box_executable", "box")
+    box_executable = '/usr/bin/python'  #self.get_config("box_executable", "box")
     box_args = self.get_config("box_extra_args", [])
     presrc_path, presrc_basename = os.path.split(presrc_filename)
 
     # Command line arguments to be passed to box
-    args = ["-l", "g"] + box_args
+    args = box_args
 
     # Include the helper code (which allows communication box-boxer)
-    args += ("-I", presrc_path, "-S", presrc_basename)
+    #args += ("-I", presrc_path, "-S", presrc_basename)
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
     # add the same directory among the include directories. This allows
     # including scripts in the same directory.
-    args += ("-I", ".")
     src_path = os.path.split(self.filename or src_filename)[0]
 
     # Directory from which the script should be executed
     cwd = None
     if src_path:
       cwd = src_path
-
-    # Add extra include directories
-    box_include_dirs = self.get_config("box_include_dirs", [])
-    if box_include_dirs != None:
-      if type(box_include_dirs) == str:
-        box_include_dirs = (box_include_dirs,)
-      for inc_dir in box_include_dirs:
-        args += ("-I", inc_dir)
 
     fn = self._fns["box_document_executed"]
     def do_at_exit():

@@ -96,7 +96,7 @@ def dirpoints_to_str(rps):
   dps = rps.get_dirpoints()
   for dp in dps:
     # Append the parent index.
-    parent_idx = rp_idx[dp.name] 
+    parent_idx = rp_idx[dp.name]
     idxs.append(parent_idx)
 
     # Append the children indices.
@@ -160,7 +160,7 @@ class BoxerMacroExpand(MacroExpander):
     sep, joiner = ((",", ",".join) if self.mode == docbase.MODE_EXEC
                    else (endline, text_writer))
 
-    return sep.join(["(**expand:define-all*)", joiner(rps), "(**end:expand*)"])
+    return sep.join(["###expand:define-all", joiner(rps), "###end:expand"])
 
   def macro_view(self, args):
     mode = self.mode
@@ -168,7 +168,7 @@ class BoxerMacroExpand(MacroExpander):
       expanded = "GUI[%s]" % args
     else:
       expanded = ""
-    return "(**expand:view:%s*)%s(**end:expand*)" % (args, expanded)
+    return "###expand:view:%s\n%s###end:expand" % (args, expanded)
 
 
 (STATE_NORMAL,
@@ -221,7 +221,7 @@ class BoxerMacroContract(MacroExpander):
 
     else:
       self.push_state(STATE_EXPAND, mn)
-      return "(**%s*)" % args
+      return "###%s" % args
 
   def macro_end(self, args):
     state, context = self.states[-1]
@@ -293,7 +293,7 @@ class Document1(Document0):
     else:
       success = Document0.load_from_str(self, src)
       if success:
-        self.usercode = "(**define-all*)" + endline + self.usercode
+        self.usercode = "###define-all" + endline + self.usercode
         return True
 
       else:
@@ -311,12 +311,12 @@ class Document1(Document0):
         if len(dirpoints_text.strip()) > 0:
           ret = ret + endline + dirpoints_text
 
-    return endline.join(["(**expand:boxer-boot*)", ret,
-                         "(**end:expand*)"])
+    return endline.join(["###expand:boxer-boot", ret,
+                         "###end:expand"])
 
   @inherit_doc
   def get_part_version(self):
-    return "(**boxer-version:%d,%d,%d*)" % version
+    return "###boxer-version:%d,%d,%d" % version
 
   @inherit_doc
   def get_part_boot_code(self, boot_code):
@@ -334,7 +334,7 @@ class Document1(Document0):
       if mode == docbase.MODE_EXEC:
         filename = (os.path.split(self.filename)[1]
                     if self.filename else "New file")
-        return ('(**line:1,1,"%s"*)' % filename) + output
+        return ('###line:1,1,"%s"' % filename) + output
 
       else:
         return output
@@ -342,13 +342,13 @@ class Document1(Document0):
   @inherit_doc
   def get_part_def_refpoints(self):
     rps = self.get_refpoints()
-    return endline.join(["(**boxer-refpoints:", refpoints_to_str(rps), "*)"])
+    return endline.join(["###boxer-refpoints:", refpoints_to_str(rps), "###end"])
 
   def get_part_def_dirpoints(self):
     """Produce the part of the file which stores information about the
     direction points.
     """
     rps = self.get_refpoints()
-    return endline.join(["(**boxer-dirpoints:", dirpoints_to_str(rps), "*)"])
+    return endline.join(["###boxer-dirpoints:", dirpoints_to_str(rps), "###end"])
 
   save_to_str = DocumentBase.save_to_str

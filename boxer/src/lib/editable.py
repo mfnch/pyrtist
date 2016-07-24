@@ -28,6 +28,7 @@ from geom2 import square_metric, Point
 import document
 from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from boxdraw import BoxImageDrawer
+from pydraw import PyImageDrawer
 from refpoints import GContext, RefPoint, \
   REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
 from undoer import Undoer
@@ -46,7 +47,7 @@ class BoxViewArea(ZoomableArea):
       d.new()
 
     # Create the Box drawer
-    self.drawer = drawer = BoxImageDrawer(d)
+    self.drawer = drawer = PyImageDrawer(d)
     drawer.out_fn = out_fn
 
     # Create the ZoomableArea

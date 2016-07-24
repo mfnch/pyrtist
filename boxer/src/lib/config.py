@@ -60,27 +60,36 @@ box_syntax_highlighting = sys.path[0]
 # By default this is the text put inside a new program
 # created with File->New
 box_source_of_new = \
-"""//!BOXER:VERSION:0:1:1
+"""##!BOXER:VERSION:0:1:1
 include "g"
 GUI = Void
 Window@GUI[]
 
-//!BOXER:REFPOINTS:BEGIN
+##!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=0.0, .y=50.0]
 bbox2 = Point[.x=100.0, .y=0.0]
-//!BOXER:REFPOINTS:END
+##!BOXER:REFPOINTS:END
 
 fg = Figure[
   BBox[bbox1, bbox2]
 
-  //!BOXER:CURSOR:HERE
+  ##!BOXER:CURSOR:HERE
 
-  // Uncomment to save the picture in the script's parent directory
-  //Save["output.png", Window["rgb24", Ppi[200]]]
+  # Uncomment to save the picture in the script's parent directory
+  #Save["output.png", Window["rgb24", Ppi[200]]]
 ]
 
-(**view:fg*)
+###view:fg
 """
+box_source_of_new = '''
+from pyter2d import *
+
+w = Window()
+l = w.Line((1, 2), (1, 4), (5, 4), Close())
+w.Circle((1, 2.5), 5.0)
+
+gui(w)
+'''
 
 def installation_path():
   # Borrowed from wxglade.py
@@ -109,6 +118,10 @@ def icon_path(filename=None, big_buttons=None):
 
 def get_hl_path(filename=None):
   base = os.path.join(installation_path(), 'hl')
+  return base if filename == None else os.path.join(base, filename)
+
+def get_gui_lib_path(filename=None):
+  base = os.path.join(installation_path(), 'pyter')
   return base if filename == None else os.path.join(base, filename)
 
 def get_example_files():

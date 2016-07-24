@@ -65,7 +65,7 @@ class BoxSrcView(object):
       search_paths = langman.get_search_path()
       search_paths.append(config.get_hl_path())
       langman.set_search_path(search_paths)
-      lang = langman.get_language("box")
+      lang = langman.get_language("python")
       srcbuf.set_language(lang)
       srcbuf.set_highlight_syntax(True)
       srcview = gtksourceview.View(srcbuf)
