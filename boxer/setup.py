@@ -27,8 +27,10 @@ url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license = 'GPL'
-packages = ['pyrtist', 'pyrtist.lib', 'pyrtist.lib.dox', 'pyrtist.lib.comparse']
-package_dir = {'pyrtist': 'src'}
+packages = ['pyrtist', 'pyrtist.lib', 'pyrtist.lib.dox',
+            'pyrtist.lib.comparse', 'pyrtist.pyter2d']
+package_dir = {'pyrtist': 'src',
+               'pyrtist.pyter2d': 'src/pyter/pyter2d'}
 
 examples = []
 

@@ -101,7 +101,7 @@ def get_hl_path(filename=None):
   return base if filename == None else os.path.join(base, filename)
 
 def get_gui_lib_path(filename=None):
-  base = os.path.join(installation_path(), 'pyter')
+  base = installation_path()
   return base if filename == None else os.path.join(base, filename)
 
 def get_example_files():
