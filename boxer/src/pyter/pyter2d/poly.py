@@ -3,7 +3,7 @@ from point import PointTaker
 from path import Path
 from window import Window
 from cmd_stream import CmdStream, Cmd
-from style import Color, Style, Stroke
+from style import *
 from point import Point
 
 class Poly(PointTaker):
@@ -17,16 +17,10 @@ def fn(close, poly):
     poly.close = close
 
 @combination(Color, Poly)
-def fn(color, poly):
-    poly.style(color)
-
+@combination(StrokeStyle, Poly)
 @combination(Style, Poly)
-def fn(style, poly):
-    poly.style.take(style)
-
-@combination(Poly, Window, 'Poly')
-def fn(poly, window):
-    window.cmd_stream(Path(poly), poly.style)
+def fn(child, poly):
+    poly.style.take(child)
 
 @combination(Poly, Path)
 def fn(poly, path):
@@ -37,6 +31,14 @@ def fn(poly, path):
         if poly.close:
             path.cmd_stream(Cmd(Cmd.close_path))
 
+@combination(Poly, CmdStream)
+def fn(poly, cmd_stream):
+    cmd_stream.take(Path(poly), poly.style)
+
+@combination(Poly, Window, 'Poly')
+def fn(poly, window):
+    window.take(CmdStream(poly))
+
 class Rectangle(PointTaker):
     def __init__(self, corner1, corner2, *args):
         self.style = Style()
@@ -45,6 +47,8 @@ class Rectangle(PointTaker):
         super(Rectangle, self).__init__(*args)
 
 @combination(Color, Rectangle)
+@combination(StrokeStyle, Rectangle)
+@combination(Style, Rectangle)
 def fn(child, rectangle):
     rectangle.style.take(child)
 

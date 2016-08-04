@@ -4,7 +4,7 @@ from base import Taker, combination, RejectException
 from point import Point, Px, Py
 from cmd_stream import CmdStream, Cmd
 from path import Path
-from style import Style, Stroke
+from style import *
 from window import Window
 
 class Circle(Taker):
@@ -27,9 +27,13 @@ def fn(point, circle):
 
 @combination(tuple, Circle)
 def fn(tp, circle):
-    if len(tp) != 2:
-        raise RejectException()
     return circle.take(Point(tp))
+
+@combination(Color, Circle)
+@combination(StrokeStyle, Circle)
+@combination(Style, Circle)
+def fn(child, circle):
+    circle.style.take(child)
 
 @combination(Circle, Path)
 def fn(circle, path):
@@ -47,6 +51,10 @@ def fn(circle, path):
                     Cmd(Cmd.ext_arc_to, circle.center, one_zero, zero_one,
                         0.0, 2.0*math.pi))
 
+@combination(Circle, CmdStream)
+def fn(circle, cmd_stream):
+    cmd_stream.take(Path(circle), circle.style)
+
 @combination(Circle, Window, 'Circle')
 def fn(circle, window):
-    window.take(Stroke(Path(circle), circle.style))
+    window.take(CmdStream(circle))

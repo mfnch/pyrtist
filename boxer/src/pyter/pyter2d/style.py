@@ -1,4 +1,5 @@
-__all__ = ('Color', 'Stroke', 'Style', 'Border', 'StrokeStyle', 'Join', 'Cap')
+__all__ = ('Color', 'Grey', 'Stroke', 'Style',
+           'Border', 'StrokeStyle', 'Join', 'Cap')
 
 from base import Scalar, Taker, combination, enum, alias
 from path import Path
@@ -32,6 +33,10 @@ Color.white = Color(r=1.0, b=1.0, g=1.0)
 Color.red = Color(r=1.0)
 Color.green = Color(g=1.0)
 Color.blue = Color(b=1.0)
+
+def Grey(value, a=1.0):
+    'Return a grey color with the given intensity and alpha value.'
+    return Color(r=value, g=value, b=value, a=a)
 
 ### StyleBase #################################################################
 

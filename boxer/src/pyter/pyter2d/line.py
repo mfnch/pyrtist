@@ -20,6 +20,7 @@ def fn(close, line):
 @combination(Color, Line)
 @combination(Cap, Line)
 @combination(Join, Line)
+@combination(StrokeStyle, Line)
 def fn(child, line):
     line.stroke_style.take(child)
 
