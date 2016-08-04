@@ -28,9 +28,9 @@ download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license = 'GPL'
 packages = ['pyrtist', 'pyrtist.lib', 'pyrtist.lib.dox',
-            'pyrtist.lib.comparse', 'pyrtist.pyter2d']
-package_dir = {'pyrtist': 'src',
-               'pyrtist.pyter2d': 'src/pyter/pyter2d'}
+            'pyrtist.lib.comparse',
+            'pyrtist.pyter', 'pyrtist.pyter.pyter2d']
+package_dir = {'pyrtist': 'src'}
 
 examples = []
 
@@ -45,36 +45,15 @@ package_data = {'pyrtist': (examples_fullpaths +
 script = 'scripts/pyrtist'
 scripts = [script]
 
-
-# Try to use py2exe, if available (on Windows)
-try:
-  import py2exe
-  setup(name=name,
-        version=version,
-        description=description,
-        author=author,
-        author_email=author_email,
-        url=url,
-        download_url=download_url,
-        license=license,
-        packages=packages,
-        package_dir=package_dir,
-        package_data=package_data,
-        scripts=scripts,
-        windows=[{'script': script}],
-        options={'py2exe': {'packages': 'encodings',
-                            'includes': ('cairo, pango, pangocairo, '
-                                         'atk, gobject')}})
-except:
-  setup(name=name,
-        version=version,
-        description=description,
-        author=author,
-        author_email=author_email,
-        url=url,
-        download_url=download_url,
-        license=license,
-        packages=packages,
-        package_dir=package_dir,
-        package_data=package_data,
-        scripts=scripts)
+setup(name=name,
+      version=version,
+      description=description,
+      author=author,
+      author_email=author_email,
+      url=url,
+      download_url=download_url,
+      license=license,
+      packages=packages,
+      package_dir=package_dir,
+      package_data=package_data,
+      scripts=scripts)

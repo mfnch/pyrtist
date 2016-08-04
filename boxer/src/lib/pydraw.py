@@ -35,7 +35,7 @@ from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
 _box_preamble_common = '''
 import sys
 sys.path.append('{gui_lib_path}')
-from pyter2d import *
+from pyter.pyter2d import *
 '''.format(gui_lib_path=config.get_gui_lib_path())
 
 _box_preamble_void = ''
