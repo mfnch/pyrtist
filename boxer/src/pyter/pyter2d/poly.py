@@ -44,6 +44,10 @@ class Rectangle(PointTaker):
         self.corner2 = Point(corner2)
         super(Rectangle, self).__init__(*args)
 
+@combination(Color, Rectangle)
+def fn(child, rectangle):
+    rectangle.style.take(child)
+
 @combination(Rectangle, Window, 'Rectangle')
 def fn(rectangle, window):
     c1 = rectangle.corner1

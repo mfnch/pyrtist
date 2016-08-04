@@ -18,8 +18,6 @@ class RejectException(Exception):
 
 
 class Taker(object):
-    combinations = None
-
     def __init__(self, *args):
         self.take(*args)
 
@@ -57,10 +55,17 @@ def create_method(child, parent, fn):
 def combination(child, parent, method_name=None):
     assert issubclass(parent, Taker), \
       '{} is not a Taker: cannot add combination'.format(parent)
-    if parent.combinations is None:
-        parent.combinations = {}
+    combinations = parent.__dict__.get('combinations')
+    if combinations is None:
+        # What follows is a bit of a hack at the moment: rather than resolving
+        # correctly combinations, we join the dictionaries. This will break
+        # down as soon as combinations to a base class are added after those
+        # of the derived classes.
+        combinations = getattr(parent, 'combinations', None)
+        combinations = ({} if combinations is None else combinations.copy())
+        parent.combinations = combinations
     def combination_adder(fn):
-        parent.combinations[child] = fn
+        combinations[child] = fn
         if method_name is not None:
             setattr(parent, method_name, create_method(child, parent, fn))
         return fn

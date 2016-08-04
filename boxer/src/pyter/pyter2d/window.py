@@ -43,8 +43,7 @@ def fn(color, window):
 
 @combination(Stroke, Window)
 def fn(stroke, window):
-    window.take(stroke.path.cmd_stream,
-                stroke.style_cmd)
+    window.take(CmdStream(stroke))
 
 class Save(object):
     def __init__(self, file_name, size=None, resolution=None,

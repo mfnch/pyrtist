@@ -1,6 +1,6 @@
 import numbers
 
-from base import Taker, combination
+from base import Taker, combination, RejectException
 
 class Point(Taker):
     def __init__(self, value=None, x=0.0, y=0.0):
@@ -38,12 +38,12 @@ def fn(child, parent):
 
 @combination(tuple, Point)
 def fn(tp, point):
-    if len(tp) == 2:
-        x, y = tp
-        point.x = float(x)
-        point.y = float(y)
-    else:
-        self.dontTake(tp)
+    if len(tp) != 2:
+        raise RejectException()
+    x, y = tp
+    point.x = float(x)
+    point.y = float(y)
+
 
 class PointTaker(Taker):
     def __init__(self, *args):
@@ -62,7 +62,6 @@ def fn(point, point_taker):
 
 @combination(tuple, PointTaker)
 def fn(tp, point_taker):
-    if len(tp) == 2:
-        point_taker.take(Point(tp))
-    else:
-        self.dontTake(tp)
+    if len(tp) != 2:
+        raise RejectException()
+    point_taker.take(Point(tp))
