@@ -1,5 +1,6 @@
 from base import Taker, combination
 from cmd_stream import Cmd, CmdStream
+from style import Color, Stroke
 from cairo_cmd_exec import CairoCmdExecutor
 from bbox import BBox
 from point import Point
@@ -35,6 +36,15 @@ def fn(window, bbox):
 def fn(bbox, window):
     if bbox:
         window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
+
+@combination(Color, Window, 'Color')
+def fn(color, window):
+    window(CmdStream(color))
+
+@combination(Stroke, Window)
+def fn(stroke, window):
+    window.take(stroke.path.cmd_stream,
+                stroke.style_cmd)
 
 class Save(object):
     def __init__(self, file_name, size=None, resolution=None,

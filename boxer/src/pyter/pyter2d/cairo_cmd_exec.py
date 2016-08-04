@@ -1,8 +1,10 @@
 import numbers
 import cairo
 
+from base import Scalar
 from cmd_stream import CmdStream
 from point import Point
+from style import Cap, Join
 
 def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):
     prev_mx = ctx.get_matrix()
@@ -22,6 +24,14 @@ class CairoCmdExecutor(object):
                'a8': cairo.FORMAT_A8,
                'rgb24': cairo.FORMAT_RGB24,
                'argb32': cairo.FORMAT_ARGB32}
+
+    caps = {Cap.butt: cairo.LINE_CAP_BUTT,
+            Cap.round: cairo.LINE_CAP_ROUND,
+            Cap.square: cairo.LINE_CAP_SQUARE}
+
+    joins = {Join.miter: cairo.LINE_JOIN_MITER,
+             Join.round: cairo.LINE_JOIN_ROUND,
+             Join.bevel: cairo.LINE_JOIN_BEVEL}
 
     def __init__(self, size=None, resolution=None, origin=None, mode=None):
         if size is None:
@@ -61,7 +71,8 @@ class CairoCmdExecutor(object):
         # Flip the y axis.
         resolution.y = -resolution.y;
         origin.y += size.y
-        self.resolution = resolution
+        self.vector_transform = resolution
+        self.scalar_transform = 0.5*(abs(resolution.x) + abs(resolution.y))
         self.origin = origin
 
     def execute(self, cmds):
@@ -70,16 +81,22 @@ class CairoCmdExecutor(object):
             method = getattr(self, method_name, None)
             if method is not None:
                 method(*self.transform_args(cmd.get_args()))
+            else:
+                print('Unknown method {}'.format(method_name))
         return CmdStream()
 
     def transform_args(self, args):
-        origin, res = (self.origin, self.resolution)
+        origin = self.origin
+        vtx = self.vector_transform
+        stx = self.scalar_transform
         out = []
         for arg in args:
             if isinstance(arg, Point):
                 arg = arg - origin
-                arg.x *= res.x
-                arg.y *= res.y
+                arg.x *= vtx.x
+                arg.y *= vtx.y
+            elif isinstance(arg, Scalar):
+                arg = Scalar(arg*stx)
             out.append(arg)
         return out
 
@@ -98,6 +115,21 @@ class CairoCmdExecutor(object):
     def cmd_close_path(self):
         self.context.close_path()
 
+    def cmd_set_line_width(self, width):
+        self.context.set_line_width(float(width))
+
+    def cmd_set_line_join(self, join):
+        cairo_join = self.joins.get(join)
+        if cairo_join is None:
+            raise ValueError('Unknown join style {}'.format(join))
+        self.context.set_line_join(cairo_join)
+
+    def cmd_set_line_cap(self, cap):
+        cairo_cap = self.caps.get(cap)
+        if cairo_cap is None:
+            raise ValueError('Unknown cap style {}'.format(cap))
+        self.context.set_line_cap(cairo_cap)
+
     def cmd_set_source_rgba(self, r, g, b, a):
         self.context.set_source_rgba(r, g, b ,a)
 
@@ -107,8 +139,14 @@ class CairoCmdExecutor(object):
     def cmd_fill(self):
         self.context.fill()
 
+    def cmd_fill_preserve(self):
+        self.context.fill_preserve()
+
     def cmd_save(self):
         self.context.save()
 
     def cmd_restore(self):
         self.context.restore()
+
+    def cmd_set_bbox(self, *args):
+        pass

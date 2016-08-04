@@ -3,6 +3,15 @@ import types
 def getClassName(obj):
     return obj.__class__.__name__
 
+def enum(name, doc, **enums):
+    new_class = type(name, (int,), {'__doc__': doc})
+    for key, val in enums.iteritems():
+        setattr(new_class, key, new_class(val))
+    return new_class
+
+def alias(name, target, **attrs):
+    return type(name, (target,), attrs)
+
 
 class RejectException(Exception):
     pass
@@ -37,6 +46,7 @@ class Taker(object):
     def __call__(self, *args):
         return self.take(*args)
 
+
 def create_method(child, parent, fn):
     def new_method(p, *args, **kwargs):
         new_obj = child(*args, **kwargs)
@@ -55,3 +65,13 @@ def combination(child, parent, method_name=None):
             setattr(parent, method_name, create_method(child, parent, fn))
         return fn
     return combination_adder
+
+
+class Scalar(float):
+    '''Used to identify scalars that need to be transformed (such as line
+    widths) in a CmdStream.
+    '''
+
+
+Close = enum('Close', 'Whether to close a path',
+             no=False, yes=True)

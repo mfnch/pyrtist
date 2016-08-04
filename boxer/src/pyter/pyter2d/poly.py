@@ -1,4 +1,4 @@
-from base import combination
+from base import combination, Close
 from point import PointTaker
 from path import Path
 from window import Window
@@ -9,12 +9,20 @@ from point import Point
 class Poly(PointTaker):
     def __init__(self, *args):
         self.style = Style()
-        self.close = False
+        self.close = True
         super(Poly, self).__init__(*args)
+
+@combination(Close, Poly)
+def fn(close, poly):
+    poly.close = close
 
 @combination(Color, Poly)
 def fn(color, poly):
     poly.style(color)
+
+@combination(Style, Poly)
+def fn(style, poly):
+    poly.style.take(style)
 
 @combination(Poly, Window, 'Poly')
 def fn(poly, window):

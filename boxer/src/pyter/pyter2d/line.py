@@ -1,13 +1,9 @@
-from base import combination
+from base import combination, Close
 from point import PointTaker
 from path import Path
 from window import Window
 from cmd_stream import CmdStream, Cmd
 from style import Color, Style, Stroke
-
-class Close(object):
-    def __init__(self, value=True):
-        self.value = value
 
 class Line(PointTaker):
     def __init__(self, *args):
@@ -17,7 +13,7 @@ class Line(PointTaker):
 
 @combination(Close, Line)
 def fn(close, line):
-    line.close = close.value
+    line.close = close
 
 @combination(Color, Line)
 def fn(color, line):
