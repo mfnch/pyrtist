@@ -310,23 +310,6 @@ class Document(Document0):
     return (boot_code or default_boot_code)
 
   @inherit_doc
-  def get_part_user_code(self, mode=None):
-    """Get the user part of the Box source."""
-    if mode == docbase.MODE_ORIG:
-      return self.usercode
-
-    else:
-      mx = BoxerMacroExpand(document=self, mode=mode)
-      output = mx.parse(mode=mode)
-      if mode == docbase.MODE_EXEC:
-        filename = (os.path.split(self.filename)[1]
-                    if self.filename else "New file")
-        return ('###line:1,1,"%s"' % filename) + output
-
-      else:
-        return output
-
-  @inherit_doc
   def get_part_def_refpoints(self):
     rps = self.get_refpoints()
     return endline.join(["###boxer-refpoints:", refpoints_to_str(rps), "###end"])
