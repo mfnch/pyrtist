@@ -1,4 +1,9 @@
-from base import Taker, combination
+__all__ = ('Cmd', 'CmdStream', 'CmdArgFilter')
+
+import math
+
+from base import *
+from base_types import *
 
 class Cmd(object):
     names = ('move_to', 'line_to', 'ext_arc_to', 'close_path',
@@ -27,8 +32,37 @@ class Cmd(object):
     def get_args(self):
         return self.args[1:]
 
+    def filter(self, arg_filter):
+        args = iter(self.args)
+        new_args = [args.next()]
+        for arg in args:
+            new_args.append(arg_filter(arg))
+        return Cmd(*new_args)
+
 for cmd_nr, name in enumerate(Cmd.names):
     setattr(Cmd, name, cmd_nr)
+
+
+class CmdArgFilter(object):
+    def __init__(self, filter_scalar, filter_point):
+        self.filter_scalar = filter_scalar
+        self.filter_point = filter_point
+
+    @staticmethod
+    def from_matrix(mx):
+        # Remember: the determinant tells us how volumes are transformed.
+        scale_factor = math.sqrt(abs(mx.det()))
+        filter_point = lambda p: mx.apply(p)
+        filter_scalar = lambda s: Scalar(scale_factor*s)
+        return CmdArgFilter(filter_scalar, filter_point)
+
+    def __call__(self, arg):
+        if isinstance(arg, Point):
+            return self.filter_point(arg)
+        elif isinstance(arg, Scalar):
+            return self.filter_scalar(arg)
+        return arg
+
 
 class CmdStream(Taker):
     def __init__(self, *args):
@@ -41,6 +75,12 @@ class CmdStream(Taker):
     def __repr__(self):
         return repr(self.cmds)
 
+    def add(self, cmd_stream, arg_filter=None):
+        if arg_filter is None:
+            self.cmds += cmd_stream.cmds
+        else:
+            for cmd in cmd_stream:
+                self.cmds.append(cmd.filter(arg_filter))
 
 @combination(Cmd, CmdStream)
 def fn(cmd, cmd_stream):
@@ -53,4 +93,4 @@ def fn(none, cmd_stream):
 
 @combination(CmdStream, CmdStream)
 def fn(child, parent):
-    parent.cmds += child.cmds
+    parent.add(child)

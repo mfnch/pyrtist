@@ -77,4 +77,4 @@ def fn(save, window):
 @combination(Window, Window)
 def fn(child, parent):
     if child.cmd_executor is None:
-        parent.cmd_stream(child.cmd_stream)
+        parent.cmd_stream.take(child.cmd_stream)
