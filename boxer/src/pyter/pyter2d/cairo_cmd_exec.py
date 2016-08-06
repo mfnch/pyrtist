@@ -1,9 +1,8 @@
 import numbers
 import cairo
 
-from base import Scalar
+from base_types import *
 from cmd_stream import CmdStream
-from point import Point
 from style import Cap, Join
 
 def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):

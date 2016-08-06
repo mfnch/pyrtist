@@ -1,3 +1,8 @@
+'''Infrastructure helpers for the library.'''
+
+__all__ = ('getClassName', 'enum', 'alias', 'combination',
+           'RejectException', 'Taker')
+
 import types
 
 def getClassName(obj):
@@ -70,13 +75,3 @@ def combination(child, parent, method_name=None):
             setattr(parent, method_name, create_method(child, parent, fn))
         return fn
     return combination_adder
-
-
-class Scalar(float):
-    '''Used to identify scalars that need to be transformed (such as line
-    widths) in a CmdStream.
-    '''
-
-
-Close = enum('Close', 'Whether to close a path',
-             no=False, yes=True)

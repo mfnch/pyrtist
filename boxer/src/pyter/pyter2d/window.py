@@ -3,7 +3,7 @@ from cmd_stream import Cmd, CmdStream
 from style import Color, Stroke
 from cairo_cmd_exec import CairoCmdExecutor
 from bbox import BBox
-from point import Point
+from base_types import Point
 
 class Window(Taker):
     '''Window is the object which receives the drawing commands.

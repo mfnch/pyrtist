@@ -1,7 +1,8 @@
 __all__ = ('Color', 'Grey', 'Stroke', 'Style',
            'Border', 'StrokeStyle', 'Join', 'Cap')
 
-from base import Scalar, Taker, combination, enum, alias
+from base import *
+from base_types import *
 from path import Path
 from cmd_stream import Cmd, CmdStream
 

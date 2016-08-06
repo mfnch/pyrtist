@@ -1,6 +1,21 @@
+'''Fundamental types for the pyrtist 2D graphic library.
+
+This module defines Point, Matrix, and other types commonly used in the
+library.
+'''
+
+__all__ = ('Scalar', 'Point', 'Px', 'Py', 'PointTaker', 'Close')
+
 import numbers
 
-from base import Taker, combination, RejectException
+from base import *
+
+
+class Scalar(float):
+    '''Used to identify scalars that need to be transformed (such as line
+    widths) in a CmdStream.
+    '''
+
 
 class Point(Taker):
     def __init__(self, value=None, x=0.0, y=0.0):
@@ -65,3 +80,11 @@ def fn(tp, point_taker):
     if len(tp) != 2:
         raise RejectException()
     point_taker.take(Point(tp))
+
+
+Close = enum('Close', 'Whether to close a path',
+             no=False, yes=True)
+
+
+class Matrix(object):
+    pass

@@ -1,7 +1,7 @@
 import math
 
 from base import Taker, combination, RejectException
-from point import Point, Px, Py
+from base_types import Point, Px, Py
 from cmd_stream import CmdStream, Cmd
 from path import Path
 from style import *
