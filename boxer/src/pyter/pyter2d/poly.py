@@ -1,3 +1,5 @@
+__all__ = ('Poly', 'Rectangle')
+
 from base import *
 from base_types import *
 from path import Path

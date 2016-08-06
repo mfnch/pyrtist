@@ -44,6 +44,10 @@ def fn(window, put):
 def fn(transform_str, put):
     put.auto_transform = AutoTransform.from_string(transform_str)
 
+@combination(Transform, Put)
+def fn(transform, put):
+    put.transform = transform
+
 @combination(Near, Put)
 def fn(near, put):
     put.constraints.append(near)
