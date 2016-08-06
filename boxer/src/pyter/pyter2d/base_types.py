@@ -4,8 +4,10 @@ This module defines Point, Matrix, and other types commonly used in the
 library.
 '''
 
-__all__ = ('Scalar', 'Point', 'Px', 'Py', 'PointTaker', 'Matrix', 'Close')
+__all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
+           'Matrix', 'Close')
 
+import math
 import numbers
 import copy
 
@@ -19,6 +21,10 @@ class Scalar(float):
 
 
 class Point(Taker):
+    @staticmethod
+    def sum(points, default=None):
+        return sum(points, default or Point())
+
     def __init__(self, value=None, x=0.0, y=0.0):
         self.x = x
         self.y = y
@@ -28,6 +34,9 @@ class Point(Taker):
 
     def __repr__(self):
         return 'Point(({x}, {y}))'.format(x=self.x, y=self.y)
+
+    def __iter__(self):
+        return iter((self.x, self.y))
 
     def __add__(self, value):
         return Point(x=self.x + value.x, y=self.y + value.y)
@@ -41,11 +50,43 @@ class Point(Taker):
         else:
             return float(self.x*value.x + self.y*value.y)
 
+    def __div__(self, value):
+        return Point(x=self.x/value, y=self.y/value)
+
+    def copy(self):
+        return Point(x=self.x, y=self.y)
+
+    def dot(self, p):
+        'Return the scalar product with p.'
+
+        return self.x*p.x + self.y*p.y
+
+    def norm2(self):
+        return self.x*self.x + self.y*self.y
+
+    def norm(self):
+        return math.sqrt(self.norm2())
+
+    def normalize(self):
+        n = self.norm()
+        self.x /= n
+        self.y /= n
+
+    def normalized(self):
+        p = self.copy()
+        p.normalize()
+        return p
+
+
 def Px(value):
     return Point(x=value)
 
 def Py(value):
     return Point(y=value)
+
+def Pang(angle):
+    'Return a Point of unit norm forming the specified angle with the x axis.'
+    return Point(x=math.cos(angle), y=math.sin(angle))
 
 @combination(Point, Point)
 def fn(child, parent):

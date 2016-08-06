@@ -2,14 +2,10 @@ from base import *
 from base_types import *
 from cmd_stream import *
 from window import Window
+from transform import Transform
+from auto_transform import Constraint as Near, AutoTransform
 
 __all__ = ('Put', 'SimplePut', 'Near')
-
-class Near(object):
-    def __init__(self, reference_point, target_point, strength=1.0):
-        self.reference_point = reference_point
-        self.target_point = target_point
-        self.strength = strength
 
 
 class SimplePut(Taker):
@@ -35,7 +31,8 @@ def fn(simple_put, window):
 class Put(Taker):
     def __init__(self, *args):
         self.window = None
-        self.auto_transforms = ''
+        self.transform = Transform()
+        self.auto_transform = AutoTransform()
         self.constraints = []
         super(Put, self).__init__(*args)
 
@@ -45,7 +42,7 @@ def fn(window, put):
 
 @combination(str, Put)
 def fn(transform_str, put):
-    put.auto_transforms = transform_str
+    put.auto_transform = AutoTransform.from_string(transform_str)
 
 @combination(Near, Put)
 def fn(near, put):
@@ -53,4 +50,18 @@ def fn(near, put):
 
 @combination(Put, Window, 'Put')
 def fn(put, window):
-    print('Not implemented yet')
+    resolved_constraints = []
+    for c in put.constraints:
+        src, dst, weight = (c.src, Point(c.dst), float(c.weight))
+        if not isinstance(src, Point):
+            reference_point = put.window.get(src)
+            if reference_point is None:
+                raise ValueError('Cannot find reference point {}'
+                                 .format(repr(src)))
+            src = reference_point
+        resolved_constraints.append(Near(Point(src), dst, weight))
+
+    t = put.auto_transform.calculate(put.transform, resolved_constraints)
+    mx = t.get_matrix()
+    flt = CmdArgFilter.from_matrix(mx)
+    window.cmd_stream.add(put.window.cmd_stream, flt)

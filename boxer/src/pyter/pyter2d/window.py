@@ -1,9 +1,18 @@
+__all__ = ('Hot', 'Window')
+
 from base import Taker, combination
 from cmd_stream import Cmd, CmdStream
 from style import Color, Stroke
 from cairo_cmd_exec import CairoCmdExecutor
 from bbox import BBox
 from base_types import Point
+
+
+class Hot(object):
+    def __init__(self, name, point):
+        self.name = name
+        self.point = point
+
 
 class Window(Taker):
     '''Window is the object which receives the drawing commands.
@@ -17,7 +26,14 @@ class Window(Taker):
 
         self.cmd_stream = CmdStream()
         self.cmd_executor = cmd_executor
+        self.hot_points = {}
         super(Window, self).__init__()
+
+    def __getitem__(self, name):
+        return self.hot_points[name]
+
+    def get(self, name, default=None):
+        return self.hot_points.get(name, default)
 
     def _consume_cmds(self):
         cmd_exec = self.cmd_executor
@@ -44,6 +60,11 @@ def fn(color, window):
 @combination(Stroke, Window)
 def fn(stroke, window):
     window.take(CmdStream(stroke))
+
+@combination(Hot, Window, 'Hot')
+def fn(hot, window):
+    window.hot_points[hot.name] = hot.point
+
 
 class Save(object):
     def __init__(self, file_name, size=None, resolution=None,
