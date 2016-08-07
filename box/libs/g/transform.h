@@ -47,12 +47,11 @@ typedef struct {
            rotation_center;
   BoxReal  rotation_angle,
            rotation_cos,
-           rotation_sin, 
+           rotation_sin,
            scale_factor,
            scaling_angle,
            scaling_cos,
            scaling_sin;
-
 } BoxGTransform;
 
 /** Used by BoxG_Auto_Transform to signal errors. */
@@ -61,7 +60,6 @@ typedef enum {
   BOXGAUTOTRANSFORMERR_NOT_ENOUGH_POINTS,
   BOXGAUTOTRANSFORMERR_ZERO_WEIGHTS,
   BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED
-
 } BoxGAutoTransformErr;
 
 
@@ -82,7 +80,7 @@ const char *BoxGAutoTransformErr_To_String(BoxGAutoTransformErr n);
 BoxGAutoTransformErr
 BoxG_Auto_Transform(BoxGTransform *transform,
                     BoxPoint *src, BoxPoint *dst, BoxReal *weight, int n,
-		    BoxGAllow allowed_transforms);
+                    BoxGAllow allowed_transforms);
 
 /** Convert a string to a BoxGAllow value to use with BoxG_Auto_Transform. This
  * function allows quick specification of the allowed transformations. Allowed

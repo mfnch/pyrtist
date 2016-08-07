@@ -79,7 +79,7 @@ const char *BoxGAutoTransformErr_To_String(BoxGAutoTransformErr n) {
 BoxGAutoTransformErr
 BoxG_Auto_Transform(BoxGTransform *transform,
                     BoxPoint *src, BoxPoint *dst, BoxReal *weight, int n,
-		    BoxGAllow allowed_transforms) {
+                    BoxGAllow allowed_transforms) {
   int i;
   BoxReal weights_sum;
 
@@ -89,7 +89,7 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 #ifdef DEBUG
   for (i = 0; i < n; i++) {
     printf("src[%d] = (%g, %g)\t<--near[%g]-->\tdst[%d] = (%g, %g)\n...",
-	   i, src[i].x, src[i].y, weight[i], i, dst[i].x, dst[i].y);
+           i, src[i].x, src[i].y, weight[i], i, dst[i].x, dst[i].y);
   }
 #endif
 
@@ -148,7 +148,7 @@ BoxG_Auto_Transform(BoxGTransform *transform,
   if ((allowed_transforms & BOXGALLOW_ALL & ~BOXGALLOW_TRANSLATE) == 0)
     return 0;
 
-  else {	
+  else {
     /* Now we compute all the averages we need in the next steps */
     BoxPoint g2_avg = {0.0, 0.0},
              i_avg = {0.0, 0.0},
@@ -156,20 +156,20 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 #ifdef DEBUG
     BoxPoint g_avg;
 #endif
-    BoxPoint U = 
+    BoxPoint U =
       (BoxPoint) {transform->translation.x + transform->rotation_center.x,
-		  transform->translation.y + transform->rotation_center.y};
+                  transform->translation.y + transform->rotation_center.y};
     for (i = 0; i < n; i++) {
       BoxReal w = weight[i];
       BoxPoint
-	 g = (BoxPoint) {src[i].x - transform->rotation_center.x,
-		         src[i].y - transform->rotation_center.y},
+         g = (BoxPoint) {src[i].x - transform->rotation_center.x,
+                         src[i].y - transform->rotation_center.y},
 
-	wg = (BoxPoint) {w * g.x,
-			 w * g.y},
+        wg = (BoxPoint) {w * g.x,
+                         w * g.y},
 
          s = (BoxPoint) {dst[i].x - U.x,
-			 dst[i].y - U.y};
+                         dst[i].y - U.y};
 
       g2_avg.x += wg.x * g.x;
       g2_avg.y += wg.y * g.y;
@@ -208,35 +208,35 @@ BoxG_Auto_Transform(BoxGTransform *transform,
               B = j_avg.x * cos_tau + j_avg.y * sin_tau;
 
       if (allowed_transforms & BOXGALLOW_ROTATE) {
-	/* Determino l'angolo di rotazione, se e' selezionata
-	 * la rotazione automatica!
-	 */
-	BoxReal modAB = sqrt(A*A + B*B);
-	transform->rotation_cos = A/modAB,
-	transform->rotation_sin = B/modAB;
-	transform->rotation_angle =
+        /* Determino l'angolo di rotazione, se e' selezionata
+         * la rotazione automatica!
+         */
+        BoxReal modAB = sqrt(A*A + B*B);
+        transform->rotation_cos = A/modAB,
+        transform->rotation_sin = B/modAB;
+        transform->rotation_angle =
           atan2(transform->rotation_sin, transform->rotation_cos);
 
       } else {
-	/* Se la rotazione e' manuale, conosco theta, ma non sin e cos! */
-	transform->rotation_cos = cos(transform->rotation_angle);
-	transform->rotation_sin = sin(transform->rotation_angle);
+        /* Se la rotazione e' manuale, conosco theta, ma non sin e cos! */
+        transform->rotation_cos = cos(transform->rotation_angle);
+        transform->rotation_sin = sin(transform->rotation_angle);
       }
 
       /* What is missing is just the scaling factor! */
       if (allowed_transforms & BOXGALLOW_SCALE) {
-	BoxReal C = cos_tau*cos_tau*g2_avg.x + sin_tau*sin_tau*g2_avg.y;
-	transform->scale_factor = 
+        BoxReal C = cos_tau*cos_tau*g2_avg.x + sin_tau*sin_tau*g2_avg.y;
+        transform->scale_factor =
           (A*transform->rotation_cos + B*transform->rotation_sin)/C;
       }
-      
+
     } else if (allowed_transforms & BOXGALLOW_ANISOTROPIC) {
       /* CASE 2: Proportions have to be determined automatically. */
       return BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED;
-      
+
     } else if (allowed_transforms & BOXGALLOW_INVERT) {
       /* CASE 3: Proportions are fixed, but can invert. */
-      return BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED;      
+      return BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED;
     }
   }
 
@@ -288,7 +288,7 @@ BoxTask BoxGAllow_Of_String(BoxGAllow *allow, const char *string) {
       switch (p) {
       case 'x':
         queued_flag = BOXGALLOW_TRANSLATE_X;
-        ++string; 
+        ++string;
         break;
       case 'y':
         queued_flag = BOXGALLOW_TRANSLATE_Y;

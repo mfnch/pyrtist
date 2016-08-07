@@ -89,7 +89,7 @@ Put = ^(Constraints constraints
 // function.  When ``string`` starts with a white space ``" "``, the flags are
 // or-ed over the pre-existing settings (while if the string does not start
 // with a space previous values are ignored, i.e. set to zero). Spaces in the
-// middle of the string are ignored.         
+// middle of the string are ignored.
 Str@Put[\ .constraints[$]]
 
 ///Intro: provide a {type(Near)} constraint to place the source figure.
