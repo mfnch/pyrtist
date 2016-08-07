@@ -417,7 +417,7 @@ class Pyrtist(object):
 
     self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
-    self.set_main_source(d.get_user_code())
+    self.set_main_source(d.get_part_user_code())
     self.filename = None
     self.assume_file_is_saved()
     self.editable_area.refresh()
@@ -434,7 +434,7 @@ class Pyrtist(object):
     finally:
       self.editable_area.reset()
       self.widget_toolbox.exit_all_modes(force=True)
-      self.set_main_source(d.get_user_code())
+      self.set_main_source(d.get_part_user_code())
       self.filename = filename
       self.assume_file_is_saved()
       self.editable_area.zoom_off()
@@ -641,7 +641,7 @@ class Pyrtist(object):
   def _out_textview_refresh(self, text, force=False):
     t = time.time()
     if force == False:
-      if self.out_textbuffer_last_update_time != None:
+      if self.out_textbuffer_last_update_time is not None:
         t0 = self.out_textbuffer_last_update_time
         if t - t0 < self.out_textbuffer_update_time:
           return text
@@ -882,19 +882,22 @@ class Pyrtist(object):
       self.widget_refpoint_entry.set_text(rp.name)
     editable_area.set_callback("refpoint_pick", set_next_refpoint)
 
-    box_output = [None]
-    def box_document_execute(doc, preamble, out_fn, exit_fn):
+    prog_output = None
+
+    def box_document_execute(doc, out_fn, exit_fn):
+      global prog_output
       doc.set_user_code(self.get_main_source())
-      box_output[0] = ""
+      prog_output = ''
     editable_area.set_callback("box_document_execute", box_document_execute)
 
     def box_exec_output(s, force=False):
-      box_output[0] += s
-      box_output[0] = self._out_textview_refresh(box_output[0], force=force)
+      global prog_output
+      prog_output += s
+      prog_output = self._out_textview_refresh(prog_output, force=force)
     editable_area.drawer.set_output_function(box_exec_output)
 
     def box_document_executed(doc):
-      box_exec_output("", force=True)
+      box_exec_output('', force=True)
     editable_area.set_callback("box_document_executed", box_document_executed)
 
     # Create the scrolled window containing the box-draw editable area

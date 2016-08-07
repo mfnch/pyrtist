@@ -38,8 +38,6 @@ sys.path.append('{gui_lib_path}')
 from pyter.pyter2d import *
 '''.format(gui_lib_path=config.get_gui_lib_path())
 
-_box_preamble_void = ''
-
 _box_preamble_centered = '''
 def gui(w):
   info_file_name = "$INFO_FILENAME$"
@@ -108,7 +106,7 @@ class PyImageDrawer(ImageDrawer):
       img_out_filename = config.tmp_new_filename("img", "png", tmp_fns)
 
     if preamble == None:
-      preamble = _box_preamble_common + _box_preamble_void
+      preamble = _box_preamble_common
 
     substs = [("$INFO_FILENAME$", escape_string(info_out_filename)),
               ("$IMG_FILENAME$", escape_string(img_out_filename))]
@@ -174,7 +172,6 @@ class PyImageDrawer(ImageDrawer):
                 ("$RX$", rx), ("$RY$", ry),
                 ("$SX$", sx), ("$SY$", sy)]
       preamble += _box_preamble_view
-    preamble += self.document.save_to_str()
 
     killer = self._raw_execute(pix_view, pixbuf_output,
                                preamble=preamble,

@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2013 Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2010-2011 Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -15,310 +15,134 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+from docbase import \
+  DocumentBase, parse_guipoint_part, text_writer, \
+  refpoint_to_string, refpoint_from_string, endline, \
+  MODE_STORE
 
-from base import inherit_doc
-from refpoints import RefPoint, RefPoints
-import docbase
-from docbase import DocumentBase, refpoint_to_string, text_writer, \
-  endline, MODE_STORE
-from comparse import MacroExpander, split_args, normalize_macro_name, \
-  LEVEL_ERROR
-from document0 import Document0
+# File format version handled by this implementation of the DocumentBase class.
+version = (0, 0, 1)
 
+marker_begin = "#!PYRTIST"
+marker_sep = ":"
 
-default_boot_code = \
-'''
+def marker_line_parse(line):
+  """Extract the arguments of a marker line or return None if the given
+  string is not a marker line."""
+  if not line.strip().startswith(marker_begin):
+    return None
+  return [s.strip() for s in line.split(marker_sep)[1:]]
 
-'''
+def marker_line_assemble(attrs, newline=True):
+  """Crete a marker line from the given list of attributes."""
+  s = marker_sep.join([marker_begin] + attrs)
+  if newline:
+    s += endline
+  return s
 
-version = (0, 2, 1)
+class Document(DocumentBase):
+  def _get_arg_num(self, arg, possible_args):
+    i = 0
+    for possible_arg in possible_args:
+      if possible_arg == arg:
+        return i
+      i += 1
+    self.notify("WARNING", "unrecognized marker argument '%s'" % arg)
+    return None
 
-def refpoints_to_str(rps, max_line_length=79):
-  """Return a compact (but human readable) representation of a RefPoints
-  object (which can be mapped back to a RefPoints object using the function
-  refpoints_from_str).
-  """
-  items = []
-  for rp in rps:
-    x, y = rp.value
-    items.extend((str(rp.name),
-                  str(int(rp.visible)),
-                  repr(x),
-                  repr(y)))
+  def load_from_str(self, boxer_src):
+    parts = {}               # different text parts of the source
+    context = "preamble"     # initial context/part
+    self.version = version   # Default version
 
-  text = ""
-  line = None
-  for item in items:
-    if line == None:
-      line = item
+    # specify how many arguments each marker wants
+    marker_wants = {"CURSOR": None,
+                    "REFPOINTS": 1,
+                    "VERSION": 3}
 
-    else:
-      length = len(line) + 1 + len(item)
-      if length <= max_line_length:
-        line += " " + item
+    # process the file and interpret the markers
+    lines = boxer_src.splitlines(True)
+    for line in lines:
+      marker = marker_line_parse(line)
+      if marker is None:
+        if context in parts:
+          parts[context] += line
+        else:
+          parts[context] = line
+        continue
 
+      if len(marker) < 1:
+        raise ValueError("Internal error in Document.load_from_src")
+
+      marker_name = marker[0]
+      if not marker_name in marker_wants:
+        self.notify("WARNING", "Unknown marker '%s'" % marker_name)
+        continue
+
+      marker_nargs = marker_wants[marker_name]
+      if marker_nargs is not None and len(marker) < marker_nargs + 1:
+        self.notify("WARNING",
+                    "Marker has less arguments than expected")
+      elif marker_name == "REFPOINTS":
+        arg_num = self._get_arg_num(marker[1], ["BEGIN", "END"])
+        if arg_num is None:
+          return False
+        context = ["refpoints_text", "userspace"][arg_num]
+      elif marker_name == "VERSION":
+        try:
+          assert len(marker) == 4
+          self.version = map(int, marker[1:])
+        except:
+          self.notify("WARNING", "Cannot determine Boxer version which "
+                      "generated the file")
       else:
-        text += line + "\n"
-        line = item
+        parts[context] += line
+        # ^^^  note that this requires context to already exist in the
+        #      dictionary. In other words, unrecognized markers cannot
+        #      be the first markers in the file.
 
-  if line != None:
-    text += line
-  return text
+    refpoints = self.refpoints
+    refpoints.remove_all()
+    def guipoint_fn(p_str):
+      refpoints.append(refpoint_from_string(p_str))
 
-def refpoints_from_str(s):
-  """Reconstruct a RefPoints object from the string representation returned
-  by the function refpoints_to_str.
-  """
-  pieces = s.split()
-  num_points = len(pieces)/4
-  rps = RefPoints()
-  for i in range(num_points):
-    j = 4*i
-    name, svisible, sx, sy = pieces[j:j+4]
-    rps.append(RefPoint(name, value=(float(sx), float(sy)),
-                        visible=bool(int(svisible))))
-  return rps
+    if "refpoints_text" in parts:
+      parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
 
-def dirpoints_to_str(rps):
-  """Construct a string representing the relation between a direction point
-  and its reference points. This compact representation can be used to restore
-  the direction points (using dirpoints_from_str).
-  """
-  # Construct a map refpoint -> index
-  rp_idx = {}
-  for idx, rp in enumerate(rps):
-    rp_idx[rp.name] = idx
+    if "userspace" not in parts:
+      # This means that the file was not produced by Boxer, but it is likely
+      # to be a plain Box file.
+      parts["userspace"] = parts.get("preamble", "")
+      parts["preamble"] = ""
 
-  # Build a list of triples. Each triple contains the index of the parent
-  # and its two children.
-  idxs = []
-  dps = rps.get_dirpoints()
-  for dp in dps:
-    # Append the parent index.
-    parent_idx = rp_idx[dp.name]
-    idxs.append(parent_idx)
+    self.preamble = parts["preamble"]
+    self.usercode = parts["userspace"]
+    return True
 
-    # Append the children indices.
-    children = dp.get_children()
-    for child in children:
-      idxs.append(rp_idx[child.name] if child != None else '_')
-
-    # Missing children.
-    num_missing_children = 2 - len(children)
-    for _ in range(num_missing_children):
-      idxs.append("_")
-
-  return " ".join(map(str, idxs))
-
-def dirpoints_from_str(s, rps):
-  """Reconstruct the direction points from the string representation returned
-  by the function dirpoints_to_str.
-  """
-  idxs = s.split()
-  num_idxs = len(idxs)
-  assert num_idxs % 3 == 0
-  num_dirpoints = num_idxs/3
-
-  # Obtain a regular list.
-  rps = list(rps)
-
-  # Create all the direction points.
-  for i in range(num_dirpoints):
-    dp_idxs = []
-    for idx in idxs[3*i: 3*i + 3]:
-      try:
-        int_idx = int(idx)
-      except:
-        int_idx = None
-      dp_idxs.append(int_idx)
-
-    if len(dp_idxs) > 0:
-      parent = rps[dp_idxs[0]]
-      for i, child_idx in enumerate(dp_idxs[1:]):
-        child = rps[child_idx] if child_idx else None
-        parent.attach(child, index=i)
-
-
-class BoxerMacroExpand(MacroExpander):
-  """Expand Box sources to a format which can be parsed by Box."""
-
-  def __init__(self, document=None, mode=None):
-    self.document = document
-    self.mode = None
-    MacroExpander.__init__(self)
-
-  def parse(self, mode=None, document=None):
-    if document != None:
-      self.document = document
-    if mode != None:
-      self.mode = mode
-    return MacroExpander.parse(self, self.document.usercode)
-
-  def macro_define_all(self, args):
-    rps = filter(None, map(refpoint_to_string, self.document.refpoints))
-    sep, joiner = ((",", ",".join) if self.mode == docbase.MODE_EXEC
-                   else (endline, text_writer))
-
-    return sep.join(["###expand:define-all", joiner(rps), "###end:expand"])
-
-  def macro_view(self, args):
-    mode = self.mode
-    if mode == docbase.MODE_EXEC:
-      expanded = "GUI[%s]" % args
-    else:
-      expanded = ""
-    return "###expand:view:%s\n%s###end:expand" % (args, expanded)
-
-
-(STATE_NORMAL,
- STATE_EXPAND,
- STATE_CAPTURE) = range(3)
-
-
-class BoxerMacroContract(MacroExpander):
-  """Contract expanded Box sources."""
-
-  def __init__(self, *args):
-    MacroExpander.__init__(self, *args)
-    self.document = DocumentBase()
-    self.states = [(STATE_NORMAL, None)]
-    self.capture = None
-
-  def parse(self, text=None):
-    self.document.usercode = code = MacroExpander.parse(self, text)
-    return code
-
-  def push_state(self, new_state, new_context):
-    self.states.append((new_state, new_context))
-
-  def pop_state(self):
-    ss = self.states
-    if len(ss) > 1:
-      return ss.pop()
-    else:
-      self.states = [(STATE_NORMAL, None)]
-      return None
-
-  def subst_source(self, content):
-    s, _ = self.states[-1]
-    if s == STATE_NORMAL:
-      return content
-    elif s == STATE_CAPTURE:
-      if self.capture != None:
-        self.capture += content
-      return ""
-    else:
-      assert s == STATE_EXPAND
-      return ""
-
-  def macro_expand(self, args):
-    mn = normalize_macro_name(args)
-    if mn == "boxer_boot":
-      self.push_state(STATE_CAPTURE, mn)
-      self.capture = ""
-      return ""
-
-    else:
-      self.push_state(STATE_EXPAND, mn)
-      return "###%s" % args
-
-  def macro_end(self, args):
-    state, context = self.states[-1]
-
-    if len(self.states) <= 1 or state == STATE_NORMAL:
-      self.notify_message(LEVEL_ERROR, "unexpected macro 'end'")
-      self.pop_state() # Pop anyway...
-      return ""
-
-    else:
-      assert state == STATE_EXPAND or state == STATE_CAPTURE
-      mn = normalize_macro_name(args)
-      if mn != 'expand':
-        self.notify_message(LEVEL_ERROR,
-                            "end macro expected 'expand', but got '%s'." % mn)
-      self.pop_state()
-
-      if context == "boxer_boot":
-        self.document.set_boot_code(self.capture)
-
-      return ""
-
-  def macro_boxer_version(self, args):
-    try:
-      version = map(int, split_args(args))
-      assert len(version) == 3
-
-    except:
-      self.notify_message(LEVEL_ERROR,
-                          ("Error parsing the version number "
-                           "(macro boxer-version)"))
-      return None
-
-    self.document.version = version
-    return ""
-
-  def macro_boxer_refpoints(self, args):
-    try:
-      rps = refpoints_from_str(args)
-    except:
-      self.notify_message(LEVEL_ERROR,
-                          ("Error in parsing reference points "
-                           "(macro boxer-refpoints)"))
-      return None
-
-    self.document.refpoints.load(rps)
-    return ""
-
-  def macro_boxer_dirpoints(self, args):
-    try:
-      dirpoints_from_str(args, self.document.refpoints)
-    except:
-      self.notify_message(LEVEL_ERROR,
-                          ("Error in parsing direction points "
-                           "(macro boxer-dirpoints)"))
-      return None
-
-    return ""
-
-
-class Document(Document0):
-  def load_from_str(self, src):
-    return Document0.load_from_str(self, src)
-
-  @inherit_doc
-  def get_part_preamble(self, **kwargs):
-    ret = super(Document, self).get_part_preamble(**kwargs)
-    mode = kwargs.get('mode', None)
-    if mode == MODE_STORE:
-      num_dirpoints = len(self.get_refpoints().get_dirpoints())
-
-      if num_dirpoints > 0:
-        dirpoints_text = self.get_part_def_dirpoints()
-        if len(dirpoints_text.strip()) > 0:
-          ret = ret + endline + dirpoints_text
-
-    return endline.join(["###expand:boxer-boot", ret,
-                         "###end:expand"])
-
-  @inherit_doc
-  def get_part_version(self):
-    return "###boxer-version:%d,%d,%d" % version
-
-  @inherit_doc
-  def get_part_boot_code(self, boot_code):
-    return (boot_code or default_boot_code)
-
-  @inherit_doc
   def get_part_def_refpoints(self):
-    rps = self.get_refpoints()
-    return endline.join(["###boxer-refpoints:", refpoints_to_str(rps), "###end"])
+    refpoints = [refpoint_to_string(rp)
+                 for rp in self.refpoints]
+    return text_writer(refpoints, sep='; ').strip()
 
-  def get_part_def_dirpoints(self):
-    """Produce the part of the file which stores information about the
-    direction points.
-    """
-    rps = self.get_refpoints()
-    return endline.join(["###boxer-dirpoints:", dirpoints_to_str(rps), "###end"])
+  def get_part_preamble(self, mode=None, boot_code=''):
+    refpoints_part = self.get_part_def_refpoints()
+    if mode == MODE_STORE:
+      version_tokens = ["VERSION"] + [str(digit) for digit in version]
+      ml_version = marker_line_assemble(version_tokens, False)
+      ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"], False)
+      ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"], False)
+      parts =(ml_version, self.preamble.strip(),
+              ml_refpoints_begin, refpoints_part, ml_refpoints_end)
+    else:
+      parts = (boot_code, refpoints_part)
+    return endline.join(parts)
 
-  save_to_str = Document0.save_to_str
+  def save_to_str(self, version=version):
+    return (self.get_part_preamble(mode=MODE_STORE) + endline +
+            self.get_part_user_code())
+
+
+if __name__ == '__main__':
+  d = Document()
+  d.load_from_file('/tmp/test.py')
+  print(d.save_to_str())

@@ -218,12 +218,6 @@ class DocumentBase(Configurable):
     '''Get a list of the reference points in the document (list of GUIPoint)'''
     return self.refpoints
 
-  def get_user_code(self):
-    return self.usercode
-
-  def get_preamble(self):
-    return self.preamble
-
   def get_boot_code(self, preamble=None):
     return preamble if preamble != None else self.preamble
 
@@ -243,24 +237,19 @@ class DocumentBase(Configurable):
     """Produce the boot code (auxiliary code used to communicate the output
     back to the GUI).
     """
-    raise NotImplementedError("get_part_boot_code")
+    return (boot_code or '')
 
   def get_part_def_refpoints(self):
     """Produce the part of the file which stores information about the
     reference points.
     """
-    raise NotImplementedError("get_part_boot_code")
+    raise NotImplementedError()
 
   def get_part_preamble(self, mode=None, boot_code=None):
     """Return the first part of the Box file, where meta-information such as
     the version of the file format and the reference points are defined.
     """
-    if mode == MODE_STORE:
-      part1 = self.get_part_version()
-      part2 = self.get_part_boot_code(boot_code)
-      part3 = self.get_part_def_refpoints()
-      return endline.join([part1, part2, part3])
-    return self.get_part_boot_code(boot_code)
+    raise NotImplementedError()
 
   def get_part_user_code(self, mode=None):
     """Get the user part of the Box source."""
@@ -269,13 +258,6 @@ class DocumentBase(Configurable):
   def new(self):
     '''Start working on a new document (un-named).'''
     self.filename = None
-
-  def save_to_str(self, version=version):
-    '''Build the file corresponding to the document and return it as a string.
-    '''
-    part1 = self.get_part_preamble(mode=MODE_STORE)
-    part2 = self.get_part_user_code(mode=MODE_STORE)
-    return part1 + part2
 
   def load_from_str(self, boxer_src):
     raise NotImplementedError("DocumentBase.load_from_str")
@@ -297,47 +279,22 @@ class DocumentBase(Configurable):
       self.filename = filename
 
   def box_query(self, variable):
-    """Obtain the value of 'variable' by calling the Box executable
-    associated to this document with the option '-q'. This is useful to obtain
-    information about the configuration of the compiler which is executing the
-    document.
-    NOTE: at the moment the choice of the Box compiler is global, but the plan
-    is to make this choice document-wise (we may even store a comment into the
-    document source to specify which Box version to use. This may then be used
-    to discriminate between different Box executable to call)."""
-    box_executable = self.get_config("box_executable", "box")
-    box_args = ["-q", str(variable)]
-
-    box_finished = []
-    def do_at_exit():
-      box_finished.append(True)
-
-    box_output = []
-    def out_fn(line):
-      box_output.append(line)
-
-    killer = exec_command(box_executable, box_args,
-                          out_fn=out_fn, do_at_exit=do_at_exit)
-
-    while not box_finished:
-      time.sleep(0.1)
-
-    return ''.join(box_output).rstrip()
+    raise NotImplementedError("This function is obsolete")
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
     fn = self._fns["box_document_execute"]
     if fn != None:
-      fn(self, preamble, out_fn, exit_fn)
+      fn(self, out_fn, exit_fn)
 
     tmp_fns = []
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
     presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
 
-    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
     presrc_content = self.get_part_preamble(mode=MODE_EXEC,
                                             boot_code=preamble)
+    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
 
-    f = open(src_filename, "wt")
+    f = open(src_filename, 'wt')
     f.write(presrc_content + '\n' + original_userspace)
     f.close()
 
@@ -364,8 +321,7 @@ class DocumentBase(Configurable):
     if out_fn == None:
       out_fn = self._fns["box_exec_output"]
 
-    args = [src_filename]
-    return exec_command(box_executable, args,
+    return exec_command(box_executable, [src_filename],
                         out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
 
 if __name__ == "__main__":
