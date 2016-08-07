@@ -32,12 +32,6 @@ from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
 
-_box_preamble_common = '''
-import sys
-sys.path.append('{gui_lib_path}')
-from pyter.pyter2d import *
-'''.format(gui_lib_path=config.get_gui_lib_path())
-
 _box_preamble_centered = '''
 def gui(w):
   info_file_name = "$INFO_FILENAME$"
@@ -106,7 +100,7 @@ class PyImageDrawer(ImageDrawer):
       img_out_filename = config.tmp_new_filename("img", "png", tmp_fns)
 
     if preamble == None:
-      preamble = _box_preamble_common
+      preamble = ''
 
     substs = [("$INFO_FILENAME$", escape_string(info_out_filename)),
               ("$IMG_FILENAME$", escape_string(img_out_filename))]
@@ -155,7 +149,7 @@ class PyImageDrawer(ImageDrawer):
 
   def update(self, pixbuf_output, pix_view, coord_view=None,
              img_out_filename=None):
-    preamble = _box_preamble_common
+    preamble = ''
     if coord_view == None:
       px, py = pix_view
       substs = [("$SX$", px), ("$SY$", py)]
@@ -207,6 +201,6 @@ if __name__ == "__main__":
   d.load_from_file("../examples/poly.box")
   bd = PyImageDrawer(d)
   bd.out_fn = sys.stdout.write
-  preamble = _box_preamble_common + _box_preamble_centered
+  preamble = _box_preamble_centered
   view = zoomable.View(Point(200, 200), Point(16.0, 47.0), Point(77.0, 4.0))
   bd.update(None, Point(200, 200), view, img_out_filename="poly.png")

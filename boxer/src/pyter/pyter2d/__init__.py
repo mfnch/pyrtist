@@ -9,3 +9,6 @@ from transform import *
 from put import *
 from style import *
 from bbox import BBox
+
+def gui(window):
+    pass

@@ -126,15 +126,16 @@ class Document(DocumentBase):
 
   def get_part_preamble(self, mode=None, boot_code=''):
     refpoints_part = self.get_part_def_refpoints()
+    pyrtist_import = 'from pyrtist.pyter.pyter2d import *'
     if mode == MODE_STORE:
       version_tokens = ["VERSION"] + [str(digit) for digit in version]
       ml_version = marker_line_assemble(version_tokens, False)
       ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"], False)
       ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"], False)
-      parts =(ml_version, self.preamble.strip(),
+      parts =(ml_version, pyrtist_import,
               ml_refpoints_begin, refpoints_part, ml_refpoints_end)
     else:
-      parts = (boot_code, refpoints_part)
+      parts = (pyrtist_import, boot_code, refpoints_part)
     return endline.join(parts)
 
   def save_to_str(self, version=version):
