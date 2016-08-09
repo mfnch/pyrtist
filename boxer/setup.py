@@ -40,8 +40,7 @@ examples_fullpaths = list(os.path.join('examples', bn)
 package_data = {'pyrtist': (examples_fullpaths +
                             ['icons/24x24/*.png',
                              'icons/32x32/*.png',
-                             'icons/fonts/*.png',
-                             'hl/*.lang'])}
+                             'icons/fonts/*.png'])}
 script = 'scripts/pyrtist'
 scripts = [script]
 
