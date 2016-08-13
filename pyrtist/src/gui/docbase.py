@@ -290,7 +290,7 @@ class DocumentBase(Configurable):
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
     presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
 
-    # Hack to make "from pyrtist.pyter.pyter2d import *" work.
+    # Hack to make "from pyrtist.lib2d import *" work.
     main_module_path = config.get_gui_lib_path()
     parent_path, module_name = os.path.split(main_module_path)
     presrc_content = ('import sys, os\n'

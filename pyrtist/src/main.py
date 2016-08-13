@@ -18,7 +18,7 @@
 import sys
 import optparse
 
-from gui.info import full_name
+from .gui.info import full_name
 
 option_parser = None
 

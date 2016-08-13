@@ -28,8 +28,7 @@ download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license = 'GPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
-            'pyrtist.gui.comparse',
-            'pyrtist.pyter', 'pyrtist.pyter.pyter2d']
+            'pyrtist.gui.comparse', 'pyrtist.lib2d']
 package_dir = {'pyrtist': 'src'}
 
 examples = []
