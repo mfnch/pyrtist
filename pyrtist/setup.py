@@ -15,6 +15,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
+'''Installation script for Pyrtist. Install as follows:
+
+sudo python setup.py install
+'''
+
 import os
 from distutils.core import setup
 
@@ -26,7 +31,7 @@ author_email = 'fnch@users.sf.net'
 url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
-license = 'GPL'
+license_name = 'GPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d']
 
@@ -49,7 +54,7 @@ setup(name=name,
       author_email=author_email,
       url=url,
       download_url=download_url,
-      license=license,
+      license=license_name,
       packages=packages,
       package_data=package_data,
       scripts=scripts)
