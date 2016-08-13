@@ -290,15 +290,14 @@ class DocumentBase(Configurable):
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
     presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
 
-    # Hack to make "from pyrtist.lib2d import *" work.
+    # Hack to make the local_launch.py script work correctly (useful for
+    # debugging).
     main_module_path = config.get_gui_lib_path()
-    parent_path, module_name = os.path.split(main_module_path)
+    parent_path, _ = os.path.split(main_module_path)
     presrc_content = ('import sys, os\n'
                       'sys.path.append("{parent_path}")\n'
                       'sys.path.append(os.getcwd())\n'
-                      'import {pyrtist_name} as pyrtist\n'
-                      .format(parent_path=parent_path,
-                              pyrtist_name=module_name))
+                      .format(parent_path=parent_path))
 
     presrc_content += self.get_part_preamble(mode=MODE_EXEC,
                                             boot_code=preamble)

@@ -29,7 +29,6 @@ download_url = ('http://sourceforge.net/project/'
 license = 'GPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d']
-package_dir = {'pyrtist': 'src'}
 
 examples = []
 
@@ -52,6 +51,5 @@ setup(name=name,
       download_url=download_url,
       license=license,
       packages=packages,
-      package_dir=package_dir,
       package_data=package_data,
       scripts=scripts)
