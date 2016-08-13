@@ -5,18 +5,13 @@
 
 #include "depth_buffer.h"
 
-#if 0
-class DepthFunction {
- private:
-};
-#endif
-
 void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
       begin_x = std::max(0, x - radius),
       end_x   = std::min(width_, x + radius);
-  uint32_t* ptr = &ptr_[width_*begin_y + begin_x];
+  DepthType* begin_ptr = GetPtr();
+  DepthType* ptr = &begin_ptr[width_*begin_y + begin_x];
   uint32_t r2 = radius*radius;
   uint32_t pixels_to_next = width_ - (end_x - begin_x);
   for (int iy = begin_y; iy < end_y; iy++, ptr += pixels_to_next) {
@@ -25,86 +20,92 @@ void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
       int dx = ix - x, dx2 = dx*dx;
       int dz2 = r2 - (dx2 + dy2);
       if (dz2 >= 0) {
-        *ptr = int(z_scale*sqrt(dz2));
+        *ptr = DepthType(z_scale*sqrt(dz2));
       }
     }
   }
 }
 
-ImageBuffer* DepthBuffer::ComputeNormals() {
-  auto normals = new ImageBuffer(width_, height_);
+ARGBImageBuffer* DepthBuffer::ComputeNormals() {
+  auto normals = new ARGBImageBuffer(width_, width_, height_);
   if (normals == nullptr || width_ < 3 || height_ < 3)
     return normals;
   int32_t* out_ptr = reinterpret_cast<int32_t*>(normals->GetPtr());
 
   int nx = width_ - 2;
   int ny = height_ - 2;
-  int32_t* begin_ptr = reinterpret_cast<int32_t*>(ptr_);
-  int32_t* ptr = &begin_ptr[width_];
+  DepthType* begin_ptr = GetPtr();
+  DepthType* ptr = &begin_ptr[width_];
 
   for (int iy = 1; iy < ny; iy++) {
-    int32_t lft = *ptr++;
-    int32_t* top_ptr = ptr - width_;
-    int32_t* bot_ptr = ptr + width_;
-    int32_t ctr = *ptr++;
-    int32_t rgt;
-    uint32_t mask = ((lft == kInfiniteDepth ? 1U : 0U) |
-                     (ctr == kInfiniteDepth ? 2U : 0U));
-    int32_t* final_ptr = ptr + nx;
+    DepthType lft = *ptr++;
+    DepthType* top_ptr = ptr - width_;
+    DepthType* bot_ptr = ptr + width_;
+    DepthType ctr = *ptr++;
+    DepthType rgt;
+    uint32_t x_mask = ((IsInfiniteDepth(lft) ? 1U : 0U) |
+                       (IsInfiniteDepth(ctr) ? 2U : 0U));
+    DepthType* final_ptr = ptr + nx;
     while (ptr < final_ptr) {
+      size_t offset = ptr - 1 - begin_ptr;
       rgt = *ptr++;
-      mask |= (rgt == kInfiniteDepth ? 4U : 0U);
-      if (mask == 0) {
-        top_ptr = ptr - width_ - 1;
-        bot_ptr = ptr + width_ + 1;
+      x_mask |= (IsInfiniteDepth(rgt) ? 4U : 0U);
 
-        // The current point has both left and right neighbours.
-        int64_t dx = (rgt - lft) >> 1;            // -d/dx depth(x, y)
+      if ((x_mask & 2U) != 0) {
+        // Point with infinite depth: use default colors.
+        out_ptr[offset] = 0xff8080ff;
+      } else {
+        top_ptr = ptr - 2 - width_;
+        bot_ptr = ptr - 2 + width_;
+        DepthType top = *top_ptr;
+        DepthType bot = *bot_ptr;
+        bool top_absent = IsInfiniteDepth(top);
+        bool bot_absent = IsInfiniteDepth(bot);
 
-        // Now compute the y derivative.
-        int64_t dy = (*top_ptr - *bot_ptr) >> 1;  // -d/dy depth(x, y)
-        int64_t d2 = 1 + dx*dx + dy*dy;
-        int64_t d = static_cast<uint64_t>(sqrt(d2));
+        float dy;  // Compute -d/dy depth(x, y) in dy.
+        if (LIKELY(top_absent == bot_absent))
+          dy = UNLIKELY(top_absent) ? 0.0f : (bot - top)*0.5f;
+        else
+          dy = top_absent ? bot - ctr : ctr - top;
 
-        uint8_t red   = (dx*127)/d + 128;
-        uint8_t green = (dy*127)/d + 128;
-        uint8_t blue  = 127/d + 128;
-        size_t offset = ptr - begin_ptr;
-        out_ptr[offset] = ((static_cast<uint32_t>(red)) |
+        float dx;  // Compute -d/dx depth(x, y) in dx.
+        if (LIKELY(x_mask == 0U))
+          dx = (rgt - lft)*0.5f;
+        else if (x_mask == 4U)
+          dx = ctr - lft;
+        else if (x_mask == 1U)
+          dx = rgt - ctr;
+        else
+          dx = 0.0f;
+
+        // Now compute the norm of the unnormalized normal vector.
+        float d = sqrtf(1.0f + dx*dx + dy*dy);
+
+        uint8_t red   = 128 + static_cast<uint8_t>((dx*127.0f)/d);
+        uint8_t green = 128 + static_cast<uint8_t>((dy*127.0f)/d);
+        uint8_t blue  = 128 + static_cast<uint8_t>(127.0/d);
+        out_ptr[offset] = ((static_cast<uint32_t>(blue)) |
                            (static_cast<uint32_t>(green) << 8) |
-                           (static_cast<uint32_t>(blue) << 16) |
+                           (static_cast<uint32_t>(red) << 16) |
                            (UINT32_C(0xff) << 24));
-      } else if (mask == 7) {
-        // All empty: ignore this point.
-      } else if ((mask & 2) == 0) {
-        // Border point: only one neighbour is present.
       }
 
       lft = ctr;
       ctr = rgt;
-      mask >>= 1;
+      x_mask >>= 1;
     }
   }
 
   return normals;
 }
 
-void DepthBuffer::DoSomething() {
-  size_t sz = width_*height_;
-  for (size_t i = 0; i < sz; i++) {
-    if (ptr_[i] != 0)
-      ptr_[i] |= 0xff000000;
-  }
-}
-
 int main() {
   DepthBuffer ds(320, 200);
-  ds.DrawSphere(160, 100, 0, 80, 3.0);
+  ds.DrawSphere(160, 100, 0, 80, 1.0);
 
   auto normals = ds.ComputeNormals();
   normals->SaveToFile("normals.png");
   delete normals;
 
-  ds.DoSomething();
-  ds.SaveToFile("test.png");
+  //ds.SaveToFile("test.png");
 }

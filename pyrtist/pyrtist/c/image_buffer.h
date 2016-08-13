@@ -4,32 +4,61 @@
 #include <stddef.h>
 #include <stdint.h>
 
+template <typename T>
 class ImageBuffer {
  public:
-  ImageBuffer(int width, int height, void* ptr)
-      : width_(width), height_(height),
-        ptr_(reinterpret_cast<uint32_t*>(ptr)),
-        allocated_ptr_(nullptr) { }
+  using PixelType = T;
 
-  ImageBuffer(int width, int height);
+  ImageBuffer(int width, int stride, int height, void* ptr)
+      : ptr_(reinterpret_cast<PixelType*>(ptr)), allocated_ptr_(nullptr),
+        width_(width), stride_(stride), height_(height) { }
 
-  virtual ~ImageBuffer();
-
-  void* GetPtr() { return ptr_; }
-
-  bool IsValid() {
-    return ptr_ != nullptr;
+  ImageBuffer(int width, int stride, int height) {
+    if (width > 0 && height > 0 && stride >= width) {
+      size_t sz = stride * height;
+      ptr_ = allocated_ptr_ = new PixelType[sz];
+      width_ = width;
+      stride_ = stride;
+      height_ = height;
+    } else {
+      allocated_ptr_ = ptr_ = nullptr;
+      width_ = stride_ = height_ = 0;
+    }
   }
 
-  void Fill(uint32_t value);
+  virtual ~ImageBuffer() {
+    if (ptr_ != nullptr) {
+      delete[] allocated_ptr_;
+    }
+  }
 
-  bool SaveToFile(const char* file_name);
+  PixelType* GetPtr() { return ptr_; }
+
+  void Fill(PixelType value) {
+    PixelType* ptr = ptr_;
+    PixelType* end_ptr = ptr_ + (width_*height_);
+    while (ptr < end_ptr)
+      *ptr++ = value;
+  }
+
+  bool IsValid() { return ptr_ != nullptr; }
 
  protected:
-  int32_t width_,
-          height_;
-  uint32_t* ptr_;
-  uint32_t* allocated_ptr_;
+  PixelType* ptr_;
+  PixelType* allocated_ptr_;
+  int32_t width_;
+  int32_t stride_;
+  int32_t height_;
+};
+
+class ARGBImageBuffer : public ImageBuffer<uint32_t> {
+ private:
+  using BaseType = ImageBuffer<uint32_t>;
+
+ public:
+  using BaseType::BaseType;
+
+  bool SaveToFile(const char* file_name);
 };
 
 #endif /* _IMAGE_BUFFER_H */

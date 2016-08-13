@@ -3,32 +3,7 @@
 
 #include "image_buffer.h"
 
-ImageBuffer::~ImageBuffer() {
-  if (ptr_ != nullptr) {
-    delete[] allocated_ptr_;
-  }
-}
-
-ImageBuffer::ImageBuffer(int width, int height) {
-  if (!(width > 0 && height > 0)) {
-    allocated_ptr_ = ptr_ = nullptr;
-    width_ = height_ = 0;
-  }
-
-  size_t sz = width * height;
-  ptr_ = allocated_ptr_ = new uint32_t[sz];
-  width_ = width;
-  height_ = height;
-}
-
-void ImageBuffer::Fill(uint32_t value) {
-  uint32_t* ptr = ptr_;
-  uint32_t* end_ptr = ptr_ + (width_*height_);
-  while (ptr < end_ptr)
-    *ptr++ = value;
-}
-
-bool ImageBuffer::SaveToFile(const char* file_name) {
+bool ARGBImageBuffer::SaveToFile(const char* file_name) {
   bool success = false;
   cairo_format_t fmt = CAIRO_FORMAT_ARGB32;
   unsigned char *data = reinterpret_cast<unsigned char*>(ptr_);
