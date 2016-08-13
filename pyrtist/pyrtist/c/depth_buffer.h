@@ -11,7 +11,7 @@
 #define UNLIKELY(x) (x)
 
 class DepthBuffer : public ImageBuffer<float> {
- private:
+ public:
   /// 32-bit type used to store the depth of each pixel.
   using DepthType = PixelType;
 
@@ -25,15 +25,18 @@ class DepthBuffer : public ImageBuffer<float> {
     return isnan(depth);
   }
 
- public:
   DepthBuffer(int width, int height, void* ptr)
       : ImageBuffer(width, width, height, ptr) {
-    Fill(kInfiniteDepth);
+    Clear();
   }
 
-  DepthBuffer(int width, int height) : ImageBuffer(width, width, height) {
-    Fill(kInfiniteDepth);
+  DepthBuffer(int width, int stride, int height)
+      : ImageBuffer(width, stride, height) {
+    Clear();
   }
+
+  /// Fill the depth buffer with infinite depth.
+  void Clear() { Fill(kInfiniteDepth); }
 
   ARGBImageBuffer* ComputeNormals();
 

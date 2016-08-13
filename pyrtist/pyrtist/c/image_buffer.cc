@@ -17,3 +17,23 @@ bool ARGBImageBuffer::SaveToFile(const char* file_name) {
   }
   return success;
 }
+
+void ARGBImageBuffer::DrawCircle(int x, int y, int radius, uint32_t color) {
+  int begin_y = std::max(0, y - radius),
+      end_y   = std::min(height_, y + radius),
+      begin_x = std::max(0, x - radius),
+      end_x   = std::min(width_, x + radius);
+  PixelType* begin_ptr = GetPtr();
+  PixelType* ptr = &begin_ptr[width_*begin_y + begin_x];
+  uint32_t r2 = radius*radius;
+  uint32_t pixels_to_next = width_ - (end_x - begin_x);
+  for (int iy = begin_y; iy < end_y; iy++, ptr += pixels_to_next) {
+    int dy = iy - y, dy2 = dy*dy;
+    for (int ix = begin_x; ix < end_x; ix++, ptr++) {
+      int dx = ix - x, dx2 = dx*dx;
+      int dz2 = r2 - (dx2 + dy2);
+      if (dz2 >= 0)
+        *ptr = color;
+    }
+  }
+}

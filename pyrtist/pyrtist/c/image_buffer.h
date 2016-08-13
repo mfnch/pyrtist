@@ -32,6 +32,9 @@ class ImageBuffer {
     }
   }
 
+  int GetWidth() { return width_; }
+  int GetStride() { return stride_; }
+  int GetHeight() { return height_; }
   PixelType* GetPtr() { return ptr_; }
 
   void Fill(PixelType value) {
@@ -57,6 +60,11 @@ class ARGBImageBuffer : public ImageBuffer<uint32_t> {
 
  public:
   using BaseType::BaseType;
+
+  /// Clear the content of the buffer.
+  void Clear() { Fill(0U); }
+
+  void DrawCircle(int x, int y, int radius, uint32_t color);
 
   bool SaveToFile(const char* file_name);
 };

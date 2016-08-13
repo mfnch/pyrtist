@@ -19,9 +19,8 @@ void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
     for (int ix = begin_x; ix < end_x; ix++, ptr++) {
       int dx = ix - x, dx2 = dx*dx;
       int dz2 = r2 - (dx2 + dy2);
-      if (dz2 >= 0) {
-        *ptr = DepthType(z_scale*sqrt(dz2));
-      }
+      if (dz2 >= 0)
+        *ptr = DepthType(z_scale*sqrt(dz2) + z);
     }
   }
 }
@@ -97,15 +96,4 @@ ARGBImageBuffer* DepthBuffer::ComputeNormals() {
   }
 
   return normals;
-}
-
-int main() {
-  DepthBuffer ds(320, 200);
-  ds.DrawSphere(160, 100, 0, 80, 1.0);
-
-  auto normals = ds.ComputeNormals();
-  normals->SaveToFile("normals.png");
-  delete normals;
-
-  //ds.SaveToFile("test.png");
 }
