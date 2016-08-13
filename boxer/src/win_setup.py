@@ -6,8 +6,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import lib.config as config
-from lib.boxer import debug
+import gui.config as config
+from gui.boxer import debug
 
 spacing = 6
 

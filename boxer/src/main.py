@@ -18,7 +18,7 @@
 import sys
 import optparse
 
-from lib.info import full_name
+from gui.info import full_name
 
 option_parser = None
 
@@ -53,7 +53,7 @@ def main(args):
     sys.stdout.write("WARNING: Pyrtist takes just one file from the command "
                      "line. Ignoring the files %s." % other_files)
 
-  from lib.boxer import run
+  from gui.boxer import run
   run(file_to_edit, box_exec=options.box_exec)
 
 if __name__ == "__main__":
