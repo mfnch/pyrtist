@@ -11,8 +11,9 @@ bool ARGBImageBuffer::SaveToFile(const char* file_name) {
   if (stride == 4*width_) {
     cairo_surface_t* cs =
       cairo_image_surface_create_for_data(data, fmt, width_, height_, stride);
-    success = (cairo_surface_status(cs) == CAIRO_STATUS_SUCCESS &&
-               cairo_surface_write_to_png(cs, file_name));
+    success =
+      (cairo_surface_status(cs) == CAIRO_STATUS_SUCCESS &&
+       cairo_surface_write_to_png(cs, file_name) == CAIRO_STATUS_SUCCESS);
     cairo_surface_destroy(cs);
   }
   return success;
