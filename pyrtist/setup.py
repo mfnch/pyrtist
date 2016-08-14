@@ -20,8 +20,20 @@
 sudo python setup.py install
 '''
 
+# In systems where the setuptools module cannot be used, the variable below
+# can be used to select whether to build the deepsurface module.
+BUILD_DEEPSURFACE = False
+
 import os
-from distutils.core import setup
+
+try:
+    from setuptools import setup, Extension, Feature
+except ImportError:
+    from distutils.core import setup, Extension
+    Feature = None
+    print('*** USING distutils')
+    print('*** Edit the setup.py script to enable building deepsurface')
+    print('***')
 
 name = 'pyrtist'
 version = '0.0.1'
@@ -44,8 +56,33 @@ package_data = {'pyrtist': (examples_fullpaths +
                             ['icons/24x24/*.png',
                              'icons/32x32/*.png',
                              'icons/fonts/*.png'])}
-script = 'scripts/pyrtist'
-scripts = [script]
+
+# C++ extensions.
+ext_modules = []
+srcs = ['image_buffer.cc', 'deep_buffer.cc', 'deep_surface.cc',
+        'py_init.cc', 'py_deep_surface.cc']
+srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
+                   for file_name in srcs]
+ext_modules.append(Extension('pyrtist.deepsurface',
+                             extra_compile_args=['-std=c++11'],
+                             sources=srcs_full_paths,
+                             libraries=['cairo']))
+
+# Add the extensions differently depending on whether we are using
+# setuptools or distutils.
+kwargs = {}
+if Feature is not None:
+    # setuptools way.
+    kwargs['features'] = \
+      {'deepsurface': Feature('the deepsurface module.',
+                              standard=False, ext_modules=ext_modules)}
+    kwargs['entry_points'] = \
+      {'console_scripts': ['pyrtist=pyrtist.__main__:main']}
+elif BUILD_DEEPSURFACE:
+    # distutils way.
+    kwargs['ext_modules'] = ext_modules
+    kwargs['scripts'] = ['scripts/pyrtist']
+
 
 setup(name=name,
       version=version,
@@ -57,4 +94,4 @@ setup(name=name,
       license=license_name,
       packages=packages,
       package_data=package_data,
-      scripts=scripts)
+      **kwargs)

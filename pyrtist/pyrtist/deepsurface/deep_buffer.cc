@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <math.h>
 
-#include "depth_buffer.h"
+#include "deep_buffer.h"
 
-void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
+void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
       begin_x = std::max(0, x - radius),
@@ -25,7 +25,7 @@ void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   }
 }
 
-ARGBImageBuffer* DepthBuffer::ComputeNormals() {
+ARGBImageBuffer* DeepBuffer::ComputeNormals() {
   auto normals = new ARGBImageBuffer(width_, width_, height_);
   if (normals == nullptr || width_ < 3 || height_ < 3)
     return normals;

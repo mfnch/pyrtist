@@ -1,0 +1,102 @@
+#include "deep_surface.h"
+#include "py_deep_surface.h"
+
+// Forward declarations.
+static PyObject* PyDeepSurface_New(PyTypeObject* type,
+                                   PyObject* args, PyObject* kwds);
+static void PyDeepSurface_Dealloc(PyObject* py_obj);
+static PyObject* PyDeepSurface_GetSrcCairoImage(PyObject* ds, PyObject* args);
+
+// PyDeepSurface object methods.
+static PyMethodDef pydeepsurface_methods[] = {
+  {"get_src_cairo_image", PyDeepSurface_GetSrcCairoImage, METH_VARARGS},
+  {NULL, NULL, 0, NULL}
+};
+
+// PyDeepSurface object type.
+PyTypeObject PyDeepSurface_Type = {
+  PyObject_HEAD_INIT(NULL)
+  0,                                         // ob_size
+  "deepsurface.DeepSurface",                 // tp_name
+  sizeof(PyDeepSurface),                     // tp_basicsize
+  0,                                         // tp_itemsize
+  PyDeepSurface_Dealloc,                     // tp_dealloc
+  0,                                         // tp_print
+  0,                                         // tp_getattr
+  0,                                         // tp_setattr
+  0,                                         // tp_compare
+  0,                                         // tp_repr
+  0,                                         // tp_as_number
+  0,                                         // tp_as_sequence
+  0,                                         // tp_as_mapping
+  0,                                         // tp_hash
+  0,                                         // tp_call
+  0,                                         // tp_str
+  0,                                         // tp_getattro
+  0,                                         // tp_setattro
+  0,                                         // tp_as_buffer
+  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
+  0,                                         // tp_doc
+  0,                                         // tp_traverse
+  0,                                         // tp_clear
+  0,                                         // tp_richcompare
+  0,                                         // tp_weaklistoffset
+  0,                                         // tp_iter
+  0,                                         // tp_iternext
+  pydeepsurface_methods,                     // tp_methods
+  0,                                         // tp_members
+  0,                                         // tp_getset
+  0,                                         // tp_base
+  0,                                         // tp_dict
+  0,                                         // tp_descr_get
+  0,                                         // tp_descr_set
+  0,                                         // tp_dictoffset
+  0,                                         // tp_init
+  0,                                         // tp_alloc
+  PyDeepSurface_New,                         // tp_new
+  0,                                         // tp_free
+  0,                                         // tp_is_gc
+  0,                                         // tp_bases
+};
+
+static PyObject* PyDeepSurface_New(PyTypeObject* type,
+                                   PyObject* args, PyObject* kwds) {
+  int width, height;
+  if (!PyArg_ParseTuple(args, "ii:DeepSurface.__new__", &width, &height))
+    return nullptr;
+
+  DeepSurface* ds = new DeepSurface{width, width, height};
+  if (!ds->IsValid()) {
+    // Destroy ds and raise an exception.
+    delete ds;
+    PyErr_SetString(PyExc_ValueError, "Invalid width/height");
+    return nullptr;
+  }
+
+  PyObject *py_obj = PyDeepSurface_Type.tp_alloc(type, 0);
+  if (py_obj == nullptr) {
+    delete ds;
+    return nullptr;
+  }
+
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(py_obj);
+  py_ds->deep_surface = ds;
+  return py_obj;
+}
+
+static void PyDeepSurface_Dealloc(PyObject* py_obj) {
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(py_obj);
+  delete py_ds->deep_surface;
+  py_ds->ob_type->tp_free(py_obj);
+}
+
+static PyObject*
+PyDeepSurface_GetSrcCairoImage(PyObject* self, PyObject* args) {
+  if (!PyArg_ParseTuple(args, ":DeepSurface.get_src_cairo_image"))
+    return nullptr;
+
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
+  ARGBImageBuffer* buf = py_ds->deep_surface->GetImageBuffer();
+
+  Py_RETURN_NONE;
+}

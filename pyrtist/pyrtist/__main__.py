@@ -19,8 +19,7 @@ import sys
 import optparse
 
 from .gui.info import full_name
-
-option_parser = None
+from .gui.boxer import run
 
 def generate_option_parser():
   usage = ("pyrtist [options] [filename.py]")
@@ -37,12 +36,9 @@ def generate_option_parser():
 
   return op
 
-def main(args):
-  global option_parser
-  if option_parser == None:
-    option_parser = generate_option_parser()
-
-  (options, arguments) = option_parser.parse_args(args)
+def main(args=None):
+  option_parser = generate_option_parser()
+  (options, arguments) = option_parser.parse_args(args or sys.argv)
 
   file_to_edit = None
   if len(arguments) >= 2:
@@ -53,7 +49,6 @@ def main(args):
     sys.stdout.write("WARNING: Pyrtist takes just one file from the command "
                      "line. Ignoring the files %s." % other_files)
 
-  from gui.boxer import run
   run(file_to_edit, box_exec=options.box_exec)
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-#ifndef _DEPTH_BUFFER_H
-#define _DEPTH_BUFFER_H
+#ifndef _DEEP_BUFFER_H
+#define _DEEP_BUFFER_H
 
 #include <limits>
 #include <math.h>
@@ -10,7 +10,7 @@
 #define LIKELY(x) (x)
 #define UNLIKELY(x) (x)
 
-class DepthBuffer : public ImageBuffer<float> {
+class DeepBuffer : public ImageBuffer<float> {
  public:
   /// 32-bit type used to store the depth of each pixel.
   using DepthType = PixelType;
@@ -25,12 +25,12 @@ class DepthBuffer : public ImageBuffer<float> {
     return isnan(depth);
   }
 
-  DepthBuffer(int width, int height, void* ptr)
+  DeepBuffer(int width, int height, void* ptr)
       : ImageBuffer(width, width, height, ptr) {
     Clear();
   }
 
-  DepthBuffer(int width, int stride, int height)
+  DeepBuffer(int width, int stride, int height)
       : ImageBuffer(width, stride, height) {
     Clear();
   }
@@ -43,4 +43,4 @@ class DepthBuffer : public ImageBuffer<float> {
   void DrawSphere(int x, int y, int z, int radius, float z_scale);
 };
 
-#endif /* _DEPTH_BUFFER_H */
+#endif /* _DEEP_BUFFER_H */
