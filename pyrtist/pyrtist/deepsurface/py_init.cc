@@ -1,6 +1,7 @@
 #include "Python.h"
 
 #include "py_deep_buffer.h"
+#include "py_image_buffer.h"
 #include "py_deep_surface.h"
 
 static PyMethodDef deepsurface_methods[] = {
@@ -18,11 +19,13 @@ extern "C" {
 
   PyMODINIT_FUNC initdeepsurface() {
     PYTYPE_READY(PyDeepSurface_Type);
+    PYTYPE_READY(PyImageBuffer_Type);
     PYTYPE_READY(PyDeepBuffer_Type);
 
     PyObject* m = Py_InitModule("deepsurface", deepsurface_methods);
 
     PYMODULE_ADDOBJECT(m, "DeepSurface", PyDeepSurface_Type);
+    PYMODULE_ADDOBJECT(m, "ImageBuffer", PyImageBuffer_Type);
     PYMODULE_ADDOBJECT(m, "DeepBuffer", PyDeepBuffer_Type);
   }
 

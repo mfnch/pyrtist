@@ -1,4 +1,5 @@
 #include "deep_surface.h"
+#include "py_image_buffer.h"
 #include "py_deep_buffer.h"
 #include "py_deep_surface.h"
 
@@ -105,9 +106,8 @@ PyDeepSurface_GetImageBuffer(PyObject* self, PyObject* args) {
     return nullptr;
 
   PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
-  ARGBImageBuffer* buf = py_ds->deep_surface->GetImageBuffer();
-
-  Py_RETURN_NONE;
+  ARGBImageBuffer* ib = py_ds->deep_surface->GetImageBuffer();
+  return PyImageBuffer_FromC(&PyImageBuffer_Type, ib, self);
 }
 
 static PyObject*

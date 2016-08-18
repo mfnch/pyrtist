@@ -36,6 +36,7 @@ class ImageBuffer {
   int GetStride() { return stride_; }
   int GetHeight() { return height_; }
   PixelType* GetPtr() { return ptr_; }
+  size_t GetSizeInBytes() { return height_*stride_*sizeof(PixelType); }
 
   void Fill(PixelType value) {
     PixelType* ptr = ptr_;

@@ -7,13 +7,47 @@ static PyObject* PyDeepBuffer_New(PyTypeObject* type,
 static void PyDeepBuffer_Dealloc(PyObject* py_obj);
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args);
+static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
 
 // PyDeepBuffer object methods.
 static PyMethodDef pydeepbuffer_methods[] = {
   {"draw_sphere", PyDeepBuffer_DrawSphere, METH_VARARGS},
   {"save_normals", PyDeepBuffer_SaveNormals, METH_VARARGS},
+  {"get_data", PyDeepBuffer_GetData, METH_NOARGS},
   {NULL, NULL, 0, NULL}
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Implement the old buffer API.
+
+static Py_ssize_t
+PyDeepBuffer_GetReadBuf(PyObject* py_obj, Py_ssize_t segment, void** ptr) {
+  if (segment != 0) {
+    PyErr_SetString(PyExc_SystemError, "DeepBuffer has only one segment");
+    return -1;
+  }
+  DeepBuffer* db = reinterpret_cast<PyDeepBuffer*>(py_obj)->deep_buffer;
+  *ptr = db->GetPtr();
+  return db->GetSizeInBytes();
+}
+
+static Py_ssize_t
+PyDeepBuffer_GetSegCount(PyObject* py_obj, Py_ssize_t* lenp) {
+  if (lenp) {
+    DeepBuffer* db = reinterpret_cast<PyDeepBuffer*>(py_obj)->deep_buffer;
+    *lenp = db->GetSizeInBytes();
+  }
+  return 1;  // Only one segment.
+}
+
+static PyBufferProcs deepbuffer_as_buffer = {
+  PyDeepBuffer_GetReadBuf,
+  PyDeepBuffer_GetReadBuf,
+  PyDeepBuffer_GetSegCount,
+  nullptr,
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 // PyDeepBuffer object type.
 PyTypeObject PyDeepBuffer_Type = {
@@ -36,7 +70,7 @@ PyTypeObject PyDeepBuffer_Type = {
   0,                                         // tp_str
   0,                                         // tp_getattro
   0,                                         // tp_setattro
-  0,                                         // tp_as_buffer
+  &deepbuffer_as_buffer,                     // tp_as_buffer
   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
   0,                                         // tp_doc
   0,                                         // tp_traverse
@@ -128,4 +162,8 @@ static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args) {
   if (success)
     Py_RETURN_TRUE;
   Py_RETURN_FALSE;
+}
+
+static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args) {
+  return PyBuffer_FromReadWriteObject(db, 0, Py_END_OF_BUFFER);
 }
