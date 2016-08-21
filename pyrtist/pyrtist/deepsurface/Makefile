@@ -1,9 +1,27 @@
-deep_buffer: image_buffer.h image_buffer.cc deep_buffer.h deep_buffer.cc \
-  deep_surface.h deep_surface.cc
-	g++ -Wall -std=c++11 -O2 \
-	  image_buffer.cc deep_buffer.cc deep_surface.cc \
-	  -lcairo -o deep_buffer
+# This makefile is useful for building the library locally so that it can be
+# used with local_launch.py for running pyrtist without having to install it.
+
+OUT_LIB=../deepsurface.so
+CXX = g++
+CXXFLAGS := -std=c++11 -g -O2 -Wall -pthread -fPIC -fwrapv \
+  -Wstrict-prototypes -fno-strict-aliasing \
+  -fstack-protector-strong -Wformat -Werror=format-security \
+  -DNDEBUG -D_FORTIFY_SOURCE=2 -I/usr/include/python2.7
+SOURCES := deep_buffer.cc deep_surface.cc image_buffer.cc py_deep_buffer.cc \
+  py_deep_surface.cc py_image_buffer.cc py_init.cc
+OBJS := $(SOURCES:.cc=.o)
 
 .PHONY: clean
+
+$(OUT_LIB): $(OBJS) $(HEADERS)
+	$(CXX) -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-z,relro \
+	  $(OBJS) -lcairo -o $(OUT_LIB)
+
+-include $(SOURCES:.cc=.d)
+
+%.o: %.cc
+	$(CXX)  -c $(CXXFLAGS) $*.cc -o $*.o
+	$(CXX) -MM $(CXXFLAGS) $*.cc > $*.d
+
 clean:
-	rm -f deep_buffer
+	rm -f deep_buffer *.o *.d $(OUT_LIB)

@@ -295,12 +295,12 @@ class DocumentBase(Configurable):
     main_module_path = config.get_gui_lib_path()
     parent_path, _ = os.path.split(main_module_path)
     presrc_content = ('import sys, os\n'
-                      'sys.path.append("{parent_path}")\n'
-                      'sys.path.append(os.getcwd())\n'
+                      'sys.path.insert(0, "{parent_path}")\n'
+                      'sys.path.insert(0, os.getcwd())\n'
                       .format(parent_path=parent_path))
 
     presrc_content += self.get_part_preamble(mode=MODE_EXEC,
-                                            boot_code=preamble)
+                                             boot_code=preamble)
     original_userspace = self.get_part_user_code(mode=MODE_EXEC)
 
     f = open(src_filename, 'wt')
