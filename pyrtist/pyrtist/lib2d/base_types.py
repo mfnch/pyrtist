@@ -20,20 +20,51 @@ class Scalar(float):
     '''
 
 
-class Point(Taker):
+class Point(object):
+    '''Point with 2 components.
+
+    A Point() can be created in one of the following ways:
+    - Point(), Point(x) or Point(x, y). Use the provided argument to set the
+      x and y components. Missing components are set to zero.
+    - Point(Point(...)) to copy the point given as first argument.
+    - Point(tuple) to set from a tuple.
+    '''
+
     @staticmethod
     def sum(points, default=None):
         return sum(points, default or Point())
 
-    def __init__(self, value=None, x=0.0, y=0.0):
-        self.x = x
-        self.y = y
-        super(Point, self).__init__()
-        if value is not None:
-            self.take(value)
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            self.x = self.y = 0.0
+        else:
+            arg0 = args[0]
+            if isinstance(arg0, numbers.Number):
+                xy = args
+            elif isinstance(arg0, Point):
+                xy = (arg0.x, arg0.y) + args[1:]
+            elif isinstance(arg0, tuple):
+                xy = arg0 + args[1:]
+            else:
+                raise TypeError('Unknown type of first argument of Point()')
+            if len(xy) == 2:
+                self.x = float(xy[0])
+                self.y = float(xy[1])
+            elif len(xy) > 2:
+                raise TypeError('Too many arguments to Point()')
+            else:
+                assert len(args) == 1
+                self.x = xy[0]
+                self.y = 0.0
+        # The code below is there for compatibility reasons, but we should get
+        # rid of it eventually.
+        if 'x' in kwargs:
+            self.x = kwargs['x']
+        if 'y' in kwargs:
+            self.y = kwargs['y']
 
     def __repr__(self):
-        return 'Point(({x}, {y}))'.format(x=self.x, y=self.y)
+        return 'Point({x}, {y})'.format(x=self.x, y=self.y)
 
     def __iter__(self):
         return iter((self.x, self.y))
@@ -69,8 +100,9 @@ class Point(Taker):
 
     def normalize(self):
         n = self.norm()
-        self.x /= n
-        self.y /= n
+        if n != 0.0:
+            self.x /= n
+            self.y /= n
 
     def normalized(self):
         p = self.copy()
@@ -87,19 +119,6 @@ def Py(value):
 def Pang(angle):
     'Return a Point of unit norm forming the specified angle with the x axis.'
     return Point(x=math.cos(angle), y=math.sin(angle))
-
-@combination(Point, Point)
-def fn(child, parent):
-    parent.x = child.x
-    parent.y = child.y
-
-@combination(tuple, Point)
-def fn(tp, point):
-    if len(tp) != 2:
-        raise RejectException()
-    x, y = tp
-    point.x = float(x)
-    point.y = float(y)
 
 
 class PointTaker(Taker):

@@ -1,3 +1,5 @@
+__all__ = ('CairoCmdExecutor',)
+
 import numbers
 import cairo
 

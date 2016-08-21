@@ -1,9 +1,9 @@
-from base import *
-from base_types import *
-from path import Path
-from window import Window
-from cmd_stream import CmdStream, Cmd
-from style import *
+from .base import *
+from .base_types import *
+from .path import Path
+from .window import Window
+from .cmd_stream import CmdStream, Cmd
+from .style import *
 
 class Line(PointTaker):
     def __init__(self, *args):
