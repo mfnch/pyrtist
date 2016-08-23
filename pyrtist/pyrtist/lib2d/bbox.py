@@ -1,5 +1,5 @@
-from base import Taker, combination
-from base_types import Point
+from .base import Taker, combination
+from .core_types import Point
 
 class BBox(Taker):
     def __init__(self, *args):

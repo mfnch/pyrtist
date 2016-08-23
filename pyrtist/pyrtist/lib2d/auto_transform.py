@@ -2,7 +2,7 @@ import math
 import copy
 from collections import OrderedDict as odict
 
-from base_types import *
+from .core_types import *
 psum = Point.sum
 
 

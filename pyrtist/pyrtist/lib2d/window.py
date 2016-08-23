@@ -5,7 +5,7 @@ from cmd_stream import Cmd, CmdStream
 from style import Color, Stroke
 from cairo_cmd_exec import CairoCmdExecutor
 from bbox import BBox
-from base_types import Point
+from core_types import Point
 
 
 class Hot(object):

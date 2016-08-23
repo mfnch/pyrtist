@@ -3,9 +3,9 @@ __all__ = ('CairoCmdExecutor',)
 import numbers
 import cairo
 
-from base_types import *
-from cmd_stream import CmdStream
-from style import Cap, Join
+from .core_types import *
+from .cmd_stream import CmdStream
+from .style import Cap, Join
 
 def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):
     prev_mx = ctx.get_matrix()

@@ -1,10 +1,10 @@
 __all__ = ('Color', 'Grey', 'Stroke', 'Style',
            'Border', 'StrokeStyle', 'Join', 'Cap')
 
-from base import *
-from base_types import *
-from path import Path
-from cmd_stream import Cmd, CmdStream
+from .base import *
+from .core_types import *
+from .path import Path
+from .cmd_stream import Cmd, CmdStream
 
 ### Color #####################################################################
 class Color(object):

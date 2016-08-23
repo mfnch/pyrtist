@@ -2,8 +2,8 @@ __all__ = ('Cmd', 'CmdStream', 'CmdArgFilter')
 
 import math
 
-from base import *
-from base_types import *
+from .base import *
+from .core_types import *
 
 class Cmd(object):
     names = ('move_to', 'line_to', 'ext_arc_to', 'close_path',
@@ -11,6 +11,11 @@ class Cmd(object):
              'set_source_rgb', 'set_source_rgba',
              'stroke', 'fill', 'fill_preserve', 'save', 'restore',
              'set_bbox')
+
+    @classmethod
+    def register_commands(cls):
+        for cmd_nr, name in enumerate(cls.names):
+            setattr(cls, name, cmd_nr)
 
     def __init__(self, *args):
         self.args = tuple(args)
@@ -39,8 +44,7 @@ class Cmd(object):
             new_args.append(arg_filter(arg))
         return Cmd(*new_args)
 
-for cmd_nr, name in enumerate(Cmd.names):
-    setattr(Cmd, name, cmd_nr)
+Cmd.register_commands()
 
 
 class CmdArgFilter(object):

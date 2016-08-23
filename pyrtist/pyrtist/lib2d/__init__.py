@@ -1,5 +1,5 @@
 import base
-from .base_types import *
+from .core_types import *
 from .cmd_stream import Cmd, CmdStream
 from .line import Line
 from .circle import Circle

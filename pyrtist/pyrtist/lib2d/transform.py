@@ -2,7 +2,8 @@ __all__ = ('Transform',)
 
 import math
 
-from base_types import *
+from .core_types import *
+
 
 class Transform(object):
     '''Parametrized `Matrix` object.

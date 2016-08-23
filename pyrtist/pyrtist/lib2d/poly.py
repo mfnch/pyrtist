@@ -1,12 +1,12 @@
 __all__ = ('Poly', 'Rectangle')
 
-from base import *
-from base_types import *
-from path import Path
-from window import Window
-from cmd_stream import CmdStream, Cmd
-from style import *
-from base_types import Point
+from .base import *
+from .core_types import *
+from .path import Path
+from .window import Window
+from .cmd_stream import CmdStream, Cmd
+from .style import *
+from .core_types import Point
 
 class Poly(PointTaker):
     def __init__(self, *args):

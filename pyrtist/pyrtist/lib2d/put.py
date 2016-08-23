@@ -1,9 +1,9 @@
-from base import *
-from base_types import *
-from cmd_stream import *
-from window import Window
-from transform import Transform
-from auto_transform import Constraint as Near, AutoTransform
+from .base import *
+from .core_types import *
+from .cmd_stream import *
+from .window import Window
+from .transform import Transform
+from .auto_transform import Constraint as Near, AutoTransform
 
 __all__ = ('Put', 'SimplePut', 'Near')
 

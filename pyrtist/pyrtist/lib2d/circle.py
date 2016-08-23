@@ -1,11 +1,11 @@
 import math
 
-from base import Taker, combination, RejectException
-from base_types import Point
-from cmd_stream import CmdStream, Cmd
-from path import Path
-from style import *
-from window import Window
+from .base import Taker, combination, RejectException
+from .core_types import Point
+from .cmd_stream import CmdStream, Cmd
+from .path import Path
+from .style import *
+from .window import Window
 
 class Circle(Taker):
     def __init__(self, *args):
