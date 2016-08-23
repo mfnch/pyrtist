@@ -1,7 +1,7 @@
 import math
 
 from base import Taker, combination, RejectException
-from base_types import Point, Px, Py
+from base_types import Point
 from cmd_stream import CmdStream, Cmd
 from path import Path
 from style import *
@@ -45,8 +45,8 @@ def fn(circle, path):
     else:
         rx = ry = circle.radii[0]
 
-    one_zero = circle.center + Px(rx)
-    zero_one = circle.center + Py(ry)
+    one_zero = circle.center + Point.vx(rx)
+    zero_one = circle.center + Point.vy(ry)
     path.cmd_stream(Cmd(Cmd.move_to, one_zero),
                     Cmd(Cmd.ext_arc_to, circle.center, one_zero, zero_one,
                         0.0, 2.0*math.pi))

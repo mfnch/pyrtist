@@ -23,6 +23,9 @@ class Color(object):
     def __repr__(self):
         return 'Color(({}, {}, {}))'.format(self.r, self.g, self.b)
 
+    def __iter__(self):
+        return iter((self.r, self.g, self.b, self.a))
+
 @combination(Color, CmdStream)
 def fn(color, cmd_stream):
     cmd_stream(Cmd(Cmd.set_source_rgba, color.r, color.g, color.b, color.a))

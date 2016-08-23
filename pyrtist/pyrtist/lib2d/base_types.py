@@ -31,6 +31,21 @@ class Point(object):
     '''
 
     @staticmethod
+    def vx(delta_x):
+        'Return a vector with the given x component and zero y component.'
+        return Point(delta_x)
+
+    @staticmethod
+    def vy(delta_y):
+        'Return a vector with the given y component and zero x component.'
+        return Point(0.0, delta_y)
+
+    @staticmethod
+    def vangle(angle):
+        'Return a unit vector forming the specified angle with the x axis.'
+        return Point(math.cos(angle), math.sin(angle))
+
+    @staticmethod
     def sum(points, default=None):
         return sum(points, default or Point())
 
@@ -111,10 +126,10 @@ class Point(object):
 
 
 def Px(value):
-    return Point(x=value)
+    return Point.vx(value)
 
 def Py(value):
-    return Point(y=value)
+    return Point.vy(value)
 
 def Pang(angle):
     'Return a Point of unit norm forming the specified angle with the x axis.'
