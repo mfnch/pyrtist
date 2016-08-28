@@ -142,7 +142,7 @@ static PyObject* PyDeepSurface_Transfer(PyObject* ds, PyObject* args) {
 static PyObject* PyDeepSurface_SaveToFiles(PyObject* ds, PyObject* args) {
   const char* image_file_name = nullptr;
   const char* normals_file_name = nullptr;
-  if (!PyArg_ParseTuple(args, "zz:DeepSurface.save_normals",
+  if (!PyArg_ParseTuple(args, "zz:DeepSurface.save_to_files",
                         &image_file_name, &normals_file_name))
     return nullptr;
 

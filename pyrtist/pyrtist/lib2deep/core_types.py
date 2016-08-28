@@ -10,6 +10,11 @@ import math
 
 from ..lib2d import Point
 
+
+class Z(float):
+    'Used to mark Z coordinates in commands.'
+
+
 class Point3(object):
     '''Point with 3 components.
 
