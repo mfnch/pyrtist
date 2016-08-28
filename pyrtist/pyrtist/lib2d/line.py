@@ -1,3 +1,5 @@
+__all__ = ('Line',)
+
 from .base import *
 from .core_types import *
 from .path import Path

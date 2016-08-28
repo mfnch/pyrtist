@@ -31,12 +31,12 @@ class Point(object):
     '''
 
     @staticmethod
-    def vx(delta_x):
+    def vx(delta_x=1.0):
         'Return a vector with the given x component and zero y component.'
         return Point(delta_x)
 
     @staticmethod
-    def vy(delta_y):
+    def vy(delta_y=1.0):
         'Return a vector with the given y component and zero x component.'
         return Point(0.0, delta_y)
 

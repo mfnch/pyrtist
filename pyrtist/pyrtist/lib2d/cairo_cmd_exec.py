@@ -34,47 +34,70 @@ class CairoCmdExecutor(object):
              Join.round: cairo.LINE_JOIN_ROUND,
              Join.bevel: cairo.LINE_JOIN_BEVEL}
 
-    def __init__(self, size=None, resolution=None, origin=None, mode=None):
-        if size is None:
-            raise ValueError('size missing')
+    @classmethod
+    def create_image_surface(cls, mode, width, height, bg_color=None):
+        '''Create a new image surface.'''
+        cairo_fmt = cls.formats.get(mode, None)
+        if cairo_fmt is None:
+            raise ValueError('Invalid format {}'.format(mode))
+        return cairo.ImageSurface(cairo_fmt, width, height)
 
-        orig_mode = mode
-        mode = self.formats.get(orig_mode, self.default_mode)
-        if mode is None:
-            raise ValueError('Unknown mode {}'.format(orig_mode))
+    @staticmethod
+    def for_surface(cairo_surface, top_left=None, bot_right=None,
+                    top_right=None, bot_left=None, bg_color=None):
+        '''Create a CairoCmdExecutor from a given cairo surface and the
+        coordinates of two opposite corners.
 
-        # Ensure origin and size are Point objects.
-        size = Point(size)
-        origin = Point(self.default_origin if origin is None else origin)
+        The user can either provide top_left, bot_right or top_right, bot_left.
+        These optional arguments should contain Point objects (or tuples)
+        specifying the coordinates of the corresponding corner. A reference
+        system will be set up to honor the user request. If no corner
+        coordinates are specified, then this function assumes bot_left=(0, 0)
+        and top_right=(width, height).
 
-        self.mode = mode
-        self.size = size
-        resolution = (self.default_resolution if resolution is None
-                      else resolution)
-        resolution = \
-          (Point((resolution, resolution))
-           if isinstance(resolution, numbers.Number)
-           else Point(resolution))
+        bg_color, if provided, is used to set the background with a uniform
+        color.
+        '''
+        if ((top_left is None) != (bot_right is None) or
+            (top_right is None) != (bot_left is None)):
+            raise TypeError('Only opposing corners should be set')
 
-        right_bottom = origin + size
-        num_x = int(abs(size.x*resolution.x))
-        num_y = int(abs(size.y*resolution.y))
+        if bot_left is None:
+            if top_left is None:
+                bot_left = Point(0, 0)
+                top_right = Point(cairo_surface.get_width(),
+                                  cairo_surface.get_height())
+            else:
+                top_left, bot_right = Point(top_left), Point(bot_right)
+        else:
+            if top_left is not None:
+                raise TypeError('Only opposing corners should be set')
+            bot_left, top_right = Point(bot_left), Point(top_right)
 
-        self.surface = surface = cairo.ImageSurface(mode, num_x, num_y)
-        self.context = context = cairo.Context(surface)
+        if top_left is None:
+            top_left = Point(bot_left.x, top_right.y)
+            bot_right = Point(top_right.x, bot_left.y)
 
-        context.save()
-        context.rectangle(0, 0, num_x, num_y)
-        context.set_source_rgb(1.0, 1.0, 1.0)
-        context.fill()
-        context.restore()
+        diag = bot_right - top_left
+        scale = Point(cairo_surface.get_width()/diag.x,
+                      cairo_surface.get_height()/diag.y)
+        return CairoCmdExecutor(cairo_surface, top_left, scale,
+                                bg_color=bg_color)
 
-        # Flip the y axis.
-        resolution.y = -resolution.y;
-        origin.y += size.y
+    def __init__(self, surface, origin, resolution, bg_color=None):
+        context = cairo.Context(surface)
+        self.surface = surface
+        self.context = context
         self.vector_transform = resolution
         self.scalar_transform = 0.5*(abs(resolution.x) + abs(resolution.y))
         self.origin = origin
+        self.size = (surface.get_width(), surface.get_height())
+        if bg_color is not None:
+            context.save()
+            context.rectangle(0, 0, *self.size)
+            context.set_source_rgba(*bg_color)
+            context.fill()
+            context.restore()
 
     def execute(self, cmds):
         for cmd in cmds:

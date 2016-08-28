@@ -1,6 +1,5 @@
 import base
 from .core_types import *
-from .cmd_stream import Cmd, CmdStream
 from .line import Line
 from .circle import Circle
 from .poly import *
