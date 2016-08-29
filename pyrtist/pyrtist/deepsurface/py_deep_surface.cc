@@ -7,16 +7,24 @@
 static PyObject* PyDeepSurface_New(PyTypeObject* type,
                                    PyObject* args, PyObject* kwds);
 static void PyDeepSurface_Dealloc(PyObject* py_obj);
-static PyObject* PyDeepSurface_GetImageBuffer(PyObject* ds, PyObject* args);
-static PyObject* PyDeepSurface_GetDepthBuffer(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetWidth(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetHeight(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetSrcImageBuffer(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetDstImageBuffer(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetSrcDepthBuffer(PyObject* ds, PyObject* args);
+static PyObject* PyDeepSurface_GetDstDepthBuffer(PyObject* ds, PyObject* args);
 static PyObject* PyDeepSurface_Clear(PyObject* ds, PyObject* args);
 static PyObject* PyDeepSurface_Transfer(PyObject* ds, PyObject* args);
 static PyObject* PyDeepSurface_SaveToFiles(PyObject* ds, PyObject* args);
 
 // PyDeepSurface object methods.
 static PyMethodDef pydeepsurface_methods[] = {
-  {"get_image_buffer", PyDeepSurface_GetImageBuffer, METH_VARARGS},
-  {"get_depth_buffer", PyDeepSurface_GetDepthBuffer, METH_VARARGS},
+  {"get_width", PyDeepSurface_GetWidth, METH_NOARGS},
+  {"get_height", PyDeepSurface_GetHeight, METH_NOARGS},
+  {"get_src_image_buffer", PyDeepSurface_GetSrcImageBuffer, METH_VARARGS},
+  {"get_dst_image_buffer", PyDeepSurface_GetDstImageBuffer, METH_VARARGS},
+  {"get_src_depth_buffer", PyDeepSurface_GetSrcDepthBuffer, METH_VARARGS},
+  {"get_dst_depth_buffer", PyDeepSurface_GetDstDepthBuffer, METH_VARARGS},
   {"clear", PyDeepSurface_Clear, METH_VARARGS},
   {"transfer", PyDeepSurface_Transfer, METH_VARARGS},
   {"save_to_files", PyDeepSurface_SaveToFiles, METH_VARARGS},
@@ -101,22 +109,42 @@ static void PyDeepSurface_Dealloc(PyObject* py_obj) {
 }
 
 static PyObject*
-PyDeepSurface_GetImageBuffer(PyObject* self, PyObject* args) {
-  if (!PyArg_ParseTuple(args, ":DeepSurface.get_src_cairo_image"))
+PyDeepSurface_GetSrcImageBuffer(PyObject* self, PyObject* args) {
+  if (!PyArg_ParseTuple(args, ":DeepSurface.get_src_image_buffer"))
     return nullptr;
 
   PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
-  ARGBImageBuffer* ib = py_ds->deep_surface->GetImageBuffer();
+  ARGBImageBuffer* ib = py_ds->deep_surface->GetSrcImageBuffer();
   return PyImageBuffer_FromC(&PyImageBuffer_Type, ib, self);
 }
 
 static PyObject*
-PyDeepSurface_GetDepthBuffer(PyObject* self, PyObject* args) {
-  if (!PyArg_ParseTuple(args, ":DeepSurface.get_depth_buffer"))
+PyDeepSurface_GetDstImageBuffer(PyObject* self, PyObject* args) {
+  if (!PyArg_ParseTuple(args, ":DeepSurface.get_dst_image_buffer"))
     return nullptr;
 
   PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
-  DeepBuffer* db = py_ds->deep_surface->GetDeepBuffer();
+  ARGBImageBuffer* ib = py_ds->deep_surface->GetDstImageBuffer();
+  return PyImageBuffer_FromC(&PyImageBuffer_Type, ib, self);
+}
+
+static PyObject*
+PyDeepSurface_GetSrcDepthBuffer(PyObject* self, PyObject* args) {
+  if (!PyArg_ParseTuple(args, ":DeepSurface.get_src_depth_buffer"))
+    return nullptr;
+
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
+  DeepBuffer* db = py_ds->deep_surface->GetSrcDepthBuffer();
+  return PyDeepBuffer_FromC(&PyDeepBuffer_Type, db, self);
+}
+
+static PyObject*
+PyDeepSurface_GetDstDepthBuffer(PyObject* self, PyObject* args) {
+  if (!PyArg_ParseTuple(args, ":DeepSurface.get_dst_depth_buffer"))
+    return nullptr;
+
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
+  DeepBuffer* db = py_ds->deep_surface->GetDstDepthBuffer();
   return PyDeepBuffer_FromC(&PyDeepBuffer_Type, db, self);
 }
 
@@ -150,4 +178,16 @@ static PyObject* PyDeepSurface_SaveToFiles(PyObject* ds, PyObject* args) {
   if (py_ds->deep_surface->SaveToFiles(image_file_name, normals_file_name))
     Py_RETURN_TRUE;
   Py_RETURN_FALSE;
+}
+
+static PyObject* PyDeepSurface_GetWidth(PyObject* ds, PyObject* args) {
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(ds);
+  long v = py_ds->deep_surface->GetWidth();
+  return PyLong_FromLong(static_cast<long>(v));
+}
+
+static PyObject* PyDeepSurface_GetHeight(PyObject* ds, PyObject* args) {
+  PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(ds);
+  long v = py_ds->deep_surface->GetHeight();
+  return PyLong_FromLong(static_cast<long>(v));
 }

@@ -1,17 +1,20 @@
 #include "deep_surface.h"
 #include "py_deep_buffer.h"
+#include "py_image_buffer.h"
 
 // Forward declarations.
 static PyObject* PyDeepBuffer_New(PyTypeObject* type,
                                   PyObject* args, PyObject* kwds);
 static void PyDeepBuffer_Dealloc(PyObject* py_obj);
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args);
+static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
 
 // PyDeepBuffer object methods.
 static PyMethodDef pydeepbuffer_methods[] = {
   {"draw_sphere", PyDeepBuffer_DrawSphere, METH_VARARGS},
+  {"compute_normals", PyDeepBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDeepBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDeepBuffer_GetData, METH_NOARGS},
   {NULL, NULL, 0, NULL}
@@ -148,6 +151,12 @@ static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args) {
   PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
   py_db->deep_buffer->DrawSphere(x, y, z, radius, z_scale);
   Py_RETURN_NONE;
+}
+
+static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args) {
+  PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
+  ARGBImageBuffer* normals = py_db->deep_buffer->ComputeNormals();
+  return PyImageBuffer_FromC(&PyImageBuffer_Type, normals, nullptr);
 }
 
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args) {

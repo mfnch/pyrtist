@@ -1,8 +1,52 @@
 __all__ = ('DeepWindow',)
 
-from ..lib2d import BBox
+from ..lib2d import Point, Color, BBox, Window, View
 from ..lib2d.base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
+from .cmd_exec import CmdExecutor
+
+
+class DeepWindowRenderer(object):
+    def __init__(self, deep_window, mode):
+        self.deep_window = deep_window
+        self.mode = mode
+
+    def draw_full_view(self, target_surface):
+        dw = self.deep_window
+        if dw.cmd_executor is not None:
+            raise ValueError('Cannot render a window with a custom executor')
+
+        bb = BBox(dw)
+        b_min = bb.min_point
+        b_max = bb.max_point
+        size = bb.max_point - bb.min_point
+
+        wx = target_surface.get_width()
+        wy = target_surface.get_height()
+        r = min(wx/float(size.x), wy/float(size.y))
+        new_size = Point(wx/r, wy/r)
+        tr = (new_size - size)*0.5
+        origin = b_min - tr
+
+        deep_surface = CmdExecutor.create_surface(wx, wy)
+        ce = CmdExecutor.for_surface(deep_surface, bot_left=origin,
+                                     top_right=origin + new_size,
+                                     bg_color=Color.grey)
+        tmp = DeepWindow(ce)
+        #tmp.Rectangle(b_min, b_max, Color.white)
+        tmp.take(dw)
+
+        if self.mode == 'depth':
+            db = deep_surface.get_dst_depth_buffer()
+            db = db.compute_normals()
+        else:
+            db = deep_surface.get_dst_image_buffer()
+
+        src_data = db.get_data()
+        dst_data = target_surface.get_data()
+        dst_data[:] = src_data[:]
+        return View(bb, origin, new_size)
+    draw_full_view.__doc__ = Window.draw_full_view.__doc__
 
 
 class DeepWindow(Taker):
@@ -16,12 +60,33 @@ class DeepWindow(Taker):
         if cmd_exec is not None:
             self.cmd_stream = cmd_exec.execute(self.cmd_stream)
 
+    def render(self, mode='real'):
+        return DeepWindowRenderer(self, mode)
+
 
 @combination(CmdStream, DeepWindow)
 def cmd_stream_at_deep_window(cmd_stream, deep_window):
     deep_window.cmd_stream(cmd_stream)
     deep_window._consume_cmds()
 
+@combination(DeepWindow, BBox)
+def deep_window_at_bbox(deep_window, bbox):
+    for cmd in deep_window.cmd_stream:
+        args = cmd.get_args()
+        for arg in args:
+            if isinstance(arg, Point):
+                bbox(arg)
+
+@combination(DeepWindow, DeepWindow)
+def deep_window_at_deep_window(child, parent):
+    cmd_exec = parent.cmd_executor
+    if cmd_exec is not None:
+        cmd_exec.execute(child.cmd_stream)
+    else:
+        parent.cmd_stream.take(child.cmd_stream)
+
 @combination(BBox, DeepWindow, 'BBox')
 def bbox_at_deep_window(bbox, deep_window):
-    pass
+    if not bbox:
+        return
+    deep_window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))

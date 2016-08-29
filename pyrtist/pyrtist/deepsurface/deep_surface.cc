@@ -63,8 +63,8 @@ void DeepSurface::Transfer(bool and_clear) {
 int main() {
   DeepSurface ds(320, 320, 200);
 
-  auto ib = ds.GetImageBuffer();
-  auto db = ds.GetDeepBuffer();
+  auto ib = ds.GetSrcImageBuffer();
+  auto db = ds.GetSrcDepthBuffer();
 
   ib->DrawCircle(107, 70, 80, 0xffff0000);
   db->DrawSphere(107, 70, 0, 80, 1.0);

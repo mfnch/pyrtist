@@ -53,8 +53,10 @@ def sphere_at_cmd_stream(sphere, cmd_stream):
     center_2d = Point(center.x, center.y)
     one_zero = center_2d + Point.vx(rx)
     zero_one = center_2d + Point.vy(ry)
-    cmd_stream.take(Cmd(Cmd.draw_sphere, center_2d, one_zero, zero_one,
-                        Z(center.z), Z(rz), sphere.window))
+    cmd_stream.take(Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
+                        Z(center.z), Z(rz)),
+                    Cmd(Cmd.src_draw, sphere.window),
+                    Cmd(Cmd.transfer))
 
 @combination(Sphere, DeepWindow)
 def sphere_at_window(sphere, deep_window):

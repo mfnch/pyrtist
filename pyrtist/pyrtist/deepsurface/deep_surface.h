@@ -23,11 +23,20 @@ class DeepSurface {
             dst_image_buffer_.IsValid());
   }
 
+  int GetWidth() { return dst_deep_buffer_.GetWidth(); }
+  int GetHeight() { return dst_deep_buffer_.GetHeight(); }
+
   /// Get the depth buffer over which the user is expected to draw.
-  DeepBuffer* GetDeepBuffer() { return &src_deep_buffer_; }
+  DeepBuffer* GetSrcDepthBuffer() { return &src_deep_buffer_; }
+
+  /// Get the destination depth buffer.
+  DeepBuffer* GetDstDepthBuffer() { return &dst_deep_buffer_; }
 
   /// Get the image buffer over which the user is expected to draw.
-  ARGBImageBuffer* GetImageBuffer() { return &src_image_buffer_; }
+  ARGBImageBuffer* GetSrcImageBuffer() { return &src_image_buffer_; }
+
+  /// Get the image buffer over which the user is expected to draw.
+  ARGBImageBuffer* GetDstImageBuffer() { return &dst_image_buffer_; }
 
   /// Clear the source buffers.
   void Clear() {

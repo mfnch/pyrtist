@@ -17,10 +17,6 @@ def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):
     ctx.set_matrix(prev_mx)
 
 class CairoCmdExecutor(object):
-    default_origin = (0.0, 0.0)
-    default_mode = cairo.FORMAT_RGB24
-    default_resolution = 10.0
-
     formats = {'a1': cairo.FORMAT_A1,
                'a8': cairo.FORMAT_A8,
                'rgb24': cairo.FORMAT_RGB24,
@@ -35,7 +31,7 @@ class CairoCmdExecutor(object):
              Join.bevel: cairo.LINE_JOIN_BEVEL}
 
     @classmethod
-    def create_image_surface(cls, mode, width, height, bg_color=None):
+    def create_image_surface(cls, mode, width, height):
         '''Create a new image surface.'''
         cairo_fmt = cls.formats.get(mode, None)
         if cairo_fmt is None:
