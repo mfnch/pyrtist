@@ -34,44 +34,21 @@ from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
 
 _box_preamble_centered = '''
 def gui(w):
-  info_file_name = $INFO_FILENAME$
-  bb = BBox(w); b_min = bb.min_point; b_max = bb.max_point
-  wx, wy = ($SX$, $SY$); size = bb.max_point - bb.min_point
-  r = min(wx/float(size.x), wy/float(size.y))
-  new_size = Point(wx/r, wy/r)
-  tr = (new_size - size)*0.5; origin = b_min - tr
-  sf = CairoCmdExecutor.create_image_surface('rgb24', wx, wy)
-  cex = CairoCmdExecutor.for_surface(sf, bot_left=origin,
-                                     top_right=origin + new_size,
-                                     bg_color=Color.grey)
-  tmp = Window(cex)
-  tmp.take(Rectangle(b_min, b_max, Color.white), Color(), w)
-  tmp.save($IMG_FILENAME$)
-  with open(info_file_name, 'w') as f:
-    f.write(', '.join(map(str, (2, b_min.x, b_min.y, b_max.x, b_max.y))) +
-            '\\n')
-    f.write(', '.join(map(str, (origin.x, origin.y, new_size.x, new_size.y))) +
-            '\\n')
+  sf = CairoCmdExecutor.create_image_surface('rgb24', $SX$, $SY$)
+  view = w.draw_full_view(sf)
+  sf.write_to_png($IMG_FILENAME$)
+  with open($INFO_FILENAME$, 'w') as f:
+    f.write(repr(view))
 '''
 
 _box_preamble_view = '''
 def gui(w):
-  info_file_name = $INFO_FILENAME$
-  bb = BBox(w); b_min = bb.min_point; b_max = bb.max_point
-  size = Point($SX$, $SY$); origin = Point($OX$, $OY$)
   sf = CairoCmdExecutor.create_image_surface('rgb24', $PX$, $PY$)
-  cex = CairoCmdExecutor.for_surface(sf, bot_left=origin,
-                                     top_right=origin + size,
-                                     bg_color=Color.grey)
-  tmp = Window(cex)
-  tmp.Rectangle(origin, origin + size, Color.grey)
-  tmp.Rectangle(b_min, b_max, Color.white)
-  tmp.Color()
-  tmp.take(w)
-  tmp.save($IMG_FILENAME$)
-  with open(info_file_name, 'w') as f:
-    f.write(', '.join(map(str, (2, b_min.x, b_min.y, b_max.x, b_max.y))) + '\\n')
-    f.write(', '.join(map(str, (origin.x, origin.y, size.x, size.y))) + '\\n')
+  view = View(None, Point($OX$, $OY$), Point($SX$, $SY$))
+  view = w.draw_zoomed_view(sf, view)
+  sf.write_to_png($IMG_FILENAME$)
+  with open($INFO_FILENAME$, 'w') as f:
+    f.write(repr(view))
 '''
 
 class PyImageDrawer(ImageDrawer):

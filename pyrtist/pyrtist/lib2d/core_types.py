@@ -5,7 +5,7 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close')
+           'Matrix', 'Close', 'View')
 
 import math
 import numbers
@@ -248,3 +248,20 @@ class Matrix(object):
         ret = self.copy()
         ret.invert()
         return ret
+
+
+class View(object):
+    '''Object used to pass information to the GUI.'''
+
+    def __init__(self, bbox, origin, size):
+        self.bbox = bbox
+        self.origin = origin
+        self.size = size
+
+    def __repr__(self):
+        b1 = self.bbox.min_point
+        b2 = self.bbox.max_point
+        bbox_args = ', '.join(map(str, (2, b1.x, b1.y, b2.x, b2.y)))
+        other_args = ', '.join(map(str, (self.origin.x, self.origin.y,
+                                         self.size.x, self.size.y)))
+        return '{}\n{}\n'.format(bbox_args, other_args)
