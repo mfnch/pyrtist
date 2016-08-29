@@ -27,7 +27,6 @@ import gtk
 from geom2 import square_metric, Point
 import document
 from zoomable import ZoomableArea, DrawSucceded, DrawFailed
-from boxdraw import BoxImageDrawer
 from pydraw import PyImageDrawer
 from refpoints import GContext, RefPoint, \
   REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED

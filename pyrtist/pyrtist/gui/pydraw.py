@@ -34,7 +34,7 @@ from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
 
 _box_preamble_centered = '''
 def gui(w):
-  info_file_name = "$INFO_FILENAME$"
+  info_file_name = $INFO_FILENAME$
   bb = BBox(w); b_min = bb.min_point; b_max = bb.max_point
   wx, wy = ($SX$, $SY$); size = bb.max_point - bb.min_point
   r = min(wx/float(size.x), wy/float(size.y))
@@ -46,7 +46,7 @@ def gui(w):
                                      bg_color=Color.grey)
   tmp = Window(cex)
   tmp.take(Rectangle(b_min, b_max, Color.white), Color(), w)
-  tmp.save("$IMG_FILENAME$")
+  tmp.save($IMG_FILENAME$)
   with open(info_file_name, 'w') as f:
     f.write(', '.join(map(str, (2, b_min.x, b_min.y, b_max.x, b_max.y))) +
             '\\n')
@@ -56,7 +56,7 @@ def gui(w):
 
 _box_preamble_view = '''
 def gui(w):
-  info_file_name = "$INFO_FILENAME$"
+  info_file_name = $INFO_FILENAME$
   bb = BBox(w); b_min = bb.min_point; b_max = bb.max_point
   size = Point($SX$, $SY$); origin = Point($OX$, $OY$)
   sf = CairoCmdExecutor.create_image_surface('rgb24', $PX$, $PY$)
@@ -68,20 +68,11 @@ def gui(w):
   tmp.Rectangle(b_min, b_max, Color.white)
   tmp.Color()
   tmp.take(w)
-  tmp.save("$IMG_FILENAME$")
+  tmp.save($IMG_FILENAME$)
   with open(info_file_name, 'w') as f:
     f.write(', '.join(map(str, (2, b_min.x, b_min.y, b_max.x, b_max.y))) + '\\n')
     f.write(', '.join(map(str, (origin.x, origin.y, size.x, size.y))) + '\\n')
 '''
-
-def escape_string(s):
-  """Many languages (including Box and Python) take a string representation,
-  where escape sequences are accepted, and transform it into a final string.
-  Here we do the opposite. For example, if a string is made of one character
-  with ASCII value 0, this string maps it to a string made of two characters:
-  '\\' and '\0': "\0" --> "\\\0"
-  """
-  return s.replace("\\", "\\\\") # At the moment we just do this
 
 class PyImageDrawer(ImageDrawer):
   def __init__(self, document):
@@ -106,8 +97,8 @@ class PyImageDrawer(ImageDrawer):
     if preamble == None:
       preamble = ''
 
-    substs = [("$INFO_FILENAME$", escape_string(info_out_filename)),
-              ("$IMG_FILENAME$", escape_string(img_out_filename))]
+    substs = [("$INFO_FILENAME$", repr(info_out_filename)),
+              ("$IMG_FILENAME$", repr(img_out_filename))]
     for var, val in substs + extra_substs:
       preamble = preamble.replace(var, str(val))
 
