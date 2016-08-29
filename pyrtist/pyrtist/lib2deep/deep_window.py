@@ -1,6 +1,9 @@
 __all__ = ('DeepWindow',)
 
+import os
+
 from ..lib2d import Point, Color, BBox, Window, View
+from ..lib2d.window import WindowBase
 from ..lib2d.base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
 from .cmd_exec import CmdExecutor
@@ -49,19 +52,35 @@ class DeepWindowRenderer(object):
     draw_full_view.__doc__ = Window.draw_full_view.__doc__
 
 
-class DeepWindow(Taker):
+class DeepWindow(WindowBase):
     def __init__(self, cmd_executor=None):
-        self.cmd_stream = CmdStream()
-        self.cmd_executor = cmd_executor
-        super(DeepWindow, self).__init__()
+        super(DeepWindow, self).__init__(CmdStream(), cmd_executor)
 
-    def _consume_cmds(self):
-        cmd_exec = self.cmd_executor
-        if cmd_exec is not None:
-            self.cmd_stream = cmd_exec.execute(self.cmd_stream)
+    def depth(self):
+        '''Return the normals view so that it can be rendered in the GUI.'''
+        return DeepWindowRenderer(self, 'depth')
 
-    def render(self, mode='real'):
-        return DeepWindowRenderer(self, mode)
+    def draw_full_view(self, target_surface):
+        return DeepWindowRenderer(self, 'real').draw_full_view(target_surface)
+    draw_full_view.__doc__ = Window.draw_full_view.__doc__
+
+    def save(self, real_file_name, depth_file_name=None,
+             size=None, resolution=None):
+        '''Save the real and depth parts of the image, computing the visible
+        area automatically.
+        '''
+        # Construct the depth file name, if not given.
+        if depth_file_name is None:
+            lhs, rhs = os.path.splitext(real_file_name)
+            depth_file_name = lhs + '-depth' + rhs
+
+        bbox, _, size, _ = \
+          self._check_for_save(None, size, resolution, None, None)
+        surface = CmdExecutor.create_surface(size[0], size[1])
+        cmd_exec = CmdExecutor.for_surface(surface, bot_left=bbox.min_point,
+                                           top_right=bbox.max_point)
+        cmd_exec.execute(self.cmd_stream)
+        cmd_exec.save(real_file_name, depth_file_name)
 
 
 @combination(CmdStream, DeepWindow)

@@ -94,6 +94,5 @@ class CmdExecutor(object):
         self.depth_buffer.draw_sphere(int(x), int(y), int(z_start),
                                       int(radius), z_scale)
 
-    def save(self, base_name):
-        self.deep_surface.save_to_files(base_name + '-real.png',
-                                        base_name + '-norm.png')
+    def save(self, real_file_name, depth_file_name):
+        self.deep_surface.save_to_files(real_file_name, depth_file_name)
