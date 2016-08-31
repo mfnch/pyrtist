@@ -114,15 +114,21 @@ class Point(object):
         return math.sqrt(self.norm2())
 
     def normalize(self):
+        '''Normalized this vector.'''
         n = self.norm()
         if n != 0.0:
             self.x /= n
             self.y /= n
 
     def normalized(self):
+        '''Return a normalized copy of this vector.'''
         p = self.copy()
         p.normalize()
         return p
+
+    def ort(self):
+        '''Return the ortogonal vector, rotated by 90 degrees anticlockwise.'''
+        return Point(-self.y, self.x)
 
 
 def Px(value):
@@ -175,8 +181,11 @@ class Matrix(object):
         return 'Matrix({})'.format(repr(self.value))
 
     def __mul__(self, b):
+
         if isinstance(b, Point):
             return self.apply(b)
+        if isinstance(b, tuple) and len(b) == 2:
+            return self.apply(Point(b))
 
         ret = self.copy()
         if isinstance(b, numbers.Number):
@@ -217,8 +226,9 @@ class Matrix(object):
         self.value[1][2] += p.y
 
     def apply(self, p):
-        'Apply the matrix to a Point.'
-
+        '''Apply the matrix to a Point.'''
+        if not isinstance(p, Point):
+            p = Point(p)
         (a11, a12, a13), (a21, a22, a23) = self.value
         return Point(x=a11*p.x + a12*p.y + a13,
                      y=a21*p.x + a22*p.y + a23)

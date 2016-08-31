@@ -1,6 +1,7 @@
 import base
 from .core_types import *
-from .line import Line
+from .axes import *
+from .line import *
 from .circle import Circle
 from .poly import *
 from .path import Path
