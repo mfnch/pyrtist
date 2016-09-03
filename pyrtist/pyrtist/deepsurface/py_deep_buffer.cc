@@ -6,6 +6,7 @@
 static PyObject* PyDeepBuffer_New(PyTypeObject* type,
                                   PyObject* args, PyObject* kwds);
 static void PyDeepBuffer_Dealloc(PyObject* py_obj);
+static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args);
@@ -13,6 +14,7 @@ static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
 
 // PyDeepBuffer object methods.
 static PyMethodDef pydeepbuffer_methods[] = {
+  {"draw_step", PyDeepBuffer_DrawStep, METH_VARARGS},
   {"draw_sphere", PyDeepBuffer_DrawSphere, METH_VARARGS},
   {"compute_normals", PyDeepBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDeepBuffer_SaveNormals, METH_VARARGS},
@@ -139,6 +141,22 @@ static void PyDeepBuffer_Dealloc(PyObject* py_obj) {
     // This buffer is embedded inside py_db->base: just do a DECREF.
     Py_DECREF(py_db->base);
   py_db->ob_type->tp_free(py_obj);
+}
+
+static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args) {
+  float clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+      start_x, start_y, start_z, end_x, end_y, end_z;
+  if (!PyArg_ParseTuple(args, "ffffffffff:DeepSurface.draw_step",
+                        &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
+                        &start_x, &start_y, &start_z, &end_x, &end_y, &end_z))
+    return nullptr;
+
+  PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
+  py_db->deep_buffer->DrawStep(clip_start_x, clip_start_y,
+                               clip_end_x, clip_end_y,
+                               start_x, start_y, start_z,
+                               end_x, end_y, end_z);
+  Py_RETURN_NONE;
 }
 
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args) {

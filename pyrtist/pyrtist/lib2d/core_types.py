@@ -103,8 +103,7 @@ class Point(object):
         return Point(x=self.x, y=self.y)
 
     def dot(self, p):
-        'Return the scalar product with p.'
-
+        '''Return the scalar product with p.'''
         return self.x*p.x + self.y*p.y
 
     def norm2(self):
@@ -129,6 +128,23 @@ class Point(object):
     def ort(self):
         '''Return the ortogonal vector, rotated by 90 degrees anticlockwise.'''
         return Point(-self.y, self.x)
+
+    def mirror(self, axes):
+        '''Mirror the point with respect to the x axis of the given Axes()
+        object.
+        '''
+        d = self - axes.origin
+        u10 = (axes.one_zero - axes.origin).normalized()
+        d_ort = u10*u10.dot(d)
+        return axes.origin - d + d_ort*2.0
+
+    def mirror_x(self, p):
+        '''Mirror the point with respect to the x axis.'''
+        return Point(self.x, 2.0*p.y - self.y)
+
+    def mirror_y(self, p):
+        '''Mirror the point with respect to the x axis.'''
+        return Point(2.0*p.x - self.x, self.y)
 
 
 def Px(value):
@@ -175,7 +191,7 @@ class Matrix(object):
     def __init__(self, value=None):
         if value is None:
             value = Matrix.identity
-        self.value = copy.deepcopy(value)
+        self.value = [list(value[0]), list(value[1])]
 
     def __repr__(self):
         return 'Matrix({})'.format(repr(self.value))
@@ -209,7 +225,6 @@ class Matrix(object):
 
     def copy(self):
         'Return a copy of the matrix.'
-
         return Matrix(value=self.value)
 
     def scale(self, s):

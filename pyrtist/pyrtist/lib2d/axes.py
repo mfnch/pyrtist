@@ -4,6 +4,18 @@ from .core_types import Point, Matrix
 
 
 class Axes(object):
+    '''Object describing a reference system with an origin and - not
+    necessarily orthogonal - axes.
+    '''
+
+    @staticmethod
+    def vx(origin, delta_x=1.0):
+        return Axes(origin, origin + Point.vx(delta_x))
+
+    @staticmethod
+    def vy(origin, delta_y=1.0):
+        return Axes(origin, origin + Point.vy(delta_y))
+
     def __init__(self, *args):
         if len(args) > 3:
             raise TypeError('Too many arguments to {}'

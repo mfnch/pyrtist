@@ -3,7 +3,8 @@ from ..lib2d.cmd_stream import CmdBase, CmdStreamBase
 
 
 class Cmd(CmdBase):
-    names = ('set_bbox', 'transfer', 'src_draw', 'on_sphere')
+    names = ('set_bbox', 'transfer', 'src_draw', 'on_step', 'on_plane',
+             'on_sphere')
 Cmd.register_commands()
 
 

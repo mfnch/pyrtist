@@ -40,6 +40,11 @@ class DeepBuffer : public ImageBuffer<float> {
 
   ARGBImageBuffer* ComputeNormals();
 
+  void DrawStep(float clip_start_x, float clip_start_y,
+                float clip_end_x, float clip_end_y,
+                float start_x, float start_y, float start_z,
+                float end_x, float end_y, float end_z);
+
   void DrawSphere(int x, int y, int z, int radius, float z_scale);
 };
 

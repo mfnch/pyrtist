@@ -13,6 +13,9 @@ class BBox(Taker):
     def __nonzero__(self):
         return (self.min_point is not None)
 
+    def __iter__(self):
+        return iter((self.min_point, self.max_point))
+
 @combination(tuple, BBox)
 @combination(Point, BBox)
 def fn(point, bbox):

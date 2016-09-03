@@ -58,6 +58,9 @@ class CmdStreamBase(Taker):
     def __repr__(self):
         return repr(self.cmds)
 
+    def __getitem__(self, index):
+        return self.cmds[index]
+
     def add(self, cmd_stream, arg_filter=None):
         if arg_filter is None:
             self.cmds += cmd_stream.cmds

@@ -85,6 +85,11 @@ class CmdExecutor(object):
     def cmd_src_draw(self, window):
         self.src_image.take(window)
 
+    def cmd_on_step(self, clip_start, clip_end, start, z_start, end, z_end):
+        args = (clip_start.x, clip_start.y, clip_end.x, clip_end.y,
+                start.x, start.y, z_start, end.x, end.y, z_end)
+        self.depth_buffer.draw_step(*map(float, args))
+
     def cmd_on_sphere(self, center_2d, one_zero, zero_one, z_start, z_end):
         x, y = center_2d
         radius = 0.5*((one_zero - center_2d).norm() +

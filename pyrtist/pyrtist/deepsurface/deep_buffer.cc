@@ -5,6 +5,54 @@
 
 #include "deep_buffer.h"
 
+void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
+                          float clip_end_x, float clip_end_y,
+                          float start_x, float start_y, float start_z,
+                          float end_x, float end_y, float end_z) {
+  if (clip_end_x < clip_start_x) std::swap(clip_start_x, clip_end_x);
+  if (clip_end_y < clip_start_y) std::swap(clip_start_y, clip_end_y);
+  int ix0 = static_cast<int>(floorf(clip_start_x));
+  int iy0 = static_cast<int>(floorf(clip_start_y));
+  int ix1 = static_cast<int>(ceilf(clip_end_x));
+  int iy1 = static_cast<int>(ceilf(clip_end_y));
+  auto region = GetRegion(ix0, iy0, ix1, iy1);
+  if (!region.IsValid()) {
+    std::cout << "NOT VALID" << std::endl;
+    return;
+  }
+
+  float min_z = std::min(start_z, end_z);
+  float max_z = std::max(start_z, end_z);
+  float dx = end_x - start_x;
+  float dy = end_y - start_y;
+  float dz = end_z - start_z;
+  float v2 = dx*dx + dy*dy;
+  float increment_x = dx*dz/v2;
+  float increment_y = dy*dz/v2;
+  float z_at_line_start = (((start_z*end_x - end_z*start_x)*dx +
+                            (start_z*end_y - end_z*start_y)*dy)/v2 +
+                           increment_x*ix0 + increment_y*iy0);
+
+  int32_t width = region.GetWidth();
+  int32_t stride = region.GetStride();
+  int32_t height = region.GetHeight();
+  int32_t skip = stride - width;
+  float* ptr = region.GetPtr();
+  float* end_ptr = ptr + stride*height;
+  PixelType* end_line;
+  while ((end_line = ptr + width) < end_ptr) {
+    float z = z_at_line_start;
+    while (ptr < end_line) {
+      if (z >= min_z && z < max_z)
+        *ptr = z;
+      ptr++;
+      z += increment_x;
+    }
+    ptr += skip;
+    z_at_line_start += increment_y;
+  }
+}
+
 void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
