@@ -5,6 +5,7 @@ import os
 from ..lib2d import Point, Color, BBox, Window, View
 from ..lib2d.window import WindowBase
 from ..lib2d.base import Taker, combination
+from .core_types import Point3
 from .cmd_stream import Cmd, CmdStream
 from .cmd_exec import CmdExecutor
 
@@ -33,8 +34,7 @@ class DeepWindowRenderer(object):
 
         deep_surface = CmdExecutor.create_surface(wx, wy)
         ce = CmdExecutor.for_surface(deep_surface, bot_left=origin,
-                                     top_right=origin + new_size,
-                                     bg_color=Color.grey)
+                                     top_right=origin + new_size)
         tmp = DeepWindow(ce)
         #tmp.Rectangle(b_min, b_max, Color.white)
         tmp.take(dw)
@@ -64,8 +64,7 @@ class DeepWindow(WindowBase):
         return DeepWindowRenderer(self, 'real').draw_full_view(target_surface)
     draw_full_view.__doc__ = Window.draw_full_view.__doc__
 
-    def save(self, real_file_name, depth_file_name=None,
-             size=None, resolution=None):
+    def save(self, real_file_name, depth_file_name=None, resolution=None):
         '''Save the real and depth parts of the image, computing the visible
         area automatically.
         '''
@@ -74,11 +73,18 @@ class DeepWindow(WindowBase):
             lhs, rhs = os.path.splitext(real_file_name)
             depth_file_name = lhs + '-depth' + rhs
 
+        # Get the z component of the resolution.
+        z_resolution = None
+        if isinstance(resolution, Point3):
+            z_resolution = resolution.z
+            resolution = resolution.get_xy()
+
         bbox, _, size, _ = \
-          self._check_for_save(None, size, resolution, None, None)
+          self._check_for_save(None, None, resolution, None, None)
         surface = CmdExecutor.create_surface(size[0], size[1])
         cmd_exec = CmdExecutor.for_surface(surface, bot_left=bbox.min_point,
-                                           top_right=bbox.max_point)
+                                           top_right=bbox.max_point,
+                                           z_scale=z_resolution)
         cmd_exec.execute(self.cmd_stream)
         cmd_exec.save(real_file_name, depth_file_name)
 

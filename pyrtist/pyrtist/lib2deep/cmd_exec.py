@@ -4,7 +4,7 @@ import cairo
 
 from ..lib2d import CairoCmdExecutor, Window
 from .. import deepsurface
-from .core_types import Point
+from .core_types import Point, Z
 
 
 class CmdExecutor(object):
@@ -14,7 +14,8 @@ class CmdExecutor(object):
 
     @staticmethod
     def for_surface(deep_surface, top_left=None, bot_right=None,
-                    top_right=None, bot_left=None, bg_color=None):
+                    top_right=None, bot_left=None, z_origin=0.0,
+                    z_scale=None):
         if ((top_left is None) != (bot_right is None) or
             (top_right is None) != (bot_left is None)):
             raise TypeError('Only opposing corners should be set')
@@ -38,12 +39,15 @@ class CmdExecutor(object):
         diag = bot_right - top_left
         scale = Point(deep_surface.get_width()/diag.x,
                       deep_surface.get_height()/diag.y)
-        return CmdExecutor(deep_surface, top_left, scale)
+        z_scale = z_scale or (abs(scale.x) + abs(scale.y))*0.5
+        return CmdExecutor(deep_surface, top_left, scale, z_origin, z_scale)
 
-    def __init__(self, deep_surface, origin, scale):
+    def __init__(self, deep_surface, origin, scale, z_origin=0.0, z_scale=1.0):
         self.deep_surface = ds = deep_surface
         self.origin = Point(origin)
         self.vector_transform = Point(scale)
+        self.z_origin = z_origin
+        self.z_scale = z_scale
         self.depth_buffer = ds.get_src_depth_buffer()
         width = ds.get_width()
         height = ds.get_height()
@@ -73,6 +77,8 @@ class CmdExecutor(object):
                 arg = arg - origin
                 arg.x *= vtx.x
                 arg.y *= vtx.y
+            elif isinstance(arg, Z):
+                arg = Z((arg - self.z_origin)*self.z_scale)
             out.append(arg)
         return out
 

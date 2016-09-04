@@ -69,6 +69,10 @@ class Point3(object):
         'Return a copy of the point.'
         return Point3(self.x, self.y, self.z)
 
+    def get_xy(self):
+        'Return the x and y components as a Point object.'
+        return Point(self.x, self.y)
+
     def dot(self, p):
         'Return the scalar product with another 3D point.'
         return self.x*p.x + self.y*p.y + self.z*p.z
