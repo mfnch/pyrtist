@@ -15,7 +15,7 @@ class DeepWindowRenderer(object):
         self.deep_window = deep_window
         self.mode = mode
 
-    def draw_full_view(self, target_surface):
+    def draw_common(self, target_surface, view):
         dw = self.deep_window
         if dw.cmd_executor is not None:
             raise ValueError('Cannot render a window with a custom executor')
@@ -23,18 +23,22 @@ class DeepWindowRenderer(object):
         bb = BBox(dw)
         b_min = bb.min_point
         b_max = bb.max_point
-        size = bb.max_point - bb.min_point
 
         wx = target_surface.get_width()
         wy = target_surface.get_height()
-        r = min(wx/float(size.x), wy/float(size.y))
-        new_size = Point(wx/r, wy/r)
-        tr = (new_size - size)*0.5
-        origin = b_min - tr
-
         deep_surface = CmdExecutor.create_surface(wx, wy)
+
+        if view is None:
+            old_size = bb.max_point - bb.min_point
+            r = min(wx/float(old_size.x), wy/float(old_size.y))
+            size = Point(wx/r, wy/r)
+            origin = b_min - (size - old_size)*0.5
+        else:
+            origin = view.origin
+            size = view.size
+
         ce = CmdExecutor.for_surface(deep_surface, bot_left=origin,
-                                     top_right=origin + new_size)
+                                     top_right=origin + size)
         tmp = DeepWindow(ce)
         #tmp.Rectangle(b_min, b_max, Color.white)
         tmp.take(dw)
@@ -48,8 +52,15 @@ class DeepWindowRenderer(object):
         src_data = db.get_data()
         dst_data = target_surface.get_data()
         dst_data[:] = src_data[:]
-        return View(bb, origin, new_size)
+        return View(bb, origin, size)
+
+    def draw_full_view(self, target_surface):
+        return self.draw_common(target_surface, None)
     draw_full_view.__doc__ = Window.draw_full_view.__doc__
+
+    def draw_zoomed_view(self, target_surface, view):
+        return self.draw_common(target_surface, view)
+    draw_zoomed_view.__doc__ = Window.draw_zoomed_view.__doc__
 
 
 class DeepWindow(WindowBase):
@@ -63,6 +74,11 @@ class DeepWindow(WindowBase):
     def draw_full_view(self, target_surface):
         return DeepWindowRenderer(self, 'real').draw_full_view(target_surface)
     draw_full_view.__doc__ = Window.draw_full_view.__doc__
+
+    def draw_zoomed_view(self, target_surface, view):
+        renderer = DeepWindowRenderer(self, 'real')
+        return renderer.draw_zoomed_view(target_surface, view)
+    draw_zoomed_view.__doc__ = Window.draw_zoomed_view.__doc__
 
     def save(self, real_file_name, depth_file_name=None, resolution=None):
         '''Save the real and depth parts of the image, computing the visible
