@@ -102,6 +102,37 @@ class Window(WindowBase):
         cmd_exec.execute(self.cmd_stream)
         cmd_exec.save(file_name)
 
+    def draw_view(self, target_surface, view):
+        '''Run draw_full_view() when view is None and draw_zoomed_view()
+        when view is not None.
+        '''
+        # Rendering a bitmap window is not yet supported.
+        if self.cmd_executor is not None:
+            raise ValueError('Cannot render a window with a custom executor')
+
+        bb = BBox(self)
+        b_min = bb.min_point
+        b_max = bb.max_point
+        wx = target_surface.get_width()
+        wy = target_surface.get_height()
+
+        if view is None:
+            old_size = bb.max_point - bb.min_point
+            r = min(wx/float(old_size.x), wy/float(old_size.y))
+            size = Point(wx/r, wy/r)
+            origin = b_min - (size - old_size)*0.5
+        else:
+            size = view.size
+            origin = view.origin
+
+        ce = CairoCmdExecutor.for_surface(target_surface, bot_left=origin,
+                                          top_right=origin + size,
+                                          bg_color=Color.grey)
+        tmp = Window(ce)
+        tmp.Rectangle(b_min, b_max, Color.white)
+        tmp.take(Color.black, self)
+        return View(bb, origin, size)
+
     def draw_full_view(self, target_surface):
         '''Method used by the GUI to render a full view of the window.
 
@@ -112,29 +143,7 @@ class Window(WindowBase):
            A View() object containing details about the rendered view.
            This is used to allow zooming in/out etc.
         '''
-        # Rendering a bitmap window is not yet supported.
-        if self.cmd_executor is not None:
-            raise ValueError('Cannot render a window with a custom executor')
-
-        bb = BBox(self)
-        b_min = bb.min_point
-        b_max = bb.max_point
-        size = bb.max_point - bb.min_point
-
-        wx = target_surface.get_width()
-        wy = target_surface.get_height()
-        r = min(wx/float(size.x), wy/float(size.y))
-        new_size = Point(wx/r, wy/r)
-        tr = (new_size - size)*0.5
-        origin = b_min - tr
-
-        ce = CairoCmdExecutor.for_surface(target_surface, bot_left=origin,
-                                          top_right=origin + new_size,
-                                          bg_color=Color.grey)
-        tmp = Window(ce)
-        tmp.Rectangle(b_min, b_max, Color.white)
-        tmp.take(Color.black, self)
-        return View(bb, origin, new_size)
+        return self.draw_view(target_surface, None)
 
     def draw_zoomed_view(self, target_surface, view):
         '''Method used by the GUI to render a zoomed view of the window.
@@ -146,21 +155,7 @@ class Window(WindowBase):
         Returns:
            A View() object containing details about the rendered view.
         '''
-        # Rendering a bitmap window is not yet supported.
-        if self.cmd_executor is not None:
-            raise ValueError('Cannot render a window with a custom executor')
-
-        bb = BBox(self)
-        b_min = bb.min_point
-        b_max = bb.max_point
-        ce = CairoCmdExecutor.for_surface(target_surface, bot_left=view.origin,
-                                          top_right=view.origin + view.size,
-                                          bg_color=Color.grey)
-        tmp = Window(ce)
-        tmp.Rectangle(b_min, b_max, Color.white)
-        tmp.take(Color.black, self)
-        return View(bb, view.origin, view.size)
-
+        return self.draw_view(target_surface, view)
 
 
 @combination(Window, BBox)

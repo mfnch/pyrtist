@@ -15,7 +15,7 @@ class DeepWindowRenderer(object):
         self.deep_window = deep_window
         self.mode = mode
 
-    def draw_common(self, target_surface, view):
+    def draw_view(self, target_surface, view):
         dw = self.deep_window
         if dw.cmd_executor is not None:
             raise ValueError('Cannot render a window with a custom executor')
@@ -55,11 +55,11 @@ class DeepWindowRenderer(object):
         return View(bb, origin, size)
 
     def draw_full_view(self, target_surface):
-        return self.draw_common(target_surface, None)
+        return self.draw_view(target_surface, None)
     draw_full_view.__doc__ = Window.draw_full_view.__doc__
 
     def draw_zoomed_view(self, target_surface, view):
-        return self.draw_common(target_surface, view)
+        return self.draw_view(target_surface, view)
     draw_zoomed_view.__doc__ = Window.draw_zoomed_view.__doc__
 
 
