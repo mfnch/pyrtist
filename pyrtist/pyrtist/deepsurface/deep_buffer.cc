@@ -17,21 +17,19 @@ void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
   int iy1 = static_cast<int>(ceilf(clip_end_y));
   auto region = GetRegion(ix0, iy0, ix1, iy1);
   if (!region.IsValid()) {
-    std::cout << "NOT VALID" << std::endl;
     return;
   }
 
-  float min_z = std::min(start_z, end_z);
-  float max_z = std::max(start_z, end_z);
+  float dz = end_z - start_z;
   float dx = end_x - start_x;
   float dy = end_y - start_y;
-  float dz = end_z - start_z;
   float v2 = dx*dx + dy*dy;
-  float increment_x = dx*dz/v2;
-  float increment_y = dy*dz/v2;
-  float z_at_line_start = (((start_z*end_x - end_z*start_x)*dx +
-                            (start_z*end_y - end_z*start_y)*dy)/v2 +
-                           increment_x*ix0 + increment_y*iy0);
+  if (v2 == 0)
+    return;
+
+  float increment_x = dx/v2;
+  float increment_y = dy/v2;
+  float z_at_line_start = ((ix0 - start_x)*dx + (iy0 - start_y)*dy)/v2;
 
   int32_t width = region.GetWidth();
   int32_t stride = region.GetStride();
@@ -43,8 +41,8 @@ void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
   while ((end_line = ptr + width) < end_ptr) {
     float z = z_at_line_start;
     while (ptr < end_line) {
-      if (z >= min_z && z < max_z)
-        *ptr = z;
+      if (z >= 0.0 && z <= 1.0)
+        *ptr = start_z + z*dz;
       ptr++;
       z += increment_x;
     }
