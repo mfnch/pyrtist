@@ -1,5 +1,7 @@
 __all__ = ('Line',)
 
+import copy
+
 from .base import *
 from .core_types import *
 from .path import Path
@@ -12,6 +14,28 @@ class Line(PointTaker):
         self.stroke_style = Border()
         self.close = False
         super(Line, self).__init__(*args)
+
+    def split_segments_inplace(self, num_parts):
+        '''In-place version of split_segments().'''
+        assert num_parts >= 1, 'Invalid argument to split()'
+        if len(self.points) < 2 or num_parts == 1:
+            return
+        prev = self.points[0]
+        out_points = []
+        for point in self.points[1:]:
+            dv = (point - prev)/num_parts
+            for i in range(num_parts):
+                out_points.append(prev + dv*i)
+            prev = point
+        out_points.append(prev)
+        self.points = out_points
+
+    def split_segments(self, num_parts):
+        '''Return a new Line with all segments split in `num_parts` parts.'''
+        ret = copy.deepcopy(self)
+        ret.split_segments_inplace(num_parts)
+        return ret
+
 
 @combination(Close, Line)
 def fn(close, line):

@@ -169,6 +169,9 @@ class PointTaker(Taker):
     def __len__(self):
         return len(self.points)
 
+    def __getitem__(self, index):
+        return self.points[index]
+
 @combination(Point, PointTaker)
 def fn(point, point_taker):
     point_taker.points.append(point)
@@ -191,6 +194,8 @@ class Matrix(object):
     def __init__(self, value=None):
         if value is None:
             value = Matrix.identity
+        elif isinstance(value, Matrix):
+            value = value.value
         self.value = [list(value[0]), list(value[1])]
 
     def __repr__(self):

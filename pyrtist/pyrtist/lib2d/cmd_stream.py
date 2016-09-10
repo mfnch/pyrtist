@@ -79,17 +79,17 @@ Cmd.register_commands()
 
 
 class CmdArgFilter(object):
-    def __init__(self, filter_scalar, filter_point):
-        self.filter_scalar = filter_scalar
-        self.filter_point = filter_point
-
-    @staticmethod
-    def from_matrix(mx):
+    @classmethod
+    def from_matrix(cls, mx):
         # Remember: the determinant tells us how volumes are transformed.
         scale_factor = math.sqrt(abs(mx.det()))
         filter_point = lambda p: mx.apply(p)
         filter_scalar = lambda s: Scalar(scale_factor*s)
-        return CmdArgFilter(filter_scalar, filter_point)
+        return cls(filter_scalar, filter_point)
+
+    def __init__(self, filter_scalar, filter_point):
+        self.filter_scalar = filter_scalar
+        self.filter_point = filter_point
 
     def __call__(self, arg):
         if isinstance(arg, Point):

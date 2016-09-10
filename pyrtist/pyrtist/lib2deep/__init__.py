@@ -2,6 +2,7 @@
 
 from .core_types import *
 from .deep_window import *
+from .put import *
 from .plane import *
 from .staircase import *
 from .sphere import *

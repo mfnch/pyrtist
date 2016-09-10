@@ -106,7 +106,14 @@ class DeepMatrix(Matrix):
     z_identity = [1.0, 0.0]
 
     def __init__(self, xy_value=None, z_value=None):
-        super(DeepMatrix, self).__init__()
+        if isinstance(xy_value, DeepMatrix):
+            if z_value is None:
+                z_value = xy_value.z_value
+            xy_value = xy_value.value
+        elif isinstance(xy_value, Matrix):
+            if z_value is None:
+                z_value = abs(xy_value.det())**0.5
+        super(DeepMatrix, self).__init__(xy_value)
         self.z_value = list(z_value or DeepMatrix.z_identity)
 
     def __repr__(self):
@@ -138,9 +145,13 @@ class DeepMatrix(Matrix):
         '''Apply the DeepMatrix to a Point3.'''
         p = (p if isinstance(p, Point3) else Point3(p))
         ret_xy = super(DeepMatrix, self).apply(p.get_xy())
-        a31, a32 = self.z_value
-        ret_z = a31*p.z + a32
+        ret_z = self.apply_z(p.z)
         return Point3(ret_xy, ret_z)
+
+    def apply_z(self, z):
+        '''Apply the DeepMatrix to a Z coordinate.'''
+        a31, a32 = self.z_value
+        return a31*z + a32
 
     def invert(self):
         '''Invert the DeepMatrix.'''

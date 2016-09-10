@@ -1,3 +1,5 @@
+__all__ = ('Put', 'SimplePut', 'Near')
+
 from .base import *
 from .core_types import *
 from .cmd_stream import *
@@ -5,26 +7,20 @@ from .window import Window
 from .transform import Transform
 from .auto_transform import Constraint as Near, AutoTransform
 
-__all__ = ('Put', 'SimplePut', 'Near')
 
+class SimplePut(object):
+    def __init__(self, window, matrix=None):
+        self.window = window
+        self.matrix = matrix
 
-class SimplePut(Taker):
-    def __init__(self, *args):
-        self.window = None
-        self.matrix = Matrix()
-        super(SimplePut, self).__init__(*args)
-
-@combination(Matrix, SimplePut)
-def fn(matrix, simple_put):
-    simple_put.matrix = matrix
-
-@combination(Window, SimplePut)
-def fn(window, simple_put):
-    simple_put.window = window
+    def get_window(self):
+        if self.window is None:
+            raise ValueError('No window was given to SimplePut')
+        return self.window
 
 @combination(SimplePut, Window, 'SimplePut')
 def fn(simple_put, window):
-    flt = CmdArgFilter.from_matrix(simple_put.matrix)
+    flt = CmdArgFilter.from_matrix(simple_put.matrix or Matrix())
     window.cmd_stream.add(simple_put.window.cmd_stream, flt)
 
 
