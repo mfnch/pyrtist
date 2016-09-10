@@ -40,8 +40,8 @@ def staircase_at_cmd_stream(staircase, cmd_stream):
     if not staircase.profile.is_valid():
         raise ValueError('Invalid Profile object')
 
-    # Find the clip area for the depth buffer.
-    clip_start, clip_end = BBox(staircase.window)
+    # Draw the window to the source, which also defines the bounding box.
+    cmd_stream.take(Cmd(Cmd.src_draw, staircase.window))
 
     # Create a list of points in coordinate system of the profile object.
     profile = staircase.profile
@@ -59,11 +59,10 @@ def staircase_at_cmd_stream(staircase, cmd_stream):
     for i in range(1, len(proj_and_z_offs)):
         start, z_start = proj_and_z_offs[i - 1]
         end, z_end = proj_and_z_offs[i]
-        cmd_stream.take(Cmd(Cmd.on_step, clip_start, clip_end,
-                            start, Z(z_start), end, Z(z_end)))
+        cmd_stream.take(Cmd(Cmd.on_step, start, Z(z_start), end, Z(z_end)))
 
-    cmd_stream.take(Cmd(Cmd.src_draw, staircase.window),
-                    Cmd(Cmd.transfer))
+    # Transfer to the dst buffer.
+    cmd_stream.take(Cmd(Cmd.transfer))
 
 @combination(Staircase, DeepWindow)
 def staircase_at_deep_window(staircase, deep_window):

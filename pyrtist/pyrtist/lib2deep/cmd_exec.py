@@ -2,7 +2,7 @@ __all__ = ('CmdExecutor',)
 
 import cairo
 
-from ..lib2d import CairoCmdExecutor, Window
+from ..lib2d import CairoCmdExecutor, Window, BBox
 from .. import deepsurface
 from .core_types import Point, Z
 
@@ -58,6 +58,7 @@ class CmdExecutor(object):
                                              width, height, width*4)
         target = CairoCmdExecutor(cairo_surface, origin, scale)
         self.src_image = Window(target)
+        self.src_bbox = BBox()
 
     def execute(self, cmds):
         for cmd in cmds:
@@ -82,16 +83,28 @@ class CmdExecutor(object):
             out.append(arg)
         return out
 
+    def get_clip_region(self):
+        '''Return the bounding box of whatever has been drawn to the src window
+        since the last transfer.
+        '''
+        return BBox(*self.transform_args(p for p in self.src_bbox))
+
     def cmd_set_bbox(self, *args):
         pass
 
     def cmd_transfer(self):
         self.deep_surface.transfer()
+        self.src_bbox = BBox()
 
     def cmd_src_draw(self, window):
+        self.src_bbox.take(window)
         self.src_image.take(window)
 
-    def cmd_on_step(self, clip_start, clip_end, start, z_start, end, z_end):
+    def cmd_on_step(self, start, z_start, end, z_end):
+        bbox = self.get_clip_region()
+        if not bbox:
+            return
+        clip_start, clip_end = bbox
         args = (clip_start.x, clip_start.y, clip_end.x, clip_end.y,
                 start.x, start.y, z_start, end.x, end.y, z_end)
         self.depth_buffer.draw_step(*map(float, args))
