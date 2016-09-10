@@ -197,7 +197,6 @@ class Matrix(object):
         return 'Matrix({})'.format(repr(self.value))
 
     def __mul__(self, b):
-
         if isinstance(b, Point):
             return self.apply(b)
         if isinstance(b, tuple) and len(b) == 2:
@@ -224,19 +223,17 @@ class Matrix(object):
         raise NotImplementedError()
 
     def copy(self):
-        'Return a copy of the matrix.'
+        '''Return a copy of the matrix.'''
         return Matrix(value=self.value)
 
     def scale(self, s):
-        'Scale the matrix by the given factor (in-place).'
-
+        '''Scale the matrix by the given factor (in-place).'''
         v = self.value
         v[0][0] *= s; v[0][1] *= s; v[0][2] *= s
         v[1][0] *= s; v[1][1] *= s; v[1][2] *= s
 
     def translate(self, p):
-        'Translate the matrix by the given Point value (in-place).'
-
+        '''Translate the matrix by the given Point value (in-place).'''
         self.value[0][2] += p.x
         self.value[1][2] += p.y
 
@@ -245,18 +242,16 @@ class Matrix(object):
         if not isinstance(p, Point):
             p = Point(p)
         (a11, a12, a13), (a21, a22, a23) = self.value
-        return Point(x=a11*p.x + a12*p.y + a13,
-                     y=a21*p.x + a22*p.y + a23)
+        return Point(a11*p.x + a12*p.y + a13,
+                     a21*p.x + a22*p.y + a23)
 
     def det(self):
-        'Return the determinant of the matrix.'
-
+        '''Return the determinant of the matrix.'''
         m = self.value
         return m[0][0]*m[1][1] - m[0][1]*m[1][0]
 
     def invert(self):
-        'Invert the matrix in place.'
-
+        '''Invert the matrix in place.'''
         (m11, m12, m13), (m21, m22, m23) = m = self.value
         det = m11*m22 - m12*m21
         if det == 0.0:
@@ -268,8 +263,7 @@ class Matrix(object):
         m[1][2] = -new21*m13 - new22*m23
 
     def get_inverse(self):
-        'Return the inverse of the matrix.'
-
+        '''Return the inverse of the matrix.'''
         ret = self.copy()
         ret.invert()
         return ret

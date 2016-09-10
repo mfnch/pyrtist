@@ -3,12 +3,12 @@
 This module defines 3D Point and other types commonly used in the library.
 '''
 
-__all__ = ('Point3',)
+__all__ = ('Point3', 'DeepMatrix')
 
 import numbers
 import math
 
-from ..lib2d import Point
+from ..lib2d import Point, Matrix
 
 
 class Z(float):
@@ -98,3 +98,58 @@ class Point3(object):
         p = self.copy()
         p.normalize()
         return p
+
+
+class DeepMatrix(Matrix):
+    '''Extension of lib2d.Matrix which adds translation and scaling along z.'''
+
+    z_identity = [1.0, 0.0]
+
+    def __init__(self, xy_value=None, z_value=None):
+        super(DeepMatrix, self).__init__()
+        self.z_value = list(z_value or DeepMatrix.z_identity)
+
+    def __repr__(self):
+        return 'DeepMatrix({}, {})'.format(repr(self.value), repr(self.z_value))
+
+    def copy(self):
+        '''Return a copy of the matrix.'''
+        return DeepMatrix(self.value, self.z_value)
+
+    def get_xy(self):
+        '''Return the components of the DeepMatrix along the x and y
+        directions.
+        '''
+        return Matrix(self.value)
+
+    def scale(self, s):
+        '''Scale by the given factor (in-place).'''
+        super(DeepMatrix, self).scale(s)
+        self.z_value[0] *= s
+        self.z_value[1] *= s
+
+    def translate(self, p):
+        '''Translate by the given Point3 value (in-place).'''
+        p = (p if isinstance(p, Point3) else Point3(p))
+        super(DeepMatrix, self).translate(p.get_xy())
+        self.z_value += p.z
+
+    def apply(self, p):
+        '''Apply the DeepMatrix to a Point3.'''
+        p = (p if isinstance(p, Point3) else Point3(p))
+        ret_xy = super(DeepMatrix, self).apply(p.get_xy())
+        a31, a32 = self.z_value
+        ret_z = a31*p.z + a32
+        return Point3(ret_xy, ret_z)
+
+    def invert(self):
+        '''Invert the DeepMatrix.'''
+        if self.z_value[0] == 0.0:
+            raise ValueError('DeepMatrix is singular in z: cannot invert it')
+        z_inv = 1.0/self.z_value[0]
+        z_value = [z_inv, z_inv*self.z_value[1]]
+        super(DeepMatrix, self).invert()
+        self.z_value = z_value
+
+    def det3(self):
+        return super(DeepMatrix, self).det()*self.z_value[0]
