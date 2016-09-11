@@ -2,7 +2,7 @@ __all__ = ('DeepWindow',)
 
 import os
 
-from ..lib2d import Point, Color, BBox, Window, View
+from ..lib2d import Point, Color, BBox, Window, Hot, View
 from ..lib2d.window import WindowBase
 from ..lib2d.base import Taker, combination
 from .core_types import Point3
@@ -115,8 +115,8 @@ def deep_window_at_bbox(deep_window, bbox):
     for cmd in deep_window.cmd_stream:
         args = cmd.get_args()
         for arg in args:
-            if isinstance(arg, Point):
-                bbox(arg)
+            if isinstance(arg, (Point, Window)):
+                bbox.take(arg)
 
 @combination(DeepWindow, DeepWindow)
 def deep_window_at_deep_window(child, parent):
@@ -131,3 +131,7 @@ def bbox_at_deep_window(bbox, deep_window):
     if not bbox:
         return
     deep_window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
+
+@combination(Hot, DeepWindow, 'Hot')
+def hot_at_deep_window(hot, deep_window):
+    deep_window.hot_points[hot.name] = hot.point

@@ -112,7 +112,7 @@ class DeepMatrix(Matrix):
             xy_value = xy_value.value
         elif isinstance(xy_value, Matrix):
             if z_value is None:
-                z_value = abs(xy_value.det())**0.5
+                z_value = (abs(xy_value.det())**0.5, 0.0)
         super(DeepMatrix, self).__init__(xy_value)
         self.z_value = list(z_value or DeepMatrix.z_identity)
 

@@ -33,23 +33,23 @@ class Put(Taker):
         super(Put, self).__init__(*args)
 
 @combination(Window, Put)
-def fn(window, put):
+def window_at_put(window, put):
     put.window = window
 
 @combination(str, Put)
-def fn(transform_str, put):
+def str_at_put(transform_str, put):
     put.auto_transform = AutoTransform.from_string(transform_str)
 
 @combination(Transform, Put)
-def fn(transform, put):
+def transform_at_put(transform, put):
     put.transform = transform
 
 @combination(Near, Put)
-def fn(near, put):
+def near_at_put(near, put):
     put.constraints.append(near)
 
 @combination(Put, Window, 'Put')
-def fn(put, window):
+def put_at_window(put, window):
     resolved_constraints = []
     for c in put.constraints:
         src, dst, weight = (c.src, Point(c.dst), float(c.weight))

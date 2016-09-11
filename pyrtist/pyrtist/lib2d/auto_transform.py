@@ -94,16 +94,13 @@ class AutoTransform(object):
         return copy.deepcopy(self)
 
     def calculate(self, transform, constraints):
-        if len(constraints) < 1:
-            return ValueError('No constraint provided')
-
         weight_sum = sum(c.weight for c in constraints)
-        if weight_sum == 0.0:
-            raise ValueError('The sum of all weights is zero')
-
         transformations_left = self.copy()
         auto_translate = self.auto_translate_x or self.auto_translate_y
         if auto_translate:
+            if weight_sum == 0.0:
+                raise ValueError('The sum of all weights is zero')
+
             # One or both of the translational degrees of freedom have to be
             # handled automatically: we automatically determine Q and T.
             src_avg = psum((c.src*c.weight for c in constraints))/weight_sum
