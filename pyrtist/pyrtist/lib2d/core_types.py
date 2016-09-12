@@ -96,6 +96,9 @@ class Point(object):
         else:
             return float(self.x*value.x + self.y*value.y)
 
+    def __rmul__(self, value):
+        return self.__mul__(value)
+
     def __div__(self, value):
         return Point(x=self.x/value, y=self.y/value)
 

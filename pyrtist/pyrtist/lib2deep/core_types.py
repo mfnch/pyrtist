@@ -65,6 +65,17 @@ class Point3(object):
     def __sub__(self, value):
         return Point3(self.x - value.x, self.y - value.y, self.z - value.z)
 
+    def __mul__(self, value):
+        if isinstance(value, numbers.Number):
+            # Scalar by vector.
+            return Point3(self.x*value, self.y*value, self.z*value)
+        else:
+            # Vector product.
+            return self.dot(value)
+
+    def __rmul__(self, value):
+        return self.__mul__(value)
+
     def copy(self):
         'Return a copy of the point.'
         return Point3(self.x, self.y, self.z)
@@ -98,6 +109,13 @@ class Point3(object):
         p = self.copy()
         p.normalize()
         return p
+
+    def vec_prod(self, p):
+        '''Vector product.'''
+        # Vector product.
+        ax, ay, az = self
+        bx, by, bz = p
+        return Point3(ay*bz - az*by, az*bx - ax*bz, ax*by - ay*bx)
 
 
 class DeepMatrix(Matrix):
