@@ -2,7 +2,7 @@ from ..lib2d.base import combination
 from ..lib2d import cmd_stream as twod
 from ..lib2d import Window, Scalar
 
-from .core_types import Z, DeepMatrix
+from .core_types import Point3, Z, DeepMatrix
 
 
 class Cmd(twod.CmdBase):
@@ -19,18 +19,20 @@ class DeepCmdArgFilter(twod.CmdArgFilter):
         mx2 = mx.get_xy()
         # Remember: the determinant tells us how volumes are transformed.
         scale_factor = abs(mx.det3())**(1.0/3.0)
-        filter_z = lambda z: Z(mx.apply_z(z))
         filter_point = lambda p: mx2.apply(p)
         filter_scalar = lambda s: Scalar(scale_factor*s)
-        return cls(filter_scalar, filter_point, filter_z)
+        filters = {Point3: lambda p: mx.apply(p),
+                   Z: lambda z: Z(mx.apply_z(z))}
+        return cls(filter_scalar, filter_point, filters)
 
-    def __init__(self, filter_scalar, filter_point, filter_z=None):
+    def __init__(self, filter_scalar, filter_point, filters=None):
         super(DeepCmdArgFilter, self).__init__(filter_scalar, filter_point)
-        self.filter_z = filter_z or (lambda z: z)
+        self.filters = filters or {}
 
     def __call__(self, arg):
-        if isinstance(arg, Z):
-            return self.filter_z(arg)
+        flt_arg = self.filters.get(arg)
+        if flt_arg is not None:
+            return flt_arg
         if isinstance(arg, Window):
             w = Window()
             w.cmd_stream.add(arg.cmd_stream, self)
