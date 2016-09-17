@@ -5,7 +5,7 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close', 'View')
+           'Matrix', 'Close', 'Container', 'Radii', 'View')
 
 import math
 import numbers
@@ -32,17 +32,17 @@ class Point(object):
 
     @staticmethod
     def vx(delta_x=1.0):
-        'Return a vector with the given x component and zero y component.'
+        '''Return a vector with the given x component and zero y component.'''
         return Point(delta_x)
 
     @staticmethod
     def vy(delta_y=1.0):
-        'Return a vector with the given y component and zero x component.'
+        '''Return a vector with the given y component and zero x component.'''
         return Point(0.0, delta_y)
 
     @staticmethod
     def vangle(angle):
-        'Return a unit vector forming the specified angle with the x axis.'
+        '''Return a unit vector forming the specified angle with the x axis.'''
         return Point(math.cos(angle), math.sin(angle))
 
     @staticmethod
@@ -186,10 +186,6 @@ def fn(tp, point_taker):
     point_taker.take(Point(tp))
 
 
-Close = enum('Close', 'Whether to close a path',
-             no=False, yes=True)
-
-
 class Matrix(object):
     identity = [[1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0]]
@@ -216,6 +212,10 @@ class Matrix(object):
         else:
             ret.multiply(b)
         return ret
+
+    def get_entries(self):
+        '''Get the matrix entries as a tuple of 6 scalars.'''
+        return tuple(self.value[0] + self.value[1])
 
     def multiply(self, b):
         (a11, a12, a13), (a21, a22, a23) = ab = self.value
@@ -275,6 +275,36 @@ class Matrix(object):
         ret = self.copy()
         ret.invert()
         return ret
+
+
+Close = enum('Close', 'Whether to close a path',
+             no=False, yes=True)
+
+
+class Container(object):
+    def __init__(self, *args):
+        self.args = args
+
+    def __repr__(self):
+        return '{name}({args})'.format(name=self.__class__.__name__,
+                                       args=', '.join(map(repr, self.args)))
+
+    def copy(self):
+        return self.__class__(*self.args)
+
+    def check(self, min_args, max_args):
+        if len(self.args) < min_args:
+            raise TypeError('Radii object needs at least {} arguments'
+                            .format(min_args))
+        if len(self.args) > max_args:
+            raise TypeError('Radii object takes at most {} arguments'
+                            .format(max_args))
+
+
+class Radii(Container):
+    '''Container which groups one or more radii (e.g. the x, y radii of
+    an ellipsoid.
+    '''
 
 
 class View(object):

@@ -7,7 +7,7 @@ from .core_types import Point3, Z, DeepMatrix
 
 class Cmd(twod.CmdBase):
     names = ('set_bbox', 'transfer', 'src_draw', 'on_step', 'on_plane',
-             'on_sphere')
+             'on_sphere', 'on_cylinder')
 Cmd.register_commands()
 
 
@@ -30,9 +30,9 @@ class DeepCmdArgFilter(twod.CmdArgFilter):
         self.filters = filters or {}
 
     def __call__(self, arg):
-        flt_arg = self.filters.get(arg)
+        flt_arg = self.filters.get(arg.__class__)
         if flt_arg is not None:
-            return flt_arg
+            return flt_arg(arg)
         if isinstance(arg, Window):
             w = Window()
             w.cmd_stream.add(arg.cmd_stream, self)

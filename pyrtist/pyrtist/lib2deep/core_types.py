@@ -29,29 +29,29 @@ class Point3(object):
     '''
 
     def __init__(self, *args):
-        if len(args) == 0:
-            self.x = self.y = self.z = 0.0
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.set(*args)
+
+    def set(self, *args):
+        if len(args) < 1:
+            return
+        arg0 = args[0]
+        if isinstance(arg0, numbers.Number):
+            xyz = args
+        elif isinstance(arg0, Point):
+            xyz = (arg0.x, arg0.y) + args[1:]
+        elif isinstance(arg0, Point3):
+            xyz = (arg0.x, arg0.y, arg0.z) + args[1:]
+        elif isinstance(arg0, tuple):
+            xyz = arg0 + args[1:]
         else:
-            arg0 = args[0]
-            if isinstance(arg0, numbers.Number):
-                xyz = args
-            elif isinstance(arg0, Point):
-                xyz = (arg0.x, arg0.y) + args[1:]
-            elif isinstance(arg0, Point3):
-                xyz = (arg0.x, arg0.y, arg0.z) + args[1:]
-            elif isinstance(arg0, tuple):
-                xyz = arg0 + args[1:]
-            else:
-                raise TypeError('Unknown type of first argument of Point3()')
-            if len(xyz) == 3:
-                pass
-            elif len(xyz) > 3:
-                raise TypeError('Too many arguments to Point3()')
-            else:
-                xyz = (xyz + (0.0, 0.0, 0.0))[:3]
-            self.x = float(xyz[0])
-            self.y = float(xyz[1])
-            self.z = float(xyz[2])
+            raise TypeError('Invalid type for setting Point3')
+        if len(xyz) > 3:
+            raise TypeError('Too many arguments for setting Point3')
+        for i, value in enumerate(xyz):
+            setattr(self, 'xyz'[i], value)
 
     def __repr__(self):
         return 'Point3({}, {}, {})'.format(self.x, self.y, self.z)
@@ -79,6 +79,10 @@ class Point3(object):
     def copy(self):
         'Return a copy of the point.'
         return Point3(self.x, self.y, self.z)
+
+    @property
+    def xy(self):
+        return self.get_xy()
 
     def get_xy(self):
         'Return the x and y components as a Point object.'

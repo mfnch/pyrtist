@@ -10,6 +10,7 @@ from .deep_window import DeepWindow
 
 class Plane(Taker):
     def __init__(self, *args):
+        self.window = None
         self.points = []
         super(Plane, self).__init__(*args)
 

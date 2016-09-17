@@ -2,9 +2,9 @@ __all__ = ('CmdExecutor',)
 
 import cairo
 
-from ..lib2d import CairoCmdExecutor, Window, BBox
+from ..lib2d import CairoCmdExecutor, Window, BBox, Axes
 from .. import deepsurface
-from .core_types import Point, Z
+from .core_types import Point3, Point, Z
 
 
 class CmdExecutor(object):
@@ -80,6 +80,11 @@ class CmdExecutor(object):
                 arg.y *= vtx.y
             elif isinstance(arg, Z):
                 arg = Z((arg - self.z_origin)*self.z_scale)
+            elif isinstance(arg, Point3):
+                arg = arg - Point3(origin, self.z_origin)
+                arg.x *= vtx.x
+                arg.y *= vtx.y
+                arg.z *= self.z_scale
             out.append(arg)
         return out
 
@@ -126,6 +131,33 @@ class CmdExecutor(object):
         z_scale = 1.0
         self.depth_buffer.draw_sphere(int(x), int(y), int(z_start),
                                       int(radius), z_scale)
+
+    def cmd_on_cylinder(self, start_point, start_edge, end_point, end_edge):
+        bbox = self.get_clip_region()
+        if not bbox:
+            return
+        start_delta = start_edge - start_point
+        end_delta = end_edge - end_point
+        if start_delta.xy.norm() < end_delta.xy.norm():
+            start_point, end_point = (end_point, start_point)
+            start_edge, end_edge = (end_edge, start_edge)
+            start_delta, end_delta = (end_delta, start_delta)
+        if start_delta.xy.norm() == 0.0:
+            return
+
+        start_radius_z = start_delta.z
+        ref = start_delta.xy
+        end_radius_coeff = end_delta.xy.dot(ref)/ref.norm2()
+        end_radius_z = end_delta.z
+        z_of_axis = 0.5*(start_point.z + end_point.z)
+
+        mx = Axes(start_point.xy, end_point.xy, start_edge.xy).get_matrix()
+        mx.invert()
+
+        clip_start, clip_end = map(tuple, bbox)
+        args = (clip_start + clip_end + mx.get_entries() +
+                (end_radius_coeff, z_of_axis, start_radius_z, end_radius_z))
+        self.depth_buffer.draw_cylinder(*map(float, args))
 
     def save(self, real_file_name, depth_file_name):
         self.deep_surface.save_to_files(real_file_name, depth_file_name)
