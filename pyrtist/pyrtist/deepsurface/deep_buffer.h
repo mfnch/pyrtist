@@ -46,6 +46,11 @@ class DeepBuffer : public ImageBuffer<float> {
                 float end_x, float end_y, float end_z);
 
   void DrawSphere(int x, int y, int z, int radius, float z_scale);
+
+  void DrawCylinder(float clip_start_x, float clip_start_y,
+                    float clip_end_x, float clip_end_y,
+                    float* mx, float end_radius,
+                    float z_of_axis, float start_radius_z, float end_radius_z);
 };
 
 #endif /* _DEEP_BUFFER_H */

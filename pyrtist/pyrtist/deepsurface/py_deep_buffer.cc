@@ -8,6 +8,7 @@ static PyObject* PyDeepBuffer_New(PyTypeObject* type,
 static void PyDeepBuffer_Dealloc(PyObject* py_obj);
 static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args);
+static PyObject* PyDeepBuffer_DrawCylinder(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
@@ -16,6 +17,7 @@ static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
 static PyMethodDef pydeepbuffer_methods[] = {
   {"draw_step", PyDeepBuffer_DrawStep, METH_VARARGS},
   {"draw_sphere", PyDeepBuffer_DrawSphere, METH_VARARGS},
+  {"draw_cylinder", PyDeepBuffer_DrawCylinder, METH_VARARGS},
   {"compute_normals", PyDeepBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDeepBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDeepBuffer_GetData, METH_NOARGS},
@@ -168,6 +170,24 @@ static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args) {
 
   PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
   py_db->deep_buffer->DrawSphere(x, y, z, radius, z_scale);
+  Py_RETURN_NONE;
+}
+
+static PyObject* PyDeepBuffer_DrawCylinder(PyObject* db, PyObject* args) {
+  float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
+  float mx[6];
+  float end_radius, z_of_axis, start_radius_z, end_radius_z;
+  if (!PyArg_ParseTuple(args, "ffffffffffffff:DeepSurface.draw_cylinder",
+                        &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
+                        mx, mx + 1, mx + 2, mx + 3, mx + 4, mx + 5,
+                        &end_radius, &z_of_axis, &start_radius_z,
+                        &end_radius_z))
+    return nullptr;
+
+  PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
+  py_db->deep_buffer->
+    DrawCylinder(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
+                 end_radius, z_of_axis, start_radius_z, end_radius_z);
   Py_RETURN_NONE;
 }
 

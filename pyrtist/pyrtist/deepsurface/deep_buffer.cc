@@ -30,6 +30,28 @@ void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
             matrix, depth_fn);
 }
 
+void DeepBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
+                              float clip_end_x, float clip_end_y,
+                              float* mx, float end_radius,
+                              float z_of_axis, float start_radius_z,
+                              float end_radius_z) {
+  float drz = end_radius_z - start_radius_z;
+  float dr = end_radius - 1.0f;
+  auto depth_fn =
+      [dr, drz, z_of_axis, start_radius_z](float* out, float u, float v) -> void
+      {
+        float r = 1.0f + u*dr;
+        v /= r;
+        float z2 = 1.0 - v*v;
+        if (z2 >= 0.0) {
+          float rz = start_radius_z + u*drz;
+          *out = z_of_axis + rz*sqrt(z2);
+        }
+      };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+}
+
 void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
