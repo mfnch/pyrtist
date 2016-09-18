@@ -119,8 +119,12 @@ class CmdExecutor(object):
         if not bbox:
             return
         clip_start, clip_end = bbox
-        args = (clip_start.x, clip_start.y, clip_end.x, clip_end.y,
-                p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z)
+
+        mx = Axes(p1.xy, p2.xy, p3.xy).get_matrix()
+        mx.invert()
+
+        args = ((clip_start.x, clip_start.y, clip_end.x, clip_end.y) +
+                mx.get_entries() + (p1.z, p2.z, p3.z))
         self.depth_buffer.draw_plane(*map(float, args))
 
     def cmd_on_sphere(self, center_2d, one_zero, zero_one, z_start, z_end):

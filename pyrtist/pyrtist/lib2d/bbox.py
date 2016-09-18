@@ -23,7 +23,7 @@ def fn(point, bbox):
     if bbox.min_point is None:
         bbox.min_point = bbox.max_point = point
     else:
-        bbox.min_point = Point(x=min(bbox.min_point.x, point.x),
-                               y=min(bbox.min_point.y, point.y))
-        bbox.max_point = Point(x=max(bbox.max_point.x, point.x),
-                               y=max(bbox.max_point.y, point.y))
+        bbox.min_point = Point(min(bbox.min_point.x, point.x),
+                               min(bbox.min_point.y, point.y))
+        bbox.max_point = Point(max(bbox.max_point.x, point.x),
+                               max(bbox.max_point.y, point.y))

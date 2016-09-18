@@ -52,6 +52,20 @@ void DeepBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
+void DeepBuffer::DrawPlane(float clip_start_x, float clip_start_y,
+                           float clip_end_x, float clip_end_y,
+                           float* mx, float z00, float z10, float z01) {
+  z01 -= z00;
+  z10 -= z00;
+  auto depth_fn =
+      [z00, z10, z01](float* out, float u, float v) -> void
+      {
+        *out = z00 + u*z01 + v*z10;
+      };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+}
+
 void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
