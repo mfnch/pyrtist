@@ -1,54 +1,33 @@
-#include <iostream>
-
 #include <algorithm>
 #include <math.h>
 
+#include "draw_depth.h"
 #include "deep_buffer.h"
 
 void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
                           float clip_end_x, float clip_end_y,
                           float start_x, float start_y, float start_z,
                           float end_x, float end_y, float end_z) {
-  if (clip_end_x < clip_start_x) std::swap(clip_start_x, clip_end_x);
-  if (clip_end_y < clip_start_y) std::swap(clip_start_y, clip_end_y);
-  int ix0 = static_cast<int>(floorf(clip_start_x));
-  int iy0 = static_cast<int>(floorf(clip_start_y));
-  int ix1 = static_cast<int>(ceilf(clip_end_x));
-  int iy1 = static_cast<int>(ceilf(clip_end_y));
-  auto region = GetRegion(ix0, iy0, ix1, iy1);
-  if (!region.IsValid()) {
-    return;
-  }
-
-  float dz = end_z - start_z;
   float dx = end_x - start_x;
   float dy = end_y - start_y;
+  float dz = end_z - start_z;
   float v2 = dx*dx + dy*dy;
-  if (v2 == 0)
+  if (v2 == 0.0f)
     return;
 
   float increment_x = dx/v2;
   float increment_y = dy/v2;
-  float z_at_line_start = ((ix0 - start_x)*dx + (iy0 - start_y)*dy)/v2;
+  float offset = -(start_x*increment_x + start_y*increment_y);
+  float matrix[6] = {increment_x, increment_y, offset, 0.0f, 0.0f, 0.0f};
 
-  int32_t width = region.GetWidth();
-  int32_t stride = region.GetStride();
-  int32_t height = region.GetHeight();
-  int32_t skip = stride - width;
-  float* ptr = region.GetPtr();
-  float* end_ptr = ptr + stride*height;
-  PixelType* end_line;
-  while ((end_line = ptr + width) < end_ptr) {
-    float z = z_at_line_start;
-    while (ptr < end_line) {
-      if (z >= 0.0 && z <= 1.0)
-        *ptr = start_z + z*dz;
-      ptr++;
-      z += increment_x;
-    }
-    ptr += skip;
-    z_at_line_start += increment_y;
-  }
+  auto depth_fn =
+    [start_z, dz](float* out, float u, float v) -> void
+      {
+        if (u >= 0.0 && u <= 1.0)
+          *out = start_z + u*dz;
+      };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            matrix, depth_fn);
 }
 
 void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
