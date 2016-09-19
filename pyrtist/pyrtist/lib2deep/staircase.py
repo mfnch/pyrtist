@@ -9,25 +9,25 @@ from .core_types import Z
 from .profile import Profile
 from .cmd_stream import Cmd, CmdStream
 from .deep_window import DeepWindow
+from .primitive import Primitive
 
-class Staircase(Taker):
+
+class Staircase(Primitive):
     def __init__(self, *args):
         self.axes = None
         self.profile = None
-        self.window = None
         super(Staircase, self).__init__(*args)
+
+    def get_profile(self, args):
+        w = Window()
+        w.take(*args)
+        return w
 
 @combination(Profile, Staircase)
 def profile_at_staircase(profile, staircase):
-    if staircase.window is not None:
+    if staircase.profile is not None:
         raise RejectException('Staircase already got a Profile')
     staircase.profile = profile
-
-@combination(Window, Staircase)
-def window_at_staircase(window, staircase):
-    if staircase.window is not None:
-        raise RejectException('Staircase already got a Window')
-    staircase.window = window
 
 @combination(Axes, Staircase)
 def window_at_staircase(axes, staircase):
@@ -41,7 +41,7 @@ def staircase_at_cmd_stream(staircase, cmd_stream):
         raise ValueError('Invalid Profile object')
 
     # Draw the window to the source, which also defines the bounding box.
-    cmd_stream.take(Cmd(Cmd.src_draw, staircase.window))
+    cmd_stream.take(Cmd(Cmd.src_draw, staircase.get_window()))
 
     # Create a list of points in coordinate system of the profile object.
     profile = staircase.profile

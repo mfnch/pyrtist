@@ -37,6 +37,9 @@ Color.white = Color(r=1.0, b=1.0, g=1.0)
 Color.red = Color(r=1.0)
 Color.green = Color(g=1.0)
 Color.blue = Color(b=1.0)
+Color.yellow = Color(r=1.0, g=1.0)
+Color.magenta = Color(r=1.0, b=1.0)
+Color.cyan = Color(g=1.0, b=1.0)
 
 def Grey(value, a=1.0):
     'Return a grey color with the given intensity and alpha value.'

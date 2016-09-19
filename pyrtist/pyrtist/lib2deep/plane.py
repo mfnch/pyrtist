@@ -2,27 +2,26 @@
 
 __all__ = ('Plane',)
 
-from ..lib2d import Window, BBox, Point, Rectangle
+from ..lib2d import Window, BBox, Point, Rectangle, Color
 from ..lib2d.base import Taker, combination
 from .core_types import Point3
 from .cmd_stream import CmdStream, Cmd
 from .deep_window import DeepWindow
+from .primitive import Primitive
 
-class Plane(Taker):
+
+class Plane(Primitive):
     def __init__(self, *args):
-        self.window = None
         self.points = []
         super(Plane, self).__init__(*args)
 
-    def get_window(self):
-        if self.window is not None:
-            return self.window
-        w = Window()
+    def get_profile(self, *args):
         bb = BBox(p.xy for p in self.points)
         if not bb:
             raise ValueError('Plane needs a Window object')
-        w.take(Rectangle(*bb))
-        return w
+        r = Rectangle(*bb)
+        r.take(*args)
+        return r
 
     def get_points(self):
         points = self.points
@@ -37,11 +36,6 @@ class Plane(Taker):
         assert n == 2
         p = points[0] + Point3((points[1] - points[0]).xy.ort())
         return (points[0], points[1], p)
-
-
-@combination(Window, Plane)
-def window_at_plane(window, plane):
-    plane.window = window
 
 @combination(Point, Plane)
 def point_at_plane(point, plane):

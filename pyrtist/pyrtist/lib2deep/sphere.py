@@ -2,18 +2,24 @@
 
 __all__ = ('Sphere',)
 
-from ..lib2d import Window, Point
+from ..lib2d import Window, Circle, Point, Color
 from ..lib2d.base import Taker, combination, RejectException
 from .core_types import Point3, Z
 from .cmd_stream import Cmd, CmdStream
 from .deep_window import DeepWindow
+from .primitive import Primitive
 
-class Sphere(Taker):
+
+class Sphere(Primitive):
     def __init__(self, *args):
         self.center = None
         self.radii = []
-        self.window = None
         super(Sphere, self).__init__(*args)
+
+    def get_profile(self, *args):
+        extra_args = tuple(self.radii[:2] if len(self.radii) > 2
+                           else self.radii) + args
+        return Circle(self.center.xy, *extra_args)
 
 @combination(Point3, Sphere)
 def center_at_sphere(center, sphere):
@@ -27,12 +33,6 @@ def scalar_at_sphere(scalar, circle):
     if len(circle.radii) >= 3:
         raise RejectException()
     circle.radii.append(float(scalar))
-
-@combination(Window, Sphere)
-def window_at_sphere(window, sphere):
-    if sphere.window is not None:
-        raise ValueError('Sphere already has a center')
-    sphere.window = window
 
 @combination(Sphere, CmdStream)
 def sphere_at_cmd_stream(sphere, cmd_stream):
@@ -55,7 +55,7 @@ def sphere_at_cmd_stream(sphere, cmd_stream):
     zero_one = center_2d + Point.vy(ry)
     cmd_stream.take(Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
                         Z(center.z), Z(rz)),
-                    Cmd(Cmd.src_draw, sphere.window),
+                    Cmd(Cmd.src_draw, sphere.get_window()),
                     Cmd(Cmd.transfer))
 
 @combination(Sphere, DeepWindow)
