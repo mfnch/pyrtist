@@ -32,14 +32,20 @@ class Profile(object):
             raise ValueError('Profile object is not valid')
 
     def change_axes(self, axes, zero_offset=False):
-        '''Express the profile using different axes.'''
-        self.check()
+        '''Express the profile using different axes.
+
+        If the profile does not have an axis, this method just adds it
+        without affecting the points.
+        '''
         dy = (Point.vy(self.offset) if zero_offset else Point())
-        mx_self = self.axes.get_matrix().get_inverse()
-        ps = [mx_self.apply(p) + dy for p in self.points]
-        ps.sort(key=lambda p: p.x)
-        mx_new = axes.get_matrix()
-        ps = tuple(mx_new.apply(p) for p in ps)
+        if self.axes is None:
+            ps = [p + dy for p in self.points]
+        else:
+            mx_self = self.axes.get_matrix().get_inverse()
+            ps = [mx_self.apply(p) + dy for p in self.points]
+            ps.sort(key=lambda p: p.x)
+            mx_new = axes.get_matrix()
+            ps = tuple(mx_new.apply(p) for p in ps)
         return (Profile(axes, *ps) if zero_offset
                 else Profile(self.offset, axes, *ps))
 

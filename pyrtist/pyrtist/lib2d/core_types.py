@@ -289,16 +289,19 @@ class Container(object):
         return '{name}({args})'.format(name=self.__class__.__name__,
                                        args=', '.join(map(repr, self.args)))
 
+    def __iter__(self):
+        return iter(self.args)
+
     def copy(self):
         return self.__class__(*self.args)
 
     def check(self, min_args, max_args):
         if len(self.args) < min_args:
-            raise TypeError('Radii object needs at least {} arguments'
-                            .format(min_args))
+            raise TypeError('{} object needs at least {} arguments'
+                            .format(self.__class__.__name__, min_args))
         if len(self.args) > max_args:
-            raise TypeError('Radii object takes at most {} arguments'
-                            .format(max_args))
+            raise TypeError('{} object takes at most {} arguments'
+                            .format(self.__class__.__name__, max_args))
 
 
 class Radii(Container):
