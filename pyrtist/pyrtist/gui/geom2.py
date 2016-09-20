@@ -110,6 +110,8 @@ class Tri(object):
   def __init__(self, *args):
     self.args = args
 
+  def __iter__(self):
+    return iter(self.args)
 
 class Point(object):
   def __init__(self, x=None, y=None):

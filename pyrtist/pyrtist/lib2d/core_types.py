@@ -5,7 +5,7 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close', 'Container', 'Radii', 'View')
+           'Matrix', 'Close', 'Container', 'Radii', 'Tri', 'View')
 
 import math
 import numbers
@@ -305,6 +305,9 @@ class Radii(Container):
     '''Container which groups one or more radii (e.g. the x, y radii of
     an ellipsoid.
     '''
+
+class Tri(Container):
+    '''Container which groups up to 3 points used to define a Bezier curve.'''
 
 
 class View(object):

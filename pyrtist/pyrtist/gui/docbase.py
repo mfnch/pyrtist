@@ -76,12 +76,6 @@ def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
     text += this_line + lsep
   return text
 
-def refpoint_to_string(rp, version=version):
-  """Return a string representation of the RefPoint according to the given
-  Boxer version. The returned string can be parsed by 'refpoint_from_string'.
-  """
-  return rp.get_py_source()
-
 # Enumerate the different possible ways of building a representation
 # for a Document:
 # - MODE_ORIG: original, as given by the user;

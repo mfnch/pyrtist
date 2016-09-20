@@ -46,7 +46,7 @@ class GContext(object):
       self.layer = layer
       for obj in objs:
         obj.draw(*all_args)
-    
+
 
 (REFPOINT_UNSELECTED,
  REFPOINT_SELECTED,
@@ -138,43 +138,19 @@ class RefPoint(object):
 
   def get_py_source(self):
     if self.kind != REFPOINT_PARENT:
-      v = self.value
-      return ("%s = Point(x=%s, y=%s)" % (self.name, v[0], v[1]))
+      return "{} = Point({}, {})".format(self.name, *self.value)
 
+    lhs = rhs = None
+    ctr = "Point({}, {})".format(*self.value)
     children = self.related
-    if children != None:
-      n = len(children)
-      if n > 0:
-        pin = children[0]
-        pout = children[1] if n > 1 else None
-        args = []
-        for i, arg in enumerate((pin, self, pout)):
-          if arg is not None:
-            args.append("Point(x=%s, y=%s)" % tuple(arg.value))
-          elif i == 0:
-            args.append(";")
-        return "%s = Tri(%s)" % (self.name, ", ".join(args))
-
-  def get_box_source(self):
-    kind = self.kind
-    if kind == REFPOINT_PARENT:
-      children = self.related
-      if children != None:
-        n = len(children)
-        if n > 0:
-          pin = children[0]
-          pout = children[1] if n > 1 else None
-          args = []
-          for i, arg in enumerate((pin, self, pout)):
-            if arg != None:
-              args.append("Point[.x=%s, .y=%s]" % tuple(arg.value))
-            elif i == 0:
-              args.append(";")
-
-          return "%s = Tri[%s]" % (self.name, ", ".join(args))
-
-    v = self.value
-    return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))
+    if len(children) >= 1:
+      arg = children[0]
+      lhs = (arg.name if arg is not None else 'None')
+      if len(children) >= 2:
+        arg = children[1]
+        rhs = (arg.name if arg is not None else None)
+    args = filter(None, (lhs, ctr, rhs))
+    return "%s = Tri(%s)" % (self.name, ", ".join(args))
 
   # How we draw the refpoints in layers:
   # - LAYER 0:

@@ -15,8 +15,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from docbase import \
-  DocumentBase, text_writer, refpoint_to_string, endline, MODE_STORE
+from docbase import DocumentBase, text_writer, endline, MODE_STORE
 import geom2
 from refpoints import RefPoint
 
@@ -107,9 +106,24 @@ class Document(DocumentBase):
     if "refpoints_text" in parts:
       context = {"Point": geom2.Point, "Tri": geom2.Tri}
       exec(parts["refpoints_text"], context)
+      points_by_id = {}
       for name, value in context.items():
         if isinstance(value, geom2.Point):
-          refpoints.append(RefPoint(name, [value.x, value.y]))
+          points_by_id[id(value)] = rp = RefPoint(name, list(value))
+          refpoints.append(rp)
+      for name, value in context.items():
+        if isinstance(value, geom2.Tri):
+          tri_args = list(value)
+          if len(tri_args) < 2:
+            # Weird: Tri() object is degenerate. Load it as a Point().
+            if len(tri_args) == 1:
+              refpoints.append(RefPoint(name, list(tri_args[0])))
+          else:
+            rp_parent = RefPoint(name, list(tri_args.pop(1)))
+            refpoints.append(rp_parent)
+            rp_children = [points_by_id.get(id(arg)) for arg in tri_args]
+            for idx, rp_child in enumerate(rp_children):
+              rp_parent.attach(rp_child)
 
     if "userspace" not in parts:
       # This means that the file was not produced by Boxer, but it is likely
@@ -122,9 +136,12 @@ class Document(DocumentBase):
     return True
 
   def get_part_def_refpoints(self):
-    refpoints = [refpoint_to_string(rp)
-                 for rp in self.refpoints]
-    return text_writer(refpoints, sep='; ').strip()
+    # First stringify the children.
+    defs = [rp.get_py_source() for rp in self.refpoints if rp.is_child()]
+
+    # Now add the others, which may refer to the children.
+    defs += [rp.get_py_source() for rp in self.refpoints if not rp.is_child()]
+    return text_writer(defs, sep='; ').strip()
 
   def get_part_preamble(self, mode=None, boot_code=''):
     refpoints_part = self.get_part_def_refpoints()
