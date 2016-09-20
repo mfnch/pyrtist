@@ -35,10 +35,6 @@ marker_cursor_here = "//!BOXER:CURSOR:HERE"
 #from os import linesep as endline
 endline = "\n"
 
-default_preamble = 'include "g"\nGUI = Void\nWindow@GUI[]\n\n'
-
-default_code = "\n"
-
 def cmp_version(v1, v2):
   """Compare two version tuples."""
   return cmp(v1[0], v2[0]) or cmp(v1[1], v2[1]) or cmp(v1[2], v2[2])
@@ -80,89 +76,11 @@ def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
     text += this_line + lsep
   return text
 
-
-def parse_given_eq_smthg(s, fixed_part):
-  """Parse the given string 's' assuming it has the form
-  "fixed_part = something" where fixed_part must match the second argument
-  received by the function. Return 'something' if this is the case, otherwise
-  return None."""
-  left, right = s.split("=", 1)
-  if left.strip() == fixed_part:
-    return right.strip()
-  return None
-
-def refpoint_from_string(s):
-  """Parse a string representation of a Point and return the corresponding
-  Point object.
-  """
-  try:
-    lhs, rhs = s.split("=", 1)
-    rhs, s_next = rhs.split(")", 1)
-    point_str, rem_str = rhs.split("(", 1)
-    if point_str.strip() != "Point":
-      return None
-    str_x, str_y = rem_str.split(",", 1)
-    x = float(parse_given_eq_smthg(str_x, "x"))
-    y = float(parse_given_eq_smthg(str_y, "y"))
-    return RefPoint(lhs.strip(), [x, y])
-  except:
-    return None
-
 def refpoint_to_string(rp, version=version):
   """Return a string representation of the RefPoint according to the given
   Boxer version. The returned string can be parsed by 'refpoint_from_string'.
   """
   return rp.get_py_source()
-
-def search_first(s, things, start=0):
-  found = -1
-  for thing in things:
-    i = s.find(thing, start)
-    if found == -1:
-      found = i
-    elif i != -1 and i < found:
-      found = i
-  return found
-
-
-def match_close(src, start, pars):
-  open_bracket = src[start]
-  close_bracket = pars[open_bracket]
-  while True:
-    next = search_first(src, [open_bracket, close_bracket], start + 1)
-    if next == -1:
-      raise "Missing closing parethesis!"
-    if src[next] == open_bracket:
-      start = match_close(src, next) + 1
-    else:
-      return next + 1
-
-def get_next_guipoint_string(src, start=0, seps=[";", endline],
-                             pars={"(": ")", "[": "]"}):
-  pos = start
-  open_seps = pars.keys()
-  all_seps = seps + open_seps
-  while True:
-    next = search_first(src, all_seps, pos)
-    if next < 0:
-      # no comma nor parenthesis: we are parsing the last bit
-      return (src[start:], len(src))
-
-    c = src[next]
-    if c in seps:
-      # comma comes before next open parenthesis
-      return (src[start:next], next + 1)
-
-    elif c in open_seps:
-      pos = match_close(src, next, pars=pars)
-
-def parse_guipoint_part(src, guipoint_fn, start=0):
-  if len(src.strip()) > 0:
-    while start < len(src):
-      line, start = get_next_guipoint_string(src, start)
-      line = line.strip()
-      if len(line) > 0:
-        guipoint_fn(line)
 
 # Enumerate the different possible ways of building a representation
 # for a Document:
@@ -204,11 +122,7 @@ class DocumentBase(Configurable):
     '''Used to notify problems during load/save.'''
     sys.stdout.write("%s: %s\n" % (t, msg))
 
-  def new(self, preamble=None, refpoints=[], code=None):
-    if code == None:
-      code = default_code
-    if preamble == None:
-        preamble = default_preamble
+  def new(self, preamble, refpoints=[], code='\n'):
     self.refpoints.load(refpoints)
     self.preamble = preamble
     self.usercode = code

@@ -22,7 +22,7 @@ Basic 2D geometry functionality
 
 __all__ = ["sgn", "central_segments_intersection", "segment_adjustment",
            "rectangle_adjustment", "round_metric", "square_metric",
-           "Point", "Rectangle"]
+           "Point", "Tri", "Rectangle"]
 
 def sgn(x):
   return (x >= 0.0) - (x <= 0.0)
@@ -104,6 +104,11 @@ def rectangles_overlap(a0x, a0y, a1x, a1y, b0x, b0y, b1x, b1y):
     else: # eqy
       return bz0y == 1
   return True
+
+
+class Tri(object):
+  def __init__(self, *args):
+    self.args = args
 
 
 class Point(object):

@@ -16,9 +16,9 @@
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 from docbase import \
-  DocumentBase, parse_guipoint_part, text_writer, \
-  refpoint_to_string, refpoint_from_string, endline, \
-  MODE_STORE
+  DocumentBase, text_writer, refpoint_to_string, endline, MODE_STORE
+import geom2
+from refpoints import RefPoint
 
 # File format version handled by this implementation of the DocumentBase class.
 version = (0, 0, 1)
@@ -103,11 +103,13 @@ class Document(DocumentBase):
 
     refpoints = self.refpoints
     refpoints.remove_all()
-    def guipoint_fn(p_str):
-      refpoints.append(refpoint_from_string(p_str))
 
     if "refpoints_text" in parts:
-      parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
+      context = {"Point": geom2.Point, "Tri": geom2.Tri}
+      exec(parts["refpoints_text"], context)
+      for name, value in context.items():
+        if isinstance(value, geom2.Point):
+          refpoints.append(RefPoint(name, [value.x, value.y]))
 
     if "userspace" not in parts:
       # This means that the file was not produced by Boxer, but it is likely
