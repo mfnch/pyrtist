@@ -26,13 +26,51 @@ class Profile(object):
         '''Whether the object is well formed.'''
         return (self.axes is not None and len(self.points) >= 2)
 
+    def check(self):
+        '''Raise an exception if the object is not valid.'''
+        if not self.is_valid():
+            raise ValueError('Profile object is not valid')
+
     def change_axes(self, axes, zero_offset=False):
-        '''Express the profile in a different axes.'''
-        mx_self = self.axes.get_matrix().get_inverse()
-        mx_new = axes.get_matrix()
+        '''Express the profile using different axes.'''
+        self.check()
         dy = (Point.vy(self.offset) if zero_offset else Point())
+        mx_self = self.axes.get_matrix().get_inverse()
         ps = [mx_self.apply(p) + dy for p in self.points]
         ps.sort(key=lambda p: p.x)
+        mx_new = axes.get_matrix()
         ps = tuple(mx_new.apply(p) for p in ps)
         return (Profile(axes, *ps) if zero_offset
                 else Profile(self.offset, axes, *ps))
+
+    def get_function(self):
+        '''Get a function for the profile.'''
+        self.check()
+
+        mx_self = self.axes.get_matrix().get_inverse()
+        ps = [mx_self.apply(p) for p in self.points]
+        ps.sort(key=lambda p: p.x)
+        min_x = ps[0].x
+        max_x = ps[-1].x
+        last = [ps[0], ps[1]]
+
+        def fn(x):
+            p_lhs, p_rhs = last
+            if p_lhs.x <= x <= p_rhs.x:
+                pass
+            elif min_x <= x <= max_x:
+                lhs = 0
+                rhs = len(ps) - 1
+                while lhs + 1 < rhs:
+                    ctr = (lhs + rhs)//2
+                    if x < ps[ctr].x:
+                        rhs = ctr
+                    else:
+                        lhs = ctr
+                p_lhs, p_rhs = last[0:2] = ps[lhs:lhs+2]
+            else:
+                return 0.0
+            return (p_lhs.y*(p_rhs.x - x) +
+                    p_rhs.y*(x - p_lhs.x))/(p_rhs.x - p_lhs.x)
+
+        return fn
