@@ -107,7 +107,7 @@ def get_gui_lib_path(filename=None):
 def get_example_files():
   """Return a list of example files for Pyrtist."""
   import glob
-  pattern = os.path.join(installation_path(), "examples", "*.box")
+  pattern = os.path.join(installation_path(), "examples", "*.py")
   return glob.glob(pattern)
 
 #-----------------------------------------------------------------------------
