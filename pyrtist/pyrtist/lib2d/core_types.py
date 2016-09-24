@@ -312,6 +312,41 @@ class Radii(Container):
 class Tri(Container):
     '''Container which groups up to 3 points used to define a Bezier curve.'''
 
+    def __init__(self, *args):
+        n = len(args)
+        if n == 1:
+            self.args = (None, args[0], None)
+        elif n == 2:
+            self.args = (args[0], args[1], None)
+        elif n == 3:
+            self.args = args
+        else:
+            raise TypeError('Tri takes at most 3 points')
+
+    @property
+    def p(self):
+        return self.args[1]
+
+    @property
+    def ip(self):
+        p_in = self.args[0]
+        if p_in is not None:
+            return p_in
+        p_out = self.args[2]
+        if p_out is not None:
+            return 2.0*self.args[1] - p_out
+        return self.args[1]
+
+    @property
+    def op(self):
+        p_out = self.args[2]
+        if p_out is not None:
+            return p_out
+        p_in = self.args[0]
+        if p_in is not None:
+            return 2.0*self.args[1] - p_in
+        return self.args[1]
+
 
 class View(object):
     '''Object used to pass information to the GUI.'''

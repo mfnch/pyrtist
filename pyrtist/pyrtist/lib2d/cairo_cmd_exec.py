@@ -129,6 +129,9 @@ class CairoCmdExecutor(object):
     def cmd_line_to(self, p):
         self.context.line_to(p.x, p.y)
 
+    def cmd_curve_to(self, p_out, p_in, p):
+        self.context.curve_to(p_out.x, p_out.y, p_in.x, p_in.y, p.x, p.y)
+
     def cmd_ext_arc_to(self, ctr, a, b, angle_begin, angle_end):
         ext_arc_to(self.context, ctr, a, b, angle_begin, angle_end)
 
