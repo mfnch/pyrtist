@@ -1,6 +1,12 @@
 #include "deep_surface.h"
 #include "py_deep_buffer.h"
 #include "py_image_buffer.h"
+#include "sampler.h"
+
+#include <iostream>
+
+// Sample Python callbacks to achieve better performance.
+static constexpr bool kSamplePythonCallbacks = true;
 
 // Forward declarations.
 static PyObject* PyDeepBuffer_New(PyTypeObject* type,
@@ -10,6 +16,7 @@ static PyObject* PyDeepBuffer_DrawPlane(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_DrawCylinder(PyObject* db, PyObject* args);
+static PyObject* PyDeepBuffer_DrawCircular(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args);
 static PyObject* PyDeepBuffer_GetData(PyObject* db, PyObject* args);
@@ -20,6 +27,7 @@ static PyMethodDef pydeepbuffer_methods[] = {
   {"draw_step", PyDeepBuffer_DrawStep, METH_VARARGS},
   {"draw_sphere", PyDeepBuffer_DrawSphere, METH_VARARGS},
   {"draw_cylinder", PyDeepBuffer_DrawCylinder, METH_VARARGS},
+  {"draw_circular", PyDeepBuffer_DrawCircular, METH_VARARGS},
   {"compute_normals", PyDeepBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDeepBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDeepBuffer_GetData, METH_NOARGS},
@@ -151,7 +159,7 @@ static PyObject* PyDeepBuffer_DrawPlane(PyObject* db, PyObject* args) {
   float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
   float mx[6];
   float z00, z10, z01;
-  if (!PyArg_ParseTuple(args, "fffffffffffff:DeepSurface.draw_plane",
+  if (!PyArg_ParseTuple(args, "fffffffffffff:DeepBuffer.draw_plane",
                         &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
                         mx, mx + 1, mx + 2, mx + 3, mx + 4, mx + 5,
                         &z00, &z10, &z01))
@@ -166,7 +174,7 @@ static PyObject* PyDeepBuffer_DrawPlane(PyObject* db, PyObject* args) {
 static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args) {
   float clip_start_x, clip_start_y, clip_end_x, clip_end_y,
       start_x, start_y, start_z, end_x, end_y, end_z;
-  if (!PyArg_ParseTuple(args, "ffffffffff:DeepSurface.draw_step",
+  if (!PyArg_ParseTuple(args, "ffffffffff:DeepBuffer.draw_step",
                         &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
                         &start_x, &start_y, &start_z, &end_x, &end_y, &end_z))
     return nullptr;
@@ -182,7 +190,7 @@ static PyObject* PyDeepBuffer_DrawStep(PyObject* db, PyObject* args) {
 static PyObject* PyDeepBuffer_DrawSphere(PyObject* db, PyObject* args) {
   int x, y, z, radius;
   float z_scale;
-  if (!PyArg_ParseTuple(args, "iiiif:DeepSurface.draw_sphere",
+  if (!PyArg_ParseTuple(args, "iiiif:DeepBuffer.draw_sphere",
                         &x, &y, &z, &radius, &z_scale))
     return nullptr;
 
@@ -195,7 +203,7 @@ static PyObject* PyDeepBuffer_DrawCylinder(PyObject* db, PyObject* args) {
   float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
   float mx[6];
   float end_radius, z_of_axis, start_radius_z, end_radius_z;
-  if (!PyArg_ParseTuple(args, "ffffffffffffff:DeepSurface.draw_cylinder",
+  if (!PyArg_ParseTuple(args, "ffffffffffffff:DeepBuffer.draw_cylinder",
                         &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
                         mx, mx + 1, mx + 2, mx + 3, mx + 4, mx + 5,
                         &end_radius, &z_of_axis, &start_radius_z,
@@ -209,6 +217,70 @@ static PyObject* PyDeepBuffer_DrawCylinder(PyObject* db, PyObject* args) {
   Py_RETURN_NONE;
 }
 
+static PyObject* PyDeepBuffer_DrawCircular(PyObject* db, PyObject* args) {
+  float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
+  float mx[6];
+  float translate_z, scale_z;
+  PyObject* callback;
+  if (!PyArg_ParseTuple(args, "ffffffffffffO:DeepBuffer.draw_circular",
+                        &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
+                        mx, mx + 1, mx + 2, mx + 3, mx + 4, mx + 5,
+                        &scale_z, &translate_z, &callback))
+    return nullptr;
+
+  if (!PyCallable_Check(callback)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "DeepBuffer.draw_circular: object cannot be called");
+    return nullptr;
+  }
+
+  // Wrap the Python callback inside a std::function<float(float)>.
+  bool ok = true;
+  auto callback_wrapper =
+    [callback, &ok](float x)->float {
+      PyObject* py_args = Py_BuildValue("(f)", x);
+      PyObject* py_result = PyObject_CallObject(callback, py_args);
+      Py_DECREF(py_args);
+
+      float result = -1.0f;
+      if (PyFloat_Check(py_result)) {
+        result = static_cast<float>(PyFloat_AsDouble(py_result));
+      } else {
+        ok = false;
+      }
+      Py_DECREF(py_result);
+      return result;
+    };
+
+  std::function<float(float)> radius_fn = callback_wrapper;
+  Sampler sampler;
+  if (kSamplePythonCallbacks) {
+    // Sample the Python callback, so that we don't have to go back to Python
+    // to evaluate it.
+
+    // First, let's find how fine the sampling should be.
+    float n = std::max(std::abs(clip_end_x - clip_start_x),
+                       std::abs(clip_end_y - clip_start_y));
+    int num_samples = std::max(2, static_cast<int>(n));
+
+    // Now create the sampler.
+    sampler.Sample(num_samples, callback_wrapper);
+    if (!ok) {
+      PyErr_SetString(PyExc_TypeError,
+                      "DeepBuffer.draw_circular: callback returned non-float");
+      return nullptr;
+    }
+
+    radius_fn = [&sampler](float x)->float {return sampler(x);};
+  }
+
+  PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
+  py_db->deep_buffer->
+    DrawCircular(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
+                 scale_z, translate_z, radius_fn);
+  Py_RETURN_NONE;
+}
+
 static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args) {
   PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);
   ARGBImageBuffer* normals = py_db->deep_buffer->ComputeNormals();
@@ -217,7 +289,7 @@ static PyObject* PyDeepBuffer_ComputeNormals(PyObject* db, PyObject* args) {
 
 static PyObject* PyDeepBuffer_SaveNormals(PyObject* db, PyObject* args) {
   const char* file_name = nullptr;
-  if (!PyArg_ParseTuple(args, "s:DeepSurface.save_normals", &file_name))
+  if (!PyArg_ParseTuple(args, "s:DeepBuffer.save_normals", &file_name))
     return nullptr;
 
   PyDeepBuffer* py_db = reinterpret_cast<PyDeepBuffer*>(db);

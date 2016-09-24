@@ -163,7 +163,7 @@ class CmdExecutor(object):
                 (end_radius_coeff, z_of_axis, start_radius_z, end_radius_z))
         self.depth_buffer.draw_cylinder(*map(float, args))
 
-    def cmd_on_lathe(self, start_point, end_point, start_edge, radius_fn):
+    def cmd_on_circular(self, start_point, end_point, start_edge, radius_fn):
         bbox = self.get_clip_region()
         if not bbox:
             return
@@ -176,9 +176,9 @@ class CmdExecutor(object):
 
         clip_start, clip_end = map(tuple, bbox)
         float_args = map(float, (clip_start + clip_end + mx.get_entries() +
-                                 (translation_z, scale_z)))
+                                 (scale_z, translation_z)))
         args = list(float_args) + [radius_fn]
-        self.depth_buffer.draw_lathe(*args)
+        self.depth_buffer.draw_circular(*args)
 
     def save(self, real_file_name, depth_file_name):
         self.deep_surface.save_to_files(real_file_name, depth_file_name)

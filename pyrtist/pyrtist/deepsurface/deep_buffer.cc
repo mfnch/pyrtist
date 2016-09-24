@@ -21,11 +21,10 @@ void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
   float matrix[6] = {increment_x, increment_y, offset, 0.0f, 0.0f, 0.0f};
 
   auto depth_fn =
-    [start_z, dz](float* out, float u, float v) -> void
-      {
-        if (u >= 0.0 && u <= 1.0)
-          *out = start_z + u*dz;
-      };
+    [start_z, dz](float* out, float u, float v) -> void {
+      if (u >= 0.0 && u <= 1.0)
+        *out = start_z + u*dz;
+    };
   DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
             matrix, depth_fn);
 }
@@ -38,16 +37,16 @@ void DeepBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
   float drz = end_radius_z - start_radius_z;
   float dr = end_radius - 1.0f;
   auto depth_fn =
-      [dr, drz, z_of_axis, start_radius_z](float* out, float u, float v) -> void
-      {
-        float r = 1.0f + u*dr;
-        v /= r;
-        float z2 = 1.0 - v*v;
-        if (z2 >= 0.0) {
-          float rz = start_radius_z + u*drz;
-          *out = z_of_axis + rz*sqrt(z2);
-        }
-      };
+    [dr, drz, z_of_axis, start_radius_z](float* out,
+                                         float u, float v) -> void {
+      float r = 1.0f + u*dr;
+      v /= r;
+      float z2 = 1.0f - v*v;
+      if (z2 >= 0.0f) {
+        float rz = start_radius_z + u*drz;
+        *out = z_of_axis + rz*sqrt(z2);
+      }
+    };
   DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
             mx, depth_fn);
 }
@@ -58,10 +57,9 @@ void DeepBuffer::DrawPlane(float clip_start_x, float clip_start_y,
   z01 -= z00;
   z10 -= z00;
   auto depth_fn =
-      [z00, z10, z01](float* out, float u, float v) -> void
-      {
-        *out = z00 + u*z01 + v*z10;
-      };
+    [z00, z10, z01](float* out, float u, float v) -> void {
+      *out = z00 + u*z01 + v*z10;
+    };
   DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
             mx, depth_fn);
 }
@@ -84,6 +82,22 @@ void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
         *ptr = DepthType(z_scale*sqrt(dz2) + z);
     }
   }
+}
+
+void DeepBuffer::DrawCircular(float clip_start_x, float clip_start_y,
+                              float clip_end_x, float clip_end_y,
+                              float* mx, float scale_z, float translate_z,
+                              std::function<float(float)> radius_fn) {
+  auto depth_fn =
+      [scale_z, translate_z, radius_fn](float* out, float u, float v) -> void {
+      float r = radius_fn(u);
+      v /= r;
+      float z2 = 1.0f - v*v;
+      if (z2 >= 0.0f)
+        *out = translate_z + scale_z*r*sqrt(z2);
+    };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
 }
 
 ARGBImageBuffer* DeepBuffer::ComputeNormals() {

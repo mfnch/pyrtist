@@ -2,6 +2,7 @@
 #define _DEEP_BUFFER_H
 
 #include <limits>
+#include <functional>
 #include <math.h>
 #include <stdint.h>
 
@@ -55,6 +56,11 @@ class DeepBuffer : public ImageBuffer<float> {
                     float clip_end_x, float clip_end_y,
                     float* mx, float end_radius,
                     float z_of_axis, float start_radius_z, float end_radius_z);
+
+  void DrawCircular(float clip_start_x, float clip_start_y,
+                    float clip_end_x, float clip_end_y,
+                    float* mx, float scale_z, float translate_z,
+                    std::function<float(float)> radius_fn);
 };
 
-#endif /* _DEEP_BUFFER_H */
+#endif  /* _DEEP_BUFFER_H */

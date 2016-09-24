@@ -20,8 +20,8 @@ class Lathe(Primitive):
 
     def get_profile(self, *args):
         p1, p2, p3 = (p.xy for p in self.get_points())
-        p4 = p2 + p3 - p1
-        return Poly(p1, p2, p4, p3, *args)
+        v = p3 - p1
+        return Poly(p1 + v, p2 + v, p2 - v, p1 - v, *args)
 
     def get_points(self):
         # TODO: this can be shared with Cylinder.
@@ -38,7 +38,7 @@ class Lathe(Primitive):
         p2 = Point3(0, 0, z)
         p2.set(old_p2)
         if p1.z != p2.z:
-            raise ValueError('Cylinder points should have the same coordinate')
+            raise ValueError('Lathe points should have the same z coordinate')
 
         axis = (p2 - p1).xy
         r, rz = self.get_radii()
@@ -49,11 +49,11 @@ class Lathe(Primitive):
         if self.radii is None:
             return (1.0, 1.0)
         self.radii.check(0, 2)
-        return (type(self.radii) + (1.0, 1.0))[:2]
+        return (tuple(self.radii) + (1.0, 1.0))[:2]
 
 @combination(Radii, Lathe)
 def radii_at_lathe(radii, lathe):
-    if self.radii is not None:
+    if lathe.radii is not None:
         raise TypeError('Lathe already got a radius')
     lathe.radii = radii
 
@@ -78,7 +78,7 @@ def lathe_at_cmd_stream(lathe, cmd_stream):
     p1, p2, p3 = lathe.get_points()
     fn = lathe.profile.change_axes(Axes(p1.xy, p2.xy, p3.xy)).get_function()
     cmd_stream.take(Cmd(Cmd.src_draw, lathe.get_window()),
-                    Cmd(Cmd.on_lathe, p1, p2, p3, fn),
+                    Cmd(Cmd.on_circular, p1, p2, p3, fn),
                     Cmd(Cmd.transfer))
 
 
