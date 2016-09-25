@@ -123,7 +123,7 @@ class Document(DocumentBase):
             refpoints.append(rp_parent)
             rp_children = [points_by_id.get(id(arg)) for arg in tri_args]
             for idx, rp_child in enumerate(rp_children):
-              rp_parent.attach(rp_child)
+              rp_parent.attach(rp_child, index=idx)
 
     if "userspace" not in parts:
       # This means that the file was not produced by Boxer, but it is likely
