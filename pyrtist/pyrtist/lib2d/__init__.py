@@ -1,5 +1,6 @@
 import base
 from .core_types import *
+from .pattern import *
 from .axes import *
 from .line import *
 from .circle import Circle
