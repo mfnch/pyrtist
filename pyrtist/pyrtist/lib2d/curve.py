@@ -1,16 +1,16 @@
 __all__ = ('Curve',)
 
 from .base import Taker, combination
-from .core_types import Point, Tri
+from .core_types import Point, Tri, Close
 from .path import Path
 from .window import Window
 from .cmd_stream import CmdStream, Cmd
-from .style import *
+from .style import Style
 
 class Curve(Taker):
     def __init__(self, *args):
         self.style = Style()
-        self.close = True
+        self.close = False
         self.tris = []
         super(Curve, self).__init__(*args)
 
@@ -21,6 +21,10 @@ def tri_at_curve(tri, curve):
 @combination(Point, Curve)
 def point_at_curve(point, curve):
     curve.take(Tri(point))
+
+@combination(Close, Curve)
+def fn(close, curve):
+    curve.close = (close == Close.yes)
 
 @combination(Curve, Path)
 def curve_at_path(curve, path):

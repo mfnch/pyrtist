@@ -161,16 +161,13 @@ class Window(WindowBase):
 
 @combination(Window, BBox)
 def fn(window, bbox):
-    for cmd in window.cmd_stream:
-        args = cmd.get_args()
-        for arg in args:
-            if isinstance(arg, Point):
-                bbox(arg)
+    bbox.take(window.cmd_stream)
 
 @combination(BBox, Window, 'BBox')
 def fn(bbox, window):
     if bbox:
-        window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
+        cmd = Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)
+        window.take(CmdStream(cmd))
 
 @combination(Pattern, Window)
 def pattern_at_window(pattern, window):
