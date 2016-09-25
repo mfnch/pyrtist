@@ -1,39 +1,46 @@
 __all__ = ('Color', 'Grey', 'Stroke', 'Style',
            'Border', 'StrokeStyle', 'Join', 'Cap')
 
+import numbers
+
 from .base import *
 from .core_types import *
 from .path import Path
 from .cmd_stream import Cmd, CmdStream
+from .pattern import Pattern
 
 ### Color #####################################################################
-class Color(object):
-    def __init__(self, value=None, r=0.0, g=0.0, b=0.0, a=1.0):
-        if value is not None:
-            if len(value) == 3:
-                r, g, b = value
+class Color(Pattern):
+    def __init__(self, r=0.0, g=0.0, b=0.0, a=1.0):
+        super(Color, self).__init__()
+        if not isinstance(r, numbers.Number):
+            comps = tuple(r)
+            n = len(comps)
+            if n == 4: r, g, b, a = comps
+            elif n == 3: r, g, b = comps
+            elif n == 2: r, g = comps
+            elif n == 1: r = comps[0]
             else:
-                assert(len(value) == 4)
-                r, g, b, a = value
+                raise ValueError('Invalid argument for Color: {}'
+                                 .format(repr(r)))
         self.r = r
         self.b = b
         self.g = g
         self.a = a
 
+    def _get_cmds(self):
+        return [Cmd(Cmd.set_source_rgba, self.r, self.g, self.b, self.a)]
+
     def __repr__(self):
-        return 'Color(({}, {}, {}))'.format(self.r, self.g, self.b)
+        return 'Color({}, {}, {}, {})'.format(self.r, self.g, self.b, self.a)
 
     def __iter__(self):
         return iter((self.r, self.g, self.b, self.a))
 
-@combination(Color, CmdStream)
-def fn(color, cmd_stream):
-    cmd_stream(Cmd(Cmd.set_source_rgba, color.r, color.g, color.b, color.a))
-
 Color.none = Color(a=0.0)
 Color.black = Color()
-Color.grey = Color(r=0.5, b=0.5, g=0.5)
-Color.white = Color(r=1.0, b=1.0, g=1.0)
+Color.grey = Color(0.5, 0.5, 0.5)
+Color.white = Color(1.0, 1.0, 1.0)
 Color.red = Color(r=1.0)
 Color.green = Color(g=1.0)
 Color.blue = Color(b=1.0)
