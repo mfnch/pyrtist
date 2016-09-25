@@ -80,8 +80,3 @@ def lathe_at_cmd_stream(lathe, cmd_stream):
     cmd_stream.take(Cmd(Cmd.src_draw, lathe.get_window()),
                     Cmd(Cmd.on_circular, p1, p2, p3, fn),
                     Cmd(Cmd.transfer))
-
-
-@combination(Lathe, DeepWindow)
-def lathe_at_deep_window(lathe, deep_window):
-    deep_window.take(CmdStream(lathe))

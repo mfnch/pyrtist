@@ -87,7 +87,3 @@ def cylinder_at_cmd_stream(cylinder, cmd_stream):
                     Cmd(Cmd.on_cylinder, start_point, start_edge,
                         end_point, end_edge),
                     Cmd(Cmd.transfer))
-
-@combination(Cylinder, DeepWindow)
-def cylinder_at_deep_window(cylinder, deep_window):
-    deep_window.take(CmdStream(cylinder))

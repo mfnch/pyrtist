@@ -57,7 +57,3 @@ def sphere_at_cmd_stream(sphere, cmd_stream):
                         Z(center.z), Z(rz)),
                     Cmd(Cmd.src_draw, sphere.get_window()),
                     Cmd(Cmd.transfer))
-
-@combination(Sphere, DeepWindow)
-def sphere_at_deep_window(sphere, deep_window):
-    deep_window.take(CmdStream(sphere))

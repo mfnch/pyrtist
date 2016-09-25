@@ -35,3 +35,7 @@ def window_at_primitive(window, primitive):
 @combination(Color, Primitive)
 def color_at_primitive(extra_arg, primitive):
     primitive.extra_args.append(extra_arg)
+
+@combination(Primitive, DeepWindow)
+def primitive_at_deep_window(primitive, deep_window):
+    deep_window.take(CmdStream(primitive))

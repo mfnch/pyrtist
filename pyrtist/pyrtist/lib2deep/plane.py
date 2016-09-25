@@ -58,7 +58,3 @@ def plane_at_cmd_stream(plane, cmd_stream):
     cmd_stream.take(Cmd(Cmd.src_draw, plane.get_window()),
                     Cmd(Cmd.on_plane, *points),
                     Cmd(Cmd.transfer))
-
-@combination(Plane, DeepWindow)
-def plane_at_deep_window(plane, deep_window):
-    deep_window.take(CmdStream(plane))

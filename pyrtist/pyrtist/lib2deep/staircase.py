@@ -63,7 +63,3 @@ def staircase_at_cmd_stream(staircase, cmd_stream):
 
     # Transfer to the dst buffer.
     cmd_stream.take(Cmd(Cmd.transfer))
-
-@combination(Staircase, DeepWindow)
-def staircase_at_deep_window(staircase, deep_window):
-    deep_window.take(CmdStream(staircase))
