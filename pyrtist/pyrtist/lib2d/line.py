@@ -39,7 +39,7 @@ class Line(PointTaker):
 
 @combination(Close, Line)
 def fn(close, line):
-    line.close = close
+    line.close = (close == Close.yes)
 
 @combination(int, Line)
 @combination(float, Line)

@@ -1,17 +1,33 @@
 '''Infrastructure helpers for the library.'''
 
-__all__ = ('getClassName', 'enum', 'alias', 'combination',
+__all__ = ('getClassName', 'create_enum', 'alias', 'combination',
            'RejectError', 'Taker')
 
 import types
 
 def getClassName(obj):
     return obj.__class__.__name__
+get_class_name = getClassName
 
-def enum(name, doc, **enums):
-    new_class = type(name, (int,), {'__doc__': doc})
-    for key, val in enums.iteritems():
-        setattr(new_class, key, new_class(val))
+class Enum(object):
+    def __init__(self, name, value=None):
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        return '{}.{}'.format(get_class_name(self), self.name)
+
+    def __repr__(self):
+        args = ((self.name,) if self.value is None
+                else (self.name, self.value))
+        return '{}({})'.format(get_class_name(self),
+                               ', '.join(map(repr, args)))
+
+def create_enum(name, doc, *enums):
+    d = ({'__doc__': doc} if doc is not None else {})
+    new_class = type(name, (Enum,), d)
+    for name in enums:
+        setattr(new_class, name, new_class(name))
     return new_class
 
 def alias(name, target, **attrs):

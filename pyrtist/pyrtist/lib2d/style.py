@@ -70,15 +70,15 @@ class StyleBase(Taker):
 
 ### StrokeStyle & co. #########################################################
 
-Join = enum('Join', 'Enumeration of join styles for lines',
-            miter=0, round=1, bevel=2)
+Join = create_enum('Join', 'Enumeration of join styles for lines',
+                   'miter', 'round', 'bevel')
 
 @combination(Join, CmdStream)
 def fn(join, cmd_stream):
     cmd_stream.take(Cmd(Cmd.set_line_join, join))
 
-Cap = enum('Cap', 'Enumeration of cap styles for lines',
-           butt=0, round=1, square=2)
+Cap = create_enum('Cap', 'Enumeration of cap styles for lines',
+                  'butt', 'round', 'square')
 
 @combination(Cap, CmdStream)
 def fn(cap, cmd_stream):
@@ -91,16 +91,16 @@ doc = ('If the current line join style (see `Join`) is set to `Join.miter`, '
 'then the style is converted to a `Join.bevel`.')
 MiterLimit = alias('MiterLimit', float, __doc__=doc)
 
-doc = 'Whether this style should be made the default style. '
-'This is mostly used internally. It allows to control the scope of validity '
-'of a Style object. For example, ``Poly(..., Style(MakeDefault.no, ...))`` '
-'traces a polygon using the provided style. The style is used only for '
-'tracing this polygon and does not affect the default style. '
-'Alternatively, ``Poly(..., Style(MakeDefault.yes, ...))`` traces the polygon '
-'using the provided style, which will also become the default style. '
-'Following ``Poly`` will use this style, unless another style is explicitly '
-'provided.'
-MakeDefault = enum('MakeDefault', doc, no=False, yes=True)
+doc = ('Whether this style should be made the default style. '
+ 'This is mostly used internally. It allows to control the scope of validity '
+ 'of a Style object. For example, ``Poly(..., Style(MakeDefault.no, ...))`` '
+ 'traces a polygon using the provided style. The style is used only for '
+ 'tracing this polygon and does not affect the default style. '
+ 'Alternatively, ``Poly(..., Style(MakeDefault.yes, ...))`` traces the polygon '
+ 'using the provided style, which will also become the default style. '
+ 'Following ``Poly`` will use this style, unless another style is explicitly '
+ 'provided.')
+MakeDefault = create_enum('MakeDefault', doc, 'no', 'yes')
 
 class StrokeStyle(StyleBase):
     attrs = ('pattern', 'width', 'dash', 'miter_limit', 'join', 'cap',

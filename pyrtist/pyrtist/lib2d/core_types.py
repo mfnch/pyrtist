@@ -277,8 +277,8 @@ class Matrix(object):
         return ret
 
 
-Close = enum('Close', 'Whether to close a path',
-             no=False, yes=True)
+Close = create_enum('Close', 'Whether to close a path',
+                    'no', 'yes')
 
 
 class Container(object):
