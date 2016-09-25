@@ -1,7 +1,7 @@
 '''Infrastructure helpers for the library.'''
 
 __all__ = ('getClassName', 'enum', 'alias', 'combination',
-           'RejectException', 'Taker')
+           'RejectError', 'Taker')
 
 import types
 
@@ -18,7 +18,7 @@ def alias(name, target, **attrs):
     return type(name, (target,), attrs)
 
 
-class RejectException(Exception):
+class RejectError(Exception):
     pass
 
 
@@ -26,24 +26,29 @@ class Taker(object):
     def __init__(self, *args):
         self.take(*args)
 
+    def _take_one(self, arg):
+        for arg_type in type(arg).mro():
+            for ancestor_type in type(self).mro():
+                combinations = getattr(ancestor_type, 'combinations', None)
+                if combinations is None:
+                    continue
+
+                combination = combinations.get(arg_type)
+                if combination is not None:
+                    return combination(arg, self)
+
+                if isinstance(arg, types.GeneratorType):
+                    for item in arg:
+                        ret = self._take_one(item)
+                    return ret
+
+        raise RejectError('{} doesn\'t take {}'
+                          .format(getClassName(self), getClassName(arg)))
+
     def take(self, *args):
-        combinations = self.combinations or {}
         ret = None
         for arg in args:
-            arg_type = type(arg)
-            combination = combinations.get(arg_type)
-            if combination is not None:
-                ret = combination(arg, self)
-                continue
-
-            if isinstance(arg, types.GeneratorType):
-                for item in arg:
-                    ret = self.take(item)
-                continue
-
-            raise ValueError('{} doesn\'t take {}'
-                             .format(getClassName(self),
-                                     getClassName(arg)))
+            ret = self._take_one(arg)
         return ret
 
     def __call__(self, *args):
@@ -62,13 +67,7 @@ def combination(child, parent, method_name=None):
       '{} is not a Taker: cannot add combination'.format(parent)
     combinations = parent.__dict__.get('combinations')
     if combinations is None:
-        # What follows is a bit of a hack at the moment: rather than resolving
-        # correctly combinations, we join the dictionaries. This will break
-        # down as soon as combinations to a base class are added after those
-        # of the derived classes.
-        combinations = getattr(parent, 'combinations', None)
-        combinations = ({} if combinations is None else combinations.copy())
-        parent.combinations = combinations
+        combinations = parent.combinations = {}
     def combination_adder(fn):
         combinations[child] = fn
         if method_name is not None:

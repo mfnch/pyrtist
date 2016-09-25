@@ -1,6 +1,6 @@
 import math
 
-from .base import Taker, combination, RejectException
+from .base import Taker, combination, RejectError
 from .core_types import Point
 from .cmd_stream import CmdStream, Cmd
 from .path import Path
@@ -18,7 +18,7 @@ class Circle(Taker):
 @combination(float, Circle)
 def fn(scalar, circle):
     if len(circle.radii) >= 2:
-        raise RejectException()
+        raise RejectError()
     circle.radii.append(float(scalar))
 
 @combination(Point, Circle)
@@ -38,7 +38,7 @@ def fn(child, circle):
 @combination(Circle, Path)
 def fn(circle, path):
     if len(circle.radii) == 0 or circle.center is None:
-        raise RejectException()
+        raise RejectError()
 
     if len(circle.radii) == 2:
         rx, ry = circle.radii

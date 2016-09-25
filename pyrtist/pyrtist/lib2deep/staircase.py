@@ -4,7 +4,7 @@
 __all__ = ('Staircase',)
 
 from ..lib2d import Window, Point, Axes, BBox
-from ..lib2d.base import Taker, combination, RejectException
+from ..lib2d.base import Taker, combination, RejectError
 from .core_types import Z
 from .profile import Profile
 from .cmd_stream import Cmd, CmdStream
@@ -26,13 +26,13 @@ class Staircase(Primitive):
 @combination(Profile, Staircase)
 def profile_at_staircase(profile, staircase):
     if staircase.profile is not None:
-        raise RejectException('Staircase already got a Profile')
+        raise RejectError('Staircase already got a Profile')
     staircase.profile = profile
 
 @combination(Axes, Staircase)
 def window_at_staircase(axes, staircase):
     if staircase.axes is not None:
-        raise RejectException('Staircase already got an Axes')
+        raise RejectError('Staircase already got an Axes')
     staircase.axes = axes
 
 @combination(Staircase, CmdStream)

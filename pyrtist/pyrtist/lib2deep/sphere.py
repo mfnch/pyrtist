@@ -3,7 +3,7 @@
 __all__ = ('Sphere',)
 
 from ..lib2d import Window, Circle, Point, Color
-from ..lib2d.base import Taker, combination, RejectException
+from ..lib2d.base import Taker, combination, RejectError
 from .core_types import Point3, Z
 from .cmd_stream import Cmd, CmdStream
 from .deep_window import DeepWindow
@@ -31,7 +31,7 @@ def center_at_sphere(center, sphere):
 @combination(float, Sphere)
 def scalar_at_sphere(scalar, circle):
     if len(circle.radii) >= 3:
-        raise RejectException()
+        raise RejectError()
     circle.radii.append(float(scalar))
 
 @combination(Sphere, CmdStream)

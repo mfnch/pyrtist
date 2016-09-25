@@ -57,6 +57,6 @@ def fn(child, rectangle):
 def fn(rectangle, window):
     c1 = rectangle.corner1
     c2 = rectangle.corner2
-    p = Poly(c1, Point(x=c1.x, y=c2.y), c2, Point(x=c2.x, y=c1.y))
+    p = Poly(c1, Point(c1.x, c2.y), c2, Point(c2.x, c1.y))
     p.style = rectangle.style
     window(p)

@@ -182,7 +182,7 @@ def fn(point, point_taker):
 @combination(tuple, PointTaker)
 def fn(tp, point_taker):
     if len(tp) != 2:
-        raise RejectException()
+        raise RejectError()
     point_taker.take(Point(tp))
 
 

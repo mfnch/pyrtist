@@ -2,7 +2,7 @@
 
 __all__ = ('Cylinder',)
 
-from ..lib2d.base import Taker, combination, RejectException
+from ..lib2d.base import Taker, combination, RejectError
 from ..lib2d import Point, Radii, Window, Poly, Color
 from .core_types import Point3, Z
 from .cmd_stream import Cmd, CmdStream
@@ -71,7 +71,7 @@ def scalar_at_cylinder(scalar, cylinder):
 @combination(Radii, Cylinder)
 def radii_at_cylinder(radii, cylinder):
     if len(cylinder.radii) >= 2:
-        raise RejectException('Too many radii given to Cylinder')
+        raise RejectError('Too many radii given to Cylinder')
     cylinder.radii.append(radii)
 
 @combination(Cylinder, CmdStream)
