@@ -20,7 +20,12 @@ class Transform(object):
         self.rotation_angle = rotation_angle or 0.0
 
     @staticmethod
-    def from_matrix(self, mx):
+    def create_translation(point):
+        '''Return a new translation transformation.'''
+        return Transform(translation=point)
+
+    @staticmethod
+    def from_matrix(mx):
         '''Build a `Transform` object from a given `Matrix`, assuming (0, 0)
         as a rotation center.
         '''

@@ -5,7 +5,7 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close', 'Container', 'Radii', 'Tri', 'View')
+           'Matrix', 'Close', 'Container', 'Offset', 'Radii', 'Tri', 'View')
 
 import math
 import numbers
@@ -304,10 +304,15 @@ class Container(object):
                             .format(self.__class__.__name__, max_args))
 
 
+class Offset(Point):
+    '''Alias for Point used to pass unitless offsets.'''
+
+
 class Radii(Container):
     '''Container which groups one or more radii (e.g. the x, y radii of
     an ellipsoid.
     '''
+
 
 class Tri(Container):
     '''Container which groups up to 3 points used to define a Bezier curve.'''

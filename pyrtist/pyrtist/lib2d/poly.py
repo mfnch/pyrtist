@@ -5,6 +5,7 @@ from .core_types import *
 from .path import Path
 from .window import Window
 from .cmd_stream import CmdStream, Cmd
+from .pattern import Pattern
 from .style import *
 
 class Poly(PointTaker):
@@ -13,11 +14,16 @@ class Poly(PointTaker):
         self.close = True
         super(Poly, self).__init__(*args)
 
+@combination(int, Poly)
+@combination(float, Poly)
+def scalar_at_poly(scalar, poly):
+    pass
+
 @combination(Close, Poly)
 def fn(close, poly):
     poly.close = close
 
-@combination(Color, Poly)
+@combination(Pattern, Poly)
 @combination(StrokeStyle, Poly)
 @combination(Style, Poly)
 def fn(child, poly):
@@ -47,7 +53,7 @@ class Rectangle(PointTaker):
         self.corner2 = Point(corner2)
         super(Rectangle, self).__init__(*args)
 
-@combination(Color, Rectangle)
+@combination(Pattern, Rectangle)
 @combination(StrokeStyle, Rectangle)
 @combination(Style, Rectangle)
 def fn(child, rectangle):

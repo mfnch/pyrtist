@@ -70,11 +70,12 @@ class CmdStreamBase(Taker):
 
 
 class Cmd(CmdBase):
-    names = ('move_to', 'line_to', 'curve_to', 'ext_arc_to', 'close_path',
-             'set_line_width', 'set_line_join', 'set_line_cap',
-             'set_source_rgb', 'set_source_rgba',
-             'stroke', 'fill', 'fill_preserve', 'save', 'restore',
-             'set_bbox')
+    names = \
+      ('move_to', 'line_to', 'curve_to', 'ext_arc_to', 'close_path',
+       'set_line_width', 'set_line_join', 'set_line_cap',
+       'pattern_create_image', 'pattern_set_extend', 'pattern_set_filter',
+       'pattern_set_source', 'set_source_rgb', 'set_source_rgba',
+       'stroke', 'fill', 'fill_preserve', 'save', 'restore', 'set_bbox')
 Cmd.register_commands()
 
 

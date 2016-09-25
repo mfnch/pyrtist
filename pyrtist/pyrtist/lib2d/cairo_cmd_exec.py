@@ -30,6 +30,18 @@ class CairoCmdExecutor(object):
              Join.round: cairo.LINE_JOIN_ROUND,
              Join.bevel: cairo.LINE_JOIN_BEVEL}
 
+    pattern_extends = {'none': cairo.EXTEND_NONE,
+                       'repeat': cairo.EXTEND_REPEAT,
+                       'reflect': cairo.EXTEND_REFLECT,
+                       'pad': cairo.EXTEND_PAD}
+
+    pattern_filters = {'fast': cairo.FILTER_FAST,
+                       'good': cairo.FILTER_GOOD,
+                       'best': cairo.FILTER_BEST,
+                       'nearest': cairo.FILTER_NEAREST,
+                       'bilinear': cairo.FILTER_BILINEAR,
+                       'gaussian': cairo.FILTER_GAUSSIAN}
+
     @classmethod
     def create_image_surface(cls, mode, width, height):
         '''Create a new image surface.'''
@@ -84,6 +96,7 @@ class CairoCmdExecutor(object):
         context = cairo.Context(surface)
         self.surface = surface
         self.context = context
+        self.pattern = None
         self.vector_transform = resolution
         self.scalar_transform = 0.5*(abs(resolution.x) + abs(resolution.y))
         self.origin = origin
@@ -155,6 +168,41 @@ class CairoCmdExecutor(object):
 
     def cmd_set_source_rgba(self, r, g, b, a):
         self.context.set_source_rgba(r, g, b ,a)
+
+    def cmd_pattern_set_extend(self, extend):
+        if self.pattern is None:
+            return
+        cairo_extend = self.pattern_extends.get(extend)
+        if cairo_extend is None:
+            raise ValueError('Unknown pattern extend mode {}'.format(extend))
+        self.pattern.set_extend(cairo_extend)
+
+    def cmd_pattern_set_filter(self, flt):
+        if self.pattern is None:
+            return
+        cairo_filter = self.pattern_filters.get(flt)
+        if cairo_filter is None:
+            raise ValueError('Unknown pattern filter {}'.format(flt))
+        self.pattern.set_filter(cairo_filter)
+
+    def cmd_pattern_set_source(self):
+        if self.pattern is None:
+            return
+        self.context.set_source(self.pattern)
+
+    def cmd_pattern_create_image(self, origin, v10, v01, offset, file_name):
+        image = cairo.ImageSurface.create_from_png(file_name)
+        lx = float(image.get_width())
+        ly = float(image.get_height())
+        mx = cairo.Matrix(xx=(v10.x - origin.x)/lx, yx=(v10.y - origin.y)/lx,
+                          xy=(origin.x - v01.x)/ly, yy=(origin.y - v01.y)/ly,
+                          x0=v01.x, y0=v01.y)
+        mx.invert()
+        mx = mx.multiply(cairo.Matrix(x0=offset[0]*lx, y0=-offset[1]*ly))
+        pattern = cairo.SurfacePattern(image)
+        pattern.set_matrix(mx)
+        self.pattern = pattern
+        self.context.set_source(pattern)
 
     def cmd_stroke(self):
         self.context.stroke()

@@ -2,6 +2,7 @@ __all__ = ('Color', 'Grey', 'Stroke', 'Style',
            'Border', 'StrokeStyle', 'Join', 'Cap')
 
 import numbers
+import colorsys
 
 from .base import *
 from .core_types import *
@@ -11,6 +12,12 @@ from .pattern import Pattern
 
 ### Color #####################################################################
 class Color(Pattern):
+    @staticmethod
+    def from_hsva(h=0.0, s=0.0, v=0.0, a=1.0):
+        '''Create a Color from hue, saturation, value and alpha components.'''
+        r, g, b = colorsys.hsv_to_rgb(h, s, v)
+        return Color(r, g, b, a)
+
     def __init__(self, r=0.0, g=0.0, b=0.0, a=1.0):
         super(Color, self).__init__()
         if not isinstance(r, numbers.Number):
@@ -36,6 +43,19 @@ class Color(Pattern):
 
     def __iter__(self):
         return iter((self.r, self.g, self.b, self.a))
+
+    def get_hsva(self):
+        '''Get the hue, saturation, value and alpha components for this color.
+        '''
+        h, s, v = colorsys.rgb_to_hsv(self.r, self.g, self.b)
+        return (h, s, v, self.a)
+
+    def darken(self, amount):
+        '''Return a color which is darker than this color by the given amount.
+        '''
+        h, s, v, a = self.get_hsva()
+        v = v*amount
+        return Color.from_hsva(h, s, v, a)
 
 Color.none = Color(a=0.0)
 Color.black = Color()
@@ -120,9 +140,9 @@ Border = StrokeStyle
 def fn(child, parent):
     parent.set_from(child)
 
-@combination(Color, StrokeStyle)
-def fn(color, stroke_style):
-    stroke_style.pattern = color
+@combination(Pattern, StrokeStyle)
+def pattern_at_stroke_style(pattern, stroke_style):
+    stroke_style.pattern = pattern
 
 @combination(int, StrokeStyle)
 @combination(float, StrokeStyle)
@@ -167,9 +187,9 @@ def fn(stroke_style, style):
         style.stroke_style = StrokeStyle()
     style.stroke_style.take(stroke_style)
 
-@combination(Color, Style)
-def fn(color, style):
-    style.pattern = color
+@combination(Pattern, Style)
+def pattern_at_style(pattern, style):
+    style.pattern = pattern
 
 @combination(Style, CmdStream)
 def fn(style, cmd_stream):

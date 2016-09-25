@@ -2,12 +2,13 @@ __all__ = ('Hot', 'Window')
 
 import numbers
 
-from base import Taker, combination
-from cmd_stream import Cmd, CmdStream
-from style import Color, Stroke
-from cairo_cmd_exec import CairoCmdExecutor
-from bbox import BBox
-from core_types import Point, View
+from .base import Taker, combination
+from .cmd_stream import Cmd, CmdStream
+from .style import Color, Stroke
+from .cairo_cmd_exec import CairoCmdExecutor
+from .bbox import BBox
+from .core_types import Point, View
+from .pattern import Pattern
 
 
 class Hot(object):
@@ -93,7 +94,7 @@ class Window(WindowBase):
           self._check_for_save(mode, size, resolution, executor, bg_color)
         if bg_color is None:
             bg_color = (self.default_bg_color if mode == 'rgb24'
-                        else Color((1, 1, 1, 0)))
+                        else Color(1, 1, 1, 0))
         ex = executor or self.default_executor
         mode = mode or self.default_mode
         surface = ex.create_image_surface(mode, size[0], size[1])
@@ -171,9 +172,9 @@ def fn(bbox, window):
     if bbox:
         window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
 
-@combination(Color, Window, 'Color')
-def fn(color, window):
-    window(CmdStream(color))
+@combination(Pattern, Window)
+def pattern_at_window(pattern, window):
+    window.take(CmdStream(pattern))
 
 @combination(Stroke, Window)
 def fn(stroke, window):

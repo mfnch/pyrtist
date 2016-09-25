@@ -1,9 +1,10 @@
 __all__ = ('Axes',)
 
+from .base import Taker, combination
 from .core_types import Point, Matrix
 
 
-class Axes(object):
+class Axes(Taker):
     '''Object describing a reference system with an origin and - not
     necessarily orthogonal - axes.
     '''
@@ -17,29 +18,40 @@ class Axes(object):
         return Axes(origin, origin + Point.vy(delta_y))
 
     def __init__(self, *args):
-        if len(args) > 3:
-            raise TypeError('Too many arguments to {}'
-                            .format(self.__class__.__name__))
-        points = map(Point, args)
-        if len(points) == 0:
-            points = (Point(), Point.vx(), Point.vy())
-        elif len(points) == 1:
-            origin = points[0]
-            points = (origin, origin + Point.vx(), origin + Point.vy())
-        elif len(points) == 2:
-            origin, one_zero = points
-            zero_one = origin + (one_zero - origin).ort()
-            points = (origin, one_zero, zero_one)
-        self.origin, self.one_zero, self.zero_one = points
+        self.points = []
+        super(Axes, self).__init__(*args)
+
+    @property
+    def origin(self):
+        if len(self.points) >= 1:
+            return self.points[0]
+        return Point()
+
+    @property
+    def one_zero(self):
+        if len(self.points) >= 2:
+            return self.points[1]
+        return self.origin + Point.vx()
+
+    @property
+    def zero_one(self):
+        if len(self.points) >= 3:
+            return self.points[2]
+        if len(self.points) <= 1:
+            return self.origin + Point.vy()
+        origin = self.origin
+        zero_one = origin + (self.one_zero - origin).ort()
+        return zero_one
 
     def copy(self):
-        return Axes(self.origin, self.one_zero, self.zero_one)
+        return Axes(*self.get_points())
 
     def scale(self, scalar):
         '''Scale the object keeping the same origin.'''
         origin = self.origin
-        self.one_zero = origin + (self.one_zero - origin)*scalar
-        self.zero_one = origin + (self.zero_one - origin)*scalar
+        one_zero = origin + (self.one_zero - origin)*scalar
+        zero_one = origin + (self.zero_one - origin)*scalar
+        self.points = [origin, one_zero, zero_one]
 
     def __repr__(self):
         return ('Axes({}, {}, {})'
@@ -64,3 +76,16 @@ class Axes(object):
         v10 = self.one_zero - origin
         return Matrix(((v10.x, v01.x, origin.x),
                        (v10.y, v01.y, origin.y)))
+
+@combination(tuple, Axes)
+@combination(Point, Axes)
+def point_at_axes(point, axes):
+    if len(axes.points) >= 3:
+        raise TypeError('Too many arguments to {}'
+                        .format(self.__class__.__name__))
+    axes.points.append(point)
+
+@combination(int, Axes)
+@combination(float, Axes)
+def scalar_at_axes(scalar, axes):
+    axes.scale(scalar)

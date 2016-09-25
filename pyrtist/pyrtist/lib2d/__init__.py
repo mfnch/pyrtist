@@ -10,6 +10,7 @@ from .path import Path
 from .window import *
 from .transform import *
 from .put import *
+from .image import *
 from .style import *
 from .bbox import BBox
 from .cairo_cmd_exec import *
