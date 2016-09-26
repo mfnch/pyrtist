@@ -1,5 +1,6 @@
 __all__ = ('CairoCmdExecutor',)
 
+import math
 import numbers
 import cairo
 
@@ -13,7 +14,18 @@ def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):
                       xy=b.x - ctr.x, yy=b.y - ctr.y, y0=ctr.y)
     ctx.transform(mx)
     ctx.arc(0.0, 0.0, 1.0,            # center x and y, radius.
-            angle_begin, angle_end);  # angle begin and end.
+            angle_begin, angle_end)   # angle begin and end.
+    ctx.set_matrix(prev_mx)
+
+def ext_joinarc_to(ctx, a, b, c):
+    prev_mx = ctx.get_matrix()
+    mx_xx = b.x - c.x
+    mx_yx = b.y - c.y
+    mx = cairo.Matrix(xx=mx_xx,     yx=mx_yx,     x0=a.x - mx_xx,
+                      xy=b.x - a.x, yy=b.y - a.y, y0=a.y - mx_yx)
+    ctx.transform(mx)
+    ctx.arc(0.0, 0.0, 1.0,            # center x and y, radius.
+            0.0, 0.5*math.pi)         # angle begin and end.
     ctx.set_matrix(prev_mx)
 
 class CairoCmdExecutor(object):
@@ -147,6 +159,9 @@ class CairoCmdExecutor(object):
 
     def cmd_ext_arc_to(self, ctr, a, b, angle_begin, angle_end):
         ext_arc_to(self.context, ctr, a, b, angle_begin, angle_end)
+
+    def cmd_ext_joinarc_to(self, a, b, c):
+        ext_joinarc_to(self.context, a, b, c)
 
     def cmd_close_path(self):
         self.context.close_path()
