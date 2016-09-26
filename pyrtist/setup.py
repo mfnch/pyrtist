@@ -47,15 +47,10 @@ license_name = 'GPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep']
 
-examples = []
-
-examples_fullpaths = list(os.path.join('examples', bn)
-                          for bn in examples)
-
-package_data = {'pyrtist': (examples_fullpaths +
-                            ['icons/24x24/*.png',
-                             'icons/32x32/*.png',
-                             'icons/fonts/*.png'])}
+package_data = {'pyrtist': ['examples/*.py',
+                            'icons/24x24/*.png',
+                            'icons/32x32/*.png',
+                            'icons/fonts/*.png']}
 
 # C++ extensions.
 ext_modules = []
