@@ -33,6 +33,6 @@ new_figure.take(another_polygon)
 # We finally put the new figure inside the first, scaling it down
 # a bit. Try to change the AngleDeg[0] to AngleDeg[20], then
 # press CTRL+RETURN (or try menu Run --> Execute)
-#w.take(Put(new_figure, Scale(0.8), AngleDeg(0), Center(p7)))
+w.take(Put(new_figure, Scale(0.8), AngleDeg(0), Center(p7)))
 
 gui(w)

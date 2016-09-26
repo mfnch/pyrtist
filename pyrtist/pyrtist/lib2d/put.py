@@ -1,5 +1,7 @@
 __all__ = ('Put', 'SimplePut', 'Near')
 
+import math
+
 from .base import *
 from .core_types import *
 from .cmd_stream import *
@@ -43,6 +45,18 @@ def str_at_put(transform_str, put):
 @combination(Transform, Put)
 def transform_at_put(transform, put):
     put.transform = transform
+
+@combination(Scale, Put)
+def scale_at_put(scale, put):
+    put.transform.scale_factors = scale
+
+@combination(Center, Put)
+def scale_at_put(center, put):
+    put.transform.rotation_center = center
+
+@combination(AngleDeg, Put)
+def scale_at_put(angle, put):
+    put.transform.rotation_angle = angle*math.pi/180.0
 
 @combination(Near, Put)
 def near_at_put(near, put):

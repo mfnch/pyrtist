@@ -5,7 +5,8 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close', 'Container', 'Offset', 'Radii', 'Tri', 'View')
+           'Matrix', 'Close', 'Container', 'Offset', 'Scale', 'Center',
+           'AngleDeg', 'Radii', 'Tri', 'View')
 
 import math
 import numbers
@@ -142,12 +143,20 @@ class Point(object):
         return axes.origin - d + d_ort*2.0
 
     def mirror_x(self, p):
-        '''Mirror the point with respect to the x axis.'''
+        '''Mirror the point with respect to an horizontal axis passing
+        through `p`.
+        '''
         return Point(self.x, 2.0*p.y - self.y)
 
     def mirror_y(self, p):
-        '''Mirror the point with respect to the x axis.'''
+        '''Mirror the point with respect to a vertical axis passing
+        through `p`.
+        '''
         return Point(2.0*p.x - self.x, self.y)
+
+    def mirror_xy(self, p):
+        '''Mirror this point with respect to the specified point.'''
+        return 2.0*p - self
 
 
 def Px(value):
@@ -308,10 +317,26 @@ class Offset(Point):
     '''Alias for Point used to pass unitless offsets.'''
 
 
+class Scale(Point):
+    '''Alias for Point used to pass scale factors.'''
+
+    def __init__(self, x=1.0, y=None):
+        if y is None:
+            y = x
+        super(Scale, self).__init__(x, y)
+
+class Center(Point):
+    '''Alias for Point used to pass the center for a rotation.'''
+
+
 class Radii(Container):
     '''Container which groups one or more radii (e.g. the x, y radii of
     an ellipsoid.
     '''
+
+
+class AngleDeg(float):
+    '''Floating point number representing an angle in degrees.'''
 
 
 class Tri(Container):
