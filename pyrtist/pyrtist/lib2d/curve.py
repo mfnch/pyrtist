@@ -10,7 +10,7 @@ from .style import Style
 class Curve(Taker):
     def __init__(self, *args):
         self.style = Style()
-        self.close = False
+        self.close = True
         self.tris = []
         super(Curve, self).__init__(*args)
 
