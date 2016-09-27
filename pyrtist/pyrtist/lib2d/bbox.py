@@ -26,7 +26,7 @@ class BBox(Taker):
 
 @combination(tuple, BBox)
 @combination(Point, BBox)
-def fn(point, bbox):
+def point_at_bbox(point, bbox):
     point = Point(point)
     if bbox.min_point is None:
         bbox.min_point = bbox.max_point = point
@@ -36,10 +36,15 @@ def fn(point, bbox):
         bbox.max_point = Point(max(bbox.max_point.x, point.x),
                                max(bbox.max_point.y, point.y))
 
+@combination(BBox, BBox)
+def bbox_at_bbox(child, parent):
+    parent.take(child.min_point, child.max_point)
+
 
 class BBoxExecutor(object):
     def __init__(self, bbox):
         self.bbox = bbox
+        self.current_width = None
 
     def execute(self, cmds):
         for cmd in cmds:
@@ -50,7 +55,15 @@ class BBoxExecutor(object):
     def generic_cmd_executor(self, *args):
         for arg in args:
             if isinstance(arg, Point):
-                self.bbox.take(arg)
+                w = self.current_width
+                if w is None:
+                    self.bbox.take(arg)
+                else:
+                    self.bbox.take(arg + Point(w, w))
+                    self.bbox.take(arg - Point(w, w))
+
+    def cmd_set_line_width(self, width):
+        self.current_width = abs(width)
 
     def cmd_set_bbox(self, p1, p2):
         self.bbox.reset()
