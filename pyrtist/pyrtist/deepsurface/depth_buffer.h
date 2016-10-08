@@ -3,6 +3,7 @@
 
 #include <limits>
 #include <functional>
+#include <memory>
 #include <math.h>
 #include <stdint.h>
 
@@ -40,6 +41,13 @@ class DepthBuffer : public ImageBuffer<float> {
   void Clear() { Fill(kInfiniteDepth); }
 
   ARGBImageBuffer* ComputeNormals();
+
+  bool SaveToFile(const char* file_name) {
+    if (file_name == nullptr)
+      return false;
+    std::unique_ptr<ARGBImageBuffer> normals_image{ComputeNormals()};
+    return normals_image->SaveToFile(file_name);
+  }
 
   void DrawPlane(float clip_start_x, float clip_start_y,
                  float clip_end_x, float clip_end_y,

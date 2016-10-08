@@ -7,10 +7,43 @@ from .. import deepsurface
 from .core_types import Point3, Point, Z
 
 
+class DeepSurfaceWrapper(object):
+    def __init__(self, *args):
+        self.src = deepsurface.DeepSurface(*args)
+        self.dst = deepsurface.DeepSurface(*args)
+
+    def get_width(self):
+        return self.dst.get_width()
+
+    def get_height(self):
+        return self.dst.get_height()
+
+    def get_src_image_buffer(self):
+        return self.src.get_image_buffer()
+
+    def get_src_depth_buffer(self):
+        return self.src.get_depth_buffer()
+
+    def get_dst_image_buffer(self):
+        return self.dst.get_image_buffer()
+
+    def get_dst_depth_buffer(self):
+        return self.dst.get_depth_buffer()
+
+    def clear(self):
+        self.src.clear()
+
+    def transfer(self, and_clear=True):
+        self.src.transfer(self.dst, and_clear)
+
+    def save_to_files(self, image_file_name, normals_file_name):
+        self.dst.save_to_files(image_file_name, normals_file_name)
+
+
 class CmdExecutor(object):
     @staticmethod
     def create_surface(width, height):
-        return deepsurface.DeepSurface(width, height)
+        return DeepSurfaceWrapper(width, height)
 
     @staticmethod
     def for_surface(deep_surface, top_left=None, bot_right=None,

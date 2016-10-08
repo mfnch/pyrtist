@@ -6,54 +6,46 @@
 
 class DeepSurface {
  public:
+  /// Transfer the surface to the given destination surface.
+  static bool Transfer(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
+                       DepthBuffer* dst_depth, ARGBImageBuffer* dst_image);
+
+  static bool Transfer(DeepSurface* src, DeepSurface* dst) {
+    return Transfer(&src->depth_buffer_, &src->image_buffer_,
+                    &dst->depth_buffer_, &dst->image_buffer_);
+  }
+
   DeepSurface(int width, int stride, int height)
-      : src_depth_buffer_(width, stride, height),
-        src_image_buffer_(width, stride, height),
-        dst_depth_buffer_(width, stride, height),
-        dst_image_buffer_(width, stride, height) {
+      : depth_buffer_(width, stride, height),
+        image_buffer_(width, stride, height) {
     if (IsValid())
       Clear();
   }
 
   /// Whether the surface is valid and ready to be used.
-  bool IsValid() {
-    return (src_depth_buffer_.IsValid() &&
-            src_image_buffer_.IsValid() &&
-            dst_depth_buffer_.IsValid() &&
-            dst_image_buffer_.IsValid());
-  }
+  bool IsValid() { return depth_buffer_.IsValid() && image_buffer_.IsValid(); }
 
-  int GetWidth() { return dst_depth_buffer_.GetWidth(); }
-  int GetHeight() { return dst_depth_buffer_.GetHeight(); }
+  DepthBuffer* GetDepthBuffer() { return &depth_buffer_; }
+  ARGBImageBuffer* GetImageBuffer() { return &image_buffer_; }
 
-  /// Get the depth buffer over which the user is expected to draw.
-  DepthBuffer* GetSrcDepthBuffer() { return &src_depth_buffer_; }
-
-  /// Get the destination depth buffer.
-  DepthBuffer* GetDstDepthBuffer() { return &dst_depth_buffer_; }
-
-  /// Get the image buffer over which the user is expected to draw.
-  ARGBImageBuffer* GetSrcImageBuffer() { return &src_image_buffer_; }
-
-  /// Get the image buffer over which the user is expected to draw.
-  ARGBImageBuffer* GetDstImageBuffer() { return &dst_image_buffer_; }
-
-  /// Clear the source buffers.
   void Clear() {
-    src_depth_buffer_.Clear();
-    src_image_buffer_.Clear();
+    depth_buffer_.Clear();
+    image_buffer_.Clear();
   }
 
-  /// Transfer the source buffer to the main buffers.
-  void Transfer(bool and_clear = true);
-
-  bool SaveToFiles(const char* image_file_name, const char* normals_file_name);
+  bool SaveToFiles(const char* image_file_name,
+                   const char* normals_file_name) {
+    bool success = true;
+    if (image_file_name != nullptr)
+      success = image_buffer_.SaveToFile(image_file_name);
+    if (normals_file_name)
+      success = depth_buffer_.SaveToFile(normals_file_name) && success;
+    return success;
+  }
 
  private:
-  DepthBuffer src_depth_buffer_;
-  ARGBImageBuffer src_image_buffer_;
-  DepthBuffer dst_depth_buffer_;
-  ARGBImageBuffer dst_image_buffer_;
+  DepthBuffer depth_buffer_;
+  ARGBImageBuffer image_buffer_;
 };
 
 #endif /* _DEEP_SURFACE_H */
