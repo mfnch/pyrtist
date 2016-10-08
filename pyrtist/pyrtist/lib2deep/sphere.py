@@ -2,11 +2,10 @@
 
 __all__ = ('Sphere',)
 
-from ..lib2d import Window, Circle, Point, Color
-from ..lib2d.base import Taker, combination, RejectError
+from ..lib2d import Circle, Point
+from ..lib2d.base import combination, RejectError
 from .core_types import Point3, Z
 from .cmd_stream import Cmd, CmdStream
-from .deep_window import DeepWindow
 from .primitive import Primitive
 
 

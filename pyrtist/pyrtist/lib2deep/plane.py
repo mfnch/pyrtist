@@ -2,11 +2,10 @@
 
 __all__ = ('Plane',)
 
-from ..lib2d import Window, BBox, Point, Rectangle, Color
-from ..lib2d.base import Taker, combination
+from ..lib2d import BBox, Point, Rectangle
+from ..lib2d.base import combination
 from .core_types import Point3
 from .cmd_stream import CmdStream, Cmd
-from .deep_window import DeepWindow
 from .primitive import Primitive
 
 

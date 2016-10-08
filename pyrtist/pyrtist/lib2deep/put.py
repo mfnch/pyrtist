@@ -1,6 +1,13 @@
-__all__ = ('SimplePut',)
+'''Implementation of Put functionality for DeepWindows.
 
-from ..lib2d.base import Taker, combination
+This module allows passing Put objects to DeepWindow in order to place a
+DeepWindow inside another DeepWindow, similarly to what is done for Windows
+in the pyrtist.lib2d module.
+'''
+
+__all__ = ('SimplePut', 'Put', 'Near')
+
+from ..lib2d.base import combination
 from ..lib2d import SimplePut, Put, Near
 from .core_types import Point, Point3, DeepMatrix
 from .deep_window import DeepWindow

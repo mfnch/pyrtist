@@ -69,7 +69,7 @@ void DepthBuffer::DrawSphere(float clip_start_x, float clip_start_y,
                              float* mx, float translate_z, float z_end) {
   float scale_z = z_end - translate_z;
   auto depth_fn =
-      [scale_z, translate_z](float* out, float u, float v) -> void {
+    [scale_z, translate_z](float* out, float u, float v) -> void {
       float z2 = 1.0f - (u*u + v*v);
       if (z2 >= 0.0f)
         *out = translate_z + scale_z*sqrt(z2);

@@ -4,7 +4,7 @@ import os
 
 from ..lib2d import Point, Color, BBox, Window, Hot, View
 from ..lib2d.window import WindowBase
-from ..lib2d.base import Taker, combination
+from ..lib2d.base import combination
 from .core_types import Point3
 from .cmd_stream import Cmd, CmdStream
 from .cmd_exec import CmdExecutor

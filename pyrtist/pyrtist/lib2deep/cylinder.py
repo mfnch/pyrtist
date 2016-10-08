@@ -2,11 +2,10 @@
 
 __all__ = ('Cylinder',)
 
-from ..lib2d.base import Taker, combination, RejectError
-from ..lib2d import Point, Radii, Window, Poly, Color
-from .core_types import Point3, Z
+from ..lib2d.base import combination, RejectError
+from ..lib2d import Point, Radii, Poly
+from .core_types import Point3
 from .cmd_stream import Cmd, CmdStream
-from .deep_window import DeepWindow
 from .primitive import Primitive
 
 
@@ -58,7 +57,7 @@ class Cylinder(Primitive):
         return (ret[0].args, ret[1].args)
 
 
-@combination(Point , Cylinder)
+@combination(Point, Cylinder)
 @combination(Point3, Cylinder)
 def point3_at_cylinder(p, cylinder):
     cylinder.points.append(p)

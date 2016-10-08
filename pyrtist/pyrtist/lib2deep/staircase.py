@@ -3,12 +3,11 @@
 
 __all__ = ('Staircase',)
 
-from ..lib2d import Window, Point, Axes, BBox
-from ..lib2d.base import Taker, combination, RejectError
+from ..lib2d import Window, Point, Axes
+from ..lib2d.base import combination, RejectError
 from .core_types import Z
 from .profile import Profile
 from .cmd_stream import Cmd, CmdStream
-from .deep_window import DeepWindow
 from .primitive import Primitive
 
 
