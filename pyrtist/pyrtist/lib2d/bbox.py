@@ -1,5 +1,7 @@
 __all__ = ('BBox',)
 
+import math
+
 from .base import Taker, combination
 from .core_types import Point
 from .cmd_stream import CmdStream
@@ -68,6 +70,18 @@ class BBoxExecutor(object):
     def cmd_set_bbox(self, p1, p2):
         self.bbox.reset()
         self.bbox.take(p1, p2)
+
+    def cmd_ext_arc_to(self, center, one_zero, zero_one, start_ang, end_ang):
+        u = one_zero - center
+        v = zero_one - center
+        w = self.current_width
+        if self.current_width is not None:
+            u += Point(math.copysign(w, u.x), math.copysign(w, u.x))
+            v += Point(math.copysign(w, v.x), math.copysign(w, v.x))
+        self.bbox.take(center + u + v,
+                       center + u - v,
+                       center - u - v,
+                       center - u + v)
 
 @combination(CmdStream, BBox)
 def cmd_stream_at_bbox(cmd_stream, bbox):

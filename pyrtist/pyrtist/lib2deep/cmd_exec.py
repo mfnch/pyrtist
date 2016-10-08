@@ -128,13 +128,27 @@ class CmdExecutor(object):
         self.depth_buffer.draw_plane(*map(float, args))
 
     def cmd_on_sphere(self, center_2d, one_zero, zero_one, z_start, z_end):
+        bbox = self.get_clip_region()
+        if not bbox:
+            return
+
+        if 1:
+            mx = Axes(center_2d, one_zero, zero_one).get_matrix()
+            mx.invert()
+
+            clip_start, clip_end = map(tuple, bbox)
+            args = map(float, (clip_start + clip_end + mx.get_entries() +
+                               (z_start, z_end)))
+            self.depth_buffer.draw_sphere(*args)
+            return
+
         x, y = center_2d
         radius = 0.5*((one_zero - center_2d).norm() +
                       (zero_one - center_2d).norm())
         z_scale = (z_end - z_start)/float(radius)
         z_scale = 1.0
-        self.depth_buffer.draw_sphere(int(x), int(y), int(z_start),
-                                      int(radius), z_scale)
+        self.depth_buffer.draw_sphere_old(int(x), int(y), int(z_start),
+                                          int(radius), z_scale)
 
     def cmd_on_cylinder(self, start_point, start_edge, end_point, end_edge):
         bbox = self.get_clip_region()

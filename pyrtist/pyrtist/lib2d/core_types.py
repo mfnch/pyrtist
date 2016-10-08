@@ -111,9 +111,11 @@ class Point(object):
         return self.x*p.x + self.y*p.y
 
     def norm2(self):
+        '''Return the square of the norm for this vector.'''
         return self.x*self.x + self.y*self.y
 
     def norm(self):
+        '''Return the vector's norm.'''
         return math.sqrt(self.norm2())
 
     def normalize(self):

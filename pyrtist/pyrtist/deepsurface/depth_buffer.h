@@ -52,6 +52,10 @@ class DepthBuffer : public ImageBuffer<float> {
 
   void DrawSphere(int x, int y, int z, int radius, float z_scale);
 
+  void DrawSphere(float clip_start_x, float clip_start_y,
+                  float clip_end_x, float clip_end_y,
+                  float* mx, float z_start, float z_end);
+
   void DrawCylinder(float clip_start_x, float clip_start_y,
                     float clip_end_x, float clip_end_y,
                     float* mx, float end_radius,

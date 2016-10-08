@@ -84,6 +84,20 @@ void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   }
 }
 
+void DepthBuffer::DrawSphere(float clip_start_x, float clip_start_y,
+                             float clip_end_x, float clip_end_y,
+                             float* mx, float translate_z, float z_end) {
+  float scale_z = z_end - translate_z;
+  auto depth_fn =
+      [scale_z, translate_z](float* out, float u, float v) -> void {
+      float z2 = 1.0f - (u*u + v*v);
+      if (z2 >= 0.0f)
+        *out = translate_z + scale_z*sqrt(z2);
+    };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+}
+
 void DepthBuffer::DrawCircular(float clip_start_x, float clip_start_y,
                                float clip_end_x, float clip_end_y,
                                float* mx, float scale_z, float translate_z,
