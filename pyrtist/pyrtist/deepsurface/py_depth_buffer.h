@@ -1,7 +1,7 @@
-#ifndef _PY_DEEP_BUFFER_H
-#define _PY_DEEP_BUFFER_H
+#ifndef _PY_DEPTH_BUFFER_H
+#define _PY_DEPTH_BUFFER_H
 
-#include "deep_buffer.h"
+#include "depth_buffer.h"
 
 #include "Python.h"
 
@@ -19,4 +19,4 @@ extern PyTypeObject PyDeepBuffer_Type;
 PyObject* PyDeepBuffer_FromC(PyTypeObject* type, DeepBuffer* db,
                              PyObject* base);
 
-#endif  // _PY_DEEP_BUFFER_H
+#endif  // _PY_DEPTH_BUFFER_H

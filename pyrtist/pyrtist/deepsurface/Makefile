@@ -7,7 +7,7 @@ CXXFLAGS := -std=c++11 -g -O2 -Wall -pthread -fPIC -fwrapv \
   -fno-strict-aliasing -fstack-protector-strong -Wformat \
   -Werror=format-security -DNDEBUG -D_FORTIFY_SOURCE=2 \
   -I/usr/include/python2.7
-SOURCES := deep_buffer.cc deep_surface.cc image_buffer.cc py_deep_buffer.cc \
+SOURCES := depth_buffer.cc deep_surface.cc image_buffer.cc py_depth_buffer.cc \
   py_deep_surface.cc py_image_buffer.cc py_init.cc
 OBJS := $(SOURCES:.cc=.o)
 
@@ -24,4 +24,4 @@ $(OUT_LIB): $(OBJS) $(HEADERS)
 	$(CXX) -MM $(CXXFLAGS) $*.cc > $*.d
 
 clean:
-	rm -f deep_buffer *.o *.d $(OUT_LIB)
+	rm -f *.o *.d $(OUT_LIB)

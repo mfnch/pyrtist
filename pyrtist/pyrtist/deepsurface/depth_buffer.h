@@ -1,5 +1,5 @@
-#ifndef _DEEP_BUFFER_H
-#define _DEEP_BUFFER_H
+#ifndef _DEPTH_BUFFER_H
+#define _DEPTH_BUFFER_H
 
 #include <limits>
 #include <functional>
@@ -63,4 +63,4 @@ class DeepBuffer : public ImageBuffer<float> {
                     std::function<float(float)> radius_fn);
 };
 
-#endif  /* _DEEP_BUFFER_H */
+#endif  /* _DEPTH_BUFFER_H */

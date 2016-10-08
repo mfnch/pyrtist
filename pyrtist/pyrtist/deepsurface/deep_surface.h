@@ -2,7 +2,7 @@
 #define _DEEP_SURFACE_H
 
 #include "image_buffer.h"
-#include "deep_buffer.h"
+#include "depth_buffer.h"
 
 class DeepSurface {
  public:

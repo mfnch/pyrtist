@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include "draw_depth.h"
-#include "deep_buffer.h"
+#include "depth_buffer.h"
 
 void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
                           float clip_end_x, float clip_end_y,

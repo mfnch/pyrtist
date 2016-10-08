@@ -1,6 +1,6 @@
 #include "deep_surface.h"
 #include "py_image_buffer.h"
-#include "py_deep_buffer.h"
+#include "py_depth_buffer.h"
 #include "py_deep_surface.h"
 
 // Forward declarations.
