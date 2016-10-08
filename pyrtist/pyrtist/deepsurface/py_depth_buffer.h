@@ -5,18 +5,18 @@
 
 #include "Python.h"
 
-/// The internal C structure of our PyDeepBuffer.
+/// The internal C structure of our PyDepthBuffer.
 typedef struct {
   PyObject_HEAD
-  DeepBuffer* deep_buffer;  ///< The C++ object.
+  DepthBuffer* depth_buffer;  ///< The C++ object.
   PyObject* base;           ///< The Python object owning this object.
                             /// This is nullptr for standalone objects.
-} PyDeepBuffer;
+} PyDepthBuffer;
 
-/// The Python type for a DeepBuffer wrapper.
-extern PyTypeObject PyDeepBuffer_Type;
+/// The Python type for a DepthBuffer wrapper.
+extern PyTypeObject PyDepthBuffer_Type;
 
-PyObject* PyDeepBuffer_FromC(PyTypeObject* type, DeepBuffer* db,
+PyObject* PyDepthBuffer_FromC(PyTypeObject* type, DepthBuffer* db,
                              PyObject* base);
 
 #endif  // _PY_DEPTH_BUFFER_H

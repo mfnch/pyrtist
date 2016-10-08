@@ -7,9 +7,9 @@
 class DeepSurface {
  public:
   DeepSurface(int width, int stride, int height)
-      : src_deep_buffer_(width, stride, height),
+      : src_depth_buffer_(width, stride, height),
         src_image_buffer_(width, stride, height),
-        dst_deep_buffer_(width, stride, height),
+        dst_depth_buffer_(width, stride, height),
         dst_image_buffer_(width, stride, height) {
     if (IsValid())
       Clear();
@@ -17,20 +17,20 @@ class DeepSurface {
 
   /// Whether the surface is valid and ready to be used.
   bool IsValid() {
-    return (src_deep_buffer_.IsValid() &&
+    return (src_depth_buffer_.IsValid() &&
             src_image_buffer_.IsValid() &&
-            dst_deep_buffer_.IsValid() &&
+            dst_depth_buffer_.IsValid() &&
             dst_image_buffer_.IsValid());
   }
 
-  int GetWidth() { return dst_deep_buffer_.GetWidth(); }
-  int GetHeight() { return dst_deep_buffer_.GetHeight(); }
+  int GetWidth() { return dst_depth_buffer_.GetWidth(); }
+  int GetHeight() { return dst_depth_buffer_.GetHeight(); }
 
   /// Get the depth buffer over which the user is expected to draw.
-  DeepBuffer* GetSrcDepthBuffer() { return &src_deep_buffer_; }
+  DepthBuffer* GetSrcDepthBuffer() { return &src_depth_buffer_; }
 
   /// Get the destination depth buffer.
-  DeepBuffer* GetDstDepthBuffer() { return &dst_deep_buffer_; }
+  DepthBuffer* GetDstDepthBuffer() { return &dst_depth_buffer_; }
 
   /// Get the image buffer over which the user is expected to draw.
   ARGBImageBuffer* GetSrcImageBuffer() { return &src_image_buffer_; }
@@ -40,7 +40,7 @@ class DeepSurface {
 
   /// Clear the source buffers.
   void Clear() {
-    src_deep_buffer_.Clear();
+    src_depth_buffer_.Clear();
     src_image_buffer_.Clear();
   }
 
@@ -50,9 +50,9 @@ class DeepSurface {
   bool SaveToFiles(const char* image_file_name, const char* normals_file_name);
 
  private:
-  DeepBuffer src_deep_buffer_;
+  DepthBuffer src_depth_buffer_;
   ARGBImageBuffer src_image_buffer_;
-  DeepBuffer dst_deep_buffer_;
+  DepthBuffer dst_depth_buffer_;
   ARGBImageBuffer dst_image_buffer_;
 };
 

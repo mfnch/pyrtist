@@ -134,8 +134,8 @@ PyDeepSurface_GetSrcDepthBuffer(PyObject* self, PyObject* args) {
     return nullptr;
 
   PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
-  DeepBuffer* db = py_ds->deep_surface->GetSrcDepthBuffer();
-  return PyDeepBuffer_FromC(&PyDeepBuffer_Type, db, self);
+  DepthBuffer* db = py_ds->deep_surface->GetSrcDepthBuffer();
+  return PyDepthBuffer_FromC(&PyDepthBuffer_Type, db, self);
 }
 
 static PyObject*
@@ -144,8 +144,8 @@ PyDeepSurface_GetDstDepthBuffer(PyObject* self, PyObject* args) {
     return nullptr;
 
   PyDeepSurface* py_ds = reinterpret_cast<PyDeepSurface*>(self);
-  DeepBuffer* db = py_ds->deep_surface->GetDstDepthBuffer();
-  return PyDeepBuffer_FromC(&PyDeepBuffer_Type, db, self);
+  DepthBuffer* db = py_ds->deep_surface->GetDstDepthBuffer();
+  return PyDepthBuffer_FromC(&PyDepthBuffer_Type, db, self);
 }
 
 static PyObject* PyDeepSurface_Clear(PyObject* ds, PyObject* args) {

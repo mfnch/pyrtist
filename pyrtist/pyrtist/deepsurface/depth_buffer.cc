@@ -4,10 +4,10 @@
 #include "draw_depth.h"
 #include "depth_buffer.h"
 
-void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
-                          float clip_end_x, float clip_end_y,
-                          float start_x, float start_y, float start_z,
-                          float end_x, float end_y, float end_z) {
+void DepthBuffer::DrawStep(float clip_start_x, float clip_start_y,
+                           float clip_end_x, float clip_end_y,
+                           float start_x, float start_y, float start_z,
+                           float end_x, float end_y, float end_z) {
   float dx = end_x - start_x;
   float dy = end_y - start_y;
   float dz = end_z - start_z;
@@ -29,11 +29,11 @@ void DeepBuffer::DrawStep(float clip_start_x, float clip_start_y,
             matrix, depth_fn);
 }
 
-void DeepBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
-                              float clip_end_x, float clip_end_y,
-                              float* mx, float end_radius,
-                              float z_of_axis, float start_radius_z,
-                              float end_radius_z) {
+void DepthBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
+                               float clip_end_x, float clip_end_y,
+                               float* mx, float end_radius,
+                               float z_of_axis, float start_radius_z,
+                               float end_radius_z) {
   float drz = end_radius_z - start_radius_z;
   float dr = end_radius - 1.0f;
   auto depth_fn =
@@ -51,9 +51,9 @@ void DeepBuffer::DrawCylinder(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
-void DeepBuffer::DrawPlane(float clip_start_x, float clip_start_y,
-                           float clip_end_x, float clip_end_y,
-                           float* mx, float z00, float z10, float z01) {
+void DepthBuffer::DrawPlane(float clip_start_x, float clip_start_y,
+                            float clip_end_x, float clip_end_y,
+                            float* mx, float z00, float z10, float z01) {
   z01 -= z00;
   z10 -= z00;
   auto depth_fn =
@@ -64,7 +64,7 @@ void DeepBuffer::DrawPlane(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
-void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
+void DepthBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   int begin_y = std::max(0, y - radius),
       end_y   = std::min(height_, y + radius),
       begin_x = std::max(0, x - radius),
@@ -84,10 +84,10 @@ void DeepBuffer::DrawSphere(int x, int y, int z, int radius, float z_scale) {
   }
 }
 
-void DeepBuffer::DrawCircular(float clip_start_x, float clip_start_y,
-                              float clip_end_x, float clip_end_y,
-                              float* mx, float scale_z, float translate_z,
-                              std::function<float(float)> radius_fn) {
+void DepthBuffer::DrawCircular(float clip_start_x, float clip_start_y,
+                               float clip_end_x, float clip_end_y,
+                               float* mx, float scale_z, float translate_z,
+                               std::function<float(float)> radius_fn) {
   auto depth_fn =
       [scale_z, translate_z, radius_fn](float* out, float u, float v) -> void {
       float r = radius_fn(u);
@@ -100,7 +100,7 @@ void DeepBuffer::DrawCircular(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
-ARGBImageBuffer* DeepBuffer::ComputeNormals() {
+ARGBImageBuffer* DepthBuffer::ComputeNormals() {
   auto normals = new ARGBImageBuffer(width_, width_, height_);
   if (normals == nullptr || width_ < 3 || height_ < 3)
     return normals;

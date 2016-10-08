@@ -20,13 +20,13 @@ extern "C" {
   PyMODINIT_FUNC initdeepsurface() {
     PYTYPE_READY(PyDeepSurface_Type);
     PYTYPE_READY(PyImageBuffer_Type);
-    PYTYPE_READY(PyDeepBuffer_Type);
+    PYTYPE_READY(PyDepthBuffer_Type);
 
     PyObject* m = Py_InitModule("deepsurface", deepsurface_methods);
 
     PYMODULE_ADDOBJECT(m, "DeepSurface", PyDeepSurface_Type);
     PYMODULE_ADDOBJECT(m, "ImageBuffer", PyImageBuffer_Type);
-    PYMODULE_ADDOBJECT(m, "DeepBuffer", PyDeepBuffer_Type);
+    PYMODULE_ADDOBJECT(m, "DepthBuffer", PyDepthBuffer_Type);
   }
 
 }  // extern "C"

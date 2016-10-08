@@ -11,7 +11,7 @@
 #define LIKELY(x) (x)
 #define UNLIKELY(x) (x)
 
-class DeepBuffer : public ImageBuffer<float> {
+class DepthBuffer : public ImageBuffer<float> {
  public:
   /// 32-bit type used to store the depth of each pixel.
   using DepthType = PixelType;
@@ -26,12 +26,12 @@ class DeepBuffer : public ImageBuffer<float> {
     return isnan(depth);
   }
 
-  DeepBuffer(int width, int height, void* ptr)
+  DepthBuffer(int width, int height, void* ptr)
       : ImageBuffer(width, width, height, ptr) {
     Clear();
   }
 
-  DeepBuffer(int width, int stride, int height)
+  DepthBuffer(int width, int stride, int height)
       : ImageBuffer(width, stride, height) {
     Clear();
   }

@@ -36,7 +36,7 @@ bool DeepSurface::SaveToFiles(const char* image_file_name,
     success = dst_image_buffer_.SaveToFile(image_file_name);
 
   if (normals_file_name) {
-    auto depth_image = dst_deep_buffer_.ComputeNormals();
+    auto depth_image = dst_depth_buffer_.ComputeNormals();
     success = depth_image->SaveToFile(normals_file_name) && success;
     delete depth_image;
   }
@@ -45,14 +45,14 @@ bool DeepSurface::SaveToFiles(const char* image_file_name,
 }
 
 void DeepSurface::Transfer(bool and_clear) {
-  int nx = src_deep_buffer_.GetWidth();
-  int stride = src_deep_buffer_.GetStride();
+  int nx = src_depth_buffer_.GetWidth();
+  int stride = src_depth_buffer_.GetStride();
   int new_line = stride - nx;
-  int ny = src_deep_buffer_.GetHeight();
+  int ny = src_depth_buffer_.GetHeight();
 
-  auto dsrc = src_deep_buffer_.GetPtr();
+  auto dsrc = src_depth_buffer_.GetPtr();
   auto isrc = src_image_buffer_.GetPtr();
-  auto ddst = dst_deep_buffer_.GetPtr();
+  auto ddst = dst_depth_buffer_.GetPtr();
   auto idst = dst_image_buffer_.GetPtr();
 
   size_t offset = 0U;
@@ -66,12 +66,12 @@ void DeepSurface::Transfer(bool and_clear) {
         continue;
 
       auto src_depth = dsrc[offset];
-      if (DeepBuffer::IsInfiniteDepth(src_depth))
+      if (DepthBuffer::IsInfiniteDepth(src_depth))
         // Source has infinite depth. Again, nothing to do.
         continue;
 
       auto dst_depth = ddst[offset];
-      if (DeepBuffer::IsInfiniteDepth(dst_depth) || src_depth >= dst_depth) {
+      if (DepthBuffer::IsInfiniteDepth(dst_depth) || src_depth >= dst_depth) {
         ddst[offset] = src_depth;
         if (src_alpha == 0xff)
           idst[offset] = src_argb;
