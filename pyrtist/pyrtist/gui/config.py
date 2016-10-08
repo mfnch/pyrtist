@@ -62,8 +62,8 @@ box_syntax_highlighting = sys.path[0]
 box_source_of_new = '''#!PYRTIST:VERSION:0:1:1
 
 #!PYRTIST:REFPOINTS:BEGIN
-bbox1 = Point(x=0, y=50)
-bbox2 = Point(x=100, y=0)
+bbox1 = Point(0, 50)
+bbox2 = Point(100, 0)
 #!PYRTIST:REFPOINTS:END
 w = Window()          # Create a new Window and set the
 w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.

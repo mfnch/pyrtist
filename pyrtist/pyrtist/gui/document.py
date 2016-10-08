@@ -135,12 +135,17 @@ class Document(DocumentBase):
     self.usercode = parts["userspace"]
     return True
 
-  def get_part_def_refpoints(self):
-    # First stringify the children.
-    defs = [rp.get_py_source() for rp in self.refpoints if rp.is_child()]
+  def get_part_def_refpoints(self, sort=True):
+    # Obtain a list where the parents follow the children.
+    children = [rp for rp in self.refpoints if not rp.is_parent()]
+    parents = [rp for rp in self.refpoints if rp.is_parent()]
+
+    if sort:
+      children.sort()
+      parents.sort()
 
     # Now add the others, which may refer to the children.
-    defs += [rp.get_py_source() for rp in self.refpoints if not rp.is_child()]
+    defs = [rp.get_py_source() for rp in children + parents]
     return text_writer(defs, sep='; ').strip()
 
   def get_part_preamble(self, mode=None, boot_code=''):

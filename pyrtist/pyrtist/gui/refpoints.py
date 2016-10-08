@@ -60,13 +60,32 @@ class GContext(object):
 class RefPoint(object):
   def __init__(self, name, value=None, visible=True,
                kind=REFPOINT_LONELY, selected=REFPOINT_UNSELECTED):
-    global removeme_last
     self.kind = kind
     self.related = None
     self.name = name
     self.value = value
     self.visible = visible
     self.selected = selected
+
+  def split_name(self):
+    """Split the reference name into a literal prefix and a numerical index."""
+    name = self.name
+    n = -1
+    try:
+      while name[n].isdigit():
+        n -= 1
+    except IndexError:
+      return (name, 1)
+    else:
+      n += 1
+      return (name[:n], int(name[n:]))
+
+  def __cmp__(self, rhs):
+    if rhs is None:
+      return 1
+    lhs_name, lhs_idx = self.split_name()
+    rhs_name, rhs_idx = rhs.split_name()
+    return cmp(lhs_name, rhs_name) or cmp(lhs_idx, rhs_idx)
 
   def copy(self, state=None):
     state = (state if state != None else self.selected)
@@ -75,6 +94,10 @@ class RefPoint(object):
   def is_child(self):
     """Whether this is a children refpoint."""
     return self.kind == REFPOINT_CHILD
+
+  def is_parent(self):
+    """Whether this is a parent refpoint."""
+    return self.kind == REFPOINT_PARENT
 
   def can_procreate(self):
     """Whether this reference point can have any children."""
@@ -200,7 +223,7 @@ class RefPoint(object):
       # We should determine whether the two rectangles (the region and the
       # refpoint) intersect. We treat all refpoints as rectangles, even if
       # the child are drawn as circles.
-      sz = context.rp_size 
+      sz = context.rp_size
       cx, cy = map(int, view.coord_to_pix(self.value))
 
       if rectangles_overlap(cx - sz, cy - sz, cx + sz, cy + sz,
