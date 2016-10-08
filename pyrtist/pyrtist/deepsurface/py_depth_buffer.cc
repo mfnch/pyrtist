@@ -15,7 +15,6 @@ static void PyDepthBuffer_Dealloc(PyObject* py_obj);
 static PyObject* PyDepthBuffer_DrawPlane(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawSphere(PyObject* db, PyObject* args);
-static PyObject* PyDepthBuffer_DrawSphereOld(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCylinder(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args);
@@ -27,7 +26,6 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {"draw_plane", PyDepthBuffer_DrawPlane, METH_VARARGS},
   {"draw_step", PyDepthBuffer_DrawStep, METH_VARARGS},
   {"draw_sphere", PyDepthBuffer_DrawSphere, METH_VARARGS},
-  {"draw_sphere_old", PyDepthBuffer_DrawSphereOld, METH_VARARGS},
   {"draw_cylinder", PyDepthBuffer_DrawCylinder, METH_VARARGS},
   {"draw_circular", PyDepthBuffer_DrawCircular, METH_VARARGS},
   {"compute_normals", PyDepthBuffer_ComputeNormals, METH_NOARGS},
@@ -204,18 +202,6 @@ static PyObject* PyDepthBuffer_DrawSphere(PyObject* db, PyObject* args) {
   py_db->depth_buffer->
     DrawSphere(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
                z_start, z_end);
-  Py_RETURN_NONE;
-}
-
-static PyObject* PyDepthBuffer_DrawSphereOld(PyObject* db, PyObject* args) {
-  int x, y, z, radius;
-  float z_scale;
-  if (!PyArg_ParseTuple(args, "iiiif:DepthBuffer.draw_sphere",
-                        &x, &y, &z, &radius, &z_scale))
-    return nullptr;
-
-  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
-  py_db->depth_buffer->DrawSphere(x, y, z, radius, z_scale);
   Py_RETURN_NONE;
 }
 
