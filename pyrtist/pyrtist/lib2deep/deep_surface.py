@@ -4,40 +4,44 @@ from .. import deepsurface
 
 
 class DeepSurface(object):
-    def __init__(self, *args):
-        self.src_image = deepsurface.ImageBuffer(*args)
-        self.src_depth = deepsurface.DepthBuffer(*args)
-        self.dst_image = deepsurface.ImageBuffer(*args)
-        self.dst_depth = deepsurface.DepthBuffer(*args)
+    def __init__(self, width, height, num_reusable_buffers=3):
+        self.width = width
+        self.height = height
+
+        self.reusable_depth_buffers = []
+        self.num_reusable_buffers = num_reusable_buffers
+
+        self.image_buffer = self.create_image_buffer()
+        self.depth_buffer = self.take_depth_buffer()
+
+    def create_image_buffer(self):
+        return deepsurface.ImageBuffer(self.width, self.height)
+
+    def take_depth_buffer(self):
+        if len(self.reusable_depth_buffers) > 0:
+            return self.reusable_depth_buffers.pop()
+        return deepsurface.DepthBuffer(self.width, self.height)
+
+    def give_depth_buffer(self, depth_buffer):
+        if len(self.reusable_depth_buffers) < self.num_reusable_buffers:
+            self.reusable_depth_buffers.append(depth_buffer)
 
     def get_width(self):
-        return self.dst_depth.get_width()
+        return self.width
 
     def get_height(self):
-        return self.dst_depth.get_height()
-
-    def get_src_image_buffer(self):
-        return self.src_image
-
-    def get_src_depth_buffer(self):
-        return self.src_depth
+        return self.height
 
     def get_dst_image_buffer(self):
-        return self.dst_image
+        return self.image_buffer
 
     def get_dst_depth_buffer(self):
-        return self.dst_depth
+        return self.depth_buffer
 
-    def clear(self):
-        self.src_depth.clear()
-        self.src_image.clear()
-
-    def transfer(self, and_clear=True):
-        deepsurface.DeepSurface.transfer(self.src_depth, self.src_image,
-                                         self.dst_depth, self.dst_image)
-        if and_clear:
-            self.clear()
+    def transfer(self, depth_buffer, image_buffer):
+        deepsurface.DeepSurface.transfer(depth_buffer, image_buffer,
+                                         self.depth_buffer, self.image_buffer)
 
     def save_to_files(self, image_file_name, normals_file_name):
-        self.dst_image.save_to_file(image_file_name)
-        self.dst_depth.save_to_file(normals_file_name)
+        self.image_buffer.save_to_file(image_file_name)
+        self.depth_buffer.save_to_file(normals_file_name)

@@ -47,6 +47,7 @@ def primitive_at_deep_window(primitive, deep_window):
 
 @combination(Primitive, CmdStream)
 def primitive_at_cmd_stream(primitive, cmd_stream):
-    cmd_stream.take(Cmd(Cmd.src_draw, primitive.get_window()))
+    cmd_stream.take(Cmd(Cmd.src_draw, primitive.get_window()),
+                    Cmd(Cmd.depth_new))
     cmd_stream.take(*primitive.build_shape_cmd())
     cmd_stream.take(Cmd(Cmd.transfer))

@@ -5,9 +5,12 @@ import cairo
 from ..lib2d import CairoCmdExecutor, Window, BBox, Axes
 from .core_types import Point3, Point, Z
 from .deep_surface import DeepSurface
+from .cmd_stream import Cmd
 
 
 class CmdExecutor(object):
+    draw_cmd_names = set(Cmd.draw_cmd_names)
+
     @staticmethod
     def create_surface(width, height):
         return DeepSurface(width, height)
@@ -48,10 +51,13 @@ class CmdExecutor(object):
         self.vector_transform = Point(scale)
         self.z_origin = z_origin
         self.z_scale = z_scale
-        self.depth_buffer = ds.get_src_depth_buffer()
+
+        # Stacks of auxiliary depth buffers.
+        self.aux_depth_buffers = []
+
         width = ds.get_width()
         height = ds.get_height()
-        ib = ds.get_src_image_buffer()
+        self.image_buffer = ib = ds.create_image_buffer()
         cairo_surface = \
           cairo.ImageSurface.create_for_data(ib.get_data(),
                                              cairo.FORMAT_ARGB32,
@@ -61,13 +67,28 @@ class CmdExecutor(object):
         self.src_bbox = BBox()
 
     def execute(self, cmds):
+        '''Execute all the commands in the given list.'''
         for cmd in cmds:
-            method_name = 'cmd_{}'.format(cmd.get_name())
-            method = getattr(self, method_name, None)
-            if method is not None:
-                method(*self.transform_args(cmd.get_args()))
+            cmd_name = cmd.get_name()
+            if cmd_name in self.draw_cmd_names:
+                # Drawing command.
+                method_name = 'draw_{}'.format(cmd.get_name())
+                method = getattr(self, method_name, None)
+                if method is not None:
+                    bbox = self.get_clip_region()
+                    if bbox and len(self.aux_depth_buffers) > 0:
+                        clip_start, clip_end = bbox
+                        current_depth_buffer = self.aux_depth_buffers[-1]
+                        method(current_depth_buffer, clip_start, clip_end,
+                               *self.transform_args(cmd.get_args()))
+                        continue
             else:
-                print('Unknown method {}'.format(method_name))
+                method_name = 'cmd_{}'.format(cmd_name)
+                method = getattr(self, method_name, None)
+                if method is not None:
+                    method(*self.transform_args(cmd.get_args()))
+                    continue
+            print('Unknown method {}'.format(method_name))
 
     def transform_args(self, args):
         origin = self.origin
@@ -94,56 +115,59 @@ class CmdExecutor(object):
         '''
         return BBox(*self.transform_args(p for p in self.src_bbox))
 
+    def save(self, real_file_name, depth_file_name):
+        self.deep_surface.save_to_files(real_file_name, depth_file_name)
+
     def cmd_set_bbox(self, *args):
         pass
-
-    def cmd_transfer(self):
-        self.deep_surface.transfer()
-        self.src_bbox = BBox()
 
     def cmd_src_draw(self, window):
         self.src_bbox.take(window)
         self.src_image.take(window)
 
-    def cmd_on_step(self, start, z_start, end, z_end):
-        bbox = self.get_clip_region()
-        if not bbox:
-            return
-        clip_start, clip_end = bbox
-        args = (clip_start.x, clip_start.y, clip_end.x, clip_end.y,
-                start.x, start.y, z_start, end.x, end.y, z_end)
-        self.depth_buffer.draw_step(*map(float, args))
+    def cmd_depth_new(self):
+        '''Add a new depth buffer to the stack.'''
+        self.aux_depth_buffers.append(self.deep_surface.take_depth_buffer())
 
-    def cmd_on_plane(self, p1, p2, p3):
-        bbox = self.get_clip_region()
-        if not bbox:
-            return
-        clip_start, clip_end = bbox
+    def cmd_depth_merge(self):
+        '''Merge the topmost two depth buffers.'''
+        pass
 
+    def cmd_depth_sculpt(self):
+        '''Sculpt the topmost depth buffer on top of the previous one.'''
+        pass
+
+    def cmd_transfer(self):
+        current_depth_buffer = self.aux_depth_buffers.pop()
+        self.deep_surface.transfer(current_depth_buffer, self.image_buffer)
+        current_depth_buffer.clear()
+        self.image_buffer.clear()
+        self.src_bbox = BBox()
+        self.deep_surface.give_depth_buffer(current_depth_buffer)
+
+    def draw_on_step(self, dst, clip_start, clip_end,
+                     start, z_start, end, z_end):
+        args = (tuple(clip_start) + tuple(clip_end) +
+                (start.x, start.y, z_start, end.x, end.y, z_end))
+        dst.draw_step(*map(float, args))
+
+    def draw_on_plane(self, dst, clip_start, clip_end, p1, p2, p3):
         mx = Axes(p1.xy, p2.xy, p3.xy).get_matrix()
         mx.invert()
-
-        args = ((clip_start.x, clip_start.y, clip_end.x, clip_end.y) +
+        args = (tuple(clip_start) + tuple(clip_end) +
                 mx.get_entries() + (p1.z, p2.z, p3.z))
-        self.depth_buffer.draw_plane(*map(float, args))
+        dst.draw_plane(*map(float, args))
 
-    def cmd_on_sphere(self, center_2d, one_zero, zero_one, z_start, z_end):
-        bbox = self.get_clip_region()
-        if not bbox:
-            return
-
+    def draw_on_sphere(self, dst, clip_start, clip_end,
+                       center_2d, one_zero, zero_one, z_start, z_end):
         mx = Axes(center_2d, one_zero, zero_one).get_matrix()
         mx.invert()
+        args = map(float, (tuple(clip_start) + tuple(clip_end) +
+                           mx.get_entries() + (z_start, z_end)))
+        dst.draw_sphere(*args)
 
-        clip_start, clip_end = map(tuple, bbox)
-        args = map(float, (clip_start + clip_end + mx.get_entries() +
-                           (z_start, z_end)))
-        self.depth_buffer.draw_sphere(*args)
-
-    def cmd_on_cylinder(self, start_point, start_edge, end_point, end_edge):
-        bbox = self.get_clip_region()
-        if not bbox:
-            return
+    def draw_on_cylinder(self, dst, clip_start, clip_end,
+                         start_point, start_edge, end_point, end_edge):
         start_delta = start_edge - start_point
         end_delta = end_edge - end_point
         if start_delta.xy.norm() < end_delta.xy.norm():
@@ -162,27 +186,19 @@ class CmdExecutor(object):
         mx = Axes(start_point.xy, end_point.xy, start_edge.xy).get_matrix()
         mx.invert()
 
-        clip_start, clip_end = map(tuple, bbox)
-        args = (clip_start + clip_end + mx.get_entries() +
+        args = (tuple(clip_start) + tuple(clip_end) + mx.get_entries() +
                 (end_radius_coeff, z_of_axis, start_radius_z, end_radius_z))
-        self.depth_buffer.draw_cylinder(*map(float, args))
+        dst.draw_cylinder(*map(float, args))
 
-    def cmd_on_circular(self, start_point, end_point, start_edge, radius_fn):
-        bbox = self.get_clip_region()
-        if not bbox:
-            return
-
+    def draw_on_circular(self, dst, clip_start, clip_end,
+                         start_point, end_point, start_edge, radius_fn):
         translation_z = start_point.z
         scale_z = start_edge.z - start_point.z
 
         mx = Axes(start_point.xy, end_point.xy, start_edge.xy).get_matrix()
         mx.invert()
 
-        clip_start, clip_end = map(tuple, bbox)
-        float_args = map(float, (clip_start + clip_end + mx.get_entries() +
-                                 (scale_z, translation_z)))
+        float_args = map(float, (tuple(clip_start) + tuple(clip_end) +
+                                 mx.get_entries() + (scale_z, translation_z)))
         args = list(float_args) + [radius_fn]
-        self.depth_buffer.draw_circular(*args)
-
-    def save(self, real_file_name, depth_file_name):
-        self.deep_surface.save_to_files(real_file_name, depth_file_name)
+        dst.draw_circular(*args)
