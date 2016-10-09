@@ -36,6 +36,13 @@ class Plane(Primitive):
         p = points[0] + Point3((points[1] - points[0]).xy.ort())
         return (points[0], points[1], p)
 
+    def build_shape_cmd(self):
+        points = self.get_points()
+        normal = (points[1] - points[0]).vec_prod(points[2] - points[0])
+        if abs(normal.normalized().dot(Point3(0, 0, 1))) < 1e-4:
+            raise ValueError('Plane is ortogonal to plane of view')
+        return [Cmd(Cmd.on_plane, *points)]
+
 @combination(Point, Plane)
 def point_at_plane(point, plane):
     plane.take(Point3(point))
@@ -45,15 +52,3 @@ def point3_at_plane(point, plane):
     if len(plane.points) >= 3:
         raise ValueError('Plane can pass through 3 points at maximum')
     plane.points.append(point)
-
-@combination(Plane, CmdStream)
-def plane_at_cmd_stream(plane, cmd_stream):
-    points = plane.get_points()
-
-    normal = (points[1] - points[0]).vec_prod(points[2] - points[0])
-    if abs(normal.normalized().dot(Point3(0, 0, 1))) < 1e-4:
-        raise ValueError('Plane is ortogonal to plane of view')
-
-    cmd_stream.take(Cmd(Cmd.src_draw, plane.get_window()),
-                    Cmd(Cmd.on_plane, *points),
-                    Cmd(Cmd.transfer))

@@ -56,6 +56,15 @@ class Cylinder(Primitive):
             ret.append(ret[0])
         return (ret[0].args, ret[1].args)
 
+    def build_shape_cmd(self):
+        start_point, end_point = self.get_points()
+        (rs_xy, rs_z), (re_xy, re_z) = self.get_radii()
+
+        dp = (start_point.xy - end_point.xy).ort().normalized()
+        start_edge = start_point + Point3(rs_xy*dp, rs_z)
+        end_edge = end_point + Point3(re_xy*dp, re_z)
+        return [Cmd(Cmd.on_cylinder, start_point, start_edge,
+                    end_point, end_edge)]
 
 @combination(Point, Cylinder)
 @combination(Point3, Cylinder)
@@ -72,17 +81,3 @@ def radii_at_cylinder(radii, cylinder):
     if len(cylinder.radii) >= 2:
         raise RejectError('Too many radii given to Cylinder')
     cylinder.radii.append(radii)
-
-@combination(Cylinder, CmdStream)
-def cylinder_at_cmd_stream(cylinder, cmd_stream):
-    w = cylinder.get_window()
-    start_point, end_point = cylinder.get_points()
-    (rs_xy, rs_z), (re_xy, re_z) = cylinder.get_radii()
-
-    dp = (start_point.xy - end_point.xy).ort().normalized()
-    start_edge = start_point + Point3(rs_xy*dp, rs_z)
-    end_edge = end_point + Point3(re_xy*dp, re_z)
-    cmd_stream.take(Cmd(Cmd.src_draw, w),
-                    Cmd(Cmd.on_cylinder, start_point, start_edge,
-                        end_point, end_edge),
-                    Cmd(Cmd.transfer))

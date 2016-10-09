@@ -51,6 +51,11 @@ class Lathe(Primitive):
         self.radii.check(0, 2)
         return (tuple(self.radii) + (1.0, 1.0))[:2]
 
+    def build_shape_cmd(self):
+        p1, p2, p3 = self.get_points()
+        fn = self.profile.change_axes(Axes(p1.xy, p2.xy, p3.xy)).get_function()
+        return [Cmd(Cmd.on_circular, p1, p2, p3, fn)]
+
 @combination(Radii, Lathe)
 def radii_at_lathe(radii, lathe):
     if lathe.radii is not None:
@@ -72,11 +77,3 @@ def profile_at_lathe(profile, lathe):
     if lathe.profile is not None:
         raise TypeError('Lathe already got a Profile')
     lathe.profile = profile
-
-@combination(Lathe, CmdStream)
-def lathe_at_cmd_stream(lathe, cmd_stream):
-    p1, p2, p3 = lathe.get_points()
-    fn = lathe.profile.change_axes(Axes(p1.xy, p2.xy, p3.xy)).get_function()
-    cmd_stream.take(Cmd(Cmd.src_draw, lathe.get_window()),
-                    Cmd(Cmd.on_circular, p1, p2, p3, fn),
-                    Cmd(Cmd.transfer))

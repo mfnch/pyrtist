@@ -20,6 +20,27 @@ class Sphere(Primitive):
                            else self.radii) + args
         return Circle(self.center.xy, *extra_args)
 
+    def build_shape_cmd(self):
+        center, radii = (self.center, self.radii)
+        if len(radii) == 0 or center is None:
+            detail = ('center' if center is None else 'radius')
+            raise ValueError('Sphere without {} cannot be passed to CmdStream'
+                             .format(detail))
+
+        if len(radii) == 1:
+            rx = ry = rz = radii[0]
+        elif len(radii) == 3:
+            rx, ry, rz = radii
+        elif len(radii) == 2:
+            rx = ry = radii[0]
+            rz = radii[1]
+
+        center_2d = Point(center.x, center.y)
+        one_zero = center_2d + Point.vx(rx)
+        zero_one = center_2d + Point.vy(ry)
+        return [Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
+                    Z(center.z), Z(rz))]
+
 @combination(Point3, Sphere)
 def center_at_sphere(center, sphere):
     if sphere.center is not None:
@@ -32,27 +53,3 @@ def scalar_at_sphere(scalar, circle):
     if len(circle.radii) >= 3:
         raise RejectError()
     circle.radii.append(float(scalar))
-
-@combination(Sphere, CmdStream)
-def sphere_at_cmd_stream(sphere, cmd_stream):
-    center, radii = (sphere.center, sphere.radii)
-    if len(radii) == 0 or center is None:
-        detail = ('center' if center is None else 'radius')
-        raise ValueError('Sphere without {} cannot be passed to CmdStream'
-                         .format(detail))
-
-    if len(radii) == 1:
-        rx = ry = rz = radii[0]
-    elif len(radii) == 3:
-        rx, ry, rz = radii
-    elif len(radii) == 2:
-        rx = ry = radii[0]
-        rz = radii[1]
-
-    center_2d = Point(center.x, center.y)
-    one_zero = center_2d + Point.vx(rx)
-    zero_one = center_2d + Point.vy(ry)
-    cmd_stream.take(Cmd(Cmd.src_draw, sphere.get_window()),
-                    Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
-                        Z(center.z), Z(rz)),
-                    Cmd(Cmd.transfer))
