@@ -5,11 +5,15 @@
 static PyObject* PyImageBuffer_New(PyTypeObject* type,
                                    PyObject* args, PyObject* kwds);
 static void PyImageBuffer_Dealloc(PyObject* py_obj);
+static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args);
+static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args);
 
 // PyImageBuffer object methods.
 static PyMethodDef pyimagebuffer_methods[] = {
+  {"clear", PyImageBuffer_Clear, METH_NOARGS},
   {"get_data", PyImageBuffer_GetData, METH_NOARGS},
+  {"save_to_file", PyImageBuffer_SaveToFile, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
 
@@ -135,6 +139,23 @@ static void PyImageBuffer_Dealloc(PyObject* py_obj) {
   py_ib->ob_type->tp_free(py_obj);
 }
 
+static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject*) {
+  PyImageBuffer* py_ib = reinterpret_cast<PyImageBuffer*>(ib);
+  py_ib->image_buffer->Clear();
+  Py_RETURN_NONE;
+}
+
 static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args) {
   return PyBuffer_FromReadWriteObject(ib, 0, Py_END_OF_BUFFER);
+}
+
+static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args) {
+  const char* file_name = nullptr;
+  if (!PyArg_ParseTuple(args, "z:ImageBuffer.save_to_file", &file_name))
+    return nullptr;
+
+  PyImageBuffer* py_ib = reinterpret_cast<PyImageBuffer*>(ib);
+  if (py_ib->image_buffer->SaveToFile(file_name))
+    Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
 }

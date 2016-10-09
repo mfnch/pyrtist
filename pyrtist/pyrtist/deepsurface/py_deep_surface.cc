@@ -22,7 +22,7 @@ static PyMethodDef pydeepsurface_methods[] = {
   {"get_image_buffer", PyDeepSurface_GetImageBuffer, METH_VARARGS},
   {"get_depth_buffer", PyDeepSurface_GetDepthBuffer, METH_VARARGS},
   {"clear", PyDeepSurface_Clear, METH_VARARGS},
-  {"transfer", PyDeepSurface_Transfer, METH_VARARGS},
+  {"transfer", PyDeepSurface_Transfer, METH_VARARGS | METH_STATIC},
   {"save_to_files", PyDeepSurface_SaveToFiles, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
@@ -134,23 +134,29 @@ static PyObject* PyDeepSurface_Clear(PyObject* ds, PyObject* args) {
 }
 
 static PyObject* PyDeepSurface_Transfer(PyObject* ds, PyObject* args) {
-  PyObject* dst_deep_surface;
-  int and_clear = 1;
-  if (!PyArg_ParseTuple(args, "O|i:DeepSurface.transfer",
-                        &dst_deep_surface, &and_clear))
+  PyObject* py_src_image;
+  PyObject* py_src_depth;
+  PyObject* py_dst_image;
+  PyObject* py_dst_depth;
+  if (!PyArg_ParseTuple(args, "OOOO:DeepSurface.transfer",
+                        &py_src_depth, &py_src_image,
+                        &py_dst_depth, &py_dst_image))
     return nullptr;
 
-  if (!PyObject_TypeCheck(dst_deep_surface, &PyDeepSurface_Type)) {
-    PyErr_SetString(PyExc_ValueError, "Destination is not a DeepSurface");
+  if (!(PyObject_TypeCheck(py_src_depth, &PyDepthBuffer_Type) &&
+        PyObject_TypeCheck(py_src_image, &PyImageBuffer_Type) &&
+        PyObject_TypeCheck(py_dst_depth, &PyDepthBuffer_Type) &&
+        PyObject_TypeCheck(py_dst_image, &PyImageBuffer_Type))) {
+    PyErr_SetString(PyExc_ValueError,
+                    "Invalid arguments to DeepSurface.transfer");
     return nullptr;
   }
 
-  PyDeepSurface* py_src_ds = reinterpret_cast<PyDeepSurface*>(ds);
-  PyDeepSurface* py_dst_ds = reinterpret_cast<PyDeepSurface*>(dst_deep_surface);
-  bool ok = DeepSurface::Transfer(py_src_ds->deep_surface,
-                                  py_dst_ds->deep_surface);
-  if (ok && and_clear != 0)
-    py_src_ds->deep_surface->Clear();
+  auto src_depth = reinterpret_cast<PyDepthBuffer*>(py_src_depth)->depth_buffer;
+  auto src_image = reinterpret_cast<PyImageBuffer*>(py_src_image)->image_buffer;
+  auto dst_depth = reinterpret_cast<PyDepthBuffer*>(py_dst_depth)->depth_buffer;
+  auto dst_image = reinterpret_cast<PyImageBuffer*>(py_dst_image)->image_buffer;
+  DeepSurface::Transfer(src_depth, src_image, dst_depth, dst_image);
   Py_RETURN_NONE;
 }
 

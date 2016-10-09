@@ -12,6 +12,9 @@ static constexpr bool kSamplePythonCallbacks = true;
 static PyObject* PyDepthBuffer_New(PyTypeObject* type,
                                   PyObject* args, PyObject* kwds);
 static void PyDepthBuffer_Dealloc(PyObject* py_obj);
+static PyObject* PyDepthBuffer_GetWidth(PyObject* db, PyObject*);
+static PyObject* PyDepthBuffer_GetHeight(PyObject* db, PyObject*);
+static PyObject* PyDepthBuffer_Clear(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawPlane(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawSphere(PyObject* db, PyObject* args);
@@ -20,9 +23,13 @@ static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args);
+static PyObject* PyDepthBuffer_SaveToFile(PyObject* ib, PyObject* args);
 
 // PyDepthBuffer object methods.
 static PyMethodDef pydepthbuffer_methods[] = {
+  {"clear", PyDepthBuffer_Clear, METH_NOARGS},
+  {"get_width", PyDepthBuffer_GetWidth, METH_NOARGS},
+  {"get_height", PyDepthBuffer_GetHeight, METH_NOARGS},
   {"draw_plane", PyDepthBuffer_DrawPlane, METH_VARARGS},
   {"draw_step", PyDepthBuffer_DrawStep, METH_VARARGS},
   {"draw_sphere", PyDepthBuffer_DrawSphere, METH_VARARGS},
@@ -31,6 +38,7 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {"compute_normals", PyDepthBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDepthBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDepthBuffer_GetData, METH_NOARGS},
+  {"save_to_file", PyDepthBuffer_SaveToFile, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
 
@@ -153,6 +161,24 @@ static void PyDepthBuffer_Dealloc(PyObject* py_obj) {
     // This buffer is embedded inside py_db->base: just do a DECREF.
     Py_DECREF(py_db->base);
   py_db->ob_type->tp_free(py_obj);
+}
+
+static PyObject* PyDepthBuffer_GetWidth(PyObject* db, PyObject*) {
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
+  long v = py_db->depth_buffer->GetWidth();
+  return PyLong_FromLong(static_cast<long>(v));
+}
+
+static PyObject* PyDepthBuffer_GetHeight(PyObject* db, PyObject*) {
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
+  long v = py_db->depth_buffer->GetHeight();
+  return PyLong_FromLong(static_cast<long>(v));
+}
+
+static PyObject* PyDepthBuffer_Clear(PyObject* db, PyObject*) {
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
+  py_db->depth_buffer->Clear();
+  Py_RETURN_NONE;
 }
 
 static PyObject* PyDepthBuffer_DrawPlane(PyObject* db, PyObject* args) {
@@ -309,4 +335,15 @@ static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args) {
 
 static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args) {
   return PyBuffer_FromReadWriteObject(db, 0, Py_END_OF_BUFFER);
+}
+
+static PyObject* PyDepthBuffer_SaveToFile(PyObject* db, PyObject* args) {
+  const char* file_name = nullptr;
+  if (!PyArg_ParseTuple(args, "z:DepthBuffer.save_to_file", &file_name))
+    return nullptr;
+
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
+  if (py_db->depth_buffer->SaveToFile(file_name))
+    Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
 }
