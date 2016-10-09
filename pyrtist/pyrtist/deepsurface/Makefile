@@ -8,7 +8,7 @@ CXXFLAGS := -std=c++11 -g -O2 -Wall -pthread -fPIC -fwrapv \
   -Werror=format-security -DNDEBUG -D_FORTIFY_SOURCE=2 \
   -I/usr/include/python2.7
 SOURCES := depth_buffer.cc deep_surface.cc image_buffer.cc py_depth_buffer.cc \
-  py_deep_surface.cc py_image_buffer.cc py_init.cc
+  py_image_buffer.cc py_init.cc
 OBJS := $(SOURCES:.cc=.o)
 
 .PHONY: clean

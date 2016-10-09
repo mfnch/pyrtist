@@ -55,8 +55,7 @@ package_data = {'pyrtist': ['examples/*.py',
 # C++ extensions.
 ext_modules = []
 srcs = ['image_buffer.cc', 'depth_buffer.cc', 'deep_surface.cc',
-        'py_image_buffer.cc', 'py_depth_buffer.cc', 'py_deep_surface.cc',
-        'py_init.cc']
+        'py_image_buffer.cc', 'py_depth_buffer.cc', 'py_init.cc']
 srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
                    for file_name in srcs]
 ext_modules.append(Extension('pyrtist.deepsurface',

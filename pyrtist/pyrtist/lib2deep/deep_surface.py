@@ -39,8 +39,8 @@ class DeepSurface(object):
         return self.depth_buffer
 
     def transfer(self, depth_buffer, image_buffer):
-        deepsurface.DeepSurface.transfer(depth_buffer, image_buffer,
-                                         self.depth_buffer, self.image_buffer)
+        deepsurface.transfer(depth_buffer, image_buffer,
+                             self.depth_buffer, self.image_buffer)
 
     def save_to_files(self, image_file_name, normals_file_name):
         self.image_buffer.save_to_file(image_file_name)
