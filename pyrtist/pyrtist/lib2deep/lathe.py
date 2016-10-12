@@ -51,7 +51,7 @@ class Lathe(Primitive):
         self.radii.check(0, 2)
         return (tuple(self.radii) + (1.0, 1.0))[:2]
 
-    def build_shape_cmd(self):
+    def build_depth_cmd(self):
         p1, p2, p3 = self.get_points()
         fn = self.profile.change_axes(Axes(p1.xy, p2.xy, p3.xy)).get_function()
         return [Cmd(Cmd.on_circular, p1, p2, p3, fn)]

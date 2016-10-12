@@ -11,8 +11,8 @@ class Cmd(twod.CmdBase):
                       'on_circular')
     # All commands.
     names = draw_cmd_names + \
-      ('set_bbox', 'depth_new', 'depth_merge', 'depth_sculpt', 'src_draw',
-       'transfer')
+      ('set_bbox', 'depth_new', 'merge', 'depth_sculpt',
+       'image_new', 'image_draw', 'transfer')
 Cmd.register_commands()
 
 

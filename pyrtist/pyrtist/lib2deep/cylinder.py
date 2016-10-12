@@ -56,7 +56,7 @@ class Cylinder(Primitive):
             ret.append(ret[0])
         return (ret[0].args, ret[1].args)
 
-    def build_shape_cmd(self):
+    def build_depth_cmd(self):
         start_point, end_point = self.get_points()
         (rs_xy, rs_z), (re_xy, re_z) = self.get_radii()
 

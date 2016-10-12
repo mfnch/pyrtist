@@ -8,4 +8,5 @@ from .staircase import *
 from .cylinder import *
 from .sphere import *
 from .lathe import *
+from .merge import *
 from .profile import *

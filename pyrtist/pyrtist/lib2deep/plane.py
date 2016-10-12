@@ -36,7 +36,7 @@ class Plane(Primitive):
         p = points[0] + Point3((points[1] - points[0]).xy.ort())
         return (points[0], points[1], p)
 
-    def build_shape_cmd(self):
+    def build_depth_cmd(self):
         points = self.get_points()
         normal = (points[1] - points[0]).vec_prod(points[2] - points[0])
         if abs(normal.normalized().dot(Point3(0, 0, 1))) < 1e-4:

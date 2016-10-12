@@ -20,7 +20,7 @@ class Sphere(Primitive):
                            else self.radii) + args
         return Circle(self.center.xy, *extra_args)
 
-    def build_shape_cmd(self):
+    def build_depth_cmd(self):
         center, radii = (self.center, self.radii)
         if len(radii) == 0 or center is None:
             detail = ('center' if center is None else 'radius')

@@ -2,6 +2,7 @@ __all__ = ('CmdExecutor',)
 
 import cairo
 
+from .. import deepsurface
 from ..lib2d import CairoCmdExecutor, Window, BBox, Axes
 from .core_types import Point3, Point, Z
 from .deep_surface import DeepSurface
@@ -52,18 +53,9 @@ class CmdExecutor(object):
         self.z_origin = z_origin
         self.z_scale = z_scale
 
-        # Stacks of auxiliary depth buffers.
+        # Stacks of auxiliary image and depth buffers.
+        self.aux_image_buffers = []
         self.aux_depth_buffers = []
-
-        width = ds.get_width()
-        height = ds.get_height()
-        self.image_buffer = ib = ds.create_image_buffer()
-        cairo_surface = \
-          cairo.ImageSurface.create_for_data(ib.get_data(),
-                                             cairo.FORMAT_ARGB32,
-                                             width, height, width*4)
-        target = CairoCmdExecutor(cairo_surface, origin, scale)
-        self.src_image = Window(target)
         self.src_bbox = BBox()
 
     def execute(self, cmds):
@@ -121,29 +113,58 @@ class CmdExecutor(object):
     def cmd_set_bbox(self, *args):
         pass
 
-    def cmd_src_draw(self, window):
+    def cmd_image_new(self):
+        '''Add a new image buffer to the stack.'''
+        width = self.deep_surface.get_width()
+        height = self.deep_surface.get_height()
+        image_buffer = self.deep_surface.take_image_buffer()
+        image_buffer.clear()
+        cairo_surface = \
+          cairo.ImageSurface.create_for_data(image_buffer.get_data(),
+                                             cairo.FORMAT_ARGB32,
+                                             width, height, width*4)
+        target = CairoCmdExecutor(cairo_surface,
+                                  self.origin, self.vector_transform)
+        image_window = Window(target)
+        self.aux_image_buffers.append((image_buffer, image_window))
+
+    def cmd_image_draw(self, window):
+        '''Draw the given window on the topmost image buffer.'''
         self.src_bbox.take(window)
-        self.src_image.take(window)
+        if len(self.aux_image_buffers) < 1:
+            return
+        _, cur_image_window = self.aux_image_buffers[-1]
+        cur_image_window.take(window)
 
     def cmd_depth_new(self):
         '''Add a new depth buffer to the stack.'''
-        self.aux_depth_buffers.append(self.deep_surface.take_depth_buffer())
+        depth_buffer = self.deep_surface.take_depth_buffer()
+        depth_buffer.clear()
+        self.aux_depth_buffers.append(depth_buffer)
 
-    def cmd_depth_merge(self):
+    def cmd_merge(self):
         '''Merge the topmost two depth buffers.'''
-        pass
+        src_depth_buffer = self.aux_depth_buffers.pop()
+        src_image_buffer, src_image_window = self.aux_image_buffers.pop()
+        dst_depth_buffer = self.aux_depth_buffers[-1]
+        dst_image_buffer, _ = self.aux_image_buffers[-1]
+        deepsurface.transfer(src_depth_buffer, src_image_buffer,
+                             dst_depth_buffer, dst_image_buffer)
+        self.deep_surface.give_image_buffer(src_image_buffer)
+        self.deep_surface.give_depth_buffer(src_depth_buffer)
+        self.src_bbox = BBox()
 
     def cmd_depth_sculpt(self):
         '''Sculpt the topmost depth buffer on top of the previous one.'''
         pass
 
     def cmd_transfer(self):
-        current_depth_buffer = self.aux_depth_buffers.pop()
-        self.deep_surface.transfer(current_depth_buffer, self.image_buffer)
-        current_depth_buffer.clear()
-        self.image_buffer.clear()
+        cur_depth_buffer = self.aux_depth_buffers.pop()
+        cur_image_buffer, cur_image_window = self.aux_image_buffers.pop()
+        self.deep_surface.transfer(cur_depth_buffer, cur_image_buffer)
+        self.deep_surface.give_image_buffer(cur_image_buffer)
+        self.deep_surface.give_depth_buffer(cur_depth_buffer)
         self.src_bbox = BBox()
-        self.deep_surface.give_depth_buffer(current_depth_buffer)
 
     def draw_on_step(self, dst, clip_start, clip_end,
                      start, z_start, end, z_end):

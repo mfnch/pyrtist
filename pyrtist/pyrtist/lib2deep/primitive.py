@@ -22,10 +22,17 @@ class Primitive(Taker):
         w.take(self.get_profile(*self.extra_args))
         return w
 
-    def build_shape_cmd(self):
-        '''Return a list of commands that describe the shape of this primitive.
+    def build_depth_cmd(self):
+        '''Return a list of commands that can be used to construct the depth
+        buffer for this primitive.
         '''
         return []
+
+    def build_image_cmd(self):
+        '''Return a list of commands which can be used to construct the image
+        buffer for this primitive.
+        '''
+        return [Cmd(Cmd.image_draw, self.get_window())]
 
     def get_profile(self, extra_args):
         raise NotImplementedError('Primitive profile not implemented')
@@ -47,7 +54,9 @@ def primitive_at_deep_window(primitive, deep_window):
 
 @combination(Primitive, CmdStream)
 def primitive_at_cmd_stream(primitive, cmd_stream):
-    cmd_stream.take(Cmd(Cmd.src_draw, primitive.get_window()),
-                    Cmd(Cmd.depth_new))
-    cmd_stream.take(*primitive.build_shape_cmd())
-    cmd_stream.take(Cmd(Cmd.transfer))
+    cmds = [Cmd(Cmd.image_new)]
+    cmds.extend(primitive.build_image_cmd())
+    cmds.append(Cmd(Cmd.depth_new))
+    cmds.extend(primitive.build_depth_cmd())
+    cmds.append(Cmd(Cmd.transfer))
+    cmd_stream.take(*cmds)

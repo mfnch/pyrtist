@@ -22,7 +22,7 @@ class Staircase(Primitive):
         w.take(*args)
         return w
 
-    def build_shape_cmd(self):
+    def build_depth_cmd(self):
         if not self.profile.is_valid():
             raise ValueError('Invalid Profile object')
 
