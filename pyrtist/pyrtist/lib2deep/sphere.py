@@ -41,11 +41,12 @@ class Sphere(Primitive):
         return [Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
                     Z(center.z), Z(rz))]
 
+@combination(Point, Sphere)
 @combination(Point3, Sphere)
 def center_at_sphere(center, sphere):
     if sphere.center is not None:
         raise ValueError('Sphere already has a center')
-    sphere.center = center
+    sphere.center = Point3(center)
 
 @combination(int, Sphere)
 @combination(float, Sphere)

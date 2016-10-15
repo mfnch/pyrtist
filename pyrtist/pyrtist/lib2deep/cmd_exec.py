@@ -118,7 +118,6 @@ class CmdExecutor(object):
         width = self.deep_surface.get_width()
         height = self.deep_surface.get_height()
         image_buffer = self.deep_surface.take_image_buffer()
-        image_buffer.clear()
         cairo_surface = \
           cairo.ImageSurface.create_for_data(image_buffer.get_data(),
                                              cairo.FORMAT_ARGB32,
@@ -139,7 +138,6 @@ class CmdExecutor(object):
     def cmd_depth_new(self):
         '''Add a new depth buffer to the stack.'''
         depth_buffer = self.deep_surface.take_depth_buffer()
-        depth_buffer.clear()
         self.aux_depth_buffers.append(depth_buffer)
 
     def cmd_merge(self):

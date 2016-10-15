@@ -22,21 +22,31 @@ class DeepSurface(object):
         self.image_buffer = self.take_image_buffer()
         self.depth_buffer = self.take_depth_buffer()
 
-    def take_image_buffer(self):
+    def take_image_buffer(self, clear=True):
         if len(self.reusable_image_buffers) > 0:
-            return self.reusable_image_buffers.pop()
-        if self.creation_limit < 1:
-            print('Refuse to create buffer')
-        self.creation_limit -= 1
-        return deepsurface.ImageBuffer(self.width, self.height)
+            ret = self.reusable_image_buffers.pop()
+        else:
+            if self.creation_limit < 1:
+                print('Refuse to create buffer')
+                return None
+            self.creation_limit -= 1
+            ret = deepsurface.ImageBuffer(self.width, self.height)
+        if clear:
+            ret.clear()
+        return ret
 
-    def take_depth_buffer(self):
+    def take_depth_buffer(self, clear=True):
         if len(self.reusable_depth_buffers) > 0:
-            return self.reusable_depth_buffers.pop()
-        if self.creation_limit < 1:
-            print('Refuse to create buffer')
-        self.creation_limit -= 1
-        return deepsurface.DepthBuffer(self.width, self.height)
+            ret = self.reusable_depth_buffers.pop()
+        else:
+            if self.creation_limit < 1:
+                print('Refuse to create buffer')
+                return None
+            self.creation_limit -= 1
+            ret = deepsurface.DepthBuffer(self.width, self.height)
+        if clear:
+            ret.clear()
+        return ret
 
     def give_depth_buffer(self, depth_buffer):
         if len(self.reusable_depth_buffers) < self.num_reusable_buffers:
