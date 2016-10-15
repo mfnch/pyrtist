@@ -19,6 +19,8 @@ static uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
 // corresponding A value, which is the format we use here.
 static uint32_t BlendSrcOverDst(uint32_t src_argb, uint32_t dst_argb) {
   uint32_t src_a = GetA(src_argb);
+  if (src_a == 0xff)
+    return src_argb;
   uint32_t src_am1 = UINT32_C(0xff) - src_a;
   uint32_t out_a = src_a          + (GetA(dst_argb)*src_am1)/UINT32_C(0xff);
   uint32_t out_r = GetR(src_argb) + (GetR(dst_argb)*src_am1)/UINT32_C(0xff);
@@ -27,8 +29,10 @@ static uint32_t BlendSrcOverDst(uint32_t src_argb, uint32_t dst_argb) {
   return GetARGB(out_a, out_r, out_g, out_b);
 }
 
-bool DeepSurface::Transfer(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
-                           DepthBuffer* dst_depth, ARGBImageBuffer* dst_image) {
+template <typename MergeFn>
+bool MergeBuffers(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
+                  DepthBuffer* dst_depth, ARGBImageBuffer* dst_image,
+                  MergeFn merge_fn) {
   if (!(src_depth->IsValid() && src_image->IsValid() &&
         dst_depth->IsValid() && dst_image->IsValid()))
     return false;
@@ -38,41 +42,56 @@ bool DeepSurface::Transfer(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
   int new_line = stride - nx;
   int ny = src_depth->GetHeight();
 
-  auto dsrc = src_depth->GetPtr();
   auto isrc = src_image->GetPtr();
-  auto ddst = dst_depth->GetPtr();
+  auto dsrc = src_depth->GetPtr();
   auto idst = dst_image->GetPtr();
+  auto ddst = dst_depth->GetPtr();
 
   size_t offset = 0U;
   for (int iy = 0; iy < ny; iy++, offset += new_line) {
     size_t final_line_offset = offset + nx;
-    for (; offset < final_line_offset; offset++) {
-      uint32_t src_argb = isrc[offset];
-      uint8_t src_alpha = GetA(src_argb);
-      if (src_alpha == 0)
-        // Source is transparent. Nothing to do.
-        continue;
-
-      auto src_depth = dsrc[offset];
-      if (DepthBuffer::IsInfiniteDepth(src_depth))
-        // Source has infinite depth. Again, nothing to do.
-        continue;
-
-      auto dst_depth = ddst[offset];
-      if (DepthBuffer::IsInfiniteDepth(dst_depth) || src_depth >= dst_depth) {
-        ddst[offset] = src_depth;
-        if (src_alpha == 0xff)
-          idst[offset] = src_argb;
-        else
-          idst[offset] = BlendSrcOverDst(src_argb, idst[offset]);
-      } else {
-        assert(src_depth < dst_depth);
-        idst[offset] = BlendSrcOverDst(idst[offset], src_argb);
-      }
-    }
+    for (; offset < final_line_offset; offset++)
+      merge_fn(isrc[offset], dsrc[offset], &idst[offset], &ddst[offset]);
   }
 
   return true;
+}
+
+bool DeepSurface::Transfer(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
+                           DepthBuffer* dst_depth, ARGBImageBuffer* dst_image) {
+  auto merge_fn = [](uint32_t src_argb, float src_depth,
+                     uint32_t* dst_argb, float* dst_depth) -> void
+  {
+    if (GetA(src_argb) == 0 || DepthBuffer::IsInfiniteDepth(src_depth))
+      // Source is transparent or has infinite depth. Nothing to do.
+      return;
+
+    if (DepthBuffer::IsInfiniteDepth(*dst_depth) || src_depth >= *dst_depth) {
+      *dst_depth = src_depth;
+      *dst_argb = BlendSrcOverDst(src_argb, *dst_argb);
+    } else {
+      assert(src_depth < *dst_depth);
+      *dst_argb = BlendSrcOverDst(*dst_argb, src_argb);
+    }
+  };
+
+  return MergeBuffers(src_depth, src_image, dst_depth, dst_image, merge_fn);
+}
+
+bool DeepSurface::Sculpt(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
+                         DepthBuffer* dst_depth, ARGBImageBuffer* dst_image) {
+  auto merge_fn = [](uint32_t src_argb, float src_depth,
+                     uint32_t* dst_argb, float* dst_depth) -> void
+  {
+    if (GetA(src_argb) == 0 || DepthBuffer::IsInfiniteDepth(src_depth) ||
+        GetA(*dst_argb) == 0 || DepthBuffer::IsInfiniteDepth(*dst_depth))
+      // Source/dest are transparent or have infinite depth. Nothing to do.
+      return;
+    *dst_depth += src_depth;
+    *dst_argb = BlendSrcOverDst(src_argb, *dst_argb);
+  };
+
+  return MergeBuffers(src_depth, src_image, dst_depth, dst_image, merge_fn);
 }
 
 #ifdef TEST_DEPTH_SURFACE
