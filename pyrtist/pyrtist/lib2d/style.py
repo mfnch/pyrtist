@@ -211,13 +211,23 @@ def fn(style, cmd_stream):
 
 class Stroke(Taker):
     def __init__(self, *args):
+        super(Stroke, self).__init__()
         self.path = Path()
         self.stroke_style = StrokeStyle()
-        super(Stroke, self).__init__(*args)
+        self.take(*args)
 
 @combination(Path, Stroke)
-def fn(path, stroke):
+def path_at_stroke(path, stroke):
     stroke.path(path)
+
+@combination(int, Stroke)
+@combination(float, Stroke)
+def scalar_at_stroke(scalar, stroke):
+    stroke.stroke_style.take(scalar)
+
+@combination(Color, Stroke)
+def color_at_stroke(scalar, stroke):
+    stroke.stroke_style.take(scalar)
 
 @combination(StrokeStyle, Stroke)
 def fn(stroke_style, stroke):
