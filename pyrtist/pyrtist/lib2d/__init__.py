@@ -3,7 +3,8 @@ from .core_types import *
 from .pattern import *
 from .axes import *
 from .line import *
-from .circle import Circle
+from .circle import *
+from .arc import *
 from .poly import *
 from .curve import *
 from .path import Path

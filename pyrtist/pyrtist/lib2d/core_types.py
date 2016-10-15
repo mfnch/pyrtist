@@ -6,7 +6,7 @@ library.
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
            'Matrix', 'Close', 'Container', 'Offset', 'Scale', 'Center',
-           'AngleDeg', 'Radii', 'Tri', 'View')
+           'AngleDeg', 'Radii', 'Through', 'Tri', 'View')
 
 import math
 import numbers
@@ -118,6 +118,10 @@ class Point(object):
         '''Return the vector's norm.'''
         return math.sqrt(self.norm2())
 
+    def angle(self):
+        '''Return the angle between the vector and the x axis.'''
+        return math.atan2(self.y, self.x)
+
     def normalize(self):
         '''Normalized this vector.'''
         n = self.norm()
@@ -168,8 +172,9 @@ def Py(value):
     return Point.vy(value)
 
 def Pang(angle):
-    'Return a Point of unit norm forming the specified angle with the x axis.'
-    return Point(x=math.cos(angle), y=math.sin(angle))
+    '''Return a Point of unit norm forming the specified angle with the x axis.
+    '''
+    return Point(math.cos(angle), math.sin(angle))
 
 
 class PointTaker(Taker):
@@ -335,6 +340,13 @@ class Radii(Container):
     '''Container which groups one or more radii (e.g. the x, y radii of
     an ellipsoid.
     '''
+
+
+class Through(list):
+    '''List of points that a geometric shape (e.g. a Circle) passes
+    through.'''
+    def __init__(self, *args):
+        super(Through, self).__init__(args)
 
 
 class AngleDeg(float):

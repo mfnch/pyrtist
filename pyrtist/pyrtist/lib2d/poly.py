@@ -11,7 +11,7 @@ from .style import *
 class Poly(Taker):
     def __init__(self, *args):
         self.style = Style()
-        self.close = True
+        self.close = Close.yes
         self.points = []
         self.margins = []
         self.num_margins = 0
@@ -101,7 +101,7 @@ def fn(poly, path):
              vertex1 = vertex2
 
         # Close the polygon, if requested
-        if poly.close:
+        if poly.close == Close.yes:
             cmd_stream(Cmd(Cmd.close_path))
 
 @combination(Poly, CmdStream)
