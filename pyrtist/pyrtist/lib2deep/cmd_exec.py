@@ -152,9 +152,17 @@ class CmdExecutor(object):
         self.deep_surface.give_depth_buffer(src_depth_buffer)
         self.src_bbox = BBox()
 
-    def cmd_depth_sculpt(self):
+    def cmd_sculpt(self):
         '''Sculpt the topmost depth buffer on top of the previous one.'''
-        pass
+        src_depth_buffer = self.aux_depth_buffers.pop()
+        src_image_buffer, src_image_window = self.aux_image_buffers.pop()
+        dst_depth_buffer = self.aux_depth_buffers[-1]
+        dst_image_buffer, _ = self.aux_image_buffers[-1]
+        deepsurface.sculpt(src_depth_buffer, src_image_buffer,
+                           dst_depth_buffer, dst_image_buffer)
+        self.deep_surface.give_image_buffer(src_image_buffer)
+        self.deep_surface.give_depth_buffer(src_depth_buffer)
+        self.src_bbox = BBox()
 
     def cmd_transfer(self):
         cur_depth_buffer = self.aux_depth_buffers.pop()

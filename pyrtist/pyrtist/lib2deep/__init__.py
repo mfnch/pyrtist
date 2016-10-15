@@ -9,4 +9,5 @@ from .cylinder import *
 from .sphere import *
 from .lathe import *
 from .merge import *
+from .sculpt import *
 from .profile import *
