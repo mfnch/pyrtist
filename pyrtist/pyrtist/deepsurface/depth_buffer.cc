@@ -78,6 +78,32 @@ void DepthBuffer::DrawSphere(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
+void DepthBuffer::DrawCrescent(float clip_start_x, float clip_start_y,
+                               float clip_end_x, float clip_end_y,
+                               float* mx, float scale_z, float translate_z,
+                               float y0, float y1) {
+  if (y0 > y1)
+    std::swap(y0, y1);
+  float delta_y = 0.5*(y1 - y0);
+  float y_orig = 0.5*(y0 + y1);
+
+  auto depth_fn =
+    [scale_z, translate_z, y0, y1, delta_y, y_orig]
+    (float* out, float u, float v) -> void {
+      float cy = (u*u + v*v - 1.0f)/(2.0f*v);
+      float y = cy + copysign(sqrt(1.0f + cy*cy), v);
+      if (y0 <= y && y <= y1) {
+        float vv = (y - y_orig)/delta_y;
+        float z2 = 1.0 - vv*vv;
+        if (z2 >= 0.0f)
+          *out = translate_z + scale_z*sqrt(z2);
+      }
+    };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+
+}
+
 void DepthBuffer::DrawCircular(float clip_start_x, float clip_start_y,
                                float clip_end_x, float clip_end_y,
                                float* mx, float scale_z, float translate_z,

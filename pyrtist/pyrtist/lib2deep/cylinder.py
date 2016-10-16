@@ -5,8 +5,8 @@ __all__ = ('Cylinder',)
 from ..lib2d.base import combination, RejectError
 from ..lib2d import Point, Radii, Poly
 from .core_types import Point3
-from .cmd_stream import Cmd, CmdStream
-from .primitive import Primitive
+from .cmd_stream import Cmd
+from .primitive import Primitive, InvalidPrimitiveError
 
 
 class Cylinder(Primitive):
@@ -23,8 +23,8 @@ class Cylinder(Primitive):
 
     def get_points(self):
         if len(self.points) != 2:
-            raise TypeError('Cylinder requires exactly 2 points ({} given)'
-                            .format(len(self.points)))
+            raise InvalidPrimitiveError('Cylinder requires exactly 2 points '
+                                        '({} given)'.format(len(self.points)))
         # Get the z component, if the user specified it, otherwise use 0.
         old_p1, old_p2 = self.points
         z = getattr(old_p1, 'z', getattr(old_p2, 'z', 0.0))
@@ -35,14 +35,15 @@ class Cylinder(Primitive):
         p2 = Point3(0, 0, z)
         p2.set(old_p2)
         if p1.z != p2.z:
-            raise ValueError('Cylinder points should have the same coordinate')
+            raise InvalidPrimitiveError('Cylinder points should have the same '
+                                        'coordinate')
         return (p1, p2)
 
     def get_radii(self):
         if len(self.radii) < 1:
-            raise ValueError('Cylinder needs at least one radius')
+            raise InvalidPrimitiveError('Cylinder needs at least one radius')
         if len(self.radii) > 2:
-            raise ValueError('Cylinder takes at most two radii')
+            raise InvalidPrimitiveError('Cylinder takes at most two radii')
 
         ret = []
         for radii in self.radii:

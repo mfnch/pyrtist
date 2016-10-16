@@ -1,9 +1,13 @@
-__all__ = ('Primitive',)
+__all__ = ('Primitive', 'InvalidPrimitiveError')
 
 from ..lib2d import Window, Color
 from ..lib2d.base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
 from .deep_window import DeepWindow
+
+
+class InvalidPrimitiveError(Exception):
+    '''Error raised when the primitive is incomplete or ill defined.'''
 
 
 class Primitive(Taker):
@@ -34,7 +38,7 @@ class Primitive(Taker):
         '''
         return [Cmd(Cmd.image_draw, self.get_window())]
 
-    def get_profile(self, extra_args):
+    def get_profile(self, *extra_args):
         raise NotImplementedError('Primitive profile not implemented')
 
 @combination(Window, Primitive)

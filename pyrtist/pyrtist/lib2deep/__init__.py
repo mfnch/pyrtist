@@ -7,6 +7,7 @@ from .plane import *
 from .staircase import *
 from .cylinder import *
 from .sphere import *
+from .crescent import *
 from .lathe import *
 from .merge import *
 from .sculpt import *

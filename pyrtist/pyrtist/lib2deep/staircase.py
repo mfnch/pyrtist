@@ -17,7 +17,7 @@ class Staircase(Primitive):
         self.profile = None
         super(Staircase, self).__init__(*args)
 
-    def get_profile(self, args):
+    def get_profile(self, *args):
         w = Window()
         w.take(*args)
         return w

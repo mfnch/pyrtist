@@ -1,5 +1,6 @@
 __all__ = ('CmdExecutor',)
 
+import math
 import cairo
 
 from .. import deepsurface
@@ -229,3 +230,22 @@ class CmdExecutor(object):
                                  mx.get_entries() + (scale_z, translation_z)))
         args = list(float_args) + [radius_fn]
         dst.draw_circular(*args)
+
+    def draw_on_crescent(self, dst, clip_start, clip_end,
+                         center, one_zero, zero_one, first_arc, second_arc):
+        translation_z = center.z
+        scale_z = one_zero.z - center.z
+        mx = Axes(center.xy, one_zero.xy, zero_one.xy).get_matrix()
+        mx.invert()
+
+        y_offsets = []
+        for arc_point in (first_arc, second_arc):
+            x, y = mx.apply(arc_point.xy)
+            circle_center_y = (x*x + y*y - 1.0)/(2.0*y)
+            circle_radius = math.sqrt(circle_center_y*circle_center_y + 1.0)
+            y0 = circle_center_y + math.copysign(circle_radius, y)
+            y_offsets.append(y0)
+
+        args = (tuple(clip_start) + tuple(clip_end) + mx.get_entries() +
+                (scale_z, translation_z) + tuple(y_offsets))
+        dst.draw_crescent(*args)

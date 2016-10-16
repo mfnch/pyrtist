@@ -71,6 +71,11 @@ class DepthBuffer : public ImageBuffer<float> {
                     float clip_end_x, float clip_end_y,
                     float* mx, float scale_z, float translate_z,
                     std::function<float(float)> radius_fn);
+
+  void DrawCrescent(float clip_start_x, float clip_start_y,
+                    float clip_end_x, float clip_end_y,
+                    float* mx, float scale_z, float translate_z,
+                    float y0, float y1);
 };
 
 #endif  /* _DEPTH_BUFFER_H */

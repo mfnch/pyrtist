@@ -20,6 +20,7 @@ static PyObject* PyDepthBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawSphere(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCylinder(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args);
+static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args);
@@ -35,6 +36,7 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {"draw_sphere", PyDepthBuffer_DrawSphere, METH_VARARGS},
   {"draw_cylinder", PyDepthBuffer_DrawCylinder, METH_VARARGS},
   {"draw_circular", PyDepthBuffer_DrawCircular, METH_VARARGS},
+  {"draw_crescent", PyDepthBuffer_DrawCrescent, METH_VARARGS},
   {"compute_normals", PyDepthBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDepthBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDepthBuffer_GetData, METH_NOARGS},
@@ -311,6 +313,25 @@ static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args) {
     DrawCircular(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
                  scale_z, translate_z, radius_fn);
   Py_RETURN_NONE;
+}
+
+static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args) {
+  float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
+  float mx[6];
+  float scale_z, translate_z, y0, y1;
+
+  if (!PyArg_ParseTuple(args, "ffffffffffffff:DepthBuffer.draw_crescent",
+                        &clip_start_x, &clip_start_y, &clip_end_x, &clip_end_y,
+                        mx, mx + 1, mx + 2, mx + 3, mx + 4, mx + 5,
+                        &scale_z, &translate_z, &y0, &y1))
+    return nullptr;
+
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
+  py_db->depth_buffer->
+    DrawCrescent(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
+                 scale_z, translate_z, y0, y1);
+  Py_RETURN_NONE;
+
 }
 
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args) {

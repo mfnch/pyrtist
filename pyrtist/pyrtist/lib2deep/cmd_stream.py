@@ -8,7 +8,7 @@ from .core_types import Point3, Z, DeepMatrix
 class Cmd(twod.CmdBase):
     # Drawing commands.
     draw_cmd_names = ('on_step', 'on_plane', 'on_sphere', 'on_cylinder',
-                      'on_circular')
+                      'on_circular', 'on_crescent')
     # All commands.
     names = draw_cmd_names + \
       ('set_bbox', 'depth_new', 'merge', 'sculpt',

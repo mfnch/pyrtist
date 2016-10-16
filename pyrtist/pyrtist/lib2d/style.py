@@ -246,6 +246,10 @@ class Fill(Taker):
         self.style = Style()
         self.take(*args)
 
+@combination(Color, Fill)
+def color_at_fill(color, fill):
+    fill.style.take(color)
+
 @combination(Path, Fill)
 def path_at_fill(path, fill):
     fill.path.take(path)
