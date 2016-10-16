@@ -54,6 +54,7 @@ class Taker(object):
                     return combination(arg, self)
 
                 if isinstance(arg, types.GeneratorType):
+                    ret = None
                     for item in arg:
                         ret = self._take_one(item)
                     return ret
