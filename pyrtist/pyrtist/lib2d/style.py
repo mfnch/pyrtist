@@ -1,4 +1,4 @@
-__all__ = ('Color', 'Grey', 'Stroke', 'Style',
+__all__ = ('Color', 'Grey', 'Stroke', 'Fill', 'Style',
            'Border', 'StrokeStyle', 'Join', 'Cap')
 
 import numbers
@@ -218,7 +218,7 @@ class Stroke(Taker):
 
 @combination(Path, Stroke)
 def path_at_stroke(path, stroke):
-    stroke.path(path)
+    stroke.path.take(path)
 
 @combination(int, Stroke)
 @combination(float, Stroke)
@@ -236,3 +236,20 @@ def fn(stroke_style, stroke):
 @combination(Stroke, CmdStream)
 def fn(stroke, cmd_stream):
     cmd_stream.take(stroke.path, stroke.stroke_style)
+
+### Fill ######################################################################
+
+class Fill(Taker):
+    def __init__(self, *args):
+        super(Fill, self).__init__()
+        self.path = Path()
+        self.style = Style()
+        self.take(*args)
+
+@combination(Path, Fill)
+def path_at_fill(path, fill):
+    fill.path.take(path)
+
+@combination(Fill, CmdStream)
+def fill_at_cmd_stream(fill, cmd_stream):
+    cmd_stream.take(fill.path, fill.style)

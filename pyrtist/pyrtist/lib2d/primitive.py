@@ -1,7 +1,7 @@
 __all__ = ('Primitive',)
 
 from .core_types import Point
-from .style import Color, StrokeStyle, Style
+from .style import Color, Stroke, Fill, StrokeStyle, Style
 from .path import Path
 from .base import Taker, combination
 from .cmd_stream import CmdStream, Cmd
@@ -34,3 +34,11 @@ def primitive_at_cmd_stream(primitive, cmd_stream):
 @combination(Primitive, Window)
 def primitive_at_window(primitive, window):
     window.take(CmdStream(primitive))
+
+@combination(Primitive, Stroke)
+def primitive_at_stroke(primitive, stroke):
+    stroke.take(Path(primitive))
+
+@combination(Primitive, Fill)
+def primitive_at_fill(primitive, fill):
+    fill.take(Path(primitive))

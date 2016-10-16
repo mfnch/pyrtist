@@ -71,7 +71,8 @@ class BBoxExecutor(object):
         self.bbox.reset()
         self.bbox.take(p1, p2)
 
-    def cmd_ext_arc_to(self, center, one_zero, zero_one, start_ang, end_ang):
+    def cmd_ext_arc_to(self, center, one_zero, zero_one,
+                       start_ang, end_ang, direction):
         u = one_zero - center
         v = zero_one - center
         w = self.current_width

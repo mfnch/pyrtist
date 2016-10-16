@@ -28,7 +28,7 @@ class Circle(Primitive):
         zero_one = self.center + Point.vy(ry)
         return [Cmd(Cmd.move_to, one_zero),
                 Cmd(Cmd.ext_arc_to, self.center, one_zero, zero_one,
-                    0.0, 2.0*math.pi)]
+                    0.0, 2.0*math.pi, 1)]
 
 @combination(int, Circle)
 @combination(float, Circle)

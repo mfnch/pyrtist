@@ -8,13 +8,14 @@ from .core_types import *
 from .cmd_stream import CmdStream
 from .style import Cap, Join
 
-def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end):
+def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end, direction):
     prev_mx = ctx.get_matrix()
     mx = cairo.Matrix(xx=a.x - ctr.x, yx=a.y - ctr.y, x0=ctr.x,
                       xy=b.x - ctr.x, yy=b.y - ctr.y, y0=ctr.y)
     ctx.transform(mx)
-    ctx.arc(0.0, 0.0, 1.0,            # center x and y, radius.
-            angle_begin, angle_end)   # angle begin and end.
+    arc = (ctx.arc_negative if direction < 0 else ctx.arc)
+    arc(0.0, 0.0, 1.0,            # center x and y, radius.
+        angle_begin, angle_end)   # angle begin and end.
     ctx.set_matrix(prev_mx)
 
 def ext_joinarc_to(ctx, a, b, c):
@@ -113,6 +114,7 @@ class CairoCmdExecutor(object):
         self.scalar_transform = 0.5*(abs(resolution.x) + abs(resolution.y))
         self.origin = origin
         self.size = (surface.get_width(), surface.get_height())
+
         if bg_color is not None:
             context.save()
             context.rectangle(0, 0, *self.size)
@@ -157,8 +159,8 @@ class CairoCmdExecutor(object):
     def cmd_curve_to(self, p_out, p_in, p):
         self.context.curve_to(p_out.x, p_out.y, p_in.x, p_in.y, p.x, p.y)
 
-    def cmd_ext_arc_to(self, ctr, a, b, angle_begin, angle_end):
-        ext_arc_to(self.context, ctr, a, b, angle_begin, angle_end)
+    def cmd_ext_arc_to(self, ctr, a, b, angle_begin, angle_end, direction):
+        ext_arc_to(self.context, ctr, a, b, angle_begin, angle_end, direction)
 
     def cmd_ext_joinarc_to(self, a, b, c):
         ext_joinarc_to(self.context, a, b, c)

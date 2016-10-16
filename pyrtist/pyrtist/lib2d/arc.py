@@ -1,6 +1,6 @@
 __all__ = ('Arc',)
 
-#import math
+import math
 
 from .core_types import Point, Close, Through
 from .primitive import Primitive
@@ -15,6 +15,7 @@ class Arc(Primitive):
         self.circle = Circle()
         self.angle_begin = None
         self.angle_end = None
+        self.direction = 1
         self.close = Close.yes
         self.take(*args)
 
@@ -26,7 +27,7 @@ class Arc(Primitive):
         zero_one = center + Point(0.0, radius)
         cmds = [Cmd(Cmd.move_to, start),
                 Cmd(Cmd.ext_arc_to, center, one_zero, zero_one,
-                    self.angle_begin, self.angle_end)]
+                    self.angle_begin, self.angle_end, self.direction)]
         if self.close == Close.yes:
             cmds.append(Cmd(Cmd.close_path))
         return cmds
@@ -40,5 +41,13 @@ def close_at_arc(close, arc):
 def point_at_arc(through, arc):
     arc.circle.take(through)
     center = arc.circle.center
-    arc.angle_begin = (through[0] - center).angle()
-    arc.angle_end = (through[2] - center).angle()
+    angle_inside = (through[1] - center).angle()
+    arc.angle_begin = angle_begin = (through[0] - center).angle()
+    arc.angle_end = angle_end = (through[2] - center).angle()
+
+    if angle_end < angle_begin:
+        angle_end += 2.0*math.pi
+    if angle_inside < angle_begin:
+        angle_inside += 2.0*math.pi
+    arc.direction = (1 if (angle_begin <= angle_inside <= angle_end)
+                     else -1)

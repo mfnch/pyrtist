@@ -4,7 +4,7 @@ import numbers
 
 from .base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
-from .style import Color, Stroke
+from .style import Color, Stroke, Fill
 from .cairo_cmd_exec import CairoCmdExecutor
 from .bbox import BBox
 from .core_types import Point, View
@@ -77,9 +77,21 @@ class Window(WindowBase):
     default_mode = 'rgb24'
     default_bg_color = Color.white
 
-    def __init__(self, cmd_executor=None):
+    def __init__(self, *args):
         '''Create a new Window.'''
+
+        cmd_executor = None
+        cmd_executors = [arg for arg in args
+                         if isinstance(arg, CairoCmdExecutor)]
+        if len(cmd_executors) == 1:
+            cmd_executor = cmd_executors[0]
+            args = tuple(arg for arg in args
+                         if not isinstance(arg, CairoCmdExecutor))
+        elif len(cmd_executors) > 1:
+            raise ValueError('Window takes at most one command executor')
+
         super(Window, self).__init__(CmdStream(), cmd_executor)
+        self.take(*args)
 
     def save(self, file_name, mode=None, size=None, resolution=None,
              executor=None, bg_color=None):
@@ -176,6 +188,10 @@ def pattern_at_window(pattern, window):
 @combination(Stroke, Window)
 def fn(stroke, window):
     window.take(CmdStream(stroke))
+
+@combination(Fill, Window)
+def fill_at_window(fill, window):
+    window.take(CmdStream(fill))
 
 @combination(Hot, Window, 'Hot')
 def fn(hot, window):
