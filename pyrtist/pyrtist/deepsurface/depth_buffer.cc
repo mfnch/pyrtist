@@ -82,21 +82,32 @@ void DepthBuffer::DrawCrescent(float clip_start_x, float clip_start_y,
                                float clip_end_x, float clip_end_y,
                                float* mx, float scale_z, float translate_z,
                                float y0, float y1) {
+  constexpr float half_pi = 2.0f*atan(1.0f);
   if (y0 > y1)
     std::swap(y0, y1);
-  float delta_y = 0.5*(y1 - y0);
-  float y_orig = 0.5*(y0 + y1);
+  float delta_y = 0.5f*(y1 - y0);
+  float y_orig = 0.5f*(y0 + y1);
 
   auto depth_fn =
     [scale_z, translate_z, y0, y1, delta_y, y_orig]
     (float* out, float u, float v) -> void {
-      float cy = (u*u + v*v - 1.0f)/(2.0f*v);
-      float y = cy + copysign(sqrt(1.0f + cy*cy), v);
-      if (y0 <= y && y <= y1) {
-        float vv = (y - y_orig)/delta_y;
-        float z2 = 1.0 - vv*vv;
-        if (z2 >= 0.0f)
-          *out = translate_z + scale_z*sqrt(z2);
+      if (fabsf(v) == 0.0f) {
+        *out = translate_z + scale_z*cos(half_pi*u);
+      } else {
+        float cy = (u*u + v*v - 1.0f)/(2.0f*v);
+        float y = cy + copysign(sqrt(1.0f + cy*cy), v);
+        if (y0 <= y && y <= y1) {
+          float pr = (y - y_orig)/delta_y;  // Planar radial component.
+          float z2 = 1.0f - pr*pr;          // Normal radial component.
+          if (z2 >= 0.0f) {
+            float axial;                    // Axial component.
+            if (y >= 0.0)
+              axial = atan2f(-u, v - cy)/atan2f(-1.0f, -cy);
+            else
+              axial = atan2f(u, cy - v)/atan2f(1.0f, cy);
+            *out = translate_z + scale_z*sqrt(z2)*cos(half_pi*axial);
+          }
+        }
       }
     };
   DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,

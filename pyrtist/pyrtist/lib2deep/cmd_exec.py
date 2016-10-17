@@ -241,9 +241,12 @@ class CmdExecutor(object):
         y_offsets = []
         for arc_point in (first_arc, second_arc):
             x, y = mx.apply(arc_point.xy)
-            circle_center_y = (x*x + y*y - 1.0)/(2.0*y)
-            circle_radius = math.sqrt(circle_center_y*circle_center_y + 1.0)
-            y0 = circle_center_y + math.copysign(circle_radius, y)
+            if y == 0.0:
+                y0 = 0.0
+            else:
+                circle_center_y = (x*x + y*y - 1.0)/(2.0*y)
+                circle_radius = math.sqrt(circle_center_y*circle_center_y + 1.0)
+                y0 = circle_center_y + math.copysign(circle_radius, y)
             y_offsets.append(y0)
 
         args = (tuple(clip_start) + tuple(clip_end) + mx.get_entries() +

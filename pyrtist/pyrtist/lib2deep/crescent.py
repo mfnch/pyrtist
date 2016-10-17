@@ -26,7 +26,7 @@ class Crescent(Primitive):
 
     def build_depth_cmd(self):
         p1, p2, p3, p4 = self.get_points()
-        origin = (p1 + p3)*0.5
+        origin = Point3(((p1 + p3)*0.5).xy, p1.z)
         one_zero = p3
         zero_one = origin + Point3((one_zero - origin).xy.ort())
         return [Cmd(Cmd.on_crescent, origin, one_zero, zero_one, p2, p4)]
