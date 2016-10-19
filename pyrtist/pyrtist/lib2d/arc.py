@@ -19,6 +19,19 @@ class Arc(Primitive):
         self.close = Close.yes
         self.take(*args)
 
+    def __getitem__(self, index):
+        c = self.circle
+        rx, ry = c.get_radii()
+        if self.direction > 0:
+            angle = self.angle_begin*(1.0 - index) + self.angle_end*index
+        else:
+            angle = self.angle_begin*(1.0 - index) + (self.angle_end - 2*math.pi)*index
+        return c.center + Point(rx*math.cos(angle), ry*math.sin(angle))
+
+    def get_angles(self):
+        angle_begin = self.angle_begin
+        angle_end = self.angle_end
+
     def build_path(self):
         radius = self.circle.radii[0]
         center = self.circle.center
@@ -42,12 +55,13 @@ def point_at_arc(through, arc):
     arc.circle.take(through)
     center = arc.circle.center
     angle_inside = (through[1] - center).angle()
-    arc.angle_begin = angle_begin = (through[0] - center).angle()
-    arc.angle_end = angle_end = (through[2] - center).angle()
-
+    angle_begin = (through[0] - center).angle()
+    angle_end = (through[2] - center).angle()
     if angle_end < angle_begin:
         angle_end += 2.0*math.pi
     if angle_inside < angle_begin:
         angle_inside += 2.0*math.pi
+    arc.angle_end = angle_end
+    arc.angle_begin = angle_begin
     arc.direction = (1 if (angle_begin <= angle_inside <= angle_end)
                      else -1)

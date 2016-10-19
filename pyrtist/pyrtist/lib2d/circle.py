@@ -15,15 +15,17 @@ class Circle(Primitive):
         self.radii = []
         self.take(*args)
 
+    def get_radii(self):
+        if len(self.radii) == 2:
+            return self.radii
+        rx = self.radii[0]
+        return (rx, rx)
+
     def build_path(self):
         if len(self.radii) == 0 or self.center is None:
             raise ValueError('Circle is missing the center')
 
-        if len(self.radii) == 2:
-            rx, ry = self.radii
-        else:
-            rx = ry = self.radii[0]
-
+        rx, ry = self.get_radii()
         one_zero = self.center + Point.vx(rx)
         zero_one = self.center + Point.vy(ry)
         return [Cmd(Cmd.move_to, one_zero),

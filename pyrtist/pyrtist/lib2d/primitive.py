@@ -6,6 +6,7 @@ from .path import Path
 from .base import Taker, combination
 from .cmd_stream import CmdStream, Cmd
 from .window import Window
+from .bbox import BBox
 
 
 class Primitive(Taker):
@@ -42,3 +43,7 @@ def primitive_at_stroke(primitive, stroke):
 @combination(Primitive, Fill)
 def primitive_at_fill(primitive, fill):
     fill.take(Path(primitive))
+
+@combination(Primitive, BBox)
+def primitive_at_bbox(primitive, bbox):
+    bbox.take(Window(primitive))
