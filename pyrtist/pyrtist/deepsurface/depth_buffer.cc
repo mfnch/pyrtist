@@ -78,6 +78,14 @@ void DepthBuffer::DrawSphere(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
+/// @brief Compute (sqrt(1 + x*x) - 1)/x without precision losses when x ~ 0.
+static float Sqrt1PlusX2Min1DivX(float x) {
+  constexpr float small_x = 1.0f / (1 << 12);
+  // small_x as defined above is roughly the point where the linear
+  // approximation performs better than the actual computation.
+  return (fabsf(x) > small_x) ? (sqrtf(1.0f + x*x) - 1.0f)/x : 0.5f*x;
+}
+
 void DepthBuffer::DrawCrescent(float clip_start_x, float clip_start_y,
                                float clip_end_x, float clip_end_y,
                                float* mx, float scale_z, float translate_z,
@@ -91,10 +99,13 @@ void DepthBuffer::DrawCrescent(float clip_start_x, float clip_start_y,
   auto depth_fn =
     [scale_z, translate_z, y0, y1, delta_y, y_orig]
     (float* out, float u, float v) -> void {
-      if (fabsf(v) == 0.0f) {
-        *out = translate_z + scale_z*cos(half_pi*u);
-      } else {
-        float cy = (u*u + v*v - 1.0f)/(2.0f*v);
+      float v2 = v*v;
+      float a2 = u*u + v2 - 1.0f;
+      if (a2 + v2 >= 0.0f) {
+        // Outside the unit circle: high-curvature long arcs.
+        // In this case, the center cy and the radius, sqrt(1 + cy^2), are well
+        // behaved, except in the region v ~ 0, |u| >= 0.
+        float cy = a2/(2.0f*v);
         float y = cy + copysign(sqrt(1.0f + cy*cy), v);
         if (y0 <= y && y <= y1) {
           float pr = (y - y_orig)/delta_y;  // Planar radial component.
@@ -105,6 +116,23 @@ void DepthBuffer::DrawCrescent(float clip_start_x, float clip_start_y,
               axial = atan2f(-u, v - cy)/atan2f(-1.0f, -cy);
             else
               axial = atan2f(u, cy - v)/atan2f(1.0f, cy);
+            *out = translate_z + scale_z*sqrt(z2)*cos(half_pi*axial);
+          }
+        }
+      } else {
+        // Inside the unit circle: low-curvature short arcs.
+        // In this case, the center cy and the radius, sqrt(1 + cy^2), become
+        // arbitrarily large when  v --> 0, despite these points are part of
+        // the primitive. Things go better if we reason in terms of curvature,
+        // except that the curvature is not well defined around (+-1, 0).
+        float cv = (2.0f*v)/a2;              // Curvature.
+        float y = -Sqrt1PlusX2Min1DivX(cv);
+        if (y0 <= y && y <= y1) {
+          float pr = (y - y_orig)/delta_y;   // Planar radial component.
+          float z2 = 1.0f - pr*pr;           // Normal radial component.
+          if (z2 >= 0.0f) {
+            // Axial component.
+            float axial = atanf(u*cv/(1.0f - v*cv))/atanf(cv);
             *out = translate_z + scale_z*sqrt(z2)*cos(half_pi*axial);
           }
         }
