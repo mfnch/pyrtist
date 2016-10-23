@@ -17,7 +17,7 @@ class DeepSurface(object):
         self.reusable_image_buffers = []
         self.reusable_depth_buffers = []
         self.num_reusable_buffers = num_reusable_buffers
-        self.creation_limit = 10
+        self.creation_limit = 20
 
         self.image_buffer = self.take_image_buffer()
         self.depth_buffer = self.take_depth_buffer()

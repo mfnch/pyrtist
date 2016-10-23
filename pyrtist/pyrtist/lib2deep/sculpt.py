@@ -2,9 +2,11 @@
 
 __all__ = ('Sculpt',)
 
+from ..lib2d import Window
 from ..lib2d.base import combination
 from .primitive import Primitive
 from .cmd_stream import Cmd
+from .merge import Merge
 
 
 class Sculpt(Primitive):
@@ -13,22 +15,22 @@ class Sculpt(Primitive):
         self.primitives = []
         self.take(*args)
 
-    def build_depth_cmd(self):
+    def get_window(self, *args):
+        return Window()
+
+    def build_cmds(self):
         cmds = []
         if len(self.primitives) < 1:
-            return cmds
+            return [Cmd(Cmd.image_new), Cmd(Cmd.depth_new)]
 
         operands = [self.primitives[0]]
         if len(self.primitives) == 2:
             operands.append(self.primitives[1])
         elif len(self.primitives) > 2:
-            operands.append(Merge(self.primitives[1:]))
+            operands.append(Merge(*self.primitives[1:]))
 
         for operand in operands:
-            cmds.append(Cmd(Cmd.image_new))
-            cmds.extend(operand.build_image_cmd())
-            cmds.append(Cmd(Cmd.depth_new))
-            cmds.extend(operand.build_depth_cmd())
+            cmds.extend(operand.build_cmds())
 
         if len(operands) == 2:
             cmds.append(Cmd(Cmd.sculpt))

@@ -1,5 +1,6 @@
 __all__ = ('Line',)
 
+import math
 import copy
 
 from .base import *
@@ -14,6 +15,16 @@ class Line(PointTaker):
         self.stroke_style = Border()
         self.close = False
         super(Line, self).__init__(*args)
+
+    def __getitem__(self, index):
+        if isinstance(index, int):
+            return self.points[index]
+        n = len(self.points)
+        prev_idx = math.floor(index)
+        prev = self.points[int(prev_idx) % n]
+        succ = self.points[int(math.ceil(index)) % n]
+        x = index - prev_idx
+        return prev*(1.0 - x) + succ*x
 
     def split_segments_inplace(self, num_parts):
         '''In-place version of split_segments().'''
