@@ -654,6 +654,10 @@ class Pyrtist(object):
     self.out_textbuffer_last_update_time = t
     return text
 
+  def _out_textview_size_allocate(self, *args):
+    adj = self.out_textview_sw.get_vadjustment()
+    adj.set_value(adj.get_upper() - adj.get_page_size())
+
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
     ad = gtk.AboutDialog()
@@ -824,12 +828,13 @@ class Pyrtist(object):
     vbox = self._init_menu_and_toolbar()
 
     self.out_textview = outtv = gtk.TextView()
-    outtv.set_size_request(10, 75)
+    outtv.set_size_request(10, 300)
     outtv.set_editable(False)
     outtv.set_cursor_visible(False)
+    outtv.connect('size-allocate', self._out_textview_size_allocate)
     self.out_textbuffer = outtv.get_buffer()
     self.out_textview_expander = outexp = gtk.Expander(label="Box output:")
-    outsw = gtk.ScrolledWindow()
+    self.out_textview_sw = outsw = gtk.ScrolledWindow()
     outsw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
     outsw.add(outtv)
     outexp.add(outsw)
