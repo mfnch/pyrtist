@@ -10,7 +10,7 @@ class ImageBufferWrapper(deepsurface.ImageBuffer):
 
 
 class DeepSurface(object):
-    def __init__(self, width, height, num_reusable_buffers=3):
+    def __init__(self, width, height, num_reusable_buffers=5):
         self.width = width
         self.height = height
 

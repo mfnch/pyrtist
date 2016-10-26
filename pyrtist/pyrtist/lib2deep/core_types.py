@@ -127,6 +127,11 @@ class DeepMatrix(Matrix):
 
     z_identity = [1.0, 0.0]
 
+    @classmethod
+    def translation(cls, t):
+        return cls([[1.0, 0.0, t.x],
+                    [0.0, 1.0, t.y]], [1.0, t.z])
+
     def __init__(self, xy_value=None, z_value=None):
         if isinstance(xy_value, DeepMatrix):
             if z_value is None:
@@ -140,6 +145,21 @@ class DeepMatrix(Matrix):
 
     def __repr__(self):
         return 'DeepMatrix({}, {})'.format(repr(self.value), repr(self.z_value))
+
+    def __mul__(self, b):
+        if isinstance(b, Point3):
+            return self.apply(b)
+        if isinstance(b, tuple) and len(b) == 3:
+            return self.apply(Point3(b))
+        return super(DeepMatrix, self).__mul__(b)
+
+    def multiply(self, b):
+        if isinstance(b, DeepMatrix):
+            a31, a32 = ab = self.z_value
+            b31, b32 = b.z_value
+            ab[0] = a31*b31
+            ab[1] = a31*b32 + a32
+        super(DeepMatrix, self).multiply(b)
 
     def copy(self):
         '''Return a copy of the matrix.'''

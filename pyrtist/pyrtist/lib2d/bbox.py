@@ -101,16 +101,25 @@ class BBoxExecutor(object):
         if start_ang > end_ang:
             d = 2.0*math.pi
             end_ang += math.ceil((start_ang - end_ang)/d)*d
-        x0, x1 = range_of_cos(start_ang, end_ang)
-        y0, y1 = range_of_sin(start_ang, end_ang)
         u = one_zero - center
         v = zero_one - center
-        w = self.current_width
-        if self.current_width is not None:
-            u += Point(math.copysign(w, u.x), math.copysign(w, u.x))
-            v += Point(math.copysign(w, v.x), math.copysign(w, v.x))
-        self.bbox.take(center + x0*u + y0*v,
-                       center + x1*u + y1*v)
+
+        # We need to compute the min and max of Q = u*cos(angle) + v*sin(angle)
+        # for angle in [start_ang, end_ang].
+
+        # Below we compute the min (uvx*x0) and max (uvx*x1) of Q.x.
+        uvx = math.sqrt(u.x*u.x + v.x*v.x)
+        a0 = math.atan2(u.x, v.x)
+        x0, x1 = range_of_sin(start_ang + a0, end_ang + a0)
+
+        # Below we compute the min (uvy*y0) and max (uvy*y1) of Q.y.
+        vuy = math.sqrt(u.y*u.y + v.y*v.y)
+        a1 = math.atan2(u.y, v.y)
+        y0, y1 = range_of_sin(start_ang + a1, end_ang + a1)
+
+        w = self.current_width or 0.0
+        self.bbox.take(center + Point(uvx*x0 - w, vuy*y0 - w),
+                       center + Point(uvx*x1 + w, vuy*y1 + w))
 
 @combination(CmdStream, BBox)
 def cmd_stream_at_bbox(cmd_stream, bbox):

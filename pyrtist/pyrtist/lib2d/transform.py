@@ -16,7 +16,7 @@ class Transform(object):
                  scale_factors=None, rotation_angle=None):
         self.translation = translation or Point()
         self.rotation_center = rotation_center or Point()
-        self.scale_factors = scale_factors or Point(x=1.0, y=1.0)
+        self.scale_factors = scale_factors or Point(1.0, 1.0)
         self.rotation_angle = rotation_angle or 0.0
 
     @staticmethod

@@ -206,6 +206,18 @@ class Matrix(object):
     identity = [[1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0]]
 
+    @classmethod
+    def rotation(cls, angle):
+        rcos = math.cos(angle)
+        rsin = math.sin(angle)
+        return cls([[rcos, -rsin, 0.0],
+                    [rsin,  rcos, 0.0]])
+
+    @classmethod
+    def translation(cls, t):
+        return cls([[1.0, 0.0, t.x],
+                    [0.0, 1.0, t.y]])
+
     def __init__(self, value=None):
         if value is None:
             value = Matrix.identity
