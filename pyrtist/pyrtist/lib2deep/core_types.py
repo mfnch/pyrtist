@@ -133,6 +133,10 @@ class DeepMatrix(Matrix):
                     [0.0, 1.0, t.y]], [1.0, t.z])
 
     def __init__(self, xy_value=None, z_value=None):
+        super(DeepMatrix, self).__init__()
+        self.set(xy_value, z_value)
+
+    def set(self, xy_value=None, z_value=None):
         if isinstance(xy_value, DeepMatrix):
             if z_value is None:
                 z_value = xy_value.z_value
@@ -140,7 +144,7 @@ class DeepMatrix(Matrix):
         elif isinstance(xy_value, Matrix):
             if z_value is None:
                 z_value = (abs(xy_value.det())**0.5, 0.0)
-        super(DeepMatrix, self).__init__(xy_value)
+        super(DeepMatrix, self).set(xy_value)
         self.z_value = list(z_value or DeepMatrix.z_identity)
 
     def __repr__(self):

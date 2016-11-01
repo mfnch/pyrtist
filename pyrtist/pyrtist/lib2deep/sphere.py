@@ -39,7 +39,7 @@ class Sphere(Primitive):
         one_zero = center_2d + Point.vx(rx)
         zero_one = center_2d + Point.vy(ry)
         return [Cmd(Cmd.on_sphere, center_2d, one_zero, zero_one,
-                    Z(center.z), Z(rz))]
+                    Z(center.z), Z(center.z + rz))]
 
 @combination(Point, Sphere)
 @combination(Point3, Sphere)

@@ -85,6 +85,12 @@ class Point(object):
     def __iter__(self):
         return iter((self.x, self.y))
 
+    def __neg__(self):
+        return type(self)(*tuple(-x for x in self))
+
+    def __pos__(self):
+        return self.copy()
+
     def __add__(self, value):
         return Point(x=self.x + value.x, y=self.y + value.y)
 
@@ -219,6 +225,10 @@ class Matrix(object):
                     [0.0, 1.0, t.y]])
 
     def __init__(self, value=None):
+        self.set(value)
+
+    def set(self, value):
+        '''Set the matrix to the given value.'''
         if value is None:
             value = Matrix.identity
         elif isinstance(value, Matrix):
