@@ -72,7 +72,7 @@ if Feature is not None:
       {'deepsurface': Feature('the deepsurface module.',
                               standard=False, ext_modules=ext_modules)}
     kwargs['entry_points'] = \
-      {'console_scripts': ['pyrtist=pyrtist.__main__:main']}
+      {'console_scripts': ['pyrtist=pyrtist:main']}
 elif BUILD_DEEPSURFACE:
     # distutils way.
     kwargs['ext_modules'] = ext_modules
