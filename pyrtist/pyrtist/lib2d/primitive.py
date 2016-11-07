@@ -1,7 +1,8 @@
 __all__ = ('Primitive',)
 
 from .core_types import Point
-from .style import Color, Stroke, Fill, StrokeStyle, Style
+from .style import Stroke, Fill, StrokeStyle, Style
+from .pattern import Pattern
 from .path import Path
 from .base import Taker, combination
 from .cmd_stream import CmdStream, Cmd
@@ -18,7 +19,7 @@ class Primitive(Taker):
     def build_path(self):
         return []
 
-@combination(Color, Primitive)
+@combination(Pattern, Primitive)
 @combination(StrokeStyle, Primitive)
 @combination(Style, Primitive)
 def style_at_primitive(style, primitive):
