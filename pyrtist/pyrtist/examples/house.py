@@ -90,8 +90,6 @@ w17 = Point(26.7301843088, 22.0110539054)
 # We definitely need a brick pattern to draw the walls
 # Try to change to gui(bricks)	 to see how this is done.
 
-bricks = Window()
-
 # Just one brick
 brick = Window()
 brick.take(
@@ -167,4 +165,4 @@ house.take(
 
 #house.save('house.png')
 
-gui(house)
+gui([house, bricks][0])
