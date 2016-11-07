@@ -207,19 +207,17 @@ class CairoCmdExecutor(object):
             return
         self.context.set_source(self.pattern)
 
-    def cmd_pattern_create_image(self, origin, v10, v01, offset, file_name):
-        image = cairo.ImageSurface.create_from_png(file_name)
-        lx = float(image.get_width())
-        ly = float(image.get_height())
+    def cmd_pattern_create_image(self, origin, v10, v01, offset, surface):
+        lx = float(surface.get_width())
+        ly = float(surface.get_height())
         mx = cairo.Matrix(xx=(v10.x - origin.x)/lx, yx=(v10.y - origin.y)/lx,
                           xy=(origin.x - v01.x)/ly, yy=(origin.y - v01.y)/ly,
                           x0=v01.x, y0=v01.y)
         mx.invert()
         mx = mx.multiply(cairo.Matrix(x0=offset[0]*lx, y0=-offset[1]*ly))
-        pattern = cairo.SurfacePattern(image)
+        pattern = cairo.SurfacePattern(surface)
         pattern.set_matrix(mx)
         self.pattern = pattern
-        self.context.set_source(pattern)
 
     def cmd_stroke(self):
         self.context.stroke()

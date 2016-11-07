@@ -1,7 +1,7 @@
 __all__ = ('Axes',)
 
 from .base import Taker, combination
-from .core_types import Point, Matrix
+from .core_types import Point, Scale, Matrix
 
 
 class Axes(Taker):
@@ -46,11 +46,12 @@ class Axes(Taker):
     def copy(self):
         return Axes(*self.get_points())
 
-    def scale(self, scalar):
+    def scale(self, scale):
         '''Scale the object keeping the same origin.'''
+        scale = Scale(scale)
         origin = self.origin
-        one_zero = origin + (self.one_zero - origin)*scalar
-        zero_one = origin + (self.zero_one - origin)*scalar
+        one_zero = origin + (self.one_zero - origin)*scale.x
+        zero_one = origin + (self.zero_one - origin)*scale.y
         self.points = [origin, one_zero, zero_one]
 
     def __repr__(self):
@@ -87,5 +88,6 @@ def point_at_axes(point, axes):
 
 @combination(int, Axes)
 @combination(float, Axes)
-def scalar_at_axes(scalar, axes):
-    axes.scale(scalar)
+@combination(Scale, Axes)
+def scalar_at_axes(scale, axes):
+    axes.scale(scale)

@@ -93,14 +93,13 @@ class Window(WindowBase):
         super(Window, self).__init__(CmdStream(), cmd_executor)
         self.take(*args)
 
-    def save(self, file_name, mode=None, size=None, resolution=None,
-             executor=None, bg_color=None):
-        '''Save the window to file, computing the visible area automatically.
+    def draw(self, mode=None, size=None, resolution=None, executor=None,
+             bg_color=None):
+        '''Draw the window to a Cairo surface.
 
-        The user should provide either the resolution or the size in pixels.
-        The visible region will be automatically determined by computing the
-        bounding box of the window. Use BBox() to set explicitly the bounding
-        box and override the automatic computation.
+        The usage of this method is similar to the usage of the save method,
+        except that this method does not save the image to a file. Instead, it
+        draws the image to a new Cairo surface and then returns it.
         '''
         bbox, mode, size, executor = \
           self._check_for_save(mode, size, resolution, executor, bg_color)
@@ -113,7 +112,20 @@ class Window(WindowBase):
         cmd_exec = ex.for_surface(surface, bot_left=bbox.min_point,
                                   top_right=bbox.max_point, bg_color=bg_color)
         cmd_exec.execute(self.cmd_stream)
-        cmd_exec.save(file_name)
+        return cmd_exec.surface
+
+    def save(self, file_name, mode=None, size=None, resolution=None,
+             executor=None, bg_color=None):
+        '''Save the window to file, computing the visible area automatically.
+
+        The user should provide either the resolution or the size in pixels.
+        The visible region will be automatically determined by computing the
+        bounding box of the window. Use BBox() to set explicitly the bounding
+        box and override the automatic computation.
+        '''
+        cairo_surface = self.draw(mode=mode, size=size, resolution=resolution,
+                                  executor=executor, bg_color=bg_color)
+        cairo_surface.write_to_png(file_name)
 
     def draw_view(self, target_surface, view):
         '''Run draw_full_view() when view is None and draw_zoomed_view()

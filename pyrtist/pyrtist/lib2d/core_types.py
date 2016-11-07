@@ -51,27 +51,29 @@ class Point(object):
         return sum(points, default or Point())
 
     def __init__(self, *args, **kwargs):
-        if len(args) == 0:
-            self.x = self.y = 0.0
-        else:
+        self.x = self.y = 0.0
+        self.set(*args, **kwargs)
+
+    def set(self, *args, **kwargs):
+        if len(args) > 0:
             arg0 = args[0]
             if isinstance(arg0, numbers.Number):
                 xy = args
-            elif isinstance(arg0, Point):
-                xy = (arg0.x, arg0.y) + args[1:]
-            elif isinstance(arg0, tuple):
-                xy = arg0 + args[1:]
+            elif isinstance(arg0, (Point, tuple)):
+                xy = tuple(arg0) + args[1:]
             else:
-                raise TypeError('Unknown type of first argument of Point()')
+                raise TypeError('Unknown type of first argument of {}()'
+                                .format(self.__class__.__name__))
             if len(xy) == 2:
                 self.x = float(xy[0])
                 self.y = float(xy[1])
             elif len(xy) > 2:
-                raise TypeError('Too many arguments to Point()')
+                raise TypeError('Too many arguments to {}()'
+                                .format(self.__class__.__name__))
             else:
-                assert len(args) == 1
+                assert len(xy) == 1
                 self.x = xy[0]
-                self.y = 0.0
+
         # The code below is there for compatibility reasons, but we should get
         # rid of it eventually.
         if 'x' in kwargs:
@@ -80,7 +82,7 @@ class Point(object):
             self.y = kwargs['y']
 
     def __repr__(self):
-        return 'Point({x}, {y})'.format(x=self.x, y=self.y)
+        return '{}({}, {})'.format(self.__class__.__name__, self.x, self.y)
 
     def __iter__(self):
         return iter((self.x, self.y))
@@ -349,10 +351,12 @@ class Offset(Point):
 class Scale(Point):
     '''Alias for Point used to pass scale factors.'''
 
-    def __init__(self, x=1.0, y=None):
-        if y is None:
-            y = x
-        super(Scale, self).__init__(x, y)
+    def __init__(self, *args):
+        super(Scale, self).__init__()
+        self.y = None
+        self.set(*args)
+        if self.y is None:
+            self.y = self.x
 
 class Center(Point):
     '''Alias for Point used to pass the center for a rotation.'''

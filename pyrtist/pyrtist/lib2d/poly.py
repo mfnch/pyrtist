@@ -5,7 +5,6 @@ from .core_types import *
 from .path import Path
 from .window import Window
 from .cmd_stream import CmdStream, Cmd
-from .pattern import Pattern
 from .style import *
 from .primitive import Primitive
 
