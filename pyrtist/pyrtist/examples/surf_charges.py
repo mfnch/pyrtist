@@ -46,8 +46,8 @@ c3 = Color(0.7, 1, 1)
 #  g = Gradient[Line[gradient_1, gradient_2], c, 0.7, c3, c]
 g = Style(Color(0.5, 0.5, 0.5, 0.5))
 s1 = Style(Border(Color.black, 0.25, Join.round))
-s2 = Style(Border(Color.black, 0.25, Join.round)) # Dash(0.4)))
-s3 = Border(Color(0, 0, 0, 0.5), 0.25) # Dash(0.4))
+s2 = Style(Border(Color.black, 0.25, Join.round, Dash(0.4)))
+s3 = Border(Color(0, 0, 0, 0.5), 0.25, Dash(0.4))
 
 w.take(
   Poly(s1, gui2, gui3, gui4, 0.5, gui5, gui1, 0, c.darken(0.6)),

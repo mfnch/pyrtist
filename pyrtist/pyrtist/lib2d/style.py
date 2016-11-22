@@ -1,5 +1,5 @@
 __all__ = ('Color', 'Grey', 'Stroke', 'Fill', 'Style',
-           'Border', 'StrokeStyle', 'Join', 'Cap')
+           'Border', 'StrokeStyle', 'Join', 'Cap', 'Dash')
 
 import numbers
 import colorsys
@@ -129,6 +129,29 @@ doc = ('Whether this style should be made the default style. '
  'provided.')
 MakeDefault = create_enum('MakeDefault', doc, 'no', 'yes')
 
+class Dash(Taker):
+    '''Object specifying the dash lengths.'''
+    def __init__(self, *args):
+        super(Dash, self).__init__()
+        self.offset = 0.0
+        self.dashes = []
+        self.take(*args)
+
+@combination(Offset, Dash)
+def offset_at_dash(offset, dash):
+    dash.offset = offset.x
+
+@combination(int, Dash)
+@combination(float, Dash)
+def scalar_at_dash(scalar, dash):
+    dash.dashes.append(scalar)
+
+@combination(Dash, CmdStream)
+def dash_at_cmd_stream(dash, cmd_stream):
+    if dash.dashes:
+        scalars = map(Scalar, [dash.offset] + dash.dashes)
+        cmd_stream.take(Cmd(Cmd.set_dash, *scalars))
+
 class StrokeStyle(StyleBase):
     attrs = ('pattern', 'width', 'dash', 'miter_limit', 'join', 'cap',
              'make_default')
@@ -157,15 +180,20 @@ def fn(join, stroke_style):
 def fn(cap, stroke_style):
     stroke_style.cap = cap
 
+@combination(Dash, StrokeStyle)
+def dash_at_stroke_style(dash, stroke_style):
+    stroke_style.dash = dash
+
 @combination(StrokeStyle, CmdStream)
-def fn(stroke_style, cmd_stream):
+def stroke_style_at_cmd_stream(stroke_style, cmd_stream):
     preserve = (stroke_style.make_default != True)
     if preserve:
         cmd_stream.take(Cmd(Cmd.save))
     cmd_stream.take(stroke_style.pattern)
     if stroke_style.width is not None:
         cmd_stream.take(Cmd(Cmd.set_line_width, Scalar(stroke_style.width)))
-    cmd_stream.take(stroke_style.join,
+    cmd_stream.take(stroke_style.dash,
+                    stroke_style.join,
                     stroke_style.cap,
                     stroke_style.miter_limit,
                     Cmd(Cmd.stroke))

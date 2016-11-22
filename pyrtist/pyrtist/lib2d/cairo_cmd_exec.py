@@ -183,6 +183,9 @@ class CairoCmdExecutor(object):
             raise ValueError('Unknown cap style {}'.format(cap))
         self.context.set_line_cap(cairo_cap)
 
+    def cmd_set_dash(self, offset, *dashes):
+        self.context.set_dash(dashes, offset)
+
     def cmd_set_source_rgba(self, r, g, b, a):
         self.context.set_source_rgba(r, g, b ,a)
 
