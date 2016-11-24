@@ -3,6 +3,10 @@
 #include "py_depth_buffer.h"
 #include "py_image_buffer.h"
 #include "deep_surface.h"
+#include "obj_parser.h"
+
+#include <memory>
+
 
 static PyObject* Py_Transfer(PyObject* ds, PyObject* args) {
   PyObject* py_src_image;
@@ -58,9 +62,28 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
   Py_RETURN_NONE;
 }
 
+static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
+  const char* file_name = nullptr;
+  PyObject* py_image;
+  PyObject* py_depth;
+  if (!PyArg_ParseTuple(args, "zOO:load_obj",
+                        &file_name, &py_depth, &py_image))
+    return nullptr;
+
+  std::unique_ptr<ObjFile> obj_file{ObjFile::Load(file_name)};
+  if (obj_file) {
+    auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
+    auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
+    obj_file->Draw(depth, image);
+    Py_RETURN_TRUE;
+  }
+  Py_RETURN_FALSE;
+}
+
 static PyMethodDef deepsurface_methods[] = {
   {"transfer", Py_Transfer, METH_VARARGS},
   {"sculpt", Py_Sculpt, METH_VARARGS},
+  {"load_obj", Py_LoadObj, METH_VARARGS},
   {nullptr, nullptr, 0, nullptr}
 };
 

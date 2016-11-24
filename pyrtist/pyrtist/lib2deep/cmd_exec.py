@@ -252,3 +252,9 @@ class CmdExecutor(object):
         args = (tuple(clip_start) + tuple(clip_end) + mx.get_entries() +
                 (scale_z, translation_z) + tuple(y_offsets))
         dst.draw_crescent(*args)
+
+    def cmd_draw_mesh(self, file_name):
+        current_depth_buffer = self.aux_depth_buffers[-1]
+        current_image_buffer = self.aux_image_buffers[-1]
+        deepsurface.load_obj(file_name, current_depth_buffer,
+                             current_image_buffer)

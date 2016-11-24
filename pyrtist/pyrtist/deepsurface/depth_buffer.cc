@@ -64,6 +64,20 @@ void DepthBuffer::DrawPlane(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
+void DepthBuffer::DrawTriangle(float clip_start_x, float clip_start_y,
+                               float clip_end_x, float clip_end_y,
+                               float* mx, float z00, float z10, float z01) {
+  z01 -= z00;
+  z10 -= z00;
+  auto depth_fn =
+    [z00, z10, z01](float* out, float u, float v) -> void {
+      if (u >= 0.0 && v >= 0.0 && u + v <= 1.0)
+        *out = z00 + u*z01 + v*z10;
+    };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+}
+
 void DepthBuffer::DrawSphere(float clip_start_x, float clip_start_y,
                              float clip_end_x, float clip_end_y,
                              float* mx, float translate_z, float z_end) {
