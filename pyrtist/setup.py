@@ -45,7 +45,8 @@ download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license_name = 'GPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
-            'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep']
+            'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep',
+            'pyrtist.lib3d']
 
 package_data = {'pyrtist': ['examples/*.py',
                             'icons/24x24/*.png',

@@ -9,117 +9,11 @@ import numbers
 import math
 
 from ..lib2d import Point, Matrix
+from ..lib3d import Point3
 
 
 class Z(float):
     'Used to mark Z coordinates in commands.'
-
-
-class Point3(object):
-    '''Point with 3 components.
-
-    Point3 can be initialised in one of the following ways:
-    - Point3(), Point(x), Point(x, y), Point(x, y, z). Use the given arguments
-      to set x, y and z components. Missing components are set to zero.
-    - Point3(Point(x, y)) or Point3(Point(x, y), z) to set x, y components from
-      a 2D point.
-    - Point3(Point3(...)) to create a copy of the first argument.
-    - Point3(tuple, ...) to set the first components from the tuple and the
-      others from the remaining arguments.
-    '''
-
-    def __init__(self, *args):
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
-        self.set(*args)
-
-    def set(self, *args):
-        if len(args) < 1:
-            return
-        arg0 = args[0]
-        if isinstance(arg0, numbers.Number):
-            xyz = args
-        elif isinstance(arg0, Point):
-            xyz = (arg0.x, arg0.y) + args[1:]
-        elif isinstance(arg0, Point3):
-            xyz = (arg0.x, arg0.y, arg0.z) + args[1:]
-        elif isinstance(arg0, tuple):
-            xyz = arg0 + args[1:]
-        else:
-            raise TypeError('Invalid type for setting Point3')
-        if len(xyz) > 3:
-            raise TypeError('Too many arguments for setting Point3')
-        for i, value in enumerate(xyz):
-            setattr(self, 'xyz'[i], value)
-
-    def __repr__(self):
-        return 'Point3({}, {}, {})'.format(self.x, self.y, self.z)
-
-    def __iter__(self):
-        return iter((self.x, self.y, self.z))
-
-    def __add__(self, value):
-        return Point3(self.x + value.x, self.y + value.y, self.z + value.z)
-
-    def __sub__(self, value):
-        return Point3(self.x - value.x, self.y - value.y, self.z - value.z)
-
-    def __mul__(self, value):
-        if isinstance(value, numbers.Number):
-            # Scalar by vector.
-            return Point3(self.x*value, self.y*value, self.z*value)
-        else:
-            # Vector product.
-            return self.dot(value)
-
-    def __rmul__(self, value):
-        return self.__mul__(value)
-
-    def copy(self):
-        'Return a copy of the point.'
-        return Point3(self.x, self.y, self.z)
-
-    @property
-    def xy(self):
-        return self.get_xy()
-
-    def get_xy(self):
-        'Return the x and y components as a Point object.'
-        return Point(self.x, self.y)
-
-    def dot(self, p):
-        'Return the scalar product with another 3D point.'
-        return self.x*p.x + self.y*p.y + self.z*p.z
-
-    def norm2(self):
-        'Return the square of the norm of the point.'
-        return self.x*self.x + self.y*self.y + self.z*self.z
-
-    def norm(self):
-        'Return the norm of the point.'
-        return math.sqrt(self.norm2())
-
-    def normalize(self):
-        'Normalize the point.'
-        n = self.norm()
-        if n != 0.0:
-            self.x /= n
-            self.y /= n
-            self.z /= n
-
-    def normalized(self):
-        'Return a normalized copy of this point.'
-        p = self.copy()
-        p.normalize()
-        return p
-
-    def vec_prod(self, p):
-        '''Vector product.'''
-        # Vector product.
-        ax, ay, az = self
-        bx, by, bz = p
-        return Point3(ay*bz - az*by, az*bx - ax*bz, ax*by - ay*bx)
 
 
 class DeepMatrix(Matrix):
