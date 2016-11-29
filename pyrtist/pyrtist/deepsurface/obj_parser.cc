@@ -76,7 +76,7 @@ bool ObjFile::ReadLine(std::istream& in) {
             }
           }
         }
-        return SkipLine(in);
+        return true;
       case 'g':
         {
           std::string group_name;
@@ -139,7 +139,7 @@ void ObjFile::Draw(DepthBuffer* db, ARGBImageBuffer* ib) {
       p[idx] = vertices_[v_idx];
       p[idx][0] *= 30.0f;
       p[idx][1] *= -30.0f;
-      p[idx][2] *= 10.0f;
+      p[idx][2] *= 30.0f;
       p[idx][0] += 300.0f;
       p[idx][1] += 300.0f;
     }
@@ -178,6 +178,6 @@ void ObjFile::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
     float clip_end_y   = std::max(std::max(p00[1], p10[1]), p01[1]);
     db->DrawTriangle(clip_start_x, clip_start_y,
                      clip_end_x, clip_end_y,
-                     inv_mx, p00[2], p10[2], p01[2]);
+                     inv_mx, p00[2], p01[2], p10[2]);
   }
 }

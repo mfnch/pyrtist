@@ -71,8 +71,12 @@ void DepthBuffer::DrawTriangle(float clip_start_x, float clip_start_y,
   z10 -= z00;
   auto depth_fn =
     [z00, z10, z01](float* out, float u, float v) -> void {
-      if (u >= 0.0 && v >= 0.0 && u + v <= 1.0)
-        *out = z00 + u*z01 + v*z10;
+      if (u >= 0.0 && v >= 0.0 && u + v <= 1.0) {
+        float bg = *out;
+        float candidate = z00 + u*z01 + v*z10;
+        if (IsInfiniteDepth(bg) || candidate > bg)
+          *out = candidate;
+      }
     };
   DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
             mx, depth_fn);
