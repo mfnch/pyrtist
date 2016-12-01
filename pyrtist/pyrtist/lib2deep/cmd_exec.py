@@ -5,7 +5,7 @@ import cairo
 
 from .. import deepsurface
 from ..lib2d import CairoCmdExecutor, Window, BBox, Axes
-from .core_types import Point3, Point, Z
+from .core_types import Point3, Matrix3, Point, Z
 from .deep_surface import DeepSurface
 from .cmd_stream import Cmd
 
@@ -253,8 +253,8 @@ class CmdExecutor(object):
                 (scale_z, translation_z) + tuple(y_offsets))
         dst.draw_crescent(*args)
 
-    def cmd_draw_mesh(self, file_name):
+    def cmd_draw_mesh(self, file_name, matrix3):
         current_depth_buffer = self.aux_depth_buffers[-1]
         current_image_buffer = self.aux_image_buffers[-1]
         deepsurface.load_obj(file_name, current_depth_buffer,
-                             current_image_buffer)
+                             current_image_buffer, matrix3.value)

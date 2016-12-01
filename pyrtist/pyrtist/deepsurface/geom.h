@@ -73,6 +73,9 @@ class Matrix {
     return std::move(out);
   }
 
+  Row& operator[](int idx) { return rows_[idx]; }
+  const Row& operator[](int idx) const { return rows_[idx]; }
+
   template <typename T1, int M1, int N1>
   friend std::ostream& operator<<(std::ostream& os,
                                   const Matrix<T1, M1, N1>& m);
@@ -109,7 +112,7 @@ class Affine3 : public Matrix<T, 3, 4> {
       this->rows_[r][3] = t[r];
   }
 
-  Point<T, 3> Apply(const Point3& p) const {
+  Point3 Apply(const Point3& p) const {
     Point3 out;
     for (int r = 0; r < 3; r++) {
       T x = 0.0;

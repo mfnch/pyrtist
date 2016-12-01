@@ -62,24 +62,53 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
   Py_RETURN_NONE;
 }
 
+#include <iostream>
+
+static bool
+MatrixFromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
+  PyObject* row_iter = PyObject_GetIter(py_matrix);
+  bool ok = (row_iter != nullptr);
+  for (int i = 0; ok && i < 3; i++) {
+    PyObject* row = PyIter_Next(row_iter);
+    PyObject* col_iter = PyObject_GetIter(row);
+    ok = (col_iter != nullptr);
+    for (int j = 0; ok && j < 4; j++) {
+      PyObject* col = PyIter_Next(col_iter);
+      ok = PyFloat_Check(col);
+      if (ok)
+        matrix[i][j] = static_cast<float>(PyFloat_AsDouble(col));
+      Py_DECREF(col);
+    }
+    Py_DECREF(row);
+  }
+  Py_DECREF(row_iter);
+
+  if (!ok) {
+    PyErr_Clear();
+    return false;
+  }
+
+  return true;
+}
+
 static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
   const char* file_name = nullptr;
   PyObject* py_image;
   PyObject* py_depth;
-  if (!PyArg_ParseTuple(args, "zOO:load_obj",
-                        &file_name, &py_depth, &py_image))
+  PyObject* py_matrix;
+  if (!PyArg_ParseTuple(args, "zOOO:load_obj",
+                        &file_name, &py_depth, &py_image, &py_matrix))
     return nullptr;
 
   std::unique_ptr<ObjFile> obj_file{ObjFile::Load(file_name)};
   if (obj_file) {
     auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
     auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
-    deepsurface::Point<float, 3> diagonal{30.0f, -30.0f, 30.0f};
-    deepsurface::Point<float, 3> translation{300.0f, 300.0f, 0.0f};
-    deepsurface::Affine3<float> mx{diagonal};
-    mx.Translate(translation);
-    obj_file->Draw(depth, image, mx);
-    Py_RETURN_TRUE;
+    deepsurface::Affine3<float> matrix;
+    if (MatrixFromPy(matrix, py_matrix)) {
+      obj_file->Draw(depth, image, matrix);
+      Py_RETURN_TRUE;
+    }
   }
   Py_RETURN_FALSE;
 }

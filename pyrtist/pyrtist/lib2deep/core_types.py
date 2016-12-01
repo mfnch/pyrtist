@@ -9,7 +9,7 @@ import numbers
 import math
 
 from ..lib2d import Point, Matrix
-from ..lib3d import Point3
+from ..lib3d import Point3, Matrix3
 
 
 class Z(float):
