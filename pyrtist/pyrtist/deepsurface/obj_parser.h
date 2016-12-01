@@ -1,46 +1,15 @@
 #ifndef _OBJ_PARSER_H
 #define _OBJ_PARSER_H
 
+#include "geom.h"
+
 #include <array>
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <ostream>
-#include <typeinfo>
-
 
 class DepthBuffer;
 class ARGBImageBuffer;
-
-
-template <typename T, int N>
-class Point {
- public:
-  using Scalar = T;
-
-  template <typename ...Args>
-  Point(Args... args) : value_{args...} { }
-
-  template <typename T1, int N1>
-  friend std::ostream& operator<<(std::ostream& os, const Point<T1, N1>& p);
-
-  Scalar& operator[](int idx) { return value_[idx]; }
-
- protected:
-  std::array<Scalar, N> value_;
-};
-
-template <typename T, int N>
-std::ostream& operator<<(std::ostream& os, const Point<T, N>& p) {
-  os << "Point<" << typeid(T).name() << "," << N << ">(";
-  if (N > 0) {
-    os << p.value_[0];
-    for (int i = 1; i < N; i++)
-      os << ", " << p.value_[i];
-  }
-  os << ")";
-  return os;
-}
 
 
 struct Face {
@@ -78,13 +47,14 @@ struct Face {
 class ObjFile {
  public:
   using Scalar = float;
-  using Point2 = Point<Scalar, 2>;
-  using Point3 = Point<Scalar, 3>;
+  using Point2 = deepsurface::Point<Scalar, 2>;
+  using Point3 = deepsurface::Point<Scalar, 3>;
 
   static ObjFile* Load(const char* file_name);
   static ObjFile* Load(std::istream& in);
 
-  void Draw(DepthBuffer* db, ARGBImageBuffer* ib);
+  void Draw(DepthBuffer* db, ARGBImageBuffer* ib,
+            const deepsurface::Affine3<float>& mx);
 
  private:
   bool SkipLine(std::istream& in);

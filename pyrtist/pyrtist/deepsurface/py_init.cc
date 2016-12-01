@@ -74,7 +74,11 @@ static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
   if (obj_file) {
     auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
     auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
-    obj_file->Draw(depth, image);
+    deepsurface::Point<float, 3> diagonal{30.0f, -30.0f, 30.0f};
+    deepsurface::Point<float, 3> translation{300.0f, 300.0f, 0.0f};
+    deepsurface::Affine3<float> mx{diagonal};
+    mx.Translate(translation);
+    obj_file->Draw(depth, image, mx);
     Py_RETURN_TRUE;
   }
   Py_RETURN_FALSE;

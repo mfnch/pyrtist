@@ -127,7 +127,8 @@ ObjFile* ObjFile::Load(std::istream& in) {
 
 #include <iostream>
 
-void ObjFile::Draw(DepthBuffer* db, ARGBImageBuffer* ib) {
+void ObjFile::Draw(DepthBuffer* db, ARGBImageBuffer* ib,
+                   const deepsurface::Affine3<float>& mx) {
   for (auto&& face: faces_) {
     Point3 p[face.indices.size()];
     for (int idx = 0; idx < face.size; idx++) {
@@ -136,12 +137,7 @@ void ObjFile::Draw(DepthBuffer* db, ARGBImageBuffer* ib) {
         std::cout << "ERROR IN ObjFile::Draw()" << std::endl;
         return;
       }
-      p[idx] = vertices_[v_idx];
-      p[idx][0] *= 30.0f;
-      p[idx][1] *= -30.0f;
-      p[idx][2] *= 30.0f;
-      p[idx][0] += 300.0f;
-      p[idx][1] += 300.0f;
+      p[idx] = mx.Apply(vertices_[v_idx]);
     }
     DrawTriangle(db, ib, p[0], p[1], p[2]);
     if (face.indices.size() == 4)
