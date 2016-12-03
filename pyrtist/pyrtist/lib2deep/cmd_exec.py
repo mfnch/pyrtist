@@ -4,10 +4,10 @@ import math
 import cairo
 
 from .. import deepsurface
-from ..lib2d import CairoCmdExecutor, Window, BBox, Axes
-from .core_types import Point3, Matrix3, Point, Z
+from ..lib2d import CairoCmdExecutor, Window, BBox, Axes, Scale
+from .core_types import Point3, Matrix3, Point, Z, DeepMatrix
 from .deep_surface import DeepSurface
-from .cmd_stream import Cmd
+from .cmd_stream import Cmd, DeepCmdArgFilter
 
 
 class CmdExecutor(object):
@@ -49,10 +49,19 @@ class CmdExecutor(object):
 
     def __init__(self, deep_surface, origin, scale, z_origin=0.0, z_scale=1.0):
         self.deep_surface = ds = deep_surface
+
         self.origin = Point(origin)
         self.vector_transform = Point(scale)
-        self.z_origin = z_origin
-        self.z_scale = z_scale
+
+        if not isinstance(origin, Point3):
+            origin = Point3(origin)
+            origin.z = z_origin
+        if not isinstance(scale, Point3):
+            scale = Point3(scale)
+            scale.z = z_scale
+
+        mx = DeepMatrix.diag(*scale)*DeepMatrix.translation(-origin)
+        self.arg_filter = DeepCmdArgFilter.from_matrix(mx)
 
         # Stacks of auxiliary image and depth buffers.
         self.aux_image_buffers = []
@@ -84,23 +93,9 @@ class CmdExecutor(object):
             print('Unknown method {}'.format(method_name))
 
     def transform_args(self, args):
-        origin = self.origin
-        vtx = self.vector_transform
-        out = []
-        for arg in args:
-            if isinstance(arg, Point):
-                arg = arg - origin
-                arg.x *= vtx.x
-                arg.y *= vtx.y
-            elif isinstance(arg, Z):
-                arg = Z((arg - self.z_origin)*self.z_scale)
-            elif isinstance(arg, Point3):
-                arg = arg - Point3(origin, self.z_origin)
-                arg.x *= vtx.x
-                arg.y *= vtx.y
-                arg.z *= self.z_scale
-            out.append(arg)
-        return out
+        return [(arg if isinstance(arg, Window)
+                 else self.arg_filter(arg))
+                for arg in args]
 
     def get_clip_region(self):
         '''Return the bounding box of whatever has been drawn to the src window

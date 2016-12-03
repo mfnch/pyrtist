@@ -5,8 +5,8 @@ library.
 '''
 
 __all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'Matrix', 'Close', 'Container', 'Offset', 'Scale', 'Center',
-           'AngleDeg', 'Radii', 'Through', 'Tri', 'View')
+           'GenericMatrix', 'Matrix', 'Close', 'Container', 'Offset',
+           'Scale', 'Center', 'AngleDeg', 'Radii', 'Through', 'Tri', 'View')
 
 import math
 import numbers
@@ -210,7 +210,23 @@ def fn(tp, point_taker):
     point_taker.take(Point(tp))
 
 
-class Matrix(object):
+class GenericMatrix(object):
+    @classmethod
+    def diag(cls, *entries):
+        '''Construct a diagonal matrix with the given diagonal entries.'''
+        m, n = cls.size
+        num_args = min(m, n)
+        if len(entries) < num_args:
+            raise TypeError('diag takes exactly {} arguments ({} given)'
+                            .format(num_args, len(entries)))
+        mx = [[(entries[i] if i == j else 0.0) for j in range(n)]
+              for i in range(m)]
+        return cls(mx)
+
+
+class Matrix(GenericMatrix):
+    size = (2, 3)
+
     identity = [[1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0]]
 
@@ -227,6 +243,7 @@ class Matrix(object):
                     [0.0, 1.0, t.y]])
 
     def __init__(self, value=None):
+        super(Matrix, self).__init__()
         self.set(value)
 
     def set(self, value):

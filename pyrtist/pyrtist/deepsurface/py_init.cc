@@ -65,7 +65,20 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
 #include <iostream>
 
 static bool
-MatrixFromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
+SetScalarFromPy(float* out, PyObject* in) {
+  if (in == nullptr)
+    return false;
+  else if (PyFloat_Check(in))
+    *out = static_cast<float>(PyFloat_AsDouble(in));
+  else if (PyInt_Check(in))
+    *out = static_cast<float>(PyInt_AsLong(in));
+  else
+    return false;
+  return true;
+}
+
+static bool
+SetAffine3FromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
   PyObject* row_iter = PyObject_GetIter(py_matrix);
   bool ok = (row_iter != nullptr);
   for (int i = 0; ok && i < 3; i++) {
@@ -74,9 +87,7 @@ MatrixFromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
     ok = (col_iter != nullptr);
     for (int j = 0; ok && j < 4; j++) {
       PyObject* col = PyIter_Next(col_iter);
-      ok = PyFloat_Check(col);
-      if (ok)
-        matrix[i][j] = static_cast<float>(PyFloat_AsDouble(col));
+      ok = SetScalarFromPy(&matrix[i][j], col);
       Py_DECREF(col);
     }
     Py_DECREF(row);
@@ -105,7 +116,7 @@ static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
     auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
     auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
     deepsurface::Affine3<float> matrix;
-    if (MatrixFromPy(matrix, py_matrix)) {
+    if (SetAffine3FromPy(matrix, py_matrix)) {
       obj_file->Draw(depth, image, matrix);
       Py_RETURN_TRUE;
     }

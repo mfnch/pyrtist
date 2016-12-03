@@ -3,8 +3,10 @@
 
 __all__ = ('Point3', 'Matrix3')
 
+import math
 import numbers
-from ..lib2d import Point
+
+from ..lib2d import Point, GenericMatrix
 
 
 class Point3(object):
@@ -50,6 +52,12 @@ class Point3(object):
 
     def __iter__(self):
         return iter((self.x, self.y, self.z))
+
+    def __neg__(self):
+        return type(self)(*tuple(-x for x in self))
+
+    def __pos__(self):
+        return self.copy()
 
     def __add__(self, value):
         return Point3(self.x + value.x, self.y + value.y, self.z + value.z)
@@ -114,7 +122,7 @@ class Point3(object):
         return Point3(ay*bz - az*by, az*bx - ax*bz, ax*by - ay*bx)
 
 
-class Matrix3(object):
+class Matrix3(GenericMatrix):
     size = (3, 4)
 
     identity = [[1.0, 0.0, 0.0, 0.0],
@@ -133,7 +141,21 @@ class Matrix3(object):
            [sth*sphi, -sth*cphi, cth]]
         )
 
+    @classmethod
+    def rotation(cls, angle, axis='x'):
+        '''Construct a rotation around one of the x, y, z axes.'''
+        idx_rot = int({'x': 0, 'y': 1, 'z': 2}.get(axis, axis))
+        zero, one, two = [(i + idx_rot) % 3 for i in range(3)]
+        c, s = (math.cos(angle), math.sin(angle))
+        value = [[0.0]*4 for _ in range(3)]
+        value[zero][zero] = 1.0
+        value[one][one] = value[two][two] = c
+        value[one][two] = -s
+        value[two][one] = s
+        return cls(value)
+
     def __init__(self, value=None):
+        super(Matrix3, self).__init__()
         self.set(value)
 
     def set(self, value):
@@ -153,11 +175,11 @@ class Matrix3(object):
         if isinstance(b, tuple) and len(b) == 3:
             return self.apply(Point(b))
 
-        ret = self.copy()
         if isinstance(b, numbers.Number):
+            ret = self.copy()
             ret.scale(b)
         else:
-            ret.multiply(b)
+            ret = self.get_product(b)
         return ret
 
     def __rmul__(self, b):
@@ -165,8 +187,13 @@ class Matrix3(object):
             return self.__mul__(b)
         raise NotImplementedError()
 
-    def multiply(self, b):
-        '''Multiply this matrix with another one.'''
+    def get_product(self, b):
+        '''Return the result of right-multiplying this matrix by another one.
+
+        This is similar to the multiply() method, except that the result is
+        returned as a different matrix and the original matrix is left
+        untouched.
+        '''
         b = b.value
         a = self.value
         m, n = self.size
@@ -177,7 +204,12 @@ class Matrix3(object):
         j = n - 1
         for i in range(m):
             value[i][j] += a[i][j]
-        self.value = value
+        return self.__class__(value)
+
+    def multiply(self, b):
+        '''Right multiply this matrix with another matrix.'''
+        print('multiply')
+        self.value = self.get_product(b).value
 
     def scale(self, s):
         '''Scale the matrix by the given factor (in-place).'''

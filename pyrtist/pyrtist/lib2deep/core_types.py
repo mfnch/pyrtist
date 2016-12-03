@@ -22,6 +22,10 @@ class DeepMatrix(Matrix):
     z_identity = [1.0, 0.0]
 
     @classmethod
+    def diag(cls, x, y, z):
+        return cls([[x, 0.0, 0.0], [0.0, y, 0.0]], [z, 0.0])
+
+    @classmethod
     def translation(cls, t):
         return cls([[1.0, 0.0, t.x],
                     [0.0, 1.0, t.y]], [1.0, t.z])
@@ -69,6 +73,14 @@ class DeepMatrix(Matrix):
         '''
         return Matrix(self.value)
 
+    def get_matrix3(self):
+        '''Return an equivalent Matrix3 object.'''
+        v0, v1 = self.value
+        z = self.z_value
+        return Matrix3([[v0[0], v0[1],  0.0, v0[2]],
+                        [v1[0], v1[1],  0.0, v1[2]],
+                        [  0.0,   0.0, z[0],  z[1]]])
+
     def scale(self, s):
         '''Scale by the given factor (in-place).'''
         super(DeepMatrix, self).scale(s)
@@ -79,7 +91,7 @@ class DeepMatrix(Matrix):
         '''Translate by the given Point3 value (in-place).'''
         p = (p if isinstance(p, Point3) else Point3(p))
         super(DeepMatrix, self).translate(p.get_xy())
-        self.z_value += p.z
+        self.z_value[1] += p.z
 
     def apply(self, p):
         '''Apply the DeepMatrix to a Point3.'''

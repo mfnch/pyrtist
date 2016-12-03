@@ -2,7 +2,7 @@ from ..lib2d.base import combination
 from ..lib2d import cmd_stream as twod
 from ..lib2d import Window, Scalar
 
-from .core_types import Point3, Z, DeepMatrix
+from .core_types import Point3, Matrix3, Z, DeepMatrix
 
 
 class Cmd(twod.CmdBase):
@@ -26,8 +26,11 @@ class DeepCmdArgFilter(twod.CmdArgFilter):
         scale_factor = abs(mx.det3())**(1.0/3.0)
         filter_point = lambda p: mx2.apply(p)
         filter_scalar = lambda s: Scalar(scale_factor*s)
+
+        mx3 = mx.get_matrix3()
         filters = {Point3: lambda p: mx.apply(p),
-                   Z: lambda z: Z(mx.apply_z(z))}
+                   Z: lambda z: Z(mx.apply_z(z)),
+                   Matrix3: lambda mx: mx3.get_product(mx)}
         return cls(filter_scalar, filter_point, filters)
 
     def __init__(self, filter_scalar, filter_point, filters=None):
