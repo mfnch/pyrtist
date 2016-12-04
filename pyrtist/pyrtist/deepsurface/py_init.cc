@@ -2,10 +2,9 @@
 
 #include "py_depth_buffer.h"
 #include "py_image_buffer.h"
+#include "py_mesh.h"
 #include "deep_surface.h"
 #include "mesh.h"
-
-#include <memory>
 
 
 static PyObject* Py_Transfer(PyObject* ds, PyObject* args) {
@@ -62,73 +61,9 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
   Py_RETURN_NONE;
 }
 
-#include <iostream>
-
-static bool
-SetScalarFromPy(float* out, PyObject* in) {
-  if (in == nullptr)
-    return false;
-  else if (PyFloat_Check(in))
-    *out = static_cast<float>(PyFloat_AsDouble(in));
-  else if (PyInt_Check(in))
-    *out = static_cast<float>(PyInt_AsLong(in));
-  else
-    return false;
-  return true;
-}
-
-static bool
-SetAffine3FromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
-  PyObject* row_iter = PyObject_GetIter(py_matrix);
-  bool ok = (row_iter != nullptr);
-  for (int i = 0; ok && i < 3; i++) {
-    PyObject* row = PyIter_Next(row_iter);
-    PyObject* col_iter = PyObject_GetIter(row);
-    ok = (col_iter != nullptr);
-    for (int j = 0; ok && j < 4; j++) {
-      PyObject* col = PyIter_Next(col_iter);
-      ok = SetScalarFromPy(&matrix[i][j], col);
-      Py_DECREF(col);
-    }
-    Py_DECREF(row);
-  }
-  Py_DECREF(row_iter);
-
-  if (!ok) {
-    PyErr_Clear();
-    return false;
-  }
-
-  return true;
-}
-
-static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
-  const char* file_name = nullptr;
-  PyObject* py_image;
-  PyObject* py_depth;
-  PyObject* py_matrix;
-  if (!PyArg_ParseTuple(args, "zOOO:load_obj",
-                        &file_name, &py_depth, &py_image, &py_matrix))
-    return nullptr;
-
-  std::unique_ptr<deepsurface::Mesh>
-      obj_file{deepsurface::Mesh::LoadObj(file_name)};
-  if (obj_file) {
-    auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
-    auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
-    deepsurface::Affine3<float> matrix;
-    if (SetAffine3FromPy(matrix, py_matrix)) {
-      obj_file->Draw(depth, image, matrix);
-      Py_RETURN_TRUE;
-    }
-  }
-  Py_RETURN_FALSE;
-}
-
 static PyMethodDef deepsurface_methods[] = {
   {"transfer", Py_Transfer, METH_VARARGS},
   {"sculpt", Py_Sculpt, METH_VARARGS},
-  {"load_obj", Py_LoadObj, METH_VARARGS},
   {nullptr, nullptr, 0, nullptr}
 };
 
@@ -144,11 +79,13 @@ extern "C" {
   PyMODINIT_FUNC initdeepsurface() {
     PYTYPE_READY(PyImageBuffer_Type);
     PYTYPE_READY(PyDepthBuffer_Type);
+    PYTYPE_READY(PyMesh_Type);
 
     PyObject* m = Py_InitModule("deepsurface", deepsurface_methods);
 
     PYMODULE_ADDOBJECT(m, "ImageBuffer", PyImageBuffer_Type);
     PYMODULE_ADDOBJECT(m, "DepthBuffer", PyDepthBuffer_Type);
+    PYMODULE_ADDOBJECT(m, "Mesh", PyMesh_Type);
   }
 
 }  // extern "C"

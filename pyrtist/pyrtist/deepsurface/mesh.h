@@ -54,7 +54,7 @@ class Mesh {
   static Mesh* LoadObj(const char* file_name);
   static Mesh* LoadObj(std::istream& in);
 
-  void Draw(DepthBuffer* db, ARGBImageBuffer* ib, const Affine3<float>& mx);
+  void Draw(DepthBuffer* db, ARGBImageBuffer* ib, const Affine3<Scalar>& mx);
 
  private:
   bool ReadLine(std::istream& in);

@@ -5,7 +5,7 @@
 
 #include "Python.h"
 
-/// The internal C structure of our PyDepthBuffer.
+/// The internal C structure of our PyImageBuffer.
 typedef struct {
   PyObject_HEAD
   ARGBImageBuffer* image_buffer;  ///< The C++ object.
