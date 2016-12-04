@@ -1,5 +1,5 @@
-#ifndef _OBJ_PARSER_H
-#define _OBJ_PARSER_H
+#ifndef _MESH_H
+#define _MESH_H
 
 #include "geom.h"
 
@@ -11,6 +11,7 @@
 class DepthBuffer;
 class ARGBImageBuffer;
 
+namespace deepsurface {
 
 struct Face {
  public:
@@ -44,22 +45,19 @@ struct Face {
 };
 
 
-class ObjFile {
+class Mesh {
  public:
   using Scalar = float;
-  using Point2 = deepsurface::Point<Scalar, 2>;
-  using Point3 = deepsurface::Point<Scalar, 3>;
+  using Point2 = Point<Scalar, 2>;
+  using Point3 = Point<Scalar, 3>;
 
-  static ObjFile* Load(const char* file_name);
-  static ObjFile* Load(std::istream& in);
+  static Mesh* LoadObj(const char* file_name);
+  static Mesh* LoadObj(std::istream& in);
 
-  void Draw(DepthBuffer* db, ARGBImageBuffer* ib,
-            const deepsurface::Affine3<float>& mx);
+  void Draw(DepthBuffer* db, ARGBImageBuffer* ib, const Affine3<float>& mx);
 
  private:
-  bool SkipLine(std::istream& in);
   bool ReadLine(std::istream& in);
-
   void DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
                     Point3& p1, Point3& p2, Point3& p3);
 
@@ -71,4 +69,6 @@ class ObjFile {
   std::vector<Face> faces_;
 };
 
-#endif  // _OBJ_PARSER_H
+}  // namespace deepsurface
+
+#endif  // _MESH_H

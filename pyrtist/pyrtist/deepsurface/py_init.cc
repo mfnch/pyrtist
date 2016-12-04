@@ -3,7 +3,7 @@
 #include "py_depth_buffer.h"
 #include "py_image_buffer.h"
 #include "deep_surface.h"
-#include "obj_parser.h"
+#include "mesh.h"
 
 #include <memory>
 
@@ -111,7 +111,8 @@ static PyObject* Py_LoadObj(PyObject* ds, PyObject* args) {
                         &file_name, &py_depth, &py_image, &py_matrix))
     return nullptr;
 
-  std::unique_ptr<ObjFile> obj_file{ObjFile::Load(file_name)};
+  std::unique_ptr<deepsurface::Mesh>
+      obj_file{deepsurface::Mesh::LoadObj(file_name)};
   if (obj_file) {
     auto depth = reinterpret_cast<PyDepthBuffer*>(py_depth)->depth_buffer;
     auto image = reinterpret_cast<PyImageBuffer*>(py_image)->image_buffer;
