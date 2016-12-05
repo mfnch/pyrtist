@@ -125,29 +125,19 @@ SetScalarFromPy(float* out, PyObject* in) {
     *out = static_cast<float>(PyFloat_AsDouble(in));
   else if (PyInt_Check(in))
     *out = static_cast<float>(PyInt_AsLong(in));
-  else {
-    PyObject* t = PyObject_Type(in);
-    PyObject_Print(t, stdout, Py_PRINT_RAW);
-    Py_XDECREF(t);
+  else
     return false;
-  }
   return true;
 }
 
 static bool
 SetAffine3FromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
-  return ForEachPyObj(
-    py_matrix,
-    [&matrix](PyObject* py_row, int i)->bool {
-      auto& row = matrix[i];
-      return ForEachPyObj(
-        py_row,
-        [&row](PyObject* py_entry, int j)->bool {
-          return SetScalarFromPy(&row[j], py_entry);
-        }
-      );
-    }
-  );
+  return ForEachPyObj(py_matrix, [&matrix](PyObject* py_row, int i)->bool {
+    auto& row = matrix[i];
+    return ForEachPyObj(py_row, [&row](PyObject* py_entry, int j)->bool {
+      return SetScalarFromPy(&row[j], py_entry);
+    });
+  });
 }
 
 static PyObject* PyMesh_Draw(PyObject* mesh, PyObject* args) {
@@ -197,16 +187,13 @@ Point3FromPy(Point3* out, PyObject* in) {
 
 static bool
 AddVerticesFromPy(deepsurface::Mesh* mesh, PyObject* py_vertices) {
-  return ForEachPyObj(
-    py_vertices,
-    [mesh](PyObject* py_obj, int i)->bool {
-      Point3 vertex;
-      if (!Point3FromPy(&vertex, py_obj))
-        return false;
-      mesh->AddVertex(vertex);
-      return true;
-    }
-  );
+  return ForEachPyObj(py_vertices, [mesh](PyObject* py_obj, int i)->bool {
+    Point3 vertex;
+    if (!Point3FromPy(&vertex, py_obj))
+      return false;
+    mesh->AddVertex(vertex);
+    return true;
+  });
 }
 
 static PyObject*
