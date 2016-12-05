@@ -10,10 +10,14 @@ static PyObject* PyMesh_New(PyTypeObject* type,
                             PyObject* args, PyObject* kwds);
 static void PyMesh_Dealloc(PyObject* py_obj);
 static PyObject* PyMesh_Draw(PyObject* m, PyObject* args);
+static PyObject* PyMesh_AddVertices(PyObject* mesh, PyObject* args);
+static PyObject* PyMesh_AddPolygons(PyObject* mesh, PyObject* args);
 
 // PyMesh object methods.
 static PyMethodDef pymesh_methods[] = {
   {"draw", PyMesh_Draw, METH_VARARGS},
+  {"add_vertices", PyMesh_AddVertices, METH_VARARGS},
+  {"add_polygons", PyMesh_AddPolygons, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
 
@@ -94,6 +98,25 @@ static void PyMesh_Dealloc(PyObject* py_obj) {
   py_mesh->ob_type->tp_free(py_obj);
 }
 
+bool ForEachPyObj(PyObject* in, std::function<bool(PyObject*, int)> fn) {
+  PyObject* iter = PyObject_GetIter(in);
+  bool ok = (iter != nullptr);
+
+  for (int i = 0; ok; i++) {
+    PyObject* py_item = PyIter_Next(iter);
+    if (py_item == nullptr)
+      break;
+
+    ok = fn(py_item, i);
+    Py_DECREF(py_item);
+  };
+
+  Py_XDECREF(iter);
+  if (!ok)
+    PyErr_Clear();
+  return ok;
+}
+
 static bool
 SetScalarFromPy(float* out, PyObject* in) {
   if (in == nullptr)
@@ -102,34 +125,29 @@ SetScalarFromPy(float* out, PyObject* in) {
     *out = static_cast<float>(PyFloat_AsDouble(in));
   else if (PyInt_Check(in))
     *out = static_cast<float>(PyInt_AsLong(in));
-  else
+  else {
+    PyObject* t = PyObject_Type(in);
+    PyObject_Print(t, stdout, Py_PRINT_RAW);
+    Py_XDECREF(t);
     return false;
+  }
   return true;
 }
 
 static bool
 SetAffine3FromPy(deepsurface::Affine3<float>& matrix, PyObject* py_matrix) {
-  PyObject* row_iter = PyObject_GetIter(py_matrix);
-  bool ok = (row_iter != nullptr);
-  for (int i = 0; ok && i < 3; i++) {
-    PyObject* row = PyIter_Next(row_iter);
-    PyObject* col_iter = PyObject_GetIter(row);
-    ok = (col_iter != nullptr);
-    for (int j = 0; ok && j < 4; j++) {
-      PyObject* col = PyIter_Next(col_iter);
-      ok = SetScalarFromPy(&matrix[i][j], col);
-      Py_DECREF(col);
+  return ForEachPyObj(
+    py_matrix,
+    [&matrix](PyObject* py_row, int i)->bool {
+      auto& row = matrix[i];
+      return ForEachPyObj(
+        py_row,
+        [&row](PyObject* py_entry, int j)->bool {
+          return SetScalarFromPy(&row[j], py_entry);
+        }
+      );
     }
-    Py_DECREF(row);
-  }
-  Py_DECREF(row_iter);
-
-  if (!ok) {
-    PyErr_Clear();
-    return false;
-  }
-
-  return true;
+  );
 }
 
 static PyObject* PyMesh_Draw(PyObject* mesh, PyObject* args) {
@@ -157,5 +175,86 @@ static PyObject* PyMesh_Draw(PyObject* mesh, PyObject* args) {
       Py_RETURN_TRUE;
     }
   }
+  Py_RETURN_FALSE;
+}
+
+#include <iostream>
+
+using Point3 = deepsurface::Mesh::Point3;
+
+static bool
+Point3FromPy(Point3* out, PyObject* in) {
+  PyObject* iter = PyObject_GetIter(in);
+  bool ok = (iter != nullptr);
+  for (int i = 0; ok && i < 3; i++) {
+    PyObject* py_coord = PyIter_Next(iter);
+    ok = SetScalarFromPy(&(*out)[i], py_coord);
+    Py_XDECREF(py_coord);
+  }
+  Py_XDECREF(iter);
+  return ok;
+}
+
+static bool
+AddVerticesFromPy(deepsurface::Mesh* mesh, PyObject* py_vertices) {
+  return ForEachPyObj(
+    py_vertices,
+    [mesh](PyObject* py_obj, int i)->bool {
+      Point3 vertex;
+      if (!Point3FromPy(&vertex, py_obj))
+        return false;
+      mesh->AddVertex(vertex);
+      return true;
+    }
+  );
+}
+
+static PyObject*
+PyMesh_AddVertices(PyObject* mesh, PyObject* args) {
+  PyObject* py_vertices;
+  if (!PyArg_ParseTuple(args, "O:Mesh.add_vertices", &py_vertices))
+    return nullptr;
+
+  PyMesh* py_mesh = reinterpret_cast<PyMesh*>(mesh);
+  if (py_mesh->mesh != nullptr &&
+      AddVerticesFromPy(py_mesh->mesh, py_vertices))
+    Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
+}
+
+static bool
+AddPolygonsFromPy(deepsurface::Mesh* mesh, PyObject* py_polygons) {
+  return ForEachPyObj(py_polygons, [mesh](PyObject* py_polygon, int)->bool {
+    deepsurface::Face* face = mesh->CreateFace();
+    return ForEachPyObj(py_polygon, [face](PyObject* py_indices, int)->bool {
+      std::array<int, 3> indices;
+      bool indices_ok =
+        ForEachPyObj(py_indices, [&indices](PyObject* py_index, int i)->bool {
+          if (i >= 0 && static_cast<size_t>(i) < indices.size() &&
+              PyInt_Check(py_index)) {
+            indices[i] = PyInt_AsLong(py_index);
+            return true;
+          }
+          return false;
+        });
+      if (!indices_ok)
+        return false;
+      deepsurface::Face::Indices idxs{indices[0], indices[1], indices[2]};
+      face->Append(idxs);
+      return true;
+    });
+  });
+}
+
+static PyObject*
+PyMesh_AddPolygons(PyObject* mesh, PyObject* args) {
+  PyObject* py_polygons;
+  if (!PyArg_ParseTuple(args, "O:Mesh.add_polygons", &py_polygons))
+    return nullptr;
+
+  PyMesh* py_mesh = reinterpret_cast<PyMesh*>(mesh);
+  if (py_mesh->mesh != nullptr &&
+      AddPolygonsFromPy(py_mesh->mesh, py_polygons))
+    Py_RETURN_TRUE;
   Py_RETURN_FALSE;
 }

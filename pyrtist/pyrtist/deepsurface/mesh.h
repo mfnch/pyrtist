@@ -45,6 +45,7 @@ struct Face {
 };
 
 
+
 class Mesh {
  public:
   using Scalar = float;
@@ -54,12 +55,19 @@ class Mesh {
   static Mesh* LoadObj(const char* file_name);
   static Mesh* LoadObj(std::istream& in);
 
+  void AddVertex(const Point3& v) { vertices_.push_back(v); }
+
+  Face* CreateFace() {
+    faces_.emplace_back();
+    return &faces_.back();
+  }
+
   void Draw(DepthBuffer* db, ARGBImageBuffer* ib, const Affine3<Scalar>& mx);
 
  private:
   bool ReadLine(std::istream& in);
   void DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
-                    Point3& p1, Point3& p2, Point3& p3);
+                    const Point3& p1, const Point3& p2, const Point3& p3);
 
   std::map<std::string, int> groups_;
   std::unordered_map<std::string, int> material_files_;

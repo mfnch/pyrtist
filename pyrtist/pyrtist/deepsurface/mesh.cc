@@ -46,7 +46,8 @@ static bool InvertMatrix(Scalar* mx_out, Scalar* mx_in) {
 }
 
 void Mesh::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
-                        Point3& p00, Point3& p10, Point3& p01) {
+                        const Point3& p00, const Point3& p10,
+                        const Point3& p01) {
   float mx[6] = {p10[0] - p00[0], p01[0] - p00[0], p00[0],
                  p10[1] - p00[1], p01[1] - p00[1], p00[1]};
   float inv_mx[6];
