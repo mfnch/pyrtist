@@ -24,7 +24,7 @@ class DepthBuffer : public ImageBuffer<float> {
   /// Check if a depth value is infinite.
   static bool IsInfiniteDepth(DepthType depth) {
     // NOTE: remember that NaN != NaN.
-    return isnan(depth);
+    return std::isnan(depth);
   }
 
   DepthBuffer(int width, int height, void* ptr)
