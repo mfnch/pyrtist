@@ -43,8 +43,7 @@ c = Color(0.3, 0.7, 1)
 c2 = Color(1.0, 1.0, 0.0, 0.8)
 c3 = Color(0.7, 1, 1)
 
-#  g = Gradient[Line[gradient_1, gradient_2], c, 0.7, c3, c]
-g = Style(Color(0.5, 0.5, 0.5, 0.5))
+g = Gradient(Line(gradient_1, gradient_2), c, 0.7, c3, c)
 s1 = Style(Border(Color.black, 0.25, Join.round))
 s2 = Style(Border(Color.black, 0.25, Join.round, Dash(0.4)))
 s3 = Border(Color(0, 0, 0, 0.5), 0.25, Dash(0.4))
@@ -71,21 +70,17 @@ w.take(
   Poly(c2, 1, *ps),
   Poly(s1, 1, *ps2),
   Poly(s1, 0, 1, ps[1], ps[2], 0, ps2[2], 0, 1, ps2[1], ps2[0], ps[0]),
-  Poly(s1, 1, ps[6], ps[7], ps[0], 0, ps2[0], 0, 1, ps2[7], ps2[6])
-)
-  
-'''
-  Line[0.3, color.black, normal_1, Scale[0.5], arrow, normal_2]
-  Circle[normal_1, 0.5]
+  Poly(s1, 1, ps[6], ps[7], ps[0], 0, ps2[0], 0, 1, ps2[7], ps2[6]),
 
-  StrokeStyle[0.2, color.black]
-  Line[Scale[0.3], arrow_ruler, rulery_1, arrow_ruler, rulery_2]
-  Line[Scale[0.3], arrow_ruler, rulerz_1, arrow_ruler, rulerz_2]
-  Line[Scale[0.3], arrow_ruler, rulerx_1, arrow_ruler, rulerx_2]
-  Texts[Font["sans", 2.1], "dx", ruler_1; "dy", ruler_2; "dz << dx, dy", ruler_3;
-        Font["sans", 4], "n", normal_2, From[(1, -0.2)]]
-]
-'''
+  #Line(0.3, Color.black, normal_1, Scale[0.5], arrow, normal_2),
+  Circle(Color.black, normal_1, 0.5)
+  #StrokeStyle[0.2, color.black]
+  #Line(Scale[0.3], arrow_ruler, rulery_1, arrow_ruler, rulery_2)
+  #Line(Scale[0.3], arrow_ruler, rulerz_1, arrow_ruler, rulerz_2)
+  #Line(Scale[0.3], arrow_ruler, rulerx_1, arrow_ruler, rulerx_2)
+  #Texts[Font["sans", 2.1], "dx", ruler_1; "dy", ruler_2; "dz << dx, dy", ruler_3;
+  #      Font["sans", 4], "n", normal_2, From[(1, -0.2)]]
+)
 
 # Uncomment the following line to obtain a proper PNG figure
 #w.Save["surf_charges.png", Window["rgb24", .Res[Dpi[200]]]]

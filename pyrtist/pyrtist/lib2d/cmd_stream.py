@@ -75,7 +75,8 @@ class Cmd(CmdBase):
        'close_path', 'set_line_width', 'set_line_join', 'set_line_cap',
        'set_dash', 'stroke', 'fill', 'fill_preserve', 'save', 'restore',
        'pattern_create_image', 'pattern_set_extend', 'pattern_set_filter',
-       'pattern_set_source', 'set_source_rgb', 'set_source_rgba',
+       'pattern_set_source', 'pattern_create_linear', 'pattern_create_radial',
+       'pattern_add_color_stop_rgba', 'set_source_rgb', 'set_source_rgba',
        'set_bbox')
 Cmd.register_commands()
 

@@ -222,6 +222,31 @@ class CairoCmdExecutor(object):
         pattern.set_matrix(mx)
         self.pattern = pattern
 
+    def cmd_pattern_create_linear(self, p_start, p_stop):
+        self.pattern = cairo.LinearGradient(p_start.x, p_start.y,
+                                            p_stop.x, p_stop.y)
+
+    def cmd_pattern_create_radial(self, ctr1, refx, refy, ctr2,
+                                  refr1, refr2):
+        xaxis = refx - ctr1
+        yaxis = refy - ctr1
+        mx = cairo.Matrix(xx=xaxis.x, yx=xaxis.y,
+                          xy=yaxis.x, yy=yaxis.y,
+                          x0=ctr1.x, y0=ctr1.y)
+        mx.invert()
+        c2x, c2y = mx.transform_point(ctr2.x, ctr2.y)
+        unity = xaxis.norm()
+        r1 = (refr1 - ctr1).norm()/unity
+        r2 = (refr2 - ctr2).norm()/unity
+        pattern = cairo.RadialGradient(0.0, 0.0, r1, c2x, c2y, r2)
+        pattern.set_matrix(mx)
+        self.pattern = pattern
+
+    def cmd_pattern_add_color_stop_rgba(self, offset, color):
+        if self.pattern is None:
+            return
+        self.pattern.add_color_stop_rgba(offset, *color)
+
     def cmd_stroke(self):
         self.context.stroke()
 
