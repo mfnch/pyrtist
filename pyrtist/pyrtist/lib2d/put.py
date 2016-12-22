@@ -46,6 +46,11 @@ def str_at_put(transform_str, put):
 def transform_at_put(transform, put):
     put.transform = transform
 
+@combination(tuple, Put)
+@combination(Point, Put)
+def point_at_put(point, put):
+    put.transform.translation = point
+
 @combination(Scale, Put)
 def scale_at_put(scale, put):
     put.transform.scale_factors = scale

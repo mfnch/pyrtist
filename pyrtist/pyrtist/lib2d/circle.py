@@ -100,7 +100,8 @@ class Circles(Primitive):
         prev_center = None
         prev_radius = None
         for center, radius in self.circles:
-            item = (center or prev_center, radius or prev_radius)
+            item = (prev_center if center is None else center,
+                    prev_radius if radius is None else radius)
             prev_center, prev_radius = item
             out.append(item)
             assert prev_center is not None and prev_radius is not None, \

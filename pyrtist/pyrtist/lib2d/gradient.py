@@ -2,7 +2,7 @@ __all__ = ('Gradient',)
 
 from .base import Taker, combination
 from .core_types import Point
-from .pattern import Pattern
+from .pattern import Pattern, Extend
 from .style import Color
 from .line import Line
 from .circle import Circles
@@ -118,26 +118,28 @@ class Gradient(Pattern, Taker):
         Taker.__init__(self)
         self.shape = None
         self.color_stops = ColorStops()
+        self.pattern_extend = None
         self.take(*args)
 
     def _get_cmds(self):
-        cmds = []
+        cmds = CmdStream()
         if isinstance(self.shape, Line):
             p1, p2 = self.shape
-            cmds.append(Cmd(Cmd.pattern_create_linear, p1, p2))
+            cmds.take(Cmd(Cmd.pattern_create_linear, p1, p2))
         elif isinstance(self.shape, Circles):
             (ctr1, r1), (ctr2, r2) = self.shape._get_tuples()
             refx = Point(ctr1.x + 1.0, ctr1.y)
             refy = Point(ctr1.x, ctr1.y + 1.0)
             refr1 = Point(ctr1.x + r1, ctr1.y)
             refr2 = Point(ctr1.x + r2, ctr1.y)
-            cmds.append(Cmd(Cmd.pattern_create_radial,
-                            ctr1, refx, refy, ctr2, refr1, refr2))
+            cmds.take(Cmd(Cmd.pattern_create_radial,
+                          ctr1, refx, refy, ctr2, refr1, refr2))
         else:
             raise ValueError('Invalid shape object for Gradient')
-        cmds.extend(self.color_stops._get_cmds())
-        cmds.append(Cmd(Cmd.pattern_set_source))
-        return cmds
+        cmds.take(*self.color_stops._get_cmds())
+        cmds.take(self.pattern_extend)
+        cmds.take(Cmd(Cmd.pattern_set_source))
+        return cmds.cmds
 
 
 @combination(Line, Gradient)
@@ -154,9 +156,12 @@ def circles_at_gradient(circles, gradient):
                          '({} given)'.format(len(circles)))
     gradient.shape = circles
 
-
 @combination(Color, Gradient)
 @combination(int, Gradient)
 @combination(float, Gradient)
 def color_or_offset_at_gradient(color_or_offset, gradient):
     gradient.color_stops.take(color_or_offset)
+
+@combination(Extend, Gradient)
+def extend_at_gradient(extend, gradient):
+    gradient.pattern_extend = extend
