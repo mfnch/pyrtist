@@ -5,6 +5,7 @@ __all__ = ('Point3', 'Matrix3')
 
 import math
 import numbers
+import numpy as np
 
 from ..lib2d import Point, GenericMatrix
 
@@ -130,6 +131,14 @@ class Matrix3(GenericMatrix):
                 [0.0, 0.0, 1.0, 0.0]]
 
     @classmethod
+    def translation(cls, t):
+        '''Return a new translation matrix for the given translation vector.'''
+        t = Point3(t)
+        return cls([[1.0, 0.0, 0.0, t.x],
+                    [0.0, 1.0, 0.0, t.y],
+                    [0.0, 0.0, 1.0, t.z]])
+
+    @classmethod
     def rotation_euler(cls, phi, theta, psi):
         '''Return a rotation from the corresponding Euler angles.'''
         cphi, sphi = (math.cos(phi), math.sin(phi))
@@ -143,15 +152,39 @@ class Matrix3(GenericMatrix):
 
     @classmethod
     def rotation(cls, angle, axis='x'):
-        '''Construct a rotation around one of the x, y, z axes.'''
+        '''Construct a rotation around a given axis. If the rotation axis is
+        one of the principal axes (x, y or z), then axis can be specified as
+        a string 'x', 'y' or 'z'. A Point3 can be used for any other arbitrary
+        rotation axis. If axis is not given, then 'x' is assumed. angle is the
+        angle of rotation in radians.
+        '''
+
+        # Check for rotations around the x, y, z axes.
         idx_rot = int({'x': 0, 'y': 1, 'z': 2}.get(axis, axis))
-        zero, one, two = [(i + idx_rot) % 3 for i in range(3)]
-        c, s = (math.cos(angle), math.sin(angle))
-        value = [[0.0]*4 for _ in range(3)]
-        value[zero][zero] = 1.0
-        value[one][one] = value[two][two] = c
-        value[one][two] = -s
-        value[two][one] = s
+        if idx_rot is not None:
+            zero, one, two = [(i + idx_rot) % 3 for i in range(3)]
+            c, s = (math.cos(angle), math.sin(angle))
+            value = [[0.0]*4 for _ in range(3)]
+            value[zero][zero] = 1.0
+            value[one][one] = value[two][two] = c
+            value[one][two] = -s
+            value[two][one] = s
+            return cls(value)
+
+        # The axis is given as a 3D vector.
+        axis = Point3(axis)
+        axis_norm = np.linalg.norm(axis[:3])
+        if axis_norm <= 0.0:
+            return cls(cls.identity)
+
+        # Rotation around an arbitrary axis.
+        ux, uy, uz = axis/axis_norm
+        c = math.cos(angle)
+        s = math.sin(angle)
+        omc = 1.0 - c
+        value = [[ux*ux*omc +    c, ux*uy*omc - uz*s, ux*uz*omc + uy*s],
+                 [uy*ux*omc + uz*s, uy*uy*omc +    c, uy*uz*omc - ux*s],
+                 [uz*ux*omc - uy*s, uz*uy*omc + ux*s, uz*uz*omc +    c]]
         return cls(value)
 
     def __init__(self, value=None):
@@ -168,6 +201,15 @@ class Matrix3(GenericMatrix):
 
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, repr(self.value))
+
+    def __str__(self):
+        return self.to_str()
+
+    def to_str(self, fmt='8.3f', sep=' \t'):
+        fmt = '{:' + fmt + '}'
+        s = '\n'.join('\t' + sep.join(fmt.format(arg) for arg in args)
+                      for args in self.value)
+        return 'Matrix3(\n{}\n)'.format(s)
 
     def __mul__(self, b):
         if isinstance(b, Point3):
@@ -186,6 +228,44 @@ class Matrix3(GenericMatrix):
         if isinstance(b, numbers.Number):
             return self.__mul__(b)
         raise NotImplementedError()
+
+    def to_np33(self, dtype=None):
+        '''Convert to a 3x3 NumPy matrix, discarding the translation part.'''
+        return self.to_np34(dtype=dtype)[:, :3]
+
+    def to_np34(self, dtype=None):
+        '''Convert to a 3x4 NumPy matrix.'''
+        dtype = (dtype or np.float64)
+        return np.array(self.value, dtype=dtype)
+
+    def to_np44(self, dtype=None):
+        '''Convert to a 4x4 NumPy matrix.'''
+        dtype = (dtype or np.float64)
+        mx = np.zeros((4, 4), dtype=dtype)
+        mx[:3, :] = np.array(self.value, dtype=dtype)
+        mx[3, 3] = 1.0
+        return mx
+
+    @classmethod
+    def from_np(cls, np_array):
+        '''Create a new Matrix3 from a 3x4 or 4x4 NumPy matrix.'''
+        return cls(np_array[:3] if len(np_array) != 3 else np_array)
+
+    def get_axis_and_angle(self):
+        '''Return the axis and angle of rotation for the rotational part of
+        this Matrix3 object. For the identity matrix, this function returns
+        None for the axis and 0.0 for the angle.
+        '''
+        mx = self.to_np33()
+        axis = np.array([mx[2, 1] - mx[1, 2],
+                         mx[0, 2] - mx[2, 0],
+                         mx[1, 0] - mx[0, 1]])
+        axis_norm = np.linalg.norm(axis)
+        if axis_norm == 0.0:
+            return (None, 0.0)
+        sin_angle = 0.5*axis_norm
+        cos_angle = 0.5*(sum(mx[i, i] for i in range(3)) - 1.0)
+        return (axis/axis_norm, math.atan2(sin_angle, cos_angle))
 
     def get_product(self, b):
         '''Return the result of right-multiplying this matrix by another one.
@@ -220,7 +300,7 @@ class Matrix3(GenericMatrix):
 
     def translate(self, p):
         '''Translate the matrix by the given Point value (in-place).'''
-        for i, x in enumerate(p):
+        for i, x in enumerate(Point3(p)):
             self.value[i][-1] += x
 
     def copy(self):
