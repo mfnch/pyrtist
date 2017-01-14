@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2010-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -19,21 +19,14 @@ import sys
 import optparse
 
 from .gui.info import full_name
-from .gui.boxer import run
+from .gui.main_window import run
 
 def generate_option_parser():
   usage = ("pyrtist [options] [filename.py]")
-  version = ("%s -- The Box Graphical User Interface\n" % full_name +
-             "Copyright (C) 2010-2016 Matteo Franchin\n")
-
+  version = ("{} -- Draw using Python!\n"
+             "Copyright (C) 2010-2017 Matteo Franchin"
+             .format(full_name))
   op = optparse.OptionParser(usage=usage, version=version)
-
-  help = ("The executable of the Box compiler to be used. "
-          "If the file is found and can be executed correctly, Pyrtist "
-          "remembers it in future sessions.")
-  op.add_option("--box-exec", type="string", metavar="EXEC-FILE",
-                dest="box_exec", help=help)
-
   return op
 
 def main(args=None):
@@ -49,7 +42,7 @@ def main(args=None):
     sys.stdout.write("WARNING: Pyrtist takes just one file from the command "
                      "line. Ignoring the files %s." % other_files)
 
-  run(file_to_edit, box_exec=options.box_exec)
+  run(file_to_edit)
 
 if __name__ == "__main__":
   import sys

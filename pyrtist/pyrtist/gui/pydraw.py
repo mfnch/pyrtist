@@ -31,7 +31,7 @@ from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
 
-_box_preamble_centered = '''
+_py_preamble_centered = '''
 def gui(w):
   sf = CairoCmdExecutor.create_image_surface('rgb24', $SX$, $SY$)
   view = w.draw_full_view(sf)
@@ -40,7 +40,7 @@ def gui(w):
     f.write(repr(view))
 '''
 
-_box_preamble_view = '''
+_py_preamble_view = '''
 def gui(w):
   sf = CairoCmdExecutor.create_image_surface('rgb24', $PX$, $PY$)
   view = View(None, Point($OX$, $OY$), Point($SX$, $SY$))
@@ -123,7 +123,7 @@ class PyImageDrawer(ImageDrawer):
     if coord_view == None:
       px, py = pix_view
       substs = [("$SX$", px), ("$SY$", py)]
-      preamble += _box_preamble_centered
+      preamble += _py_preamble_centered
     else:
       self.view.reset(pix_view, coord_view.corner1, coord_view.corner2)
       px, py = self.view.view_size
@@ -134,7 +134,7 @@ class PyImageDrawer(ImageDrawer):
       substs = [("$OX$", ox), ("$OY$", oy),
                 ("$SX$", sx), ("$SY$", sy),
                 ("$PX$", px), ("$PY$", py)]
-      preamble += _box_preamble_view
+      preamble += _py_preamble_view
 
     killer = self._raw_execute(pix_view, pixbuf_output,
                                preamble=preamble,
@@ -170,6 +170,6 @@ if __name__ == "__main__":
   d.load_from_file("../examples/poly.box")
   bd = PyImageDrawer(d)
   bd.out_fn = sys.stdout.write
-  preamble = _box_preamble_centered
+  preamble = _py_preamble_centered
   view = zoomable.View(Point(200, 200), Point(16.0, 47.0), Point(77.0, 4.0))
   bd.update(None, Point(200, 200), view, img_out_filename="poly.png")

@@ -1,2 +1,1 @@
-from boxer import *
-
+from main_window import *

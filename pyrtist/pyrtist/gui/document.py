@@ -49,7 +49,7 @@ class Document(DocumentBase):
     self.notify("WARNING", "unrecognized marker argument '%s'" % arg)
     return None
 
-  def load_from_str(self, boxer_src):
+  def load_from_str(self, py_src):
     parts = {}               # different text parts of the source
     context = "preamble"     # initial context/part
     self.version = version   # Default version
@@ -60,7 +60,7 @@ class Document(DocumentBase):
                     "VERSION": 3}
 
     # process the file and interpret the markers
-    lines = boxer_src.splitlines(True)
+    lines = py_src.splitlines(True)
     for line in lines:
       marker = marker_line_parse(line)
       if marker is None:
