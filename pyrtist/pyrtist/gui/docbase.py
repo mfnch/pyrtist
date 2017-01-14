@@ -215,9 +215,6 @@ class DocumentBase(Configurable):
     f.write(presrc_content + '\n' + original_userspace)
     f.close()
 
-    box_executable = '/usr/bin/python'
-    #self.get_config("box_executable", "box")
-
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
     # add the same directory among the include directories. This allows
@@ -238,7 +235,7 @@ class DocumentBase(Configurable):
     if out_fn == None:
       out_fn = self._fns["box_exec_output"]
 
-    return exec_command(box_executable, [src_filename],
+    return exec_command([src_filename],
                         out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
 
 if __name__ == "__main__":

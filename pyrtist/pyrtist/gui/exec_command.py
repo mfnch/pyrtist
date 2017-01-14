@@ -18,7 +18,6 @@ if config.platform_is_win:
       TerminateProcess(po._handle, 1)
     except:
       pass
-
 else:
   def _my_killer(po):
     try:
@@ -31,11 +30,10 @@ else:
 def _killer(po):
   if hasattr(po, 'kill'):
     return po.kill
-
   else:
     return lambda: _my_killer(po)
 
-def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
+def exec_command(args=[], out_fn=None, do_at_exit=None,
                  buffer_size=1024, cwd=None):
   """This function launches the command 'cmd' (an executable file) with the
   given command line arguments 'args'. The function creates a new thread
@@ -45,22 +43,14 @@ def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
   (like this: 'out_fn(nth_chunk)'). Once the running program terminates
   'do_at_exit()' is called (if it is provided)."""
 
-  # Fix for the issue described at
-  # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
-  if config.platform_is_win_py2exe:
-    shell = True
+  if config.platform_is_win:
     creationflags = CREATE_NO_WINDOW
-
-  elif config.platform_is_win:
-    shell = False
-    creationflags = CREATE_NO_WINDOW
-
   else:
-    shell = False
     creationflags = 0
 
+  cmd = '/usr/bin/python'
   po = Popen([cmd] + args, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
-             shell=shell, creationflags=creationflags, cwd=cwd)
+             shell=False, creationflags=creationflags, cwd=cwd)
 
   # The following function will run on a separate thread
   def read_box_output(out_fn, do_at_exit):
@@ -69,15 +59,13 @@ def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
       if len(out_str) == 0: # po.poll() == None and
         break
 
-      if out_fn != None:
+      if out_fn is not None:
         out_fn(out_str)
 
-    if do_at_exit != None:
+    if do_at_exit is not None:
       do_at_exit()
 
-  args_to_target = (out_fn, do_at_exit)
-
-  t = Thread(target=read_box_output, args=args_to_target)
+  t = Thread(target=read_box_output, args=(out_fn, do_at_exit))
   t.daemon = True
   t.start()
 
