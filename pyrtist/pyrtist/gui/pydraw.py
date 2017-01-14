@@ -27,7 +27,6 @@ import gtk.gdk
 from gtk.gdk import pixbuf_new_from_file
 
 import config
-from config import threads_enter, threads_leave
 from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
@@ -80,39 +79,38 @@ class PyImageDrawer(ImageDrawer):
       preamble = preamble.replace(var, str(val))
 
     def exit_fn():
-      threads_enter()
-      self.executed_successfully = False
-      try:
-        if os.path.exists(info_out_filename):
-          f = open(info_out_filename, "r")
-          ls = f.read().splitlines()
-          f.close()
-          _, bminx, bminy, bmaxx, bmaxy = [float(x) for x in ls[0].split(",")]
-          ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
-          self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
-          self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+      with gtk.gdk.lock:
+        self.executed_successfully = False
+        try:
+          if os.path.exists(info_out_filename):
+            f = open(info_out_filename, "r")
+            ls = f.read().splitlines()
+            f.close()
+            _, bminx, bminy, bmaxx, bmaxy = \
+              [float(x) for x in ls[0].split(",")]
+            ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
+            self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
+            self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
-        if os.path.exists(img_out_filename):
-          pixbuf = pixbuf_new_from_file(img_out_filename)
-          sx = pixbuf.get_width()
-          sy = pixbuf.get_height()
-          pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
-          self.executed_successfully = True
+          if os.path.exists(img_out_filename):
+            pixbuf = pixbuf_new_from_file(img_out_filename)
+            sx = pixbuf.get_width()
+            sy = pixbuf.get_height()
+            pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
+            self.executed_successfully = True
 
-      finally:
-        self.executing = False
-        config.tmp_remove_files(tmp_fns)
-        self.finished_drawing(DrawSucceded(self.bbox, self.view)
-                              if self.executed_successfully
-                              else DrawFailed())
-      threads_leave()
+        finally:
+          self.executing = False
+          config.tmp_remove_files(tmp_fns)
+          self.finished_drawing(DrawSucceded(self.bbox, self.view)
+                                if self.executed_successfully
+                                else DrawFailed())
 
     def my_out_fn(s):
-      threads_enter()
-      out_fn = self.out_fn
-      if out_fn != None:
-        out_fn(s)
-      threads_leave()
+      with gtk.gdk.lock:
+        out_fn = self.out_fn
+        if out_fn is not None:
+          out_fn(s)
 
     self.executing = True
     return self.document.execute(preamble=preamble,
@@ -146,14 +144,14 @@ class PyImageDrawer(ImageDrawer):
     # Here we wait for some time to see if we can just draw and proceed.
     # If the time is not enough then we exit and get back the control of the
     # GUI to the user. In this waiting loop it is important to release the
-    # lock of the GTK threads, otherwise the other thread will be waiting
+    # lock of the GTK threads, otherwise the other threads will be waiting
     # for this one (which is having a very high time per Python opcode...)
-    threads_leave()
+    gtk.gdk.threads_leave()
     for i in range(10):
       if not self.executing:
         break
       time.sleep(0.05)
-    threads_enter()
+    gtk.gdk.threads_enter()
 
     if self.executing:
       return DrawStillWorking(self, killer)

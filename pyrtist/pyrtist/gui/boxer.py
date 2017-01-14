@@ -36,7 +36,6 @@ import gtk.gdk
 import gobject
 
 import config
-from config import threads_init, threads_enter, threads_leave
 import docbase
 import document
 
@@ -1016,10 +1015,7 @@ class Pyrtist(object):
       i += 1
 
 def run(filename=None, box_exec=None):
-  threads_init()
-  threads_enter()
-
-  main_window = Pyrtist(filename=filename, box_exec=box_exec)
-  gtk.main()
-
-  threads_leave()
+  gtk.gdk.threads_init()
+  with gtk.gdk.lock:
+    main_window = Pyrtist(filename=filename, box_exec=box_exec)
+    gtk.main()

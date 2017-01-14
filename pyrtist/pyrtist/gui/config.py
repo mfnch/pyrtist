@@ -82,9 +82,6 @@ def installation_path():
     sys.stdout.write("Problem determining data installation path.\n")
     sys.exit()
 
-# Whether we should try to use threads
-use_threads = True
-
 def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')
   return base if filename == None else os.path.join(base, filename)
@@ -464,16 +461,3 @@ class Configurable(object):
     if the configuration does not have such an option.
     """
     return self._config[name] if name in self._config else opt
-
-
-def threads_init():
-  if use_threads:
-    gtk.gdk.threads_init()
-
-def threads_enter():
-  if use_threads:
-    gtk.gdk.threads_enter()
-
-def threads_leave():
-  if use_threads:
-    gtk.gdk.threads_leave()
