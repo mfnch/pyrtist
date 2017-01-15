@@ -196,7 +196,6 @@ class DocumentBase(Configurable):
 
     tmp_fns = []
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
-    presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
 
     # Hack to make the local_launch.py script work correctly (useful for
     # debugging).
@@ -235,8 +234,9 @@ class DocumentBase(Configurable):
     if out_fn == None:
       out_fn = self._fns["box_exec_output"]
 
-    return exec_command([src_filename],
-                        out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
+    return exec_command(src_filename, out_fn=out_fn,
+                        do_at_exit=do_at_exit, cwd=cwd)
+
 
 if __name__ == "__main__":
   import sys
