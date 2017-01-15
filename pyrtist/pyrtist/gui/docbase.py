@@ -191,11 +191,8 @@ class DocumentBase(Configurable):
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
     fn = self._fns["box_document_execute"]
-    if fn != None:
+    if fn is not None:
       fn(self, out_fn, exit_fn)
-
-    tmp_fns = []
-    src_filename = config.tmp_new_filename("source", "box", tmp_fns)
 
     # Hack to make the local_launch.py script work correctly (useful for
     # debugging).
@@ -205,36 +202,36 @@ class DocumentBase(Configurable):
                       'sys.path.insert(0, "{parent_path}")\n'
                       'sys.path.insert(0, os.getcwd())\n'
                       .format(parent_path=parent_path))
-
     presrc_content += self.get_part_preamble(mode=MODE_EXEC,
                                              boot_code=preamble)
     original_userspace = self.get_part_user_code(mode=MODE_EXEC)
-
-    f = open(src_filename, 'wt')
-    f.write(presrc_content + '\n' + original_userspace)
-    f.close()
+    src = presrc_content + '\n' + original_userspace
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
     # add the same directory among the include directories. This allows
     # including scripts in the same directory.
-    src_path = os.path.split(self.filename or src_filename)[0]
+    cwd = None
+    src_name = '<New file>'
+    if self.filename is not None:
+      cwd = os.path.split(self.filename)[0]
+      # Put the file name between angle brackets to prevent the backtrace
+      # formatter from trying to load the file when showing where the error
+      # is. This would not work as the script we are executing is not exactly
+      # the same as the one which sits on the disk.
+      src_name = '<{}>'.format(self.filename)
 
-    # Directory from which the script should be executed
-    cwd = src_path or None
-
-    fn = self._fns["box_document_executed"]
+    fn = self._fns['box_document_executed']
     def do_at_exit():
-      config.tmp_remove_files(tmp_fns)
-      if fn != None:
+      if fn is not None:
         fn(self)
       if exit_fn:
         exit_fn()
 
-    if out_fn == None:
-      out_fn = self._fns["box_exec_output"]
+    if out_fn is None:
+      out_fn = self._fns['box_exec_output']
 
-    return exec_command(src_filename, out_fn=out_fn,
+    return exec_command(src_name, src, out_fn=out_fn,
                         do_at_exit=do_at_exit, cwd=cwd)
 
 
