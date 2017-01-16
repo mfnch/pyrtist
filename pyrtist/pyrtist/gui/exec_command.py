@@ -4,6 +4,7 @@ execution while it is running, using a different thread to get the output.
 
 import sys
 import os
+import imp
 import io
 import traceback
 from threading import Thread
@@ -11,6 +12,8 @@ from multiprocessing import Process, Pipe
 
 
 class PyrtistOutStream(io.IOBase):
+  '''Stream used to pass output back to the Pyrtist GUI.'''
+
   def __init__(self, role, out_pipe):
     super(PyrtistOutStream, self).__init__()
     self._role = role
@@ -40,24 +43,33 @@ class Redirected(object):
     setattr(sys, self._stream_name, self._old_stream)
 
 
-def _child_main(cwd, src_name, src, send_to_parent):
+def _run_code(send_to_parent, cwd, src_name, src):
   if cwd is not None:
     os.chdir(cwd)
+    sys.path.insert(0, os.getcwd())
 
-  error_num = 1
+  src_env = {}
+
+  module = imp.new_module('__main__')
+  code_globals = module.__dict__
+  code_globals.update(__name__='__main__')
+  code_globals.update(src_env)
+
   with Redirected('stdout', PyrtistOutStream('stdout', send_to_parent)):
     with Redirected('stderr', PyrtistOutStream('stderr', send_to_parent)):
-      global_vars = globals().copy()
       try:
         code = compile(src, src_name, 'exec')
-        exec(code, global_vars, global_vars)
-        error_num = 0
+        exec(code, code_globals)
       except Exception as exc:
         exc_type, exc_value, exc_tb = sys.exc_info()
         exc_tb = exc_tb.tb_next
         traceback.print_exception(exc_type, exc_value, exc_tb)
-      finally:
-        send_to_parent.send(('exit', error_num))
+
+def _child_main(send_to_parent, *args):
+  try:
+    _run_code(send_to_parent, *args)
+  finally:
+    send_to_parent.send(('exit', None))
 
 def _comm_with_child(process, out_fn, do_at_exit, recv_from_child):
   timeout = 0.1
@@ -91,7 +103,7 @@ def exec_command(src_name, src, out_fn=None, do_at_exit=None, cwd=None):
   '''
 
   recv_from_child, send_to_parent = Pipe()
-  p = Process(target=_child_main, args=(cwd, src_name, src, send_to_parent))
+  p = Process(target=_child_main, args=(send_to_parent, cwd, src_name, src))
   p.daemon = True
   p.start()
 

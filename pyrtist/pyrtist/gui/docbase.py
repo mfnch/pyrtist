@@ -194,16 +194,8 @@ class DocumentBase(Configurable):
     if fn is not None:
       fn(self, out_fn, exit_fn)
 
-    # Hack to make the local_launch.py script work correctly (useful for
-    # debugging).
-    main_module_path = config.get_gui_lib_path()
-    parent_path, _ = os.path.split(main_module_path)
-    presrc_content = ('import sys, os\n'
-                      'sys.path.insert(0, "{parent_path}")\n'
-                      'sys.path.insert(0, os.getcwd())\n'
-                      .format(parent_path=parent_path))
-    presrc_content += self.get_part_preamble(mode=MODE_EXEC,
-                                             boot_code=preamble)
+    presrc_content = self.get_part_preamble(mode=MODE_EXEC,
+                                            boot_code=preamble)
     original_userspace = self.get_part_user_code(mode=MODE_EXEC)
     src = presrc_content + '\n' + original_userspace
 
@@ -228,8 +220,7 @@ class DocumentBase(Configurable):
       if exit_fn:
         exit_fn()
 
-    if out_fn is None:
-      out_fn = self._fns['box_exec_output']
+    assert out_fn is not None
 
     return exec_command(src_name, src, out_fn=out_fn,
                         do_at_exit=do_at_exit, cwd=cwd)
