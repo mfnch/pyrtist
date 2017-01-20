@@ -36,21 +36,23 @@ from config import Configurable
 
 
 class BoxViewArea(ZoomableArea):
-  def __init__(self, filename=None, out_fn=None, callbacks=None, **kwargs):
-    # Create the Document
-    self.document = d = \
-      document.Document(callbacks=callbacks, from_args=kwargs)
-    if filename != None:
+  def __init__(self, filename=None, callbacks=None, **kwargs):
+    # Create a new Document object.
+    d = document.Document(callbacks=callbacks, from_args=kwargs)
+    if filename is not None:
       d.load_from_file(filename)
     else:
       d.new()
 
-    # Create the Box drawer
-    self.drawer = drawer = PyImageDrawer(d)
-    drawer.out_fn = out_fn
+    # Create a new PyImageDrawer for the document.
+    drawer = PyImageDrawer(d)
 
-    # Create the ZoomableArea
-    ZoomableArea.__init__(self, drawer, callbacks=callbacks, **kwargs)
+    # Initialise the ZoomableArea part of this object.
+    super(BoxViewArea, self).__init__(drawer, callbacks=callbacks, **kwargs)
+
+    # Create the Document
+    self.document = d
+    self.drawer = drawer
 
   def get_document(self):
     '''Get the Document object associated to this window.'''
@@ -94,7 +96,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
                  "refpoint_delete": None,
                  "refpoint_pick": None,
                  "refpoint_press": None,
-                 "refpoint_press_middle": None}
+                 "refpoint_press_middle": None,
+                 "script_move_point": None}
 
     Configurable.__init__(self, from_args=kwargs)
     BoxViewArea.__init__(self, *args, callbacks=self._fns, **kwargs)
@@ -104,9 +107,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
                             refpoint_size=4, redraw_on_move=True)
 
     # Enable events and connect signals
-    mask = (  gtk.gdk.POINTER_MOTION_MASK
-            | gtk.gdk.BUTTON_PRESS_MASK
-            | gtk.gdk.BUTTON_RELEASE_MASK)
+    mask = (gtk.gdk.POINTER_MOTION_MASK |
+            gtk.gdk.BUTTON_PRESS_MASK |
+            gtk.gdk.BUTTON_RELEASE_MASK)
     self.add_events(mask)
     self.connect("realize", self._realize)
     self.connect("button-press-event", self._on_button_press_event)
@@ -125,8 +128,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
   def set_callback(self, name, callback):
     """Set the callbacks."""
     if name not in self._fns:
-      raise ValueError("Cannot find '%s'. Available callbacks are: %s."
-                       % (name, ", ".join(self._fns.keys())))
+      raise ValueError("Cannot find '{}'. Available callbacks are: {}."
+                       .format(name, ", ".join(self._fns.keys())))
     else:
       self._fns[name] = callback
 
@@ -209,17 +212,18 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""
-    screen_view = self.get_visible_coords()
-    box_coords = (screen_view.pix_to_coord(Point(coords)) if use_py_coords
-                  else coords)
     if rp.visible:
+      if use_py_coords:
+        screen_view = self.get_visible_coords()
+        coords = screen_view.pix_to_coord(Point(coords))
+
       v = self.refpoint_set_visibility(rp, False)
       rp_children = rp.get_children()
       v_children = tuple(self.refpoint_set_visibility(rp_child, False)
                          for rp_child in rp_children)
 
       self.undoer.record_action(move_fn, self, rp.name, rp.value)
-      rp.value = box_coords
+      rp.value = coords
 
       self.refpoint_set_visibility(rp, v)
       for i, rp_child in enumerate(rp_children):
@@ -454,16 +458,19 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def _drag_confirm(self, py_coords):
     drps = self._dragged_refpoints
-    rps = self.document.refpoints.selection
-    assert drps != None
+    assert drps is not None
     screen_view = self.get_visible_coords()
     transform = screen_view.pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
+    move_list = [(rp_name, box_vec)
+                 for rp_name in drps.initial_points]
 
     self.undoer.begin_group()
-    for rp_name, rp in drps.initial_points.iteritems():
+    rps = self.document.refpoints
+    for rp_name in drps.initial_points:
+      rp = rps[rp_name]
       if rp.visible:
-        self.undoer.record_action(move_fn, self, rp_name, rps[rp_name].value)
-        rps[rp_name].translate(box_vec)
+        self.undoer.record_action(move_fn, self, rp_name, rp.value)
+        rp.translate(box_vec)
     self.undoer.end_group()

@@ -21,7 +21,7 @@ import time
 
 import config
 from config import Configurable
-from exec_command import exec_command
+from exec_command import run_script
 from refpoints import RefPoint, RefPoints
 
 # This is the version of the document (which may be different from the version
@@ -188,10 +188,10 @@ class DocumentBase(Configurable):
   def box_query(self, variable):
     raise NotImplementedError("This function is obsolete")
 
-  def execute(self, preamble=None, out_fn=None, exit_fn=None):
+  def execute(self, preamble=None, callback=None):
     fn = self._fns["box_document_execute"]
     if fn is not None:
-      fn(self, out_fn, exit_fn)
+      fn(self)
 
     presrc_content = self.get_part_preamble(mode=MODE_EXEC,
                                             boot_code=preamble)
@@ -213,16 +213,18 @@ class DocumentBase(Configurable):
       src_name = '<{}>'.format(self.filename)
 
     fn = self._fns['box_document_executed']
-    def do_at_exit():
-      if fn is not None:
-        fn(self)
-      if exit_fn:
-        exit_fn()
+    def my_callback(name, *args):
+      if name == 'exit':
+        if fn is not None:
+          fn(self)
+        if callback:
+          callback(name, *args)
+      else:
+        cb = self._fns.get(name)
+        if cb is not None:
+          cb(*args)
 
-    assert out_fn is not None
-
-    return exec_command(src_name, src, out_fn=out_fn,
-                        do_at_exit=do_at_exit, cwd=cwd)
+    return run_script(src_name, src, callback=my_callback, cwd=cwd)
 
 
 if __name__ == "__main__":

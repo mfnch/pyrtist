@@ -1,5 +1,6 @@
-"""File which provides a function 'exec_command' to run a program and continue
-execution while it is running, using a different thread to get the output.
+"""File which provides a function 'run_script' to run a Python script in the
+background and allows to interact with it while it is running, e.g. get the
+stdout, stderr or graphical output.
 """
 
 import sys
@@ -48,6 +49,9 @@ def _run_code(send_to_parent, cwd, src_name, src):
     os.chdir(cwd)
     sys.path.insert(0, os.getcwd())
 
+  from .. import gate
+  gate.queue = send_to_parent
+
   src_env = {}
 
   module = imp.new_module('__main__')
@@ -71,7 +75,7 @@ def _child_main(send_to_parent, *args):
   finally:
     send_to_parent.send(('exit', None))
 
-def _comm_with_child(process, out_fn, do_at_exit, recv_from_child):
+def _comm_with_child(process, callback, recv_from_child):
   timeout = 0.1
   while process.is_alive():
     items_in_queue = recv_from_child.poll(timeout)
@@ -80,26 +84,28 @@ def _comm_with_child(process, out_fn, do_at_exit, recv_from_child):
 
     try:
       cmd, value = recv_from_child.recv()
-    except EOFError:
+    except:
       cmd, value = ('eof', None)
 
     if cmd in ('stdout', 'stderr'):
-      out_fn(value)
-    elif cmd == 'exit':
+      callback('out', cmd, value)
+    elif cmd in ('exit', 'eof'):
       process.join()
       break
+    else:
+      callback(cmd, value)
 
-  if do_at_exit is not None:
-    do_at_exit()
+  callback('exit')
 
-def exec_command(src_name, src, out_fn=None, do_at_exit=None, cwd=None):
+def run_script(src_name, src, callback=None, cwd=None):
   '''This function launches the Python script in `src` with name `src_name`
-  in a separate task. The function creates a new thread to read the output
-  of the program and returns while this may still be running. The output is
-  red in chunks of size not greater than `buffer_size` and is passed back
-  using the callback function `out_fn` (like this: `out_fn(nth_chunk)`).
-  Once the running program terminates `do_at_exit()` is called (if it is
-  provided).
+  in a separate task. The function creates a new thread to receive data
+  from the running script. The data is passed back by using the provided
+  `callback` function, like this `callback("out", stream_name, out_string)`,
+  where `stream_name` is a string which identifies which stream the output
+  is coming from  (it can either be "stdout" or "stderr") and `out_string`
+  is a string containing the actual output. When the script terminates, a
+  notification is sent back by calling `callback("exit")`.
   '''
 
   recv_from_child, send_to_parent = Pipe()
@@ -108,7 +114,7 @@ def exec_command(src_name, src, out_fn=None, do_at_exit=None, cwd=None):
   p.start()
 
   t = Thread(target=_comm_with_child,
-             args=(p, out_fn, do_at_exit, recv_from_child))
+             args=(p, callback, recv_from_child))
   t.daemon = True
   t.start()
 

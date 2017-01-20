@@ -52,7 +52,7 @@ def gui(w):
 
 class PyImageDrawer(ImageDrawer):
   def __init__(self, document):
-    ImageDrawer.__init__(self)
+    super(PyImageDrawer, self).__init__()
     self.document = document
     self.out_fn = None
     self.bbox = None
@@ -79,43 +79,41 @@ class PyImageDrawer(ImageDrawer):
       preamble = preamble.replace(var, str(val))
 
     def exit_fn():
-      with gtk.gdk.lock:
-        self.executed_successfully = False
-        try:
-          if os.path.exists(info_out_filename):
-            f = open(info_out_filename, "r")
+      self.executed_successfully = False
+      try:
+        if os.path.exists(info_out_filename):
+          with open(info_out_filename, "r") as f:
             ls = f.read().splitlines()
-            f.close()
-            _, bminx, bminy, bmaxx, bmaxy = \
-              [float(x) for x in ls[0].split(",")]
-            ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
-            self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
-            self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+          _, bminx, bminy, bmaxx, bmaxy = \
+            [float(x) for x in ls[0].split(",")]
+          ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
+          self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
+          self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
-          if os.path.exists(img_out_filename):
-            pixbuf = pixbuf_new_from_file(img_out_filename)
-            sx = pixbuf.get_width()
-            sy = pixbuf.get_height()
-            pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
-            self.executed_successfully = True
+        if os.path.exists(img_out_filename):
+          pixbuf = pixbuf_new_from_file(img_out_filename)
+          sx = pixbuf.get_width()
+          sy = pixbuf.get_height()
+          pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
+          self.executed_successfully = True
 
-        finally:
-          self.executing = False
-          config.tmp_remove_files(tmp_fns)
-          self.finished_drawing(DrawSucceded(self.bbox, self.view)
-                                if self.executed_successfully
-                                else DrawFailed())
+      finally:
+        self.executing = False
+        config.tmp_remove_files(tmp_fns)
+        self.finished_drawing(DrawSucceded(self.bbox, self.view)
+                              if self.executed_successfully
+                              else DrawFailed())
 
-    def my_out_fn(s):
+    def callback(name, *args):
       with gtk.gdk.lock:
-        out_fn = self.out_fn
-        if out_fn is not None:
-          out_fn(s)
+        if name == 'exit':
+          exit_fn()
+        elif name == 'out':
+          if self.out_fn is not None:
+            self.out_fn(args[1])
 
     self.executing = True
-    return self.document.execute(preamble=preamble,
-                                 out_fn=my_out_fn,
-                                 exit_fn=exit_fn)
+    return self.document.execute(preamble=preamble, callback=callback)
 
   def update(self, pixbuf_output, pix_view, coord_view=None,
              img_out_filename=None):

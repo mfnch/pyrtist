@@ -887,7 +887,7 @@ class Pyrtist(object):
 
     prog_output = None
 
-    def box_document_execute(doc, out_fn, exit_fn):
+    def box_document_execute(doc):
       global prog_output
       doc.set_user_code(self.get_main_source())
       prog_output = ''
@@ -902,6 +902,12 @@ class Pyrtist(object):
     def box_document_executed(doc):
       box_exec_output('', force=True)
     editable_area.set_callback("box_document_executed", box_document_executed)
+
+    def move_point(args):
+      name, x, y = args
+      rp = editable_area.document.refpoints[name]
+      editable_area.refpoint_move(rp, (x, y), use_py_coords=False)
+    editable_area.set_callback("script_move_point", move_point)
 
     # Create the scrolled window containing the box-draw editable area
     scroll_win1 = gtk.ScrolledWindow()
