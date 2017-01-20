@@ -67,7 +67,7 @@ bbox2 = Point(100, 0)
 #!PYRTIST:REFPOINTS:END
 w = Window()          # Create a new Window and set the
 w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
-
+#!PYRTIST:CURSOR:HERE
 gui(w)                # Show the result.
 '''
 
@@ -81,10 +81,6 @@ def installation_path():
   except:
     sys.stdout.write("Problem determining data installation path.\n")
     sys.exit()
-
-def glade_path(filename=None):
-  base = os.path.join(installation_path(), 'glade')
-  return base if filename == None else os.path.join(base, filename)
 
 def icon_path(filename=None, big_buttons=None):
   base = os.path.join(installation_path(), 'icons')

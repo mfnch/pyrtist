@@ -30,7 +30,7 @@ from refpoints import RefPoint, RefPoints
 version = (0, 2, 0)
 
 max_chars_per_line = 79
-marker_cursor_here = "//!BOXER:CURSOR:HERE"
+marker_cursor_here = "#!PYRTIST:CURSOR:HERE"
 
 #from os import linesep as endline
 endline = "\n"
@@ -96,7 +96,7 @@ class DocumentBase(Configurable):
   def __init__(self, filename=None, callbacks=None,
                config=None, from_args=None):
     """filename=None :the filename associated to the document."""
-    Configurable.__init__(self, config=config, from_args=from_args)
+    super(DocumentBase, self).__init__(config=config, from_args=from_args)
 
     self.filename = None         # File name corresponding to this document
     self.version = None          # Version of the file format
@@ -127,7 +127,7 @@ class DocumentBase(Configurable):
     return self.refpoints
 
   def get_boot_code(self, preamble=None):
-    return preamble if preamble != None else self.preamble
+    return preamble if preamble is not None else self.preamble
 
   def set_boot_code(self, boot_code):
     """Set the content of the additional Box code used by Boxer."""
@@ -179,9 +179,8 @@ class DocumentBase(Configurable):
       self.filename = filename
 
   def save_to_file(self, filename, version=version, remember_filename=True):
-    f = open(filename, "w")
-    f.write(self.save_to_str(version=version))
-    f.close()
+    with open(filename, "w") as f:
+      f.write(self.save_to_str(version=version))
 
     if remember_filename:
       self.filename = filename

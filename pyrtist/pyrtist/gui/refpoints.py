@@ -326,7 +326,7 @@ class RefPoints(object):
 
     # Notify RefPoint removals
     fn = self._fns["refpoint_remove"]
-    if fn != None:
+    if fn is not None:
       for rp in self.content:
         fn(self, rp)
 
@@ -352,10 +352,14 @@ class RefPoints(object):
       rp.selected = REFPOINT_UNSELECTED
     self.selection = {}
 
-  def select(self, *rps, **named_args):
+  def select(self, *rps, **kwargs):
     """Add the RefPoint-s in rps to the current selected RefPoint-s."""
+    flip = kwargs.pop('flip', False)
+    if len(kwargs) > 0:
+      raise TypeError("Unexpected keyword argument(s) {}"
+                      .format(', '.join(kwargs.keys())))
     selection = self.selection
-    if named_args.get("flip", False):
+    if flip:
       for rp in rps:
         if rp.selected:
           rp.selected = REFPOINT_UNSELECTED
@@ -363,7 +367,6 @@ class RefPoints(object):
         else:
           rp.selected = REFPOINT_SELECTED
           selection[rp.name] = rp
-
     else:
       for rp in rps:
         rp.selected = REFPOINT_SELECTED

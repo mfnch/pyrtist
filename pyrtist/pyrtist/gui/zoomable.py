@@ -61,7 +61,7 @@ class DrawStillWorking(DrawState):
 
   def kill(self):
     """Kill the running drawing process if it is still running."""
-    if self.killer != None:
+    if self.killer is not None:
       self.killer()
       self.killer = None
 
@@ -82,7 +82,7 @@ class ImageDrawer(object):
     (either DrawSucceded or DrawFailed).
     """
     assert isinstance(state, (DrawSucceded, DrawFailed))
-    if self._finished_callback != None:
+    if self._finished_callback is not None:
       self._finished_callback(self, state)
 
   def update(self, pixbuf_output, pix_view, coord_view=None):

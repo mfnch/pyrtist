@@ -118,7 +118,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     ones)."""
     for rp in self.document.refpoints:
       yield rp
-    if include_dragged and self._dragged_refpoints != None:
+    if include_dragged and self._dragged_refpoints is not None:
       for rp in self._dragged_refpoints.initial_points.itervalues():
         yield rp
 
@@ -132,7 +132,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def _call_back(self, name, *args):
     fn = self._fns.get(name, None)
-    if fn != None:
+    if fn is not None:
       fn(*args)
 
   def _realize(self, myself):
@@ -406,20 +406,20 @@ class BoxEditableArea(BoxViewArea, Configurable):
         #  ^^^ don't want to create a new point while we are selecting others
         visible_coords = self.get_visible_coords()
         box_coords = visible_coords.pix_to_coord(py_coords)
-        if box_coords != None:
+        if box_coords is not None:
           rp = self.refpoint_new(py_coords)
           self.refpoint_select(rp)
           self._call_back("refpoint_press", rp)
 
-    elif self._dragged_refpoints != None:
+    elif self._dragged_refpoints is not None:
       return
 
     elif event.button == self.get_config("button_center"):
-      if rp != None:
+      if rp is not None:
         self._call_back("refpoint_press_middle", self, rp)
 
     elif event.button == self.get_config("button_right"):
-      if rp != None:
+      if rp is not None:
         self.refpoint_delete(rp)
 
   def _on_motion_notify_event(self, eventbox, event):
@@ -441,7 +441,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
   def _drag_refpoints(self, py_coords):
     drps = self._dragged_refpoints
     rps = self.document.refpoints.selection
-    assert drps != None
+    assert drps is not None
     screen_view = self.get_visible_coords()
     transform = screen_view.pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -

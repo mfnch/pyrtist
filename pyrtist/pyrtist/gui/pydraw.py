@@ -67,10 +67,10 @@ class PyImageDrawer(ImageDrawer):
                    img_out_filename=None, extra_substs=[]):
     tmp_fns = []
     info_out_filename = config.tmp_new_filename("info", "dat", tmp_fns)
-    if img_out_filename == None:
+    if img_out_filename is None:
       img_out_filename = config.tmp_new_filename("img", "png", tmp_fns)
 
-    if preamble == None:
+    if preamble is None:
       preamble = ''
 
     substs = [("$INFO_FILENAME$", repr(info_out_filename)),
