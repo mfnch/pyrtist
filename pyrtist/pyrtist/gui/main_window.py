@@ -36,7 +36,6 @@ import gtk.gdk
 import gobject
 
 import config
-import docbase
 import document
 
 from undoer import Undoer
@@ -395,7 +394,7 @@ class Pyrtist(object):
     self.widget_srcbuf.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
-    here_marker = docbase.marker_cursor_here
+    here_marker = document.marker_cursor_here
     si = self.widget_srcbuf.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
     if found != None:
