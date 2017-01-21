@@ -1,5 +1,6 @@
 #!PYRTIST:VERSION:0:0:1
 from pyrtist.lib2d import *
+from pyrtist.gate import gui
 #!PYRTIST:REFPOINTS:BEGIN
 
 #!PYRTIST:REFPOINTS:END

@@ -171,9 +171,8 @@ class DocumentBase(Configurable):
     raise NotImplementedError("DocumentBase.load_from_str")
 
   def load_from_file(self, filename, remember_filename=True):
-    f = open(filename, "r")
-    self.load_from_str(f.read())
-    f.close()
+    with open(filename, "r") as f:
+      self.load_from_str(f.read())
 
     if remember_filename:
       self.filename = filename
@@ -188,13 +187,12 @@ class DocumentBase(Configurable):
   def box_query(self, variable):
     raise NotImplementedError("This function is obsolete")
 
-  def execute(self, preamble=None, callback=None):
+  def execute(self, callback=None, startup_cmds=None):
     fn = self._fns["box_document_execute"]
     if fn is not None:
       fn(self)
 
-    presrc_content = self.get_part_preamble(mode=MODE_EXEC,
-                                            boot_code=preamble)
+    presrc_content = self.get_part_preamble(mode=MODE_EXEC)
     original_userspace = self.get_part_user_code(mode=MODE_EXEC)
     src = presrc_content + '\n' + original_userspace
 
@@ -214,17 +212,17 @@ class DocumentBase(Configurable):
 
     fn = self._fns['box_document_executed']
     def my_callback(name, *args):
+      cb = self._fns.get(name)
+      if cb is not None:
+        cb(*args)
       if name == 'exit':
         if fn is not None:
           fn(self)
-        if callback:
-          callback(name, *args)
-      else:
-        cb = self._fns.get(name)
-        if cb is not None:
-          cb(*args)
+      if callback:
+        callback(name, *args)
 
-    return run_script(src_name, src, callback=my_callback, cwd=cwd)
+    return run_script(src_name, src, callback=my_callback, cwd=cwd,
+                      startup_cmds=startup_cmds)
 
 
 if __name__ == "__main__":

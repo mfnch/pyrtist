@@ -44,15 +44,19 @@ class Redirected(object):
     setattr(sys, self._stream_name, self._old_stream)
 
 
-def _run_code(send_to_parent, cwd, src_name, src):
+def _run_code(send_to_parent, cwd, src_name, src, startup_cmds):
+  # Run the script from the given working directory.
   if cwd is not None:
     os.chdir(cwd)
     sys.path.insert(0, os.getcwd())
 
-  from .. import gate
-  gate.queue = send_to_parent
-
+  # Environment for the script.
   src_env = {}
+
+  # Create the GUIGate object and allow it to populate the environment.
+  from .. import gate
+  gate.gui = gate.GUIGate(send_to_parent, startup_cmds)
+  gate.gui.update_vars(src_env)
 
   module = imp.new_module('__main__')
   code_globals = module.__dict__
@@ -97,7 +101,7 @@ def _comm_with_child(process, callback, recv_from_child):
 
   callback('exit')
 
-def run_script(src_name, src, callback=None, cwd=None):
+def run_script(src_name, src, callback=None, cwd=None, startup_cmds=None):
   '''This function launches the Python script in `src` with name `src_name`
   in a separate task. The function creates a new thread to receive data
   from the running script. The data is passed back by using the provided
@@ -109,7 +113,8 @@ def run_script(src_name, src, callback=None, cwd=None):
   '''
 
   recv_from_child, send_to_parent = Pipe()
-  p = Process(target=_child_main, args=(send_to_parent, cwd, src_name, src))
+  p = Process(target=_child_main,
+              args=(send_to_parent, cwd, src_name, src, startup_cmds))
   p.daemon = True
   p.start()
 

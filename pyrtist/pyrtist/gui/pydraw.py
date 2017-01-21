@@ -31,25 +31,6 @@ from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
 
-_py_preamble_centered = '''
-def gui(w):
-  sf = CairoCmdExecutor.create_image_surface('rgb24', $SX$, $SY$)
-  view = w.draw_full_view(sf)
-  sf.write_to_png($IMG_FILENAME$)
-  with open($INFO_FILENAME$, 'w') as f:
-    f.write(repr(view))
-'''
-
-_py_preamble_view = '''
-def gui(w):
-  sf = CairoCmdExecutor.create_image_surface('rgb24', $PX$, $PY$)
-  view = View(None, Point($OX$, $OY$), Point($SX$, $SY$))
-  view = w.draw_zoomed_view(sf, view)
-  sf.write_to_png($IMG_FILENAME$)
-  with open($INFO_FILENAME$, 'w') as f:
-    f.write(repr(view))
-'''
-
 class PyImageDrawer(ImageDrawer):
   def __init__(self, document):
     super(PyImageDrawer, self).__init__()
@@ -63,20 +44,15 @@ class PyImageDrawer(ImageDrawer):
   def set_output_function(self, fn):
     self.out_fn = fn
 
-  def _raw_execute(self, pix_size, pixbuf_output, preamble=None,
-                   img_out_filename=None, extra_substs=[]):
+  def _raw_execute(self, pix_size, pixbuf_output,
+                   startup_cmds=None, img_out_filename=None):
     tmp_fns = []
     info_out_filename = config.tmp_new_filename("info", "dat", tmp_fns)
     if img_out_filename is None:
       img_out_filename = config.tmp_new_filename("img", "png", tmp_fns)
 
-    if preamble is None:
-      preamble = ''
-
-    substs = [("$INFO_FILENAME$", repr(info_out_filename)),
-              ("$IMG_FILENAME$", repr(img_out_filename))]
-    for var, val in substs + extra_substs:
-      preamble = preamble.replace(var, str(val))
+    startup_cmds.append(('set_tmp_filenames', info_out_filename,
+                         img_out_filename))
 
     def exit_fn():
       self.executed_successfully = False
@@ -113,15 +89,14 @@ class PyImageDrawer(ImageDrawer):
             self.out_fn(args[1])
 
     self.executing = True
-    return self.document.execute(preamble=preamble, callback=callback)
+    return self.document.execute(callback=callback, startup_cmds=startup_cmds)
 
   def update(self, pixbuf_output, pix_view, coord_view=None,
              img_out_filename=None):
-    preamble = ''
-    if coord_view == None:
+    startup_cmds = []
+    if coord_view is None:
       px, py = pix_view
-      substs = [("$SX$", px), ("$SY$", py)]
-      preamble += _py_preamble_centered
+      startup_cmds.append(('full_view', px, py))
     else:
       self.view.reset(pix_view, coord_view.corner1, coord_view.corner2)
       px, py = self.view.view_size
@@ -129,14 +104,10 @@ class PyImageDrawer(ImageDrawer):
       c2x, c2y = self.view.corner2
       ox, oy = (min(c1x, c2x), min(c1y, c2y))
       sx, sy = (abs(c2x - c1x), abs(c2y - c1y))
-      substs = [("$OX$", ox), ("$OY$", oy),
-                ("$SX$", sx), ("$SY$", sy),
-                ("$PX$", px), ("$PY$", py)]
-      preamble += _py_preamble_view
+      startup_cmds.append(('zoomed_view', px, py, ox, oy, sx, sy))
 
     killer = self._raw_execute(pix_view, pixbuf_output,
-                               preamble=preamble,
-                               extra_substs=substs,
+                               startup_cmds=startup_cmds,
                                img_out_filename=img_out_filename)
 
     # Here we wait for some time to see if we can just draw and proceed.
@@ -159,15 +130,3 @@ class PyImageDrawer(ImageDrawer):
 
     else:
       return DrawFailed()
-
-if __name__ == "__main__":
-  import sys
-  import document
-  import zoomable
-  d = document.Document()
-  d.load_from_file("../examples/poly.box")
-  bd = PyImageDrawer(d)
-  bd.out_fn = sys.stdout.write
-  preamble = _py_preamble_centered
-  view = zoomable.View(Point(200, 200), Point(16.0, 47.0), Point(77.0, 4.0))
-  bd.update(None, Point(200, 200), view, img_out_filename="poly.png")

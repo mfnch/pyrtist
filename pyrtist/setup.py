@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2016 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2012-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -44,7 +44,7 @@ url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license_name = 'GPL'
-packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
+packages = ['pyrtist', 'pyrtist.gate', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep',
             'pyrtist.lib3d']
 
@@ -79,7 +79,6 @@ elif BUILD_DEEPSURFACE:
     # distutils way.
     kwargs['ext_modules'] = ext_modules
     kwargs['scripts'] = ['scripts/pyrtist']
-
 
 setup(name=name,
       version=version,

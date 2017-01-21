@@ -148,18 +148,19 @@ class Document(DocumentBase):
     defs = [rp.get_py_source() for rp in children + parents]
     return text_writer(defs, sep='; ').strip()
 
-  def get_part_preamble(self, mode=None, boot_code=''):
+  def get_part_preamble(self, mode=None):
     refpoints_part = self.get_part_def_refpoints()
     pyrtist_import = 'from pyrtist.lib2d import *'
     if mode == MODE_STORE:
+      gui_import = 'from pyrtist.gate import gui'
       version_tokens = ["VERSION"] + [str(digit) for digit in version]
       ml_version = marker_line_assemble(version_tokens, False)
       ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"], False)
       ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"], False)
-      parts =(ml_version, pyrtist_import,
+      parts =(ml_version, pyrtist_import, gui_import,
               ml_refpoints_begin, refpoints_part, ml_refpoints_end)
     else:
-      parts = (pyrtist_import, boot_code, refpoints_part)
+      parts = (pyrtist_import, refpoints_part)
     return endline.join(parts)
 
   def save_to_str(self, version=version):
