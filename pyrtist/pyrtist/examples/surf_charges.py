@@ -1,5 +1,5 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
 bbox1 = Point(30.5430530612, 47.9487259669)
 bbox2 = Point(91.596572, 2.55635137931)
@@ -34,6 +34,7 @@ v6 = Point(46.7620405577, 34.3525316456)
 v7 = Point(45.9289340102, 29.2087563452)
 v8 = Point(50.5088832487, 27.1681472081)
 #!PYRTIST:REFPOINTS:END
+from pyrtist.lib2d import *
 #import "arrows"
 
 w = Window()

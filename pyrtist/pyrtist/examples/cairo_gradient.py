@@ -1,11 +1,12 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
-from pyrtist.gate import gui
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
 
 #!PYRTIST:REFPOINTS:END
 # One example taken from the samples page of the Cairo graphic library
 # (http://cairographics.org/samples/), rewritten for Pyrtist.
+
+from pyrtist.lib2d import *
 
 w = Window()
 

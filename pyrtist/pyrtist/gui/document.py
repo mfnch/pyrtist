@@ -17,20 +17,12 @@
 
 import sys
 import os
+import itertools
 
 import geom2
 from config import Configurable
 from exec_command import run_script
 from refpoints import RefPoint, RefPoints
-
-# Enumerate the different possible ways of building a representation
-# for a Document:
-# - MODE_ORIG: original, as given by the user;
-# - MODE_STORE: as it should be when saving it to disk;
-# - MODE_EXEC: as it should be when executed within the GUI.
-(MODE_ORIG,
- MODE_STORE,
- MODE_EXEC) = range(3)
 
 # This is the version of the document (which may be different from the version
 # of Boxer which was used to write it. We should save to file all this info,
@@ -138,11 +130,11 @@ class Document(Configurable):
     return self.refpoints
 
   def set_user_code(self, code):
-    """Set the content of the user Box code."""
+    '''Set the content of the user-provided part of the Python script.'''
     self.usercode = code
 
-  def get_part_user_code(self, mode=None):
-    """Get the user part of the Box source."""
+  def get_part_user_code(self):
+    '''Get the user-provided part of the Python script.'''
     return self.usercode
 
   def load_from_file(self, filename, remember_filename=True):
@@ -267,39 +259,35 @@ class Document(Configurable):
       parents.sort()
 
     # Now add the others, which may refer to the children.
-    defs = [rp.get_py_source() for rp in children + parents]
+    defs = [rp.get_py_source() for rp in itertools.chain(children, parents)]
     return text_writer(defs, sep='; ').strip()
 
   def get_part_preamble(self, mode=None):
-    '''Return the first part of the Box file, where meta-information such as
-    the version of the file format and the reference points are defined.
+    '''Return the first part of the Pyrtist script, where meta-information such
+    as the version of the file format and the reference points are defined.
     '''
     refpoints_part = self.get_part_def_refpoints()
-    pyrtist_import = 'from pyrtist.lib2d import *'
-    if mode == MODE_STORE:
-      gui_import = 'from pyrtist.gate import gui'
-      version_tokens = ["VERSION"] + [str(digit) for digit in version]
-      ml_version = marker_line_assemble(version_tokens, False)
-      ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"], False)
-      ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"], False)
-      parts =(ml_version, pyrtist_import, gui_import,
-              ml_refpoints_begin, refpoints_part, ml_refpoints_end)
-    else:
-      parts = (pyrtist_import, refpoints_part)
+    gui_import = 'from pyrtist.lib2d import Point, Tri'
+    version_tokens = ["VERSION"] + [str(digit) for digit in version]
+    ml_version = marker_line_assemble(version_tokens, False)
+    ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"], False)
+    ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"], False)
+    parts =(ml_version, gui_import,
+            ml_refpoints_begin, refpoints_part, ml_refpoints_end)
     return endline.join(parts)
 
   def save_to_str(self, version=version):
-    return (self.get_part_preamble(mode=MODE_STORE) + endline +
-            self.get_part_user_code())
+    return self.get_part_preamble() + endline + self.get_part_user_code()
 
   def execute(self, callback=None, startup_cmds=None):
     fn = self._fns["box_document_execute"]
     if fn is not None:
       fn(self)
 
-    presrc_content = self.get_part_preamble(mode=MODE_EXEC)
-    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
-    src = presrc_content + '\n' + original_userspace
+    # Pass the point names and coordinates to the GUI gate object.
+    startup_cmds = list(startup_cmds)
+    for rp in self.refpoints:
+      startup_cmds.append(('new_point', rp.name) + tuple(rp.value))
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
@@ -326,6 +314,7 @@ class Document(Configurable):
       if callback:
         callback(name, *args)
 
+    src = self.get_part_user_code()
     return run_script(src_name, src, callback=my_callback, cwd=cwd,
                       startup_cmds=startup_cmds)
 

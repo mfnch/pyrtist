@@ -54,9 +54,9 @@ def _run_code(send_to_parent, cwd, src_name, src, startup_cmds):
   src_env = {}
 
   # Create the GUIGate object and allow it to populate the environment.
-  from .. import gate
-  gate.gui = gate.GUIGate(send_to_parent, startup_cmds)
-  gate.gui.update_vars(src_env)
+  from ..lib2d.gate import gui
+  gui.connect(send_to_parent, startup_cmds)
+  gui.update_vars(src_env)
 
   module = imp.new_module('__main__')
   code_globals = module.__dict__

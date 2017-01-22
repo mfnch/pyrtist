@@ -1,8 +1,10 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
 
 #!PYRTIST:REFPOINTS:END
+from pyrtist.lib2d import *
+
 w = Window()
 
 # Define a linear and radial gradient.

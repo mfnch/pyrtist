@@ -1,13 +1,16 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
+bbox1 = Point(0.0, 50.0); bbox2 = Point(100.0, 0.0)
+p1 = Point(13.2653061224, 15.5612119398)
 p2 = Point(23.8095238095, 38.6904453846)
-p1 = Point(13.2653061224, 15.5612119398); bbox2 = Point(100.0, 0.0)
-p7 = Point(66.156462585, 19.3027055853)
-p4 = Point(41.156462585, 7.22788518395); bbox1 = Point(0.0, 50.0)
-p5 = Point(75.0, 39.2006490635); p3 = Point(38.7755102041, 18.2822982274)
+p3 = Point(38.7755102041, 18.2822982274)
+p4 = Point(41.156462585, 7.22788518395); p5 = Point(75.0, 39.2006490635)
 p6 = Point(88.7755102041, 16.5816192977)
+p7 = Point(66.156462585, 19.3027055853)
 #!PYRTIST:REFPOINTS:END
+from pyrtist.lib2d import *
+
 w = Window()          # Create a new Window and set the
 w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
 

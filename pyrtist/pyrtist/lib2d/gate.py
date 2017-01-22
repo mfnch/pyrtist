@@ -1,16 +1,27 @@
-from ..lib2d import CairoCmdExecutor
+'''Functionality to communicate with the Pyrtist GUI from scripts.'''
+
+__all__ = ('gui',)
+
+from .cairo_cmd_exec import CairoCmdExecutor
+from .core_types import Point, Tri
 
 
 class GUIGate(object):
     '''Object which allows communicating with the Pyrtist GUI.'''
 
-    def __init__(self, gui_tx_pipe=None, startup_cmds=None):
-        self._gui_tx_pipe = gui_tx_pipe
+    def __init__(self):
+        self._gui_tx_pipe = None
         self._full_view = None
         self._size = None
         self._zoom_window = None
         self._info_filename = None
         self._img_filename = None
+        self._points = {}
+
+    def connect(self, gui_tx_pipe=None, startup_cmds=None):
+        '''Method invoked by the Pyrtist GUI to allow communicating back with it.'''
+        assert self._gui_tx_pipe is None, 'GUIGate object already connected'
+        self._gui_tx_pipe = gui_tx_pipe
         self._parse_cmds(startup_cmds)
 
     def _parse_cmds(self, cmds):
@@ -23,6 +34,9 @@ class GUIGate(object):
             method = getattr(self, cmd_name, None)
             if method is not None:
                 method(*cmd[1:])
+
+    def _cmd_new_point(self, name, x, y):
+        self._points[name] = Point(x, y)
 
     def _cmd_full_view(self, size_x, size_y):
         self._full_view = True
@@ -60,6 +74,7 @@ class GUIGate(object):
         '''Put all the variables received from the GUI in the given dictionary.
         '''
         d['gui'] = self
+        d.update(self._points)
 
     def move(self, **kwargs):
         if self._gui_tx_pipe is None:

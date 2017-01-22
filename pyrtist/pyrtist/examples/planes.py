@@ -1,17 +1,19 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
-gui4 = Point(17.7961162534, -3.50828722222)
-bbox2 = Point(146.843632129, -72.3863575296)
 bbox1 = Point(-37.5826573705, 64.8614862385)
-gui5 = Point(17.7961162534, 3.099945)
-gui3 = Point(18.5582100551, -9.35403111111)
+bbox2 = Point(146.843632129, -72.3863575296)
+bg1 = Point(54.63065, -25.8746116667)
+bg2 = Point(132.618249036, -25.8746116667)
 fg1 = Point(25.9196635922, -64.5110530769)
 fg2 = Point(127.536394984, -65.2736212928)
-gui2 = Point(20.5904601928, -15.199775); bg1 = Point(54.63065, -25.8746116667)
-bg2 = Point(132.618249036, -25.8746116667)
 gui1 = Point(-35.0423175368, -17.7413972927)
+gui2 = Point(20.5904601928, -15.199775)
+gui3 = Point(18.5582100551, -9.35403111111)
+gui4 = Point(17.7961162534, -3.50828722222)
+gui5 = Point(17.7961162534, 3.099945)
 #!PYRTIST:REFPOINTS:END
+from pyrtist.lib2d import *
 from pyrtist.lib2d.geom import intersection
 
 w = Window()

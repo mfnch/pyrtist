@@ -1,4 +1,4 @@
-# Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2008-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -59,12 +59,15 @@ box_syntax_highlighting = sys.path[0]
 
 # By default this is the text put inside a new program
 # created with File->New
-box_source_of_new = '''#!PYRTIST:VERSION:0:1:1
+box_source_of_new = '''#!PYRTIST:VERSION:0:0:1
+from pyrtist.lib2d import Point, Tri
 
 #!PYRTIST:REFPOINTS:BEGIN
 bbox1 = Point(0, 50)
 bbox2 = Point(100, 0)
 #!PYRTIST:REFPOINTS:END
+from pyrtist.lib2d import *
+
 w = Window()          # Create a new Window and set the
 w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
 #!PYRTIST:CURSOR:HERE

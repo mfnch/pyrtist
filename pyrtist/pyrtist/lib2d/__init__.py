@@ -1,4 +1,5 @@
 import base
+from .gate import *
 from .core_types import *
 from .pattern import *
 from .axes import *

@@ -1,5 +1,5 @@
 #!PYRTIST:VERSION:0:0:1
-from pyrtist.lib2d import *
+from pyrtist.lib2d import Point, Tri
 #!PYRTIST:REFPOINTS:BEGIN
 bbox1 = Point(15.6225412606, 30.7384856532)
 bbox2 = Point(38.0423256326, 11.8849630531)
@@ -86,6 +86,8 @@ w17 = Point(26.7301843088, 22.0110539054)
 #!PYRTIST:REFPOINTS:END
 # This example shows how to draw a house in a cartoon-ish way.
 # I had in mind the typical house here in England...
+
+from pyrtist.lib2d import *
 
 # We definitely need a brick pattern to draw the walls
 # Try to change to gui(bricks) to see how this is done.
