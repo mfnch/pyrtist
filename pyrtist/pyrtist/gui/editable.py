@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2010-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -24,7 +24,7 @@ import sys
 
 import gtk
 
-from geom2 import square_metric, Point
+from geom2 import square_metric, Point, isclose
 import document
 from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from pydraw import PyImageDrawer
@@ -210,12 +210,18 @@ class BoxEditableArea(BoxViewArea, Configurable):
       rp_child.detach()
       self.refpoint_set_visibility(rp_child, v)
 
-  def refpoint_move(self, rp, coords, use_py_coords=True):
+  def refpoint_move(self, rp, coords, use_py_coords=True,
+                    move_invisible=False, lazy=False):
     """Move a reference point to a new position."""
-    if rp.visible:
+    if rp.visible or move_invisible:
       if use_py_coords:
         screen_view = self.get_visible_coords()
         coords = screen_view.pix_to_coord(Point(coords))
+
+      if (lazy and
+          isclose(rp.value[0], coords[0]) and
+          isclose(rp.value[1], coords[1])):
+        return
 
       v = self.refpoint_set_visibility(rp, False)
       rp_children = rp.get_children()

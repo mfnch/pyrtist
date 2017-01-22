@@ -1,5 +1,4 @@
-# Copyright (C) 2010
-#  by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2010-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -26,6 +25,9 @@ __all__ = ["sgn", "central_segments_intersection", "segment_adjustment",
 
 def sgn(x):
   return (x >= 0.0) - (x <= 0.0)
+
+def isclose(a, b, rel_tol=1e-10):
+  return abs(a - b) <= rel_tol * max(abs(a), abs(b))
 
 def central_segments_intersection(s1_width, s2_width):
   diff = (s2_width - s1_width)/2

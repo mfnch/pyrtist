@@ -902,7 +902,8 @@ class Pyrtist(object):
     def move_point(args):
       name, x, y = args
       rp = editable_area.document.refpoints[name]
-      editable_area.refpoint_move(rp, (x, y), use_py_coords=False)
+      editable_area.refpoint_move(rp, (x, y), use_py_coords=False,
+                                  move_invisible=True, lazy=True)
     editable_area.set_callback("script_move_point", move_point)
 
     # Create the scrolled window containing the box-draw editable area
