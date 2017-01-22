@@ -22,7 +22,6 @@ import geom2
 from config import Configurable
 from exec_command import run_script
 from refpoints import RefPoint, RefPoints
-from refpoints import RefPoint
 
 # Enumerate the different possible ways of building a representation
 # for a Document:
@@ -102,17 +101,15 @@ def marker_line_assemble(attrs, newline=True):
   return s
 
 
-class DocumentBase(Configurable):
-  """Class to load, save, display and edit Boxer documents.
-  A Boxer document is basically a Box program plus some metainfo contained
-  in comments."""
-
-  accepted_versions = []         # Versions accepted by the Document class
+class Document(Configurable):
+  '''Class to load, save, display and edit Pyrtist documents.
+  A Pyrtist document is basically a Python program plus some metainfo contained
+  in comments.'''
 
   def __init__(self, filename=None, callbacks=None,
                config=None, from_args=None):
     """filename=None :the filename associated to the document."""
-    super(DocumentBase, self).__init__(config=config, from_args=from_args)
+    super(Document, self).__init__(config=config, from_args=from_args)
 
     self.filename = None         # File name corresponding to this document
     self.version = None          # Version of the file format
@@ -132,59 +129,21 @@ class DocumentBase(Configurable):
     '''Used to notify problems during load/save.'''
     sys.stdout.write("%s: %s\n" % (t, msg))
 
-  def new(self, preamble, refpoints=[], code='\n'):
-    self.refpoints.load(refpoints)
-    self.preamble = preamble
-    self.usercode = code
-    self.version = version
+  def new(self):
+    '''Start working on a new document (un-named).'''
+    self.filename = None
 
   def get_refpoints(self):
     '''Get a list of the reference points in the document (list of GUIPoint)'''
     return self.refpoints
 
-  def get_boot_code(self, preamble=None):
-    return preamble if preamble is not None else self.preamble
-
-  def set_boot_code(self, boot_code):
-    """Set the content of the additional Box code used by Boxer."""
-    self.preamble = boot_code
-
   def set_user_code(self, code):
     """Set the content of the user Box code."""
     self.usercode = code
 
-  def get_part_version(self):
-    """Produce the version line."""
-    raise NotImplementedError("get_part_version")
-
-  def get_part_boot_code(self, boot_code):
-    """Produce the boot code (auxiliary code used to communicate the output
-    back to the GUI).
-    """
-    return (boot_code or '')
-
-  def get_part_def_refpoints(self):
-    """Produce the part of the file which stores information about the
-    reference points.
-    """
-    raise NotImplementedError()
-
-  def get_part_preamble(self, mode=None, boot_code=None):
-    """Return the first part of the Box file, where meta-information such as
-    the version of the file format and the reference points are defined.
-    """
-    raise NotImplementedError()
-
   def get_part_user_code(self, mode=None):
     """Get the user part of the Box source."""
     return self.usercode
-
-  def new(self):
-    '''Start working on a new document (un-named).'''
-    self.filename = None
-
-  def load_from_str(self, boxer_src):
-    raise NotImplementedError("DocumentBase.load_from_str")
 
   def load_from_file(self, filename, remember_filename=True):
     with open(filename, "r") as f:
@@ -200,48 +159,6 @@ class DocumentBase(Configurable):
     if remember_filename:
       self.filename = filename
 
-  def box_query(self, variable):
-    raise NotImplementedError("This function is obsolete")
-
-  def execute(self, callback=None, startup_cmds=None):
-    fn = self._fns["box_document_execute"]
-    if fn is not None:
-      fn(self)
-
-    presrc_content = self.get_part_preamble(mode=MODE_EXEC)
-    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
-    src = presrc_content + '\n' + original_userspace
-
-    # If the Box source is saved (rather than being a temporary unsaved
-    # script) then execute it from its parent directory. Also, make sure to
-    # add the same directory among the include directories. This allows
-    # including scripts in the same directory.
-    cwd = None
-    src_name = '<New file>'
-    if self.filename is not None:
-      cwd = os.path.split(self.filename)[0]
-      # Put the file name between angle brackets to prevent the backtrace
-      # formatter from trying to load the file when showing where the error
-      # is. This would not work as the script we are executing is not exactly
-      # the same as the one which sits on the disk.
-      src_name = '<{}>'.format(self.filename)
-
-    fn = self._fns['box_document_executed']
-    def my_callback(name, *args):
-      cb = self._fns.get(name)
-      if cb is not None:
-        cb(*args)
-      if name == 'exit':
-        if fn is not None:
-          fn(self)
-      if callback:
-        callback(name, *args)
-
-    return run_script(src_name, src, callback=my_callback, cwd=cwd,
-                      startup_cmds=startup_cmds)
-
-
-class Document(DocumentBase):
   def _get_arg_num(self, arg, possible_args):
     i = 0
     for possible_arg in possible_args:
@@ -338,6 +255,9 @@ class Document(DocumentBase):
     return True
 
   def get_part_def_refpoints(self, sort=True):
+    '''Produce the part of the file which stores information about the
+    reference points.
+    '''
     # Obtain a list where the parents follow the children.
     children = [rp for rp in self.refpoints if not rp.is_parent()]
     parents = [rp for rp in self.refpoints if rp.is_parent()]
@@ -351,6 +271,9 @@ class Document(DocumentBase):
     return text_writer(defs, sep='; ').strip()
 
   def get_part_preamble(self, mode=None):
+    '''Return the first part of the Box file, where meta-information such as
+    the version of the file format and the reference points are defined.
+    '''
     refpoints_part = self.get_part_def_refpoints()
     pyrtist_import = 'from pyrtist.lib2d import *'
     if mode == MODE_STORE:
@@ -368,6 +291,43 @@ class Document(DocumentBase):
   def save_to_str(self, version=version):
     return (self.get_part_preamble(mode=MODE_STORE) + endline +
             self.get_part_user_code())
+
+  def execute(self, callback=None, startup_cmds=None):
+    fn = self._fns["box_document_execute"]
+    if fn is not None:
+      fn(self)
+
+    presrc_content = self.get_part_preamble(mode=MODE_EXEC)
+    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
+    src = presrc_content + '\n' + original_userspace
+
+    # If the Box source is saved (rather than being a temporary unsaved
+    # script) then execute it from its parent directory. Also, make sure to
+    # add the same directory among the include directories. This allows
+    # including scripts in the same directory.
+    cwd = None
+    src_name = '<New file>'
+    if self.filename is not None:
+      cwd = os.path.split(self.filename)[0]
+      # Put the file name between angle brackets to prevent the backtrace
+      # formatter from trying to load the file when showing where the error
+      # is. This would not work as the script we are executing is not exactly
+      # the same as the one which sits on the disk.
+      src_name = '<{}>'.format(self.filename)
+
+    fn = self._fns['box_document_executed']
+    def my_callback(name, *args):
+      cb = self._fns.get(name)
+      if cb is not None:
+        cb(*args)
+      if name == 'exit':
+        if fn is not None:
+          fn(self)
+      if callback:
+        callback(name, *args)
+
+    return run_script(src_name, src, callback=my_callback, cwd=cwd,
+                      startup_cmds=startup_cmds)
 
 
 if __name__ == '__main__':

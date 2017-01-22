@@ -752,11 +752,7 @@ class Pyrtist(object):
   def _init_doxbrowser(self):
     dox_browser = self.dialog_dox_browser
     if dox_browser == None:
-      try:
-        dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
-      except:
-        dox_path = None
-
+      dox_path = None
       if dox_path:
         # Create the Dox object
         dox = Dox()
