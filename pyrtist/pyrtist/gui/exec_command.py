@@ -47,17 +47,22 @@ class Redirected(object):
 def _run_code(send_to_parent, cwd, src_name, src, startup_cmds):
   # Run the script from the given working directory.
   if cwd is not None:
-    os.chdir(cwd)
-    sys.path.insert(0, os.getcwd())
-
-  # Environment for the script.
-  src_env = {}
+    if cwd == '':
+      cwd = '.'
+    try:
+      os.chdir(cwd)
+    except:
+      pass
+    else:
+      sys.path.insert(0, os.getcwd())
 
   # Create the GUIGate object and allow it to populate the environment.
   from ..lib2d.gate import gui
   gui.connect(send_to_parent, startup_cmds)
+  src_env = {}
   gui.update_vars(src_env)
 
+  # Create a new namespace for the script execution.
   module = imp.new_module('__main__')
   code_globals = module.__dict__
   code_globals.update(__name__='__main__')

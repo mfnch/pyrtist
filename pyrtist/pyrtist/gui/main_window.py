@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2013 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2008-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -259,9 +259,13 @@ class Pyrtist(object):
                             "point1, point2, etc.")
     button.set_size_request(60, -1)
     rhbox.pack_start(button, expand=False)
+    return rhbox
+
+    # TODO: PORT THE DOCUMENTATION SYSTEM TO PYTHON.
+    #   Major work is required to achieve this. For now we return above without
+    #   adding the Help button to the GUI.
 
     rhbox.pack_start(gtk.SeparatorToolItem(), expand=False)
-
     # The help entry and button in the toolbar
     self.widget_help_entry = entry = gtk.Entry()
     entry.set_tooltip_text("Write here a type you want to know about and "
@@ -388,8 +392,8 @@ class Pyrtist(object):
     tb = self.widget_srcbuf
     return tb.get_text(tb.get_start_iter(), tb.get_end_iter())
 
-  def set_main_source(self, text):
-    """Set the content of the main textview from the string 'text'."""
+  def _set_main_source(self, text):
+    '''Set the content of the main textview from the string 'text'.'''
     self.undoer.begin_not_undoable_action()
     self.widget_srcbuf.set_text(text)
 
@@ -397,7 +401,7 @@ class Pyrtist(object):
     here_marker = document.marker_cursor_here
     si = self.widget_srcbuf.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
-    if found != None:
+    if found is not None:
       mark0, mark1 = found
       self.widget_srcbuf.select_range(mark0, mark1)
       self.widget_srcbuf.delete_selection(True, True)
@@ -405,36 +409,37 @@ class Pyrtist(object):
     self.undoer.end_not_undoable_action()
     self.undoer.clear(mark_as_unmodified=True)
 
-  def raw_file_new(self):
-    """Start a new box program and set the content of the main textview."""
-    from config import box_source_of_new
-    d = self.editable_area.document
-    d.new()
-    d.load_from_str(box_source_of_new)
-
+  def _new_file(self, filename=None):
+    '''This function is used after setting self.editable_area.document to
+    update the GUI to this change: update the title bar with the file name,
+    update the text shown in the text view and the output image.
+    '''
     self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
-    self.set_main_source(d.get_part_user_code())
-    self.filename = None
+    src = self.editable_area.document.get_part_user_code()
+    self._set_main_source(src)
+    self.filename = filename
     self.assume_file_is_saved()
-    self.editable_area.refresh()
+    self.editable_area.zoom_off()
+    self.update_title()
+
+  def raw_file_new(self):
+    """Start a new box program and set the content of the main textview."""
+    from config import source_of_new_script
+    d = self.editable_area.document
+    d.new()
+    d.load_from_str(source_of_new_script)
+    self._new_file()
 
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
-    d = self.editable_area.document
     try:
-      d.load_from_file(filename)
+      self.editable_area.document.load_from_file(filename)
     except Exception as the_exception:
-      self.error('Error loading the file "%s". Details: "%s"'
-                 % (filename, str(the_exception)))
-      return
+      self.error('Error loading the file "{}". Details: "{}"'
+                 .format(filename, str(the_exception)))
     finally:
-      self.editable_area.reset()
-      self.widget_toolbox.exit_all_modes(force=True)
-      self.set_main_source(d.get_part_user_code())
-      self.filename = filename
-      self.assume_file_is_saved()
-      self.editable_area.zoom_off()
+      self._new_file(filename)
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -444,7 +449,6 @@ class Pyrtist(object):
         filename = self.filename
       d.set_user_code(self.get_main_source())
       d.save_to_file(filename)
-
     except Exception as exc:
       self.error("Error saving the file: %s" % str(exc))
       return False
@@ -476,13 +480,10 @@ class Pyrtist(object):
 
     if response == gtk.RESPONSE_NO:
       return True
-
     elif response == gtk.RESPONSE_YES:
       self.menu_file_save(None)
       return (not self.widget_srcbuf.get_modified())
-
-    else:
-      return False
+    return False
 
   def error(self, msg):
     md = gtk.MessageDialog(parent=self.mainwin,

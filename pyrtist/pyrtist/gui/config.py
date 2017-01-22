@@ -55,11 +55,9 @@ platform_is_win_py2exe = main_is_frozen()
 
 import ConfigParser as cfgp
 
-box_syntax_highlighting = sys.path[0]
-
 # By default this is the text put inside a new program
 # created with File->New
-box_source_of_new = '''#!PYRTIST:VERSION:0:0:1
+source_of_new_script = '''#!PYRTIST:VERSION:0:0:1
 from pyrtist.lib2d import Point, Tri
 
 #!PYRTIST:REFPOINTS:BEGIN

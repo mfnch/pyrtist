@@ -137,12 +137,10 @@ class Document(Configurable):
     '''Get the user-provided part of the Python script.'''
     return self.usercode
 
-  def load_from_file(self, filename, remember_filename=True):
+  def load_from_file(self, filename):
     with open(filename, "r") as f:
       self.load_from_str(f.read())
-
-    if remember_filename:
-      self.filename = filename
+    self.filename = filename
 
   def save_to_file(self, filename, version=version, remember_filename=True):
     with open(filename, "w") as f:
