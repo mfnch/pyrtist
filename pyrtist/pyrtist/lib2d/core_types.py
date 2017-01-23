@@ -446,7 +446,7 @@ class View(object):
     def __repr__(self):
         b1 = self.bbox.min_point
         b2 = self.bbox.max_point
-        bbox_args = ', '.join(map(str, (2, b1.x, b1.y, b2.x, b2.y)))
+        bbox_args = ', '.join(map(str, (b1.x, b1.y, b2.x, b2.y)))
         other_args = ', '.join(map(str, (self.origin.x, self.origin.y,
                                          self.size.x, self.size.y)))
         return '{}\n{}\n'.format(bbox_args, other_args)

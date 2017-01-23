@@ -130,7 +130,7 @@ class View(Rectangle):
 
   def __init__(self, size_in_pixels=None, topleft_coord=None,
                botright_coord=None):
-    Rectangle.__init__(self, topleft_coord, botright_coord)
+    super(View, self).__init__(topleft_coord, botright_coord)
     self.view_size = size_in_pixels
     if (size_in_pixels != None and topleft_coord != None
         and botright_coord != None):

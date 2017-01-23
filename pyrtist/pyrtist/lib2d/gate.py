@@ -3,7 +3,9 @@
 __all__ = ('gui',)
 
 from .cairo_cmd_exec import CairoCmdExecutor
-from .core_types import Point, Tri
+from .core_types import Point, Tri, View
+
+import numpy
 
 
 class GUIGate(object):
@@ -14,7 +16,6 @@ class GUIGate(object):
         self._full_view = None
         self._size = None
         self._zoom_window = None
-        self._info_filename = None
         self._img_filename = None
         self._points = {}
 
@@ -30,26 +31,31 @@ class GUIGate(object):
         for cmd in cmds:
             if len(cmd) < 1:
                 continue
-            cmd_name = '_cmd_{}'.format(cmd[0])
+            cmd_name = '_rx_cmd_{}'.format(cmd[0])
             method = getattr(self, cmd_name, None)
             if method is not None:
                 method(*cmd[1:])
 
-    def _cmd_new_point(self, name, x, y):
+    def _rx_cmd_new_point(self, name, x, y):
         self._points[name] = Point(x, y)
 
-    def _cmd_full_view(self, size_x, size_y):
+    def _rx_cmd_full_view(self, size_x, size_y):
         self._full_view = True
         self._size = (size_x, size_y)
 
-    def _cmd_zoomed_view(self, size_x, size_y, *view_args):
+    def _rx_cmd_zoomed_view(self, size_x, size_y, *view_args):
         self._full_view = False
         self._size = (size_x, size_y)
         self._zoom_window = view_args
 
-    def _cmd_set_tmp_filenames(self, info_filename, img_filename):
-        self._img_filename = img_filename
-        self._info_filename = info_filename
+    def _tx_cmd_image_info(self, view):
+        self._gui_tx_pipe.send(('image_info', repr(view)))
+
+    def _tx_cmd_image_data(self, sf):
+        data = numpy.frombuffer(sf.get_data(), dtype=numpy.int8).reshape(-1, 4)
+        data = str(numpy.getbuffer(numpy.fliplr(data[:, :3]).ravel()))
+        args = (sf.get_stride() / 4 * 3, sf.get_width(), sf.get_height(), data)
+        self._gui_tx_pipe.send(('image_data', args))
 
     def __call__(self, w):
         if self._size is None or self._full_view is None:
@@ -63,12 +69,8 @@ class GUIGate(object):
             view = View(None, Point(ox, oy), Point(sx, sy))
             view = w.draw_zoomed_view(sf, view)
 
-        if self._img_filename:
-            sf.write_to_png(self._img_filename)
-
-        if self._info_filename:
-            with open(self._info_filename, 'w') as f:
-                f.write(repr(view))
+        self._tx_cmd_image_info(view)
+        self._tx_cmd_image_data(sf)
 
     def update_vars(self, d):
         '''Put all the variables received from the GUI in the given dictionary.

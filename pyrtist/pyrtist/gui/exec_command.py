@@ -99,10 +99,12 @@ def _comm_with_child(process, callback, recv_from_child):
     if cmd in ('stdout', 'stderr'):
       callback('out', cmd, value)
     elif cmd in ('exit', 'eof'):
-      process.join()
       break
     else:
       callback(cmd, value)
+
+  if process.is_alive():
+    process.join()
 
   callback('exit')
 

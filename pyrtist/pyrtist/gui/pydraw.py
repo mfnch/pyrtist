@@ -1,4 +1,4 @@
-# Copyright (C) 2010 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2010-2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -16,7 +16,7 @@
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Here we provide a Python interface to call Box and get back a view
+Here we provide a Python interface to call Python and get back a view
 (an image) of the picture.
 """
 
@@ -31,6 +31,7 @@ from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
 
+
 class PyImageDrawer(ImageDrawer):
   def __init__(self, document):
     super(PyImageDrawer, self).__init__()
@@ -41,58 +42,82 @@ class PyImageDrawer(ImageDrawer):
     self.executing = False
     self.executed_successfully = False
 
+    self._pix_size = None
+    self._pixbuf_output = None
+    self._image_info = None
+    self._image_data = None
+
   def set_output_function(self, fn):
     self.out_fn = fn
 
-  def _raw_execute(self, pix_size, pixbuf_output,
-                   startup_cmds=None, img_out_filename=None):
-    tmp_fns = []
-    info_out_filename = config.tmp_new_filename("info", "dat", tmp_fns)
-    if img_out_filename is None:
-      img_out_filename = config.tmp_new_filename("img", "png", tmp_fns)
+  def _rx_cmd_out(self, stream_name, out):
+    if self.out_fn is not None:
+      self.out_fn(out)
 
-    startup_cmds.append(('set_tmp_filenames', info_out_filename,
-                         img_out_filename))
+  def _rx_cmd_image_info(self, view_repr):
+    self._image_info = [float(x)
+                        for line in view_repr.splitlines()
+                        for x in line.split(',')]
 
-    def exit_fn():
+  def _rx_cmd_image_data(self, args):
+    stride, width, height, data = args
+    self._image_data = \
+      gtk.gdk.pixbuf_new_from_data(data, gtk.gdk.COLORSPACE_RGB,
+                                   False, 8, width, height, stride)
+
+  def _rx_cmd_exit(self):
       self.executed_successfully = False
       try:
-        if os.path.exists(info_out_filename):
-          with open(info_out_filename, "r") as f:
-            ls = f.read().splitlines()
-          _, bminx, bminy, bmaxx, bmaxy = \
-            [float(x) for x in ls[0].split(",")]
-          ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
+        if self._image_info is not None:
+          (bminx, bminy, bmaxx, bmaxy, ox, oy, sx, sy) = self._image_info
           self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
-          self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+          self.view.reset(self._pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
-        if os.path.exists(img_out_filename):
-          pixbuf = pixbuf_new_from_file(img_out_filename)
-          sx = pixbuf.get_width()
-          sy = pixbuf.get_height()
-          pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
+        if self._image_data is not None:
+          sx = self._image_data.get_width()
+          sy = self._image_data.get_height()
+          self._image_data.copy_area(0, 0, sx, sy, self._pixbuf_output, 0, 0)
           self.executed_successfully = True
 
       finally:
         self.executing = False
-        config.tmp_remove_files(tmp_fns)
         self.finished_drawing(DrawSucceded(self.bbox, self.view)
                               if self.executed_successfully
                               else DrawFailed())
 
-    def callback(name, *args):
+  def _callback(self, name, *args):
+    method = getattr(self, '_rx_cmd_' + name, None)
+    if method is None:
+      return
+    if name in ('exit', 'out'):
       with gtk.gdk.lock:
-        if name == 'exit':
-          exit_fn()
-        elif name == 'out':
-          if self.out_fn is not None:
-            self.out_fn(args[1])
+        method(*args)
+    else:
+      method(*args)
+
+  def _raw_execute(self, pix_size, pixbuf_output, startup_cmds=None):
+    self._pix_size = pix_size
+    self._pixbuf_output = pixbuf_output
+    self._image_info = None
+    self._image_data = None
+
+    def callback(name, *args):
+      if name == 'image_info':
+        self._rx_cmd_image_info(*args)
+      elif name == 'image_data':
+        self._rx_cmd_image_data(*args)
+      else:
+        with gtk.gdk.lock:
+          if name == 'exit':
+            self._rx_cmd_exit()
+          elif name == 'out':
+            self._rx_cmd_out(args[1])
 
     self.executing = True
-    return self.document.execute(callback=callback, startup_cmds=startup_cmds)
+    return self.document.execute(callback=self._callback,
+                                 startup_cmds=startup_cmds)
 
-  def update(self, pixbuf_output, pix_view, coord_view=None,
-             img_out_filename=None):
+  def update(self, pixbuf_output, pix_view, coord_view=None):
     startup_cmds = []
     if coord_view is None:
       px, py = pix_view
@@ -107,8 +132,7 @@ class PyImageDrawer(ImageDrawer):
       startup_cmds.append(('zoomed_view', px, py, ox, oy, sx, sy))
 
     killer = self._raw_execute(pix_view, pixbuf_output,
-                               startup_cmds=startup_cmds,
-                               img_out_filename=img_out_filename)
+                               startup_cmds=startup_cmds)
 
     # Here we wait for some time to see if we can just draw and proceed.
     # If the time is not enough then we exit and get back the control of the
