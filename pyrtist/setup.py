@@ -44,7 +44,7 @@ url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license_name = 'GPL'
-packages = ['pyrtist', 'pyrtist.gate', 'pyrtist.gui', 'pyrtist.gui.dox',
+packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep',
             'pyrtist.lib3d']
 

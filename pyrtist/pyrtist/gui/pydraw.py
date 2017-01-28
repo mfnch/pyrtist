@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2017 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2010, 2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #

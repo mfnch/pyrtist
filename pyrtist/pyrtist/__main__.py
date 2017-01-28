@@ -19,7 +19,7 @@ import sys
 import optparse
 
 from .gui.info import full_name
-from .gui.main_window import run
+from .gui.mainwindow import run
 
 def generate_option_parser():
   usage = ("pyrtist [options] [filename.py]")

@@ -1,1 +1,1 @@
-from main_window import *
+from mainwindow import *

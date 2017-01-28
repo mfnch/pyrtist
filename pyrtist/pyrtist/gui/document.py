@@ -21,7 +21,7 @@ import itertools
 
 import geom2
 from config import Configurable
-from exec_command import run_script
+from scriptrunner import run_script
 from refpoints import RefPoint, RefPoints
 
 # This is the version of the document (which may be different from the version
