@@ -3,16 +3,16 @@
 # This file is part of Pyrtist.
 #
 #   Pyrtist is free software: you can redistribute it and/or modify it
-#   under the terms of the GNU General Public License as published
+#   under the terms of the GNU Lesser General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
 #   Pyrtist is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
+#   GNU Lesser General Public License for more details.
 #
-#   You should have received a copy of the GNU General Public License
+#   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 '''Installation script for Pyrtist. Install as follows:
@@ -43,7 +43,7 @@ author_email = 'fnch@users.sf.net'
 url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
-license_name = 'GPL'
+license_name = 'LGPL'
 packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
             'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep',
             'pyrtist.lib3d']
@@ -52,6 +52,12 @@ package_data = {'pyrtist': ['examples/*.py',
                             'icons/24x24/*.png',
                             'icons/32x32/*.png',
                             'icons/fonts/*.png']}
+classifiers = \
+  ['Programming Language :: Python :: 2',
+   'Programming Language :: Python :: 2.7',
+   'Development Status :: 3 - Alpha',
+   'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
+   'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)']
 
 # C++ extensions.
 ext_modules = []
@@ -90,4 +96,5 @@ setup(name=name,
       license=license_name,
       packages=packages,
       package_data=package_data,
+      classifiers=classifiers,
       **kwargs)
