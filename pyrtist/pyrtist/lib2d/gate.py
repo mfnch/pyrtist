@@ -39,6 +39,11 @@ class GUIGate(object):
     def _rx_cmd_new_point(self, name, x, y):
         self._points[name] = Point(x, y)
 
+    def _rx_cmd_new_tri(self, name, x, y, lhs_name, rhs_name):
+        self._points[name] = Tri(self._points.get(lhs_name),
+                                 Point(x, y),
+                                 self._points.get(rhs_name))
+
     def _rx_cmd_full_view(self, size_x, size_y):
         self._full_view = True
         self._size = (size_x, size_y)

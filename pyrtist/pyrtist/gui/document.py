@@ -283,9 +283,21 @@ class Document(Configurable):
       fn(self)
 
     # Pass the point names and coordinates to the GUI gate object.
+    # We ensure Tri points are generated after their children by appending the
+    # `new_tri' commands after all the `new_point' commands. This is done by
+    # using two separate list that are then merged.
     startup_cmds = list(startup_cmds)
+    tri_cmds = []
     for rp in self.refpoints:
-      startup_cmds.append(('new_point', rp.name) + tuple(rp.value))
+      x, y = rp.value
+      if rp.is_parent():
+        cld = rp.get_children()
+        lhs_name = (cld[0].name if len(cld) >= 1 and cld[0] is not None else None)
+        rhs_name = (cld[1].name if len(cld) >= 2 and cld[1] is not None else None)
+        tri_cmds.append(('new_tri', rp.name, x, y, lhs_name, rhs_name))
+      else:
+        startup_cmds.append(('new_point', rp.name, x, y))
+    startup_cmds.extend(tri_cmds)
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to

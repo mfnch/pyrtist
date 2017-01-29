@@ -88,11 +88,11 @@ class RefPoint(object):
     return cmp(lhs_name, rhs_name) or cmp(lhs_idx, rhs_idx)
 
   def copy(self, state=None):
-    state = (state if state != None else self.selected)
+    state = (state if state is not None else self.selected)
     return RefPoint(self.name, self.value, self.visible, self.kind, state)
 
   def is_child(self):
-    """Whether this is a children refpoint."""
+    """Whether this is a child refpoint."""
     return self.kind == REFPOINT_CHILD
 
   def is_parent(self):
@@ -102,7 +102,7 @@ class RefPoint(object):
   def can_procreate(self):
     """Whether this reference point can have any children."""
     return (self.kind != REFPOINT_CHILD
-            and (self.related == None
+            and (self.related is None
                  or len(self.related) < 2
                  or None in self.related))
 
@@ -126,11 +126,11 @@ class RefPoint(object):
     assert self.kind != REFPOINT_CHILD
     self.related = children = self.related or []
     self.kind = REFPOINT_PARENT
-    if rp != None:
+    if rp is not None:
       rp.kind = REFPOINT_CHILD
       rp.related = self
 
-    if index == None:
+    if index is None:
       index = children.index(None) if None in children else len(children)
 
     assert index < 2

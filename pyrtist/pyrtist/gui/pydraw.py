@@ -41,7 +41,6 @@ class PyImageDrawer(ImageDrawer):
     self.view = View()
     self.executing = False
     self.executed_successfully = False
-
     self._pix_size = None
     self._pixbuf_output = None
     self._image_info = None
@@ -100,19 +99,6 @@ class PyImageDrawer(ImageDrawer):
     self._pixbuf_output = pixbuf_output
     self._image_info = None
     self._image_data = None
-
-    def callback(name, *args):
-      if name == 'image_info':
-        self._rx_cmd_image_info(*args)
-      elif name == 'image_data':
-        self._rx_cmd_image_data(*args)
-      else:
-        with gtk.gdk.lock:
-          if name == 'exit':
-            self._rx_cmd_exit()
-          elif name == 'out':
-            self._rx_cmd_out(args[1])
-
     self.executing = True
     return self.document.execute(callback=self._callback,
                                  startup_cmds=startup_cmds)
@@ -148,9 +134,7 @@ class PyImageDrawer(ImageDrawer):
 
     if self.executing:
       return DrawStillWorking(self, killer)
-
     elif self.executed_successfully:
       return DrawSucceded(self.bbox, self.view)
-
     else:
       return DrawFailed()
