@@ -108,7 +108,7 @@ class Document(Configurable):
     self.preamble = None         # Preamble of the document
     self.usercode = None         # Body of the document
 
-    if callbacks == None:
+    if callbacks is None:
       callbacks = {}
     callbacks.setdefault("box_document_execute", None)
     callbacks.setdefault("box_document_executed", None)

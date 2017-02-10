@@ -49,12 +49,6 @@ from rotpaned import RotPaned
 from dox.dox import Dox
 from dox.browse import DoxBrowser
 
-def debug():
-  from IPython.Shell import IPShellEmbed
-  calling_frame = sys._getframe(1)
-  IPShellEmbed([])(local_ns  = calling_frame.f_locals,
-                   global_ns = calling_frame.f_globals)
-
 
 def create_filechooser(parent, title="Choose a file", action=None,
                        buttons=None, add_default_filters=True):
@@ -149,7 +143,6 @@ class Pyrtist(object):
           <menuitem action='Forget'/>
         </menu>
         <menu action='HelpMenu'>
-          <menuitem action='DocBrowser'/>
           <menuitem action='About'/>
         </menu>
       </menubar>
@@ -336,8 +329,6 @@ class Pyrtist(object):
        self.menu_view_forget_win_size),
 
       ("HelpMenu", None, "_Help"),
-      ("DocBrowser", None, "_Documentation browser", "<control>H",
-       "Show the Box documentation browser", self.menu_help_docbrowser),
       ("About", gtk.STOCK_ABOUT, "_About", None,
        "Show information about the program", self.menu_help_about),
 
@@ -629,7 +620,7 @@ class Pyrtist(object):
     self.editable_area.zoom_off()
 
   def _set_box_killer(self, killer):
-    killer_given = (killer != None)
+    killer_given = (killer is not None)
     self.toolbutton_stop.set_sensitive(killer_given)
     self.menubutton_run_stop.set_sensitive(killer_given)
     self.toolbutton_run.set_sensitive(not killer_given)
@@ -672,6 +663,8 @@ class Pyrtist(object):
     ad.destroy()
 
   def menu_help_docbrowser(self, _):
+    # NOTE: the documentation browser has not been ported to Python. It is
+    #   therefore disabled.
     self._init_doxbrowser()
     if self.dialog_dox_browser:
       self.dialog_dox_browser.show()
@@ -679,25 +672,75 @@ class Pyrtist(object):
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
 
-  def notify_refpoint_new(self, obj, rp):
+  def _on_script_execution_begin(self, document):
+    # Called by EditableArea before the script is executed.
+    document.set_user_code(self.get_main_source())
+    self._script_output = ''
+    self._new_positions = {}
+
+  def _on_script_output(self, s, force=False):
+    # Called by EditableArea when the script emits output to stdout and stderr.
+    assert self._script_output is not None
+    script_output = self._script_output + s
+    self._script_output = \
+      self._out_textview_refresh(script_output, force=force)
+
+  def _on_script_execution_finish(self, document):
+    # Called by EditableArea after the script has finished executing.
+    # Ensure the text view is always refreshed (old output is removed, the view
+    # is collapsed in case no output is present).
+    self._on_script_output('', force=True)
+
+    # Move all the points in a single undoable action.
+    editable_area = self.editable_area
+    undoer = editable_area.undoer
+    undoer.begin_group()
+    for name, value in self._new_positions.items():
+      rp = editable_area.document.refpoints[name]
+      editable_area.refpoint_move(rp, value, use_py_coords=False,
+                                  move_invisible=True, lazy=True)
+    undoer.end_group()
+    self._new_positions = None
+
+  def _on_move_point(self, args):
+    # Called by EditableArea when the script tries to move one point.
+    assert self._new_positions is not None
+    name, x, y = args
+    self._new_positions[name] = (x, y)
+
+  def _on_refpoint_append(self, obj, rp):
+    # Called by EditableArea when a refpoint is added.
     liststore = self.widget_refpoint_box.get_model()
     liststore.insert(-1, row=(rp.name,))
 
-  def notify_refpoint_del(self, obj, rp):
+  def _on_refpoint_remove(self, obj, rp):
+    # Called by EditableArea when a refpoint is removed.
     liststore = self.widget_refpoint_box.get_model()
     for item in liststore:
       if liststore.get_value(item.iter, 0) == rp.name:
         liststore.remove(item.iter)
         return
 
+  def _on_refpoint_press_middle(self, _, rp):
+    # Called by EditableArea when a refpoint is selected with the central
+    # mouse button.
+    tb = self.widget_srcbuf
+    self.undoer.begin_group()
+    insert_char(tb)
+    tb.insert_at_cursor(rp.name)
+    self.undoer.end_group()
+
+    if self.settings.get_prop("update_on_paste"):
+      self.update_draw_area(only_if_quick=True)
+
   def refpoint_show_update(self):
     selection = self.widget_refpoint_entry.get_text()
     d = self.editable_area.document
     ratio = d.refpoints.get_visible_ratio(selection)
     if ratio < 0.5:
-      label, show = "Show", True
+      label = "Show"
     elif ratio > 0.5:
-      label, show = "Hide", False
+      label = "Hide"
     else:
       return
     self.widget_refpoint_show.set_label(label)
@@ -848,24 +891,23 @@ class Pyrtist(object):
            "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = \
       BoxEditableArea(config=cfg, undoer=undoer)
+
+    # Variables and callbacks used to handle script execution.
+    self._script_output = None  # String variable used for buffering the script
+                                # output before flushing it to the textview.
+    self._move_points = None    # Dictionary used to store moved points.
+    editable_area.set_callback("box_document_execute", self._on_script_execution_begin)
+    editable_area.drawer.set_output_function(self._on_script_output)
+    editable_area.set_callback("box_document_executed", self._on_script_execution_finish)
+    editable_area.set_callback("script_move_point", self._on_move_point)
     editable_area.set_callback("zoomablearea_got_killer", self._set_box_killer)
-    editable_area.set_callback("refpoint_append", self.notify_refpoint_new)
-    editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
-
-    def refpoint_press_middle(_, rp):
-      tb = self.widget_srcbuf
-      self.undoer.begin_group()
-      insert_char(tb)
-      tb.insert_at_cursor(rp.name)
-      self.undoer.end_group()
-
-      if self.settings.get_prop("update_on_paste"):
-        self.update_draw_area(only_if_quick=True)
-    editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)
+    editable_area.set_callback("refpoint_append", self._on_refpoint_append)
+    editable_area.set_callback("refpoint_remove", self._on_refpoint_remove)
+    editable_area.set_callback("refpoint_press_middle", self._on_refpoint_press_middle)
 
     def new_rp(_, rp):
       if self.should_paste_on_new() and not rp.is_child():
-        refpoint_press_middle(None, rp)
+        self._on_refpoint_press_middle(None, rp)
     editable_area.set_callback("refpoint_new", new_rp)
 
     def get_next_refpoint(doc):
@@ -880,31 +922,6 @@ class Pyrtist(object):
     def set_next_refpoint(doc, rp):
       self.widget_refpoint_entry.set_text(rp.name)
     editable_area.set_callback("refpoint_pick", set_next_refpoint)
-
-    prog_output = None
-
-    def box_document_execute(doc):
-      global prog_output
-      doc.set_user_code(self.get_main_source())
-      prog_output = ''
-    editable_area.set_callback("box_document_execute", box_document_execute)
-
-    def box_exec_output(s, force=False):
-      global prog_output
-      prog_output += s
-      prog_output = self._out_textview_refresh(prog_output, force=force)
-    editable_area.drawer.set_output_function(box_exec_output)
-
-    def box_document_executed(doc):
-      box_exec_output('', force=True)
-    editable_area.set_callback("box_document_executed", box_document_executed)
-
-    def move_point(args):
-      name, x, y = args
-      rp = editable_area.document.refpoints[name]
-      editable_area.refpoint_move(rp, (x, y), use_py_coords=False,
-                                  move_invisible=True, lazy=True)
-    editable_area.set_callback("script_move_point", move_point)
 
     # Create the scrolled window containing the box-draw editable area
     scroll_win1 = gtk.ScrolledWindow()
