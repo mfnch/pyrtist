@@ -105,7 +105,7 @@ class Undoer(object):
     """End a group of actions."""
     assert self.group_level > 0
     self.group_level -= 1
-    if self.group_level == 0:
+    if self.group_level == 0 and len(self.group) > 0:
       def undo_group(_, group):
         self.begin_group()
         for action in reversed(group):

@@ -46,9 +46,6 @@ from toolbox import ToolBox
 from editable import BoxEditableArea
 from rotpaned import RotPaned
 
-from dox.dox import Dox
-from dox.browse import DoxBrowser
-
 
 def create_filechooser(parent, title="Choose a file", action=None,
                        buttons=None, add_default_filters=True):
@@ -794,8 +791,12 @@ class Pyrtist(object):
     return None
 
   def _init_doxbrowser(self):
+    # NOTE: the documentation browser has not been ported to Python. It is
+    #   therefore disabled.
+    return
+
     dox_browser = self.dialog_dox_browser
-    if dox_browser == None:
+    if dox_browser is None:
       dox_path = None
       if dox_path:
         # Create the Dox object
@@ -886,9 +887,7 @@ class Pyrtist(object):
     # Below we setup the main window
 
     # Create the editable area and do all the wiring
-    cfg = {"box_executable": self.config.get("Box", "exec"),
-           "box_include_dirs": self.config.get("Library", "dir"),
-           "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
+    cfg = {"refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = \
       BoxEditableArea(config=cfg, undoer=undoer)
 
