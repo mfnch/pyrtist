@@ -75,7 +75,11 @@ class Constraints(object):
             cnst = RotationConstraint(bone_name, resolved_dst_view_points,
                                       axis, move)
         else:
-            raise NotImplementedError()
+            if len(resolved_dst_view_points) < 2:
+                raise ValueError('You should provide either the rotation axis '
+                                 'or two view points from two different views')
+            cnst = PreferentialConstraint(bone_name, resolved_dst_view_points,
+                                          move)
         self._constraints[bone_name] = cnst
 
     def _repose_all(self, bone, parent_matrix):
@@ -165,6 +169,89 @@ class RotationConstraint(GenericConstraint):
 
         # From the new bone direction, recompute the bone rotation matrix.
         mx = rotate_y_axis(new_bone_dir)
+        rot_mx = mx.to_np33()
+        child_matrix[:3, :3] = rot_mx
+        return child_matrix
+
+
+class PreferentialConstraint(GenericConstraint):
+    '''Every element of self.dst_view_points provides 2 constraints on the 3
+    coordinates of the 3D point we are trying to determine, r, the end bone
+    position. Consequently, every such element identifies a line in 3D space
+    which - in theory - should contain r. However, two lines in 3D space are
+    not guaranteed to have an intersection. We must therefore adopt a strategy
+    to identify r, even when there are no intersections between the lines (e.g.
+    due to calculation errors). `PreferentialConstraint` adopts the strategy of
+    partitioning the list of constraints in one primary constraint and other
+    many secondary constraints. It assumes r lies inside the line identified by
+    the primary constraint. r is then determined by finding the point in this
+    line which minimises the distance to all the lines identified by the
+    secondary constraints.
+    '''
+
+    def __init__(self, bone_name, dst_view_points, move):
+        super(PreferentialConstraint, self).__init__(bone_name,
+                                                     dst_view_points, move)
+
+    def apply(self, parent_matrix, child_matrix):
+        assert len(self.dst_view_points) >= 2, \
+          'PreferentialConstraint requires at least two view points'
+
+        mx = child_matrix.copy()
+        mx[:3, :3] = np.identity(3, dtype=np.float64)
+        abs_matrix = np.dot(parent_matrix, mx)
+
+        # For every constraint we determine the 3D line it corresponds to.
+        # (see comment in the class' docstring.) The line is identified by
+        # one of it points, line_memb, and the line direction, line_dir.
+        # These values as stored as tuples in the `lines` list below.
+        lines = []
+        for view, point_name in self.dst_view_points:
+            # full_proj below is a 2x4 matrix.
+            full_proj = np.dot(view.view_matrix, abs_matrix)
+
+            # We now build a 3x3 matrix from full_proj.
+            # The third row is obtained from the vector product of the top
+            # two rows and is thus guaranteed to be invertible, as long as the
+            # scalar product of the top two rows is nonzero.
+            lhs_mx = np.zeros((3, 3))
+            lhs_mx[:2, :] = full_proj[:, :3]
+            line_dir = np.cross(lhs_mx[0], lhs_mx[1])
+            line_dir_norm = np.linalg.norm(line_dir)
+            if not line_dir_norm > 0.0:
+                raise ValueError('Degenerate view for {}'.format(point_name))
+            line_dir /= line_dir_norm
+            lhs_mx[2] = line_dir
+
+            p = Point(view.variables[point_name])
+            rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
+            lhs_mx_inv = np.linalg.inv(lhs_mx)
+            line_memb = np.dot(lhs_mx_inv, rhs)
+
+            lines.append((line_memb, line_dir))
+
+        # We assume the first view point is the primary one.
+        primary = lines[0]
+        secondaries = lines[1:]
+
+        # The point we are trying to determine can be therefore expressed as:
+        #
+        #   primary[0] + alpha*primary[1]
+        #
+        # For a suitable alpha. Below we determine this alpha.
+        dividend = 0.0
+        divisor = 0.0
+        for secondary in secondaries:
+            delta_memb = secondary[0] - primary[0]
+            ort = primary[1] - np.dot(primary[1], secondary[1])*secondary[1]
+            dividend += np.dot(delta_memb, ort)
+            divisor += np.dot(ort, ort)
+        alpha = dividend / divisor
+
+        # We can now compute the new bone direction, r, and from this the bone
+        # rotation matrix.
+        r = primary[0] + alpha*primary[1]
+        mx = Matrix3.rotation_by_example(Point3(0.0, 1.0, 0.0), Point3(*r))
         rot_mx = mx.to_np33()
         child_matrix[:3, :3] = rot_mx
         return child_matrix

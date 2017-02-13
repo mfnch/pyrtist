@@ -77,6 +77,9 @@ class Point3(object):
     def __rmul__(self, value):
         return self.__mul__(value)
 
+    def __div__(self, value):
+        return self.__class__(self.x/value, self.y/value, self.z/value)
+
     def copy(self):
         'Return a copy of the point.'
         return Point3(self.x, self.y, self.z)
@@ -92,6 +95,12 @@ class Point3(object):
     def dot(self, p):
         'Return the scalar product with another 3D point.'
         return self.x*p.x + self.y*p.y + self.z*p.z
+
+    def cross(self, p):
+        'Return the cross product with another 3D point.'
+        return self.__class__(self.y*p.z - self.z*p.y,
+                              self.z*p.x - self.x*p.z,
+                              self.x*p.y - self.y*p.x)
 
     def norm2(self):
         'Return the square of the norm of the point.'
@@ -160,7 +169,7 @@ class Matrix3(GenericMatrix):
         '''
 
         # Check for rotations around the x, y, z axes.
-        idx_rot = int({'x': 0, 'y': 1, 'z': 2}.get(axis, axis))
+        idx_rot = {'x': 0, 'y': 1, 'z': 2}.get(axis)
         if idx_rot is not None:
             zero, one, two = [(i + idx_rot) % 3 for i in range(3)]
             c, s = (math.cos(angle), math.sin(angle))
@@ -173,7 +182,7 @@ class Matrix3(GenericMatrix):
 
         # The axis is given as a 3D vector.
         axis = Point3(axis)
-        axis_norm = np.linalg.norm(axis[:3])
+        axis_norm = axis.norm()
         if axis_norm <= 0.0:
             return cls(cls.identity)
 
@@ -186,6 +195,20 @@ class Matrix3(GenericMatrix):
                  [uy*ux*omc + uz*s, uy*uy*omc +    c, uy*uz*omc - ux*s],
                  [uz*ux*omc - uy*s, uz*uy*omc + ux*s, uz*uz*omc +    c]]
         return cls(value)
+
+    @classmethod
+    def rotation_by_example(cls, v_in, v_out):
+        '''Return the rotation which maps the Point3 object `v_in` to the
+        Point3 object `v_out`.
+        '''
+        norms = v_in.norm()*v_out.norm()
+        if norms > 0.0:
+            axis = v_in.cross(v_out)
+            sin_angle = axis.norm()/norms
+            cos_angle = v_in.dot(v_out)/norms
+            angle = math.atan2(sin_angle, cos_angle)
+            return cls.rotation(angle, axis=axis)
+        return cls(Matrix3.identity)
 
     def __init__(self, value=None):
         super(Matrix3, self).__init__()
