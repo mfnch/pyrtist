@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2010-2013, 2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -195,7 +195,7 @@ class RefPoint(object):
       # We should determine whether the line connecting parent to child is
       # passing inside the region rectangle. We do this only approximatively.
       parent = self.related
-      if parent != None:
+      if parent is not None:
         ax, ay = view.coord_to_pix(parent.value)
         bx, by = view.coord_to_pix(self.value)
 
@@ -238,14 +238,14 @@ class RefPoint(object):
     drawable = context.drawable
 
     visible_coords = drawable.get_visible_coords()
-    if visible_coords == None:
+    if visible_coords is None:
       return None
 
     kind = self.kind
     retval = None
     if 0 in layers and kind == REFPOINT_CHILD:
       parent = self.related
-      if parent != None:
+      if parent is not None:
         x0, y0 = map(int, view.coord_to_pix(parent.value))
         x1, y1 = map(int, visible_coords.coord_to_pix(self.value))
         xmin, ymin = min(x0, x1), min(y0, y1)
@@ -260,14 +260,14 @@ class RefPoint(object):
       x0, y0, dx0, dy0 = cut_square(wsize, x - l0, y - l0, dl0, dl0)
       if dx0 > 0 and dy0 > 0:
         retval1 = Rectangle(x0, y0, dx0, dy0)
-        retval = retval.union(retval1) if retval != None else retval1
+        retval = retval.union(retval1) if retval is not None else retval1
 
     return retval
 
   def draw(self, context, view):
     """Draw the reference point."""
 
-    if not self.visible or self.value == None:
+    if not self.visible or self.value is None:
       return
 
     kind = self.kind
@@ -283,7 +283,7 @@ class RefPoint(object):
     x, y = view.coord_to_pix(self.value)
     if layer == 0 and kind == REFPOINT_CHILD:
       parent = self.related
-      if parent != None:
+      if parent is not None:
         x0, y0 = view.coord_to_pix(parent.value)
         drawable.draw_line(context.gc_line,
                            int(x0), int(y0), int(x), int(y))
@@ -423,7 +423,7 @@ class RefPoints(object):
     if rp.kind == REFPOINT_PARENT:
       # Do also remove the children
       for child in rp.related:
-        if child != None:
+        if child is not None:
           self.remove(child)
           ret.append(child)
 
@@ -453,7 +453,7 @@ class RefPoints(object):
     for p in self.content:
       if p.visible or include_invisible:
         d = square_metric(point, p.value)
-        if current_d == None or d <= current_d:
+        if current_d is None or d <= current_d:
           current = (p, d)
           current_d = d
     return current
@@ -461,7 +461,7 @@ class RefPoints(object):
   def get_neighbours(self, rp, distance=None):
     """Find the RefPoint-s whose distance from 'rp' is not greater than 'd'.
     """
-    if distance != None:
+    if distance is not None:
       neighbours = []
       for rpi in self.content:
         if square_metric(rpi.value, rp.value) <= distance and rpi != rp:

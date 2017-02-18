@@ -260,9 +260,9 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       current = refpoints.get_nearest(box_coords,
                                       include_invisible=include_invisible)
       s = self.get_config("refpoint_size")
-      if s == None:
+      if s is None:
         return current
-      elif current == None:
+      elif current is None:
         return None
       else:
         rp = current[0]
@@ -290,7 +290,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     args = tuple(self.get_config(val)
                  for val in ("refpoint_size", "refpoint_gc", "refpoint_sel_gc",
                              "refpoint_drag_gc", "refpoint_line_gc"))
-    if clip_rect != None:
+    if clip_rect is not None:
       new_args = list(args)
       for i, arg in enumerate(args):
         if isinstance(arg, gtk.gdk.GC):
@@ -306,7 +306,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     if len(rps) == 0:
       rps = self.document.refpoints
     view = self.get_visible_coords()
-    if view != None:
+    if view is not None:
       context = self.get_gcontext()
       context.draw(rps, view)
 
@@ -330,7 +330,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
 
     # First repaint the background.
     view = self.get_visible_coords()
-    if view == None:
+    if view is None:
       return
     ScriptViewArea.repaint(self, region.x, region.y,
                            region.width, region.height)
@@ -356,14 +356,14 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     """Repaint the area occupied by the specified refpoints."""
 
     view = self.get_visible_coords()
-    if view == None:
+    if view is None:
       return
 
     gc = self.get_gcontext()
 
     for rp in rps:
       region = rp.get_rectangle(gc, view)
-      if region != None:
+      if region is not None:
         self.repaint_region(region)
 
   def expose(self, draw_area, event):
@@ -438,15 +438,14 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       self._drag_refpoints(py_coords)
 
   def _on_button_release_event(self, eventbox, event):
-    if self._dragged_refpoints != None:
+    if self._dragged_refpoints is not None:
       py_coords = event.get_coords()
       self._drag_refpoints(py_coords)
       if event.button == self.get_config("button_left"):
         self._drag_confirm(py_coords)
       self._dragged_refpoints = None
       if self.get_config("redraw_on_move"):
-        self.buf_needs_update = True
-        self.queue_draw()
+        self.refresh()
 
   def _drag_refpoints(self, py_coords):
     drps = self._dragged_refpoints

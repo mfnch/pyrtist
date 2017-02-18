@@ -122,7 +122,7 @@ def get_pixbuf_size(buf):
   """If buf is a PixBuf returns its size as a tuple (width, height).
   If buf is None return (0, 0)."""
   return (Point(buf.get_width(), buf.get_height())
-          if buf != None else Point(0, 0))
+          if buf is not None else Point(0, 0))
 
 
 class View(Rectangle):
@@ -132,8 +132,8 @@ class View(Rectangle):
                botright_coord=None):
     super(View, self).__init__(topleft_coord, botright_coord)
     self.view_size = size_in_pixels
-    if (size_in_pixels != None and topleft_coord != None
-        and botright_coord != None):
+    if (size_in_pixels is not None and topleft_coord is not None
+        and botright_coord is not None):
       self.reset()
 
   def copy(self):
@@ -209,6 +209,8 @@ class ZoomableArea(gtk.DrawingArea):
                zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
                config=None, callbacks=None):
 
+    super(ZoomableArea, self).__init__()
+
     # Drawer object: the one that actually draws things in the buffer
     self.drawer = drawer
     self.drawer_state = None
@@ -244,8 +246,6 @@ class ZoomableArea(gtk.DrawingArea):
     # objects used for the horizontal and vertical scrollbars
     self._hadj_valchanged_handler = None
     self._vadj_valchanged_handler = None
-
-    gtk.DrawingArea.__init__(self)
 
     if not ZoomableArea.set_scroll_adjustment_signal_id:
       ZoomableArea.set_scroll_adjustment_signal_id = \
@@ -301,31 +301,31 @@ class ZoomableArea(gtk.DrawingArea):
   def has_box_coords(self):
     """Returns True only when the window was already built previously
     and the Box coordinate system is defined. Note, that this may be True even
-    if the last call to Box failed and the window is current "broken".
+    if the last call to Box failed and the window is currently "broken".
     """
-    return (self.last_view != None)
+    return (self.last_view is not None)
 
   def zoom_here(self, scale_factor=None):
-    """Fixes the magnification of the picture, exiting the picture view mode,
-    i.e. the mode in which the picture fits exactly in the current screen
-    view. The user may think that ``ZoomableArea.scale_factor()'' does not have
-    any effect, but this is not true: after the function has been called, the
-    picture is no more resized to fit in the current view!"""
+    """Exit the picture view mode, i.e. the mode in which the picture fits
+    exactly in the current screen view. The effect of this function may not be
+    evident at first, but after the function has been called, the picture is no
+    more resized to fit in the current view. One consequence is that scrolling
+    becomes possible.
+    """
     lm = self.magnification
-    if lm == None:
+    if lm is None:
       lm = self.last_magnification
-      if lm == None:
+      if lm is None:
         return
-
-    elif scale_factor == None:
+    elif scale_factor is None:
       return
 
-    self.magnification = (lm*scale_factor if scale_factor != None else lm)
+    self.magnification = (lm*scale_factor if scale_factor is not None else lm)
     self.adjust_view()
 
   def adjust_view(self):
     """Adjust the view in case it falls outside the bounding box."""
-    if self.magnification != None:
+    if self.magnification is not None:
       dr = rectangle_adjustment(self.pic_view, self.get_visible_coords())
       self.last_view.translate(dr)
 
@@ -343,21 +343,18 @@ class ZoomableArea(gtk.DrawingArea):
   def zoom_in(self):
     """Zoom in."""
     self.zoom_here(self.zoom_factor)
-    self.buf_needs_update = True
-    self.queue_draw()
+    self.refresh()
 
   def zoom_out(self):
     """Zoom out."""
     self.zoom_here(1.0/self.zoom_factor)
-    self.buf_needs_update = True
-    self.queue_draw()
+    self.refresh()
 
   def zoom_off(self):
     """Return in full picture view, where the picture is scaled to fit
     the available portion of the screen (the DrawableArea)."""
     self.magnification = None
-    self.buf_needs_update = True
-    self.queue_draw()
+    self.refresh()
 
   def size_change(self, myself, event):
     """Called when the DrawableArea changes in size. When that happens we
@@ -400,7 +397,7 @@ class ZoomableArea(gtk.DrawingArea):
 
     # And, if required, we copy from the old buffer the overlapping content
     old_buf = self.buf
-    if copy_old and old_buf != None:
+    if copy_old and old_buf is not None:
       # The old buffer goes at the center of the new one
       old_bsx, old_bsy = get_pixbuf_size(old_buf)
       old_sub_xmin, new_sub_xmin, inters_xsize = \
@@ -423,7 +420,7 @@ class ZoomableArea(gtk.DrawingArea):
     outside the buffered one, then a refresh occurs and the new visible area
     is positioned at the center of the refreshed buffer again.
     """
-    assert self.buf != None, "Cannot use get_central_buf: buffer not present!"
+    assert self.buf is not None, "Cannot use get_central_buf: buffer not present!"
     lx, ly = self.window.get_size()
     bsx, bsy = self.get_buf_size()
     marginx, marginy = ((bsx - lx)/2, (bsy - ly)/2)
@@ -431,7 +428,7 @@ class ZoomableArea(gtk.DrawingArea):
 
   def get_visible_buf(self):
     buf_view = self.buf_view
-    if self.magnification == None:
+    if self.magnification is None:
       return self.get_central_buf()
 
     else:
@@ -473,7 +470,9 @@ class ZoomableArea(gtk.DrawingArea):
 
     self.drawer.set_on_finish_callback(on_finish)
 
+    self.buf_needs_update = False
     state = self.drawer.update(pixbuf_output, pix_view, coord_view=coord_view)
+
     self.drawer_state = state
     if not isinstance(state, DrawState):
       raise ValueError("ImageDrawer.update function should return either "
@@ -484,8 +483,6 @@ class ZoomableArea(gtk.DrawingArea):
       refresh_on_finish[0] = True
       self.callbacks.call("set_script_killer", self.kill_drawer)
 
-    self.buf_needs_update = False
-
   def redraw_buffer(self):
     """Redraw the picture and update the internal buffer."""
 
@@ -494,7 +491,7 @@ class ZoomableArea(gtk.DrawingArea):
     self.alloc_buffer()
 
     # We now have two cases depending whether or not we have the view
-    if self.magnification == None:
+    if self.magnification is None:
       # We don't have the view:
       #   we want to draw all the picture in the DrawableArea
 
@@ -516,13 +513,12 @@ class ZoomableArea(gtk.DrawingArea):
 
     if not self.buf_needs_update:
       # Determine whether we need to update the buffer
-      if self.magnification == None:
+      if self.magnification is None:
         return
 
-      else:
-        visible_area = self.get_visible_coords()
-        if self.buf_view != None and self.buf_view.contains(visible_area):
-          return
+      visible_area = self.get_visible_coords()
+      if self.buf_view is not None and self.buf_view.contains(visible_area):
+        return
 
     self.redraw_buffer()
 
@@ -550,6 +546,10 @@ class ZoomableArea(gtk.DrawingArea):
     buf_area = visible_of_buf.subpixbuf(x, y, width, height)
     rowstride = buf_area.get_rowstride()
     pixels = buf_area.get_pixels()
+
+    # The following hangs sometimes on a poll() syscall.
+    # gdk_draw_rgb_image_dithalign seems to call gdk_flush, which hangs on
+    # xcb_wait_for_reply().
     self.window.draw_rgb_image(self.style.black_gc,
                                x, y, width, height,
                                'normal', pixels, rowstride,
@@ -567,8 +567,8 @@ class ZoomableArea(gtk.DrawingArea):
   def get_visible_coords(self):
     """Return the coordinate view corresponding to the DrawableArea."""
     last_view = self.last_view
-    if last_view != None:
-      if self.magnification != None:
+    if last_view is not None:
+      if self.magnification is not None:
         pix_size = Point(self.window.get_size())
         return last_view.new_reshaped(pix_size, 1.0/self.magnification)
 
@@ -585,7 +585,7 @@ class ZoomableArea(gtk.DrawingArea):
 
     self._block_scrollbar_signals(True)
 
-    if self.pic_view != None and self.magnification != None:
+    if self.pic_view is not None and self.magnification is not None:
       visible_coords = self.get_visible_coords()
       pic_view = self.pic_view
       bb1 = self.pic_view.corner1
@@ -645,7 +645,6 @@ class ZoomableArea(gtk.DrawingArea):
     if value:
       self._hadjustment.handler_block(self._hadj_valchanged_handler)
       self._vadjustment.handler_block(self._vadj_valchanged_handler)
-
     else:
       self._hadjustment.handler_unblock(self._hadj_valchanged_handler)
       self._vadjustment.handler_unblock(self._vadj_valchanged_handler)
