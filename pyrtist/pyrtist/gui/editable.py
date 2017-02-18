@@ -24,20 +24,21 @@ import sys
 
 import gtk
 
-from geom2 import square_metric, Point, isclose
-import document
-from zoomable import ZoomableArea, DrawSucceded, DrawFailed
-from pydraw import PyImageDrawer
-from refpoints import GContext, RefPoint, \
+from .config import Configurable
+from .callbacks import Callbacks
+from .geom2 import square_metric, Point, isclose
+from . import document
+from .zoomable import ZoomableArea, DrawSucceded, DrawFailed
+from .pydraw import PyImageDrawer
+from .refpoints import GContext, RefPoint, \
   REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
-from undoer import Undoer
-
-from config import Configurable
+from .undoer import Undoer
 
 
-class BoxViewArea(ZoomableArea):
+class ScriptViewArea(ZoomableArea):
   def __init__(self, filename=None, callbacks=None, **kwargs):
     # Create a new Document object.
+    callbacks = Callbacks.share(callbacks)
     d = document.Document(callbacks=callbacks, from_args=kwargs)
     if filename is not None:
       d.load_from_file(filename)
@@ -48,7 +49,7 @@ class BoxViewArea(ZoomableArea):
     drawer = PyImageDrawer(d)
 
     # Initialise the ZoomableArea part of this object.
-    super(BoxViewArea, self).__init__(drawer, callbacks=callbacks, **kwargs)
+    super(ScriptViewArea, self).__init__(drawer, callbacks=callbacks, **kwargs)
 
     # Create the Document
     self.document = d
@@ -61,9 +62,8 @@ class BoxViewArea(ZoomableArea):
 
 class DraggedPoints(object):
   def __init__(self, points, py_initial_pos):
-    self.initial_points = \
-      dict((k, v.copy(state=REFPOINT_DRAGGED))
-           for k, v in points.iteritems())
+    self.initial_points = {k: v.copy(state=REFPOINT_DRAGGED)
+                           for k, v in points.items()}
     self.py_initial_pos = py_initial_pos
 
 
@@ -87,20 +87,21 @@ def detach_fn(_, editable, child_name):
   editable.refpoint_detach(editable.document.refpoints[child_name])
 
 
-class BoxEditableArea(BoxViewArea, Configurable):
+class ScriptEditableArea(ScriptViewArea, Configurable):
   def __init__(self, *args, **kwargs):
     self.undoer = kwargs.pop('undoer', None) or Undoer()
 
-    self._dragged_refpoints = None     # RefPoints which are being dragged
-    self._fns = {"refpoint_new": None, # External handler functions
-                 "refpoint_delete": None,
-                 "refpoint_pick": None,
-                 "refpoint_press": None,
-                 "refpoint_press_middle": None,
-                 "script_move_point": None}
+    self._dragged_refpoints = None     # RefPoints which are being dragged.
 
     Configurable.__init__(self, from_args=kwargs)
-    BoxViewArea.__init__(self, *args, callbacks=self._fns, **kwargs)
+    ScriptViewArea.__init__(self, *args, **kwargs)
+    cbs = self.callbacks
+    cbs.default("refpoint_new")         # External handler functions.
+    cbs.default("refpoint_delete")
+    cbs.default("refpoint_pick")
+    cbs.default("refpoint_press")
+    cbs.default("refpoint_press_middle")
+    cbs.default("script_move_point")
 
     # Set default configuration
     self.set_config_default(button_left=1, button_center=2, button_right=3,
@@ -127,16 +128,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def set_callback(self, name, callback):
     """Set the callbacks."""
-    if name not in self._fns:
-      raise ValueError("Cannot find '{}'. Available callbacks are: {}."
-                       .format(name, ", ".join(self._fns.keys())))
-    else:
-      self._fns[name] = callback
+    self.callbacks.provide(name, callback)
 
   def _call_back(self, name, *args):
-    fn = self._fns.get(name, None)
-    if fn is not None:
-      fn(*args)
+    self.callbacks.call(name, *args)
 
   def _realize(self, myself):
     # Set extra default configuration
@@ -333,7 +328,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     view = self.get_visible_coords()
     if view == None:
       return
-    BoxViewArea.repaint(self, region.x, region.y, region.width, region.height)
+    ScriptViewArea.repaint(self, region.x, region.y,
+                           region.width, region.height)
 
     # Construct the context.
     gc = self.get_gcontext(clip_rect=region)
@@ -384,18 +380,18 @@ class BoxEditableArea(BoxViewArea, Configurable):
     picked = self.refpoint_pick(py_coords)
     state = event.get_state()
     rp = None
-    if picked != None:
+    if picked is not None:
       rp = picked[0]
       self._call_back("refpoint_pick", self, rp)
 
     shift_pressed = (state & gtk.gdk.SHIFT_MASK)
     ctrl_pressed = (state & gtk.gdk.CONTROL_MASK)
     if event.button == self.get_config("button_left"):
-      if rp != None:
+      if rp is not None:
         if ctrl_pressed and not shift_pressed and rp.can_procreate():
           visible_coords = self.get_visible_coords()
           box_coords = visible_coords.pix_to_coord(py_coords)
-          if box_coords != None:
+          if box_coords is not None:
             self.undoer.begin_group()
             rp_child = self.refpoint_new(py_coords, with_cb=False)
             self.refpoint_attach(rp_child, rp)
@@ -433,7 +429,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
         self.refpoint_delete(rp)
 
   def _on_motion_notify_event(self, eventbox, event):
-    if self._dragged_refpoints != None:
+    if self._dragged_refpoints is not None:
       py_coords = event.get_coords()
       self._drag_refpoints(py_coords)
 
@@ -456,7 +452,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     transform = screen_view.pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
-    for rp_name, rp in drps.initial_points.iteritems():
+    for rp_name, rp in drps.initial_points.items():
       if rp.visible:
         self.refpoint_set_visibility(rp, False)
         rp.translate_to(Point(rps[rp_name].value) + box_vec)

@@ -33,8 +33,9 @@ import gtk
 import gtk.gdk
 import gobject
 
-from config import debug, debug_msg
-from geom2 import *
+from .config import debug, debug_msg
+from .geom2 import *
+from .callbacks import Callbacks
 
 color_background = 0x808080ff
 
@@ -231,10 +232,8 @@ class ZoomableArea(gtk.DrawingArea):
     margin.trunc(0.0, 1.0, 0.0, 1.0)
 
     # Callbacks to notify about events concerning the ZoomableArea
-    if callbacks == None:
-      callbacks = {}
-    callbacks.setdefault("zoomablearea_got_killer", None)
-    self._fns = callbacks
+    self.callbacks = Callbacks.share(callbacks)
+    self.callbacks.default("set_script_killer")
 
     self.scrollbar_page_inc = Point(0.9, 0.9) # Page increment for scrollbars
     self.scrollbar_step_inc = Point(0.1, 0.1) # Step increment for scrollbars
@@ -465,9 +464,7 @@ class ZoomableArea(gtk.DrawingArea):
     refresh_on_finish = [False]
 
     def on_finish(imgdrawer, state):
-      fn = self._fns["zoomablearea_got_killer"]
-      if fn != None:
-        fn(None)
+      self.callbacks.call("set_script_killer", None)
       if isinstance(state, DrawSucceded):
         self._imagedrawer_update_finish(state, pix_view)
       self.drawer_state = state
@@ -481,13 +478,11 @@ class ZoomableArea(gtk.DrawingArea):
     if not isinstance(state, DrawState):
       raise ValueError("ImageDrawer.update function should return either "
                        "a DrawSucceded, a DrawStillWorking or a DrawFailed "
-                       "object, but I got %s." % str(state))
+                       "object, but I got {}.".format(state))
 
     if isinstance(state, DrawStillWorking):
       refresh_on_finish[0] = True
-      fn = self._fns["zoomablearea_got_killer"]
-      if fn != None:
-        fn(self.kill_drawer)
+      self.callbacks.call("set_script_killer", self.kill_drawer)
 
     self.buf_needs_update = False
 
@@ -538,7 +533,7 @@ class ZoomableArea(gtk.DrawingArea):
 
     # If - for some reason - the sub-buffer is not available, we just give up
     # repainting.
-    if visible_of_buf == None:
+    if visible_of_buf is None:
       return
 
     if not isinstance(self.drawer_state, DrawSucceded):

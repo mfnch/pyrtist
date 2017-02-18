@@ -20,9 +20,10 @@ import fnmatch
 
 from gtk.gdk import Rectangle
 
-from geom2 import square_metric, Point, rectangles_overlap
-from renderer import draw_square, draw_circle, cut_square
-import namegen
+from .geom2 import square_metric, Point, rectangles_overlap
+from .renderer import draw_square, draw_circle, cut_square
+from . import namegen
+from .callbacks import Callbacks
 
 
 class GContext(object):
@@ -300,11 +301,11 @@ class RefPoints(object):
     for rp in content:
       self.by_name[rp.name] = rp
     self.selection = {}
-    self._fns = cbs = callbacks if callbacks != None else {}
-    cbs.setdefault("get_next_refpoint_name", None)
-    cbs.setdefault("set_next_refpoint_name", None)
-    cbs.setdefault("refpoint_append", None)
-    cbs.setdefault("refpoint_remove", None)
+    self.callbacks = cbs = Callbacks.share(callbacks)
+    cbs.default("get_next_refpoint_name")
+    cbs.default("set_next_refpoint_name")
+    cbs.default("refpoint_append")
+    cbs.default("refpoint_remove")
 
   def __iter__(self):
     return self.content.__iter__()
@@ -325,7 +326,7 @@ class RefPoints(object):
     """
 
     # Notify RefPoint removals
-    fn = self._fns["refpoint_remove"]
+    fn = self.callbacks["refpoint_remove"]
     if fn is not None:
       for rp in self.content:
         fn(self, rp)
@@ -337,8 +338,8 @@ class RefPoints(object):
     self.selection = {}
 
     # Notify RefPoint additions
-    fn = self._fns["refpoint_append"]
-    if fn != None:
+    fn = self.callbacks["refpoint_append"]
+    if fn is not None:
       for rp in self.content:
         fn(self, rp)
 
@@ -414,10 +415,8 @@ class RefPoints(object):
     self.by_name[rp.name] = rp
     self.content.append(rp)
 
-    # Append notification
-    fn = self._fns["refpoint_append"]
-    if fn != None:
-      fn(self, rp)
+    # Append notification.
+    self.callbacks.call("refpoint_append", self, rp)
 
   def remove(self, rp):
     ret = [rp]
@@ -442,10 +441,7 @@ class RefPoints(object):
     self.selection.pop(rp.name, None)
 
     # Remove notification
-    fn = self._fns["refpoint_remove"]
-    if fn != None:
-      fn(self, rp)
-
+    self.callbacks.call("refpoint_remove", self, rp)
     return ret
 
   def get_nearest(self, point, include_invisible=False):
@@ -500,15 +496,13 @@ class RefPoints(object):
     from the 'base_name' given during class initialisation.
     Example: if 'base_name="p"', then returns p1, or p2 (if p1 has been already
     used, etc.)"""
-    if name != None:
+    if name is not None:
       return name
 
-    fn = self._fns["get_next_refpoint_name"]
-    name = fn(self) if fn != None else "gui"
+    name = self.callbacks.call("get_next_refpoint_name", self) or 'gui'
     next_name = namegen.generate_next_name(name, increment=0)
     while len(next_name.strip()) < 1 or next_name in self.by_name:
       next_name = namegen.generate_next_name(next_name)
-    fn = self._fns["set_next_refpoint_name"]
-    if fn != None:
-      fn(self, namegen.generate_next_name(next_name))
+    self.callbacks.call("set_next_refpoint_name",
+                        self, namegen.generate_next_name(next_name))
     return next_name

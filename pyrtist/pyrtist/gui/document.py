@@ -19,10 +19,11 @@ import sys
 import os
 import itertools
 
-import geom2
-from config import Configurable
-from scriptrunner import run_script
-from refpoints import RefPoint, RefPoints
+from . import geom2
+from .config import Configurable
+from .scriptrunner import run_script
+from .refpoints import RefPoint, RefPoints
+from .callbacks import Callbacks
 
 # This is the version of the document (which may be different from the version
 # of Boxer which was used to write it. We should save to file all this info,
@@ -108,14 +109,11 @@ class Document(Configurable):
     self.preamble = None         # Preamble of the document
     self.usercode = None         # Body of the document
 
-    if callbacks is None:
-      callbacks = {}
-    callbacks.setdefault("box_document_execute", None)
-    callbacks.setdefault("box_document_executed", None)
-    callbacks.setdefault("box_exec_output", None)
+    self.callbacks = cbs = Callbacks.share(callbacks)
+    cbs.default("box_document_execute")
+    cbs.default("box_document_executed")
 
-    self._fns = callbacks
-    self.refpoints = RefPoints(callbacks=self._fns)
+    self.refpoints = RefPoints(callbacks=cbs)
 
   def notify(self, t, msg):
     '''Used to notify problems during load/save.'''
@@ -278,9 +276,7 @@ class Document(Configurable):
     return self.get_part_preamble() + endline + self.get_part_user_code()
 
   def execute(self, callback=None, startup_cmds=None):
-    fn = self._fns["box_document_execute"]
-    if fn is not None:
-      fn(self)
+    self.callbacks.call("box_document_execute", self)
 
     # Pass the point names and coordinates to the GUI gate object.
     # We ensure Tri points are generated after their children by appending the
@@ -313,14 +309,10 @@ class Document(Configurable):
       # the same as the one which sits on the disk.
       src_name = '<{}>'.format(self.filename)
 
-    fn = self._fns['box_document_executed']
     def my_callback(name, *args):
-      cb = self._fns.get(name)
-      if cb is not None:
-        cb(*args)
+      self.callbacks.call(name, *args)
       if name == 'exit':
-        if fn is not None:
-          fn(self)
+        self.callbacks.call('box_document_executed', self)
       if callback:
         callback(name, *args)
 

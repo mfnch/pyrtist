@@ -43,7 +43,7 @@ from srcview import BoxSrcView
 import boxmode
 from assistant import Assistant, insert_char, rinsert_char
 from toolbox import ToolBox
-from editable import BoxEditableArea
+from editable import ScriptEditableArea
 from rotpaned import RotPaned
 
 
@@ -616,7 +616,10 @@ class Pyrtist(object):
   def menu_zoom_norm(self, image_menu_item):
     self.editable_area.zoom_off()
 
-  def _set_box_killer(self, killer):
+  def _on_set_script_killer(self, killer):
+    '''Called if the script is still executing to provide a killer function
+    which can be used to stop it.
+    '''
     killer_given = (killer is not None)
     self.toolbutton_stop.set_sensitive(killer_given)
     self.menubutton_run_stop.set_sensitive(killer_given)
@@ -889,7 +892,7 @@ class Pyrtist(object):
     # Create the editable area and do all the wiring
     cfg = {"refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = \
-      BoxEditableArea(config=cfg, undoer=undoer)
+      ScriptEditableArea(config=cfg, undoer=undoer)
 
     # Variables and callbacks used to handle script execution.
     self._script_output = None  # String variable used for buffering the script
@@ -899,7 +902,7 @@ class Pyrtist(object):
     editable_area.drawer.set_output_function(self._on_script_output)
     editable_area.set_callback("box_document_executed", self._on_script_execution_finish)
     editable_area.set_callback("script_move_point", self._on_move_point)
-    editable_area.set_callback("zoomablearea_got_killer", self._set_box_killer)
+    editable_area.set_callback("set_script_killer", self._on_set_script_killer)
     editable_area.set_callback("refpoint_append", self._on_refpoint_append)
     editable_area.set_callback("refpoint_remove", self._on_refpoint_remove)
     editable_area.set_callback("refpoint_press_middle", self._on_refpoint_press_middle)
