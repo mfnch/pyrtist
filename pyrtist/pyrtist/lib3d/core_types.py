@@ -191,9 +191,9 @@ class Matrix3(GenericMatrix):
         c = math.cos(angle)
         s = math.sin(angle)
         omc = 1.0 - c
-        value = [[ux*ux*omc +    c, ux*uy*omc - uz*s, ux*uz*omc + uy*s],
-                 [uy*ux*omc + uz*s, uy*uy*omc +    c, uy*uz*omc - ux*s],
-                 [uz*ux*omc - uy*s, uz*uy*omc + ux*s, uz*uz*omc +    c]]
+        value = [[ux*ux*omc +    c, ux*uy*omc - uz*s, ux*uz*omc + uy*s, 0.0],
+                 [uy*ux*omc + uz*s, uy*uy*omc +    c, uy*uz*omc - ux*s, 0.0],
+                 [uz*ux*omc - uy*s, uz*uy*omc + ux*s, uz*uz*omc +    c, 0.0]]
         return cls(value)
 
     @classmethod

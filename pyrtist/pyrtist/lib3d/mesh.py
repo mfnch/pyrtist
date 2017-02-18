@@ -9,12 +9,12 @@ from pyrtist.lib2d import Point, Tri
 from pyrtist.lib3d import Matrix3, Point3
 
 
-def rotate_y_axis(v):
-    phi = math.atan2(v[0], v[1])
-    theta = math.atan2(v[2], (v[0]**2 + v[1]**2)**0.5)
-    return (Matrix3.rotation(-phi, axis='z') *
-            Matrix3.rotation(theta, axis='x') *
-            Matrix3.rotation(-phi, axis='y'))
+def _extract_point_and_angle(view_point):
+    if isinstance(view_point, Tri):
+        angle = (view_point.ip - view_point.p).angle()
+        return (view_point.p, angle)
+    else:
+        return (Point(view_point), 0.0)
 
 
 class BoneView(object):
@@ -85,7 +85,7 @@ class Constraints(object):
     def _repose_all(self, bone, parent_matrix):
         constraint = self._constraints.get(bone.name)
         if constraint is not None:
-            bone.matrix = constraint.apply(parent_matrix, bone.matrix)
+            bone.matrix = constraint.apply(parent_matrix, bone)
 
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         for child in bone.children:
@@ -134,13 +134,15 @@ class RotationConstraint(GenericConstraint):
         rpn = Point3(rotation_axis)
         self.rotation_axis = np.array([rpn.x, rpn.y, rpn.z])
 
-    def apply(self, parent_matrix, child_matrix):
+    def apply(self, parent_matrix, bone):
         # The first point is the one used to calculate the constraints. The
         # other points are never used as input of the posing, only as output
-        # (in case the user wants to see where the bone end view is from other
+        # (in case the user wants to see where the bone end is from other
         # views).
+        child_matrix = bone.matrix
         desired_view, point_name = self.dst_view_points[0]
-        desired_bone_end_position = Point(desired_view.variables[point_name])
+        desired_bone_end_position, bone_axis_rotation = \
+          _extract_point_and_angle(desired_view.variables[point_name])
 
         # We get rid of the rotation part of `matrix', as we are going to
         # recalculate it anyway and we want to do this in a well known
@@ -163,14 +165,14 @@ class RotationConstraint(GenericConstraint):
         lhs_mx[2, :] = self.rotation_axis
         p = desired_bone_end_position
         rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
-        new_bone_dir = np.zeros((4,))
-        new_bone_dir[:3] = np.dot(np.linalg.inv(lhs_mx), rhs)
-        new_bone_dir[3] = 1.0
+        new_bone_dir = np.zeros((3,))
+        new_bone_dir = np.dot(np.linalg.inv(lhs_mx), rhs)
 
         # From the new bone direction, recompute the bone rotation matrix.
-        mx = rotate_y_axis(new_bone_dir)
-        rot_mx = mx.to_np33()
-        child_matrix[:3, :3] = rot_mx
+        bone_end_pos = Point3(*bone.get_end_pos()[:3])
+        mx = (Matrix3.rotation_by_example(bone_end_pos, Point3(*new_bone_dir)) *
+              Matrix3.rotation(bone_axis_rotation, axis=bone_end_pos))
+        child_matrix[:3, :3] = mx.to_np33()
         return child_matrix
 
 
@@ -193,17 +195,20 @@ class PreferentialConstraint(GenericConstraint):
         super(PreferentialConstraint, self).__init__(bone_name,
                                                      dst_view_points, move)
 
-    def apply(self, parent_matrix, child_matrix):
+    def apply(self, parent_matrix, bone):
         assert len(self.dst_view_points) >= 2, \
           'PreferentialConstraint requires at least two view points'
 
-        mx = child_matrix.copy()
+        mx = bone.matrix.copy()
         mx[:3, :3] = np.identity(3, dtype=np.float64)
         abs_matrix = np.dot(parent_matrix, mx)
 
+        # Rotation around the bone axis.
+        bone_axis_rotation = 0.0
+
         # For every constraint we determine the 3D line it corresponds to.
         # (see comment in the class' docstring.) The line is identified by
-        # one of it points, line_memb, and the line direction, line_dir.
+        # one of its points, line_memb, and the line direction, line_dir.
         # These values as stored as tuples in the `lines` list below.
         lines = []
         for view, point_name in self.dst_view_points:
@@ -223,7 +228,8 @@ class PreferentialConstraint(GenericConstraint):
             line_dir /= line_dir_norm
             lhs_mx[2] = line_dir
 
-            p = Point(view.variables[point_name])
+            p, angle = _extract_point_and_angle(view.variables[point_name])
+            bone_axis_rotation += angle
             rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
             lhs_mx_inv = np.linalg.inv(lhs_mx)
             line_memb = np.dot(lhs_mx_inv, rhs)
@@ -250,11 +256,12 @@ class PreferentialConstraint(GenericConstraint):
 
         # We can now compute the new bone direction, r, and from this the bone
         # rotation matrix.
-        r = primary[0] + alpha*primary[1]
-        mx = Matrix3.rotation_by_example(Point3(0.0, 1.0, 0.0), Point3(*r))
-        rot_mx = mx.to_np33()
-        child_matrix[:3, :3] = rot_mx
-        return child_matrix
+        r = Point3(*(primary[0] + alpha*primary[1]))
+        bone_end_pos = Point3(*bone.get_end_pos()[:3])
+        mx = (Matrix3.rotation_by_example(bone_end_pos, r) *
+              Matrix3.rotation(bone_axis_rotation, axis=bone_end_pos))
+        bone.matrix[:3, :3] = mx.to_np33()
+        return bone.matrix
 
 
 class Bone(object):
