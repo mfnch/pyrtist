@@ -59,10 +59,7 @@ class PyImageDrawer(ImageDrawer):
                         for x in line.split(',')]
 
   def _rx_cmd_image_data(self, args):
-    stride, width, height, data = args
-    self._image_data = \
-      gtk.gdk.pixbuf_new_from_data(data, gtk.gdk.COLORSPACE_RGB,
-                                   False, 8, width, height, stride)
+    self._image_data = args
 
   def _rx_cmd_exit(self):
       self.executed_successfully = False
@@ -73,9 +70,13 @@ class PyImageDrawer(ImageDrawer):
           self.view.reset(self._pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
         if self._image_data is not None:
-          sx = self._image_data.get_width()
-          sy = self._image_data.get_height()
-          self._image_data.copy_area(0, 0, sx, sy, self._pixbuf_output, 0, 0)
+          stride, width, height, data = self._image_data
+          self._image_data = None
+          pixbuf = gtk.gdk.pixbuf_new_from_data(data, gtk.gdk.COLORSPACE_RGB,
+                                                False, 8, width, height, stride)
+          sx = pixbuf.get_width()
+          sy = pixbuf.get_height()
+          pixbuf.copy_area(0, 0, sx, sy, self._pixbuf_output, 0, 0)
           self.executed_successfully = True
 
       finally:
@@ -125,12 +126,16 @@ class PyImageDrawer(ImageDrawer):
     # GUI to the user. In this waiting loop it is important to release the
     # lock of the GTK threads, otherwise the other threads will be waiting
     # for this one (which is having a very high time per Python opcode...)
-    gtk.gdk.threads_leave()
-    for i in range(10):
-      if not self.executing:
-        break
-      time.sleep(0.05)
-    gtk.gdk.threads_enter()
+    try:
+      gtk.gdk.threads_leave()
+
+      for i in range(10):
+        if not self.executing:
+          break
+        time.sleep(0.05)
+
+    finally:
+      gtk.gdk.threads_enter()
 
     if self.executing:
       return DrawStillWorking(self, killer)

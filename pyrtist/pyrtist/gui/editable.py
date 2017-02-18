@@ -205,6 +205,16 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       rp_child.detach()
       self.refpoint_set_visibility(rp_child, v)
 
+  def raw_refpoint_move(self, rp, script_coords, lazy=False):
+    """Move a reference point without updating the view."""
+    if (lazy and
+        isclose(rp.value[0], script_coords[0]) and
+        isclose(rp.value[1], script_coords[1])):
+      return
+
+    self.undoer.record_action(move_fn, self, rp.name, rp.value)
+    rp.value = script_coords
+
   def refpoint_move(self, rp, coords, use_py_coords=True,
                     move_invisible=False, lazy=False):
     """Move a reference point to a new position."""
@@ -213,18 +223,12 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
         screen_view = self.get_visible_coords()
         coords = screen_view.pix_to_coord(Point(coords))
 
-      if (lazy and
-          isclose(rp.value[0], coords[0]) and
-          isclose(rp.value[1], coords[1])):
-        return
-
       v = self.refpoint_set_visibility(rp, False)
       rp_children = rp.get_children()
       v_children = tuple(self.refpoint_set_visibility(rp_child, False)
                          for rp_child in rp_children)
 
-      self.undoer.record_action(move_fn, self, rp.name, rp.value)
-      rp.value = coords
+      self.raw_refpoint_move(rp, coords, lazy=lazy)
 
       self.refpoint_set_visibility(rp, v)
       for i, rp_child in enumerate(rp_children):

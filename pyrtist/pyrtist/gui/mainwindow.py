@@ -697,8 +697,7 @@ class Pyrtist(object):
     undoer.begin_group()
     for name, value in self._new_positions.items():
       rp = editable_area.document.refpoints[name]
-      editable_area.refpoint_move(rp, value, use_py_coords=False,
-                                  move_invisible=True, lazy=True)
+      editable_area.raw_refpoint_move(rp, value, lazy=True)
     undoer.end_group()
     self._new_positions = None
 
