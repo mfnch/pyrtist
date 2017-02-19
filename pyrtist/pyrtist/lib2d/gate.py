@@ -8,6 +8,14 @@ from .core_types import Point, Tri, View
 import numpy
 
 
+class GUIPointAttrs(object):
+    '''Attributes for points created and managed by the Pyrtist GUI.'''
+
+    def __init__(self, name, old_value=None):
+        self.name = name
+        self.old_value = old_value
+
+
 class GUIGate(object):
     '''Object which allows communicating with the Pyrtist GUI.'''
 
@@ -83,7 +91,11 @@ class GUIGate(object):
         '''Put all the variables received from the GUI in the given dictionary.
         '''
         d['gui'] = self
-        d.update(self._points['new'])
+        new_points = self._points['new']
+        old_points = self._points['old']
+        for name, point in new_points.items():
+            point.gui = GUIPointAttrs(name, old_value=old_points.get(name))
+        d.update(new_points)
 
     def move(self, **kwargs):
         if self._gui_tx_pipe is None:

@@ -55,7 +55,7 @@ class Constraints(object):
     def add(self, bone_name, dst_view_points, axis=None, move=False):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
-        for dst_view_point in dst_view_points:
+        for i, dst_view_point in enumerate(dst_view_points):
             if '/' not in dst_view_point:
                 raise ValueError("Invalid format for destination view point "
                                  "'{}' should be 'view_name/point_name'"
@@ -69,7 +69,14 @@ class Constraints(object):
             if point_name not in view.variables:
                 raise ValueError("Cannot find point name '{}' in variables "
                                  "for view '{}'".format(point_name, view_name))
-            resolved_dst_view_points.append((view, point_name))
+
+            item = (view, point_name)
+            gui_attrs = getattr(view.variables[point_name], 'gui', None)
+            if gui_attrs is not None and gui_attrs.old_value is not None:
+                # This is a dragged point, put it at the beginning of the list.
+                resolved_dst_view_points.insert(0, item)
+            else:
+                resolved_dst_view_points.append(item)
 
         if axis is not None:
             cnst = RotationConstraint(bone_name, resolved_dst_view_points,
