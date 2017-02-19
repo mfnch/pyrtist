@@ -46,15 +46,18 @@ class Constraints(object):
         views.update(kwargs)
         self._views = views
         self._constraints = {}
+        self._num_applications = 0
         if len(views) == 0:
             raise ValueError('Constraints() object must be given at least one '
                              'view')
         if None in views:
             raise ValueError('Invalid view')
 
-    def add(self, bone_name, dst_view_points, axis=None, move=False):
+    def add(self, bone_name, dst_view_points, axis=None, move=False,
+            repose_children=False):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
+        apply_order = 0
         for i, dst_view_point in enumerate(dst_view_points):
             if '/' not in dst_view_point:
                 raise ValueError("Invalid format for destination view point "
@@ -73,8 +76,16 @@ class Constraints(object):
             item = (view, point_name)
             gui_attrs = getattr(view.variables[point_name], 'gui', None)
             if gui_attrs is not None and gui_attrs.old_value is not None:
-                # This is a dragged point, put it at the beginning of the list.
+                # This is a dragged point, put it at the beginning of the list,
+                # so that the dragged point acts as the primary view point.
                 resolved_dst_view_points.insert(0, item)
+
+                # Apply this constraint after all the others, so that undragged
+                # bones which are child of the dragged bones are automatically
+                # reposed. In other words, this ensures that dragging a bone
+                # drags all its children as if they were rigidly connected to
+                # it.
+                apply_order = (1 if repose_children else 0)
             else:
                 resolved_dst_view_points.append(item)
 
@@ -87,16 +98,18 @@ class Constraints(object):
                                  'or two view points from two different views')
             cnst = PreferentialConstraint(bone_name, resolved_dst_view_points,
                                           move)
+        cnst.set_apply_order(apply_order)
+        self._num_applications = max(self._num_applications, apply_order)
         self._constraints[bone_name] = cnst
 
-    def _repose_all(self, bone, parent_matrix):
+    def _repose_all(self, bone, parent_matrix, apply_order):
         constraint = self._constraints.get(bone.name)
-        if constraint is not None:
+        if constraint is not None and constraint.apply_order == apply_order:
             bone.matrix = constraint.apply(parent_matrix, bone)
 
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         for child in bone.children:
-            self._repose_all(child, abs_matrix)
+            self._repose_all(child, abs_matrix, apply_order)
 
     def apply_forward(self, root_bone):
         '''Compute the mesh pose in `root_bone` from the constraints and the
@@ -105,7 +118,9 @@ class Constraints(object):
         This method computed the `root_bone` matrices to reflect the values of
         the view variables (`BoneView.variables`).
         '''
-        self._repose_all(root_bone, np.identity(4, dtype=np.float64))
+        for apply_order in range(self._num_applications + 1):
+            parent_matrix = np.identity(4, dtype=np.float64)
+            self._repose_all(root_bone, parent_matrix, apply_order)
 
     def apply_backward(self, root_bone):
         '''Compute the position of view points from the given pose `root_bone`.
@@ -133,6 +148,11 @@ class GenericConstraint(object):
         self.bone_name = bone_name
         self.dst_view_points = dst_view_points
         self.move = move
+        self.apply_order = 0
+
+    def set_apply_order(self, value):
+        '''Time at which the constraint should be applied.'''
+        self.apply_order = value
 
 
 class RotationConstraint(GenericConstraint):
