@@ -567,16 +567,12 @@ class ZoomableArea(gtk.DrawingArea):
   def get_visible_coords(self):
     """Return the coordinate view corresponding to the DrawableArea."""
     last_view = self.last_view
-    if last_view is not None:
-      if self.magnification is not None:
-        pix_size = Point(self.window.get_size())
-        return last_view.new_reshaped(pix_size, 1.0/self.magnification)
-
-      else:
-        return last_view.new_scaled(1.0)
-
-    else:
+    if last_view is None:
       return None
+    if self.magnification is None:
+      return last_view.new_scaled(1.0)
+    pix_size = Point(self.window.get_size())
+    return last_view.new_reshaped(pix_size, 1.0/self.magnification)
 
   def _update_scrollbars(self):
     """(internal) Update the ranges and positions of the scrollbars."""

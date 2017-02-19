@@ -26,17 +26,19 @@ import time
 import gtk.gdk
 from gtk.gdk import pixbuf_new_from_file
 
-import config
-from geom2 import *
-from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
-                     DrawStillWorking
+from . import config
+from .callbacks import Callbacks
+from .geom2 import *
+from .zoomable import (View, ImageDrawer, DrawSucceded, DrawFailed,
+                       DrawStillWorking)
 
 
 class PyImageDrawer(ImageDrawer):
-  def __init__(self, document):
+  def __init__(self, document, callbacks=None):
     super(PyImageDrawer, self).__init__()
+    self.callbacks = cbs = Callbacks.share(callbacks)
+    cbs.default('script_write_out')
     self.document = document
-    self.out_fn = None
     self.bbox = None
     self.view = View()
     self.executing = False
@@ -46,12 +48,8 @@ class PyImageDrawer(ImageDrawer):
     self._image_info = None
     self._image_data = None
 
-  def set_output_function(self, fn):
-    self.out_fn = fn
-
   def _rx_cmd_out(self, stream_name, out):
-    if self.out_fn is not None:
-      self.out_fn(out)
+    self.callbacks.call('script_write_out', out)
 
   def _rx_cmd_image_info(self, view_repr):
     self._image_info = [float(x)

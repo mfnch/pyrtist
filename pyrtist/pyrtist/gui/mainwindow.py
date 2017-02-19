@@ -35,16 +35,16 @@ import gtk
 import gtk.gdk
 import gobject
 
-import config
-import document
-
-from undoer import Undoer
-from srcview import BoxSrcView
-import boxmode
-from assistant import Assistant, insert_char, rinsert_char
-from toolbox import ToolBox
-from editable import ScriptEditableArea
-from rotpaned import RotPaned
+from . import config
+from . import document
+from . import boxmode
+from .callbacks import Callbacks
+from .undoer import Undoer
+from .srcview import BoxSrcView
+from .assistant import Assistant, insert_char, rinsert_char
+from .toolbox import ToolBox
+from .editable import ScriptEditableArea
+from .rotpaned import RotPaned
 
 
 def create_filechooser(parent, title="Choose a file", action=None,
@@ -433,7 +433,7 @@ class Pyrtist(object):
     """Save the textview content into the file 'filename'."""
     d = self.editable_area.document
     try:
-      if filename == None:
+      if filename is None:
         filename = self.filename
       d.set_user_code(self.get_main_source())
       d.save_to_file(filename)
@@ -491,7 +491,7 @@ class Pyrtist(object):
     if not self.ensure_file_is_saved():
       return
 
-    if self.dialog_fileopen == None:
+    if self.dialog_fileopen is None:
       self.dialog_fileopen = \
         create_filechooser(self.mainwin,
                            title="Open Box program",
@@ -504,12 +504,12 @@ class Pyrtist(object):
     filename = fc.get_filename() if response == gtk.RESPONSE_OK else None
     fc.hide()
 
-    if filename != None:
+    if filename is not None:
       self.raw_file_open(filename)
 
   def menu_file_save(self, image_menu_item):
     """Invoked to save a file whose name has been already assigned."""
-    if self.filename != None:
+    if self.filename is not None:
       self.raw_file_save()
     else:
       self.menu_file_save_as(image_menu_item)
@@ -517,7 +517,7 @@ class Pyrtist(object):
   def menu_file_save_as(self, image_menu_item):
     """Invoked to save a file. Shows the dialog to select the file name."""
 
-    if self.dialog_filesave == None:
+    if self.dialog_filesave is None:
       self.dialog_filesave = \
         create_filechooser(self.mainwin,
                            title="Save Box program",
@@ -531,7 +531,7 @@ class Pyrtist(object):
     filename = fc.get_filename() if do_save_it else None
     fc.hide()
 
-    if filename != None:
+    if filename is not None:
       self.raw_file_save(filename)
 
   def menu_file_quit(self, image_menu_item):
@@ -579,7 +579,7 @@ class Pyrtist(object):
     self.editable_area.refresh()
 
   def menu_run_stop(self, image_menu_item):
-    if self.box_killer != None:
+    if self.box_killer is not None:
       self.box_killer()
 
   def menu_view_rotate(self, _):
@@ -678,7 +678,7 @@ class Pyrtist(object):
     self._script_output = ''
     self._new_positions = {}
 
-  def _on_script_output(self, s, force=False):
+  def _on_script_write_out(self, s, force=False):
     # Called by EditableArea when the script emits output to stdout and stderr.
     assert self._script_output is not None
     script_output = self._script_output + s
@@ -689,7 +689,7 @@ class Pyrtist(object):
     # Called by EditableArea after the script has finished executing.
     # Ensure the text view is always refreshed (old output is removed, the view
     # is collapsed in case no output is present).
-    self._on_script_output('', force=True)
+    self._on_script_write_out('', force=True)
 
     # Move all the points in a single undoable action.
     editable_area = self.editable_area
@@ -752,7 +752,7 @@ class Pyrtist(object):
 
   def on_help_button_clicked(self, _):
     topic = self.widget_help_entry.get_text().strip()
-    if self.dialog_dox_browser != None:
+    if self.dialog_dox_browser is not None:
       self.dialog_dox_browser.show(topic=topic if len(topic) > 0 else None)
 
   def on_help_entry_activate(self, _):
@@ -784,7 +784,7 @@ class Pyrtist(object):
     db = self.dialog_dox_browser
 
     if word[0].isupper():
-      if db != None:
+      if db is not None:
         desc = db.get_brief_desc(word)
         #if desc:
         #  self.widget_help_entry.set_text(word)
@@ -809,7 +809,7 @@ class Pyrtist(object):
 
         # Read additional documentation from the library
         library_dir = self.config.get("Library", "dir")
-        if library_dir != None:
+        if library_dir is not None:
           dox.read_recursively(library_dir)
 
         # Process the documentation tree
@@ -830,7 +830,7 @@ class Pyrtist(object):
   def __init__(self, filename=None, box_exec=None, undoer=None):
     self.filename = filename
     self.config = config.get_configuration()
-    if box_exec != None:
+    if box_exec is not None:
       self.config.set("Box", "exec", box_exec)
 
     self.settings = Settings()
@@ -890,43 +890,43 @@ class Pyrtist(object):
 
     # Create the editable area and do all the wiring
     cfg = {"refpoint_size": self.config.getint("GUIView", "refpoint_size")}
-    self.editable_area = editable_area = \
-      ScriptEditableArea(config=cfg, undoer=undoer)
+    cbs = Callbacks()
+    self.editable_area = \
+      ScriptEditableArea(config=cfg, undoer=undoer, callbacks=cbs)
 
     # Variables and callbacks used to handle script execution.
     self._script_output = None  # String variable used for buffering the script
                                 # output before flushing it to the textview.
     self._move_points = None    # Dictionary used to store moved points.
-    editable_area.set_callback("box_document_execute", self._on_script_execution_begin)
-    editable_area.drawer.set_output_function(self._on_script_output)
-    editable_area.set_callback("box_document_executed", self._on_script_execution_finish)
-    editable_area.set_callback("script_move_point", self._on_move_point)
-    editable_area.set_callback("set_script_killer", self._on_set_script_killer)
-    editable_area.set_callback("refpoint_append", self._on_refpoint_append)
-    editable_area.set_callback("refpoint_remove", self._on_refpoint_remove)
-    editable_area.set_callback("refpoint_press_middle", self._on_refpoint_press_middle)
+    cbs.provide("box_document_execute", self._on_script_execution_begin)
+    cbs.provide("script_write_out", self._on_script_write_out)
+    cbs.provide("box_document_executed", self._on_script_execution_finish)
+    cbs.provide("script_move_point", self._on_move_point)
+    cbs.provide("set_script_killer", self._on_set_script_killer)
+    cbs.provide("refpoint_append", self._on_refpoint_append)
+    cbs.provide("refpoint_remove", self._on_refpoint_remove)
+    cbs.provide("refpoint_press_middle", self._on_refpoint_press_middle)
 
     def new_rp(_, rp):
       if self.should_paste_on_new() and not rp.is_child():
         self._on_refpoint_press_middle(None, rp)
-    editable_area.set_callback("refpoint_new", new_rp)
+    cbs.provide("refpoint_new", new_rp)
 
     def get_next_refpoint(doc):
       return self.widget_refpoint_entry.get_text()
-    editable_area.set_callback("get_next_refpoint_name", get_next_refpoint)
+    cbs.provide("get_next_refpoint_name", get_next_refpoint)
 
     def set_next_refpoint_name(doc, rp_name):
       self.widget_refpoint_entry.set_text(rp_name)
-    editable_area.set_callback("set_next_refpoint_name",
-                               set_next_refpoint_name)
+    cbs.provide("set_next_refpoint_name", set_next_refpoint_name)
 
     def set_next_refpoint(doc, rp):
       self.widget_refpoint_entry.set_text(rp.name)
-    editable_area.set_callback("refpoint_pick", set_next_refpoint)
+    cbs.provide("refpoint_pick", set_next_refpoint)
 
     # Create the scrolled window containing the box-draw editable area
     scroll_win1 = gtk.ScrolledWindow()
-    scroll_win1.add(editable_area)
+    scroll_win1.add(self.editable_area)
 
     # Create the text view
     self.part_srcview = part_srcview = \
@@ -993,7 +993,6 @@ class Pyrtist(object):
       from pango import FontDescription
       font = FontDescription(self.config.get("GUI", "font"))
       self.widget_srcview.modify_font(font)
-
     except:
       pass
 
@@ -1006,7 +1005,7 @@ class Pyrtist(object):
     mainwin.show_all()
 
     # Set a template program to start with...
-    if filename == None:
+    if filename is None:
       self.raw_file_new()
     else:
       self.raw_file_open(filename)

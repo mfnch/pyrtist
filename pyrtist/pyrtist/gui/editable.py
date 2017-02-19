@@ -46,7 +46,7 @@ class ScriptViewArea(ZoomableArea):
       d.new()
 
     # Create a new PyImageDrawer for the document.
-    drawer = PyImageDrawer(d)
+    drawer = PyImageDrawer(d, callbacks=callbacks)
 
     # Initialise the ZoomableArea part of this object.
     super(ScriptViewArea, self).__init__(drawer, callbacks=callbacks, **kwargs)
@@ -54,10 +54,6 @@ class ScriptViewArea(ZoomableArea):
     # Create the Document
     self.document = d
     self.drawer = drawer
-
-  def get_document(self):
-    '''Get the Document object associated to this window.'''
-    return self.document
 
 
 class DraggedPoints(object):
@@ -126,13 +122,6 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       for rp in self._dragged_refpoints.initial_points.itervalues():
         yield rp
 
-  def set_callback(self, name, callback):
-    """Set the callbacks."""
-    self.callbacks.provide(name, callback)
-
-  def _call_back(self, name, *args):
-    self.callbacks.call(name, *args)
-
   def _realize(self, myself):
     # Set extra default configuration
     unsel_gc = self.window.new_gc()
@@ -181,7 +170,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     self.undoer.begin_group()
     self.undoer.record_action(delete_fn, self, real_name)
     if with_cb:
-      self._call_back("refpoint_new", self, rp)
+      self.callbacks.call("refpoint_new", self, rp)
     self.undoer.end_group()
 
     return rp
@@ -247,7 +236,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       self.document.refpoints.remove(rp)
       self.undoer.record_action(create_fn, self, rp.name, rp.value)
       self.undoer.end_group()
-      self._call_back("refpoint_delete", self, rp)
+      self.callbacks.call("refpoint_delete", self, rp)
 
   def refpoint_pick(self, py_coords, include_invisible=False):
     """Returns the refpoint closest to the given one (argument 'point').
@@ -386,7 +375,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     rp = None
     if picked is not None:
       rp = picked[0]
-      self._call_back("refpoint_pick", self, rp)
+      self.callbacks.call("refpoint_pick", self, rp)
 
     shift_pressed = (state & gtk.gdk.SHIFT_MASK)
     ctrl_pressed = (state & gtk.gdk.CONTROL_MASK)
@@ -399,13 +388,13 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
             self.undoer.begin_group()
             rp_child = self.refpoint_new(py_coords, with_cb=False)
             self.refpoint_attach(rp_child, rp)
-            self._call_back("refpoint_new", self, rp_child)
+            self.callbacks.call("refpoint_new", self, rp_child)
             self.undoer.end_group()
 
             self.refpoint_select(rp_child)
             self._dragged_refpoints = \
               DraggedPoints(refpoints.selection, py_coords)
-            self._call_back("refpoint_press", rp_child)
+            self.callbacks.call("refpoint_press", rp_child)
         elif refpoints.is_selected(rp) and not shift_pressed:
           self._dragged_refpoints = \
             DraggedPoints(refpoints.selection, py_coords)
@@ -419,14 +408,14 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
         if box_coords is not None:
           rp = self.refpoint_new(py_coords)
           self.refpoint_select(rp)
-          self._call_back("refpoint_press", rp)
+          self.callbacks.call("refpoint_press", rp)
 
     elif self._dragged_refpoints is not None:
       return
 
     elif event.button == self.get_config("button_center"):
       if rp is not None:
-        self._call_back("refpoint_press_middle", self, rp)
+        self.callbacks.call("refpoint_press_middle", self, rp)
 
     elif event.button == self.get_config("button_right"):
       if rp is not None:
