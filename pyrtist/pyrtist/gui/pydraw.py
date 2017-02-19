@@ -36,13 +36,15 @@ from .zoomable import (View, ImageDrawer, DrawSucceded, DrawFailed,
 class PyImageDrawer(ImageDrawer):
   def __init__(self, document, callbacks=None):
     super(PyImageDrawer, self).__init__()
+    self.document = document
     self.callbacks = cbs = Callbacks.share(callbacks)
     cbs.default('script_write_out')
-    self.document = document
+
     self.bbox = None
     self.view = View()
-    self.executing = False
-    self.executed_successfully = False
+    self._executing = False
+    self._executed_successfully = False
+    self._startup_cmds = None
     self._pix_size = None
     self._pixbuf_output = None
     self._image_info = None
@@ -60,7 +62,7 @@ class PyImageDrawer(ImageDrawer):
     self._image_data = args
 
   def _rx_cmd_exit(self):
-      self.executed_successfully = False
+      self._executed_successfully = False
       try:
         if self._image_info is not None:
           (bminx, bminy, bmaxx, bmaxy, ox, oy, sx, sy) = self._image_info
@@ -75,12 +77,12 @@ class PyImageDrawer(ImageDrawer):
           sx = pixbuf.get_width()
           sy = pixbuf.get_height()
           pixbuf.copy_area(0, 0, sx, sy, self._pixbuf_output, 0, 0)
-          self.executed_successfully = True
+          self._executed_successfully = True
 
       finally:
-        self.executing = False
+        self._executing = False
         self.finished_drawing(DrawSucceded(self.bbox, self.view)
-                              if self.executed_successfully
+                              if self._executed_successfully
                               else DrawFailed())
 
   def _callback(self, name, *args):
@@ -98,12 +100,27 @@ class PyImageDrawer(ImageDrawer):
     self._pixbuf_output = pixbuf_output
     self._image_info = None
     self._image_data = None
-    self.executing = True
+    self._executing = True
     return self.document.execute(callback=self._callback,
                                  startup_cmds=startup_cmds)
 
+  def give_old_refpoints(self, old_refpoints):
+    '''Provide old values of the refpoints (e.g. before dragging them). This
+    information will be passed to the script the next time it is executed.
+    '''
+    self._startup_cmds = \
+      self.document.build_refpoint_set_cmds('old', old_refpoints)
+
+  def pop_startup_cmds(self):
+    '''Obtain the startup commands that the script will use to set up the
+    environment.
+    '''
+    cmds = self._startup_cmds
+    self._startup_cmds = None
+    return cmds or []
+
   def update(self, pixbuf_output, pix_view, coord_view=None):
-    startup_cmds = []
+    startup_cmds = self.pop_startup_cmds()
     if coord_view is None:
       px, py = pix_view
       startup_cmds.append(('full_view', px, py))
@@ -128,16 +145,16 @@ class PyImageDrawer(ImageDrawer):
       gtk.gdk.threads_leave()
 
       for i in range(10):
-        if not self.executing:
+        if not self._executing:
           break
         time.sleep(0.05)
 
     finally:
       gtk.gdk.threads_enter()
 
-    if self.executing:
+    if self._executing:
       return DrawStillWorking(self, killer)
-    elif self.executed_successfully:
+    elif self._executed_successfully:
       return DrawSucceded(self.bbox, self.view)
     else:
       return DrawFailed()

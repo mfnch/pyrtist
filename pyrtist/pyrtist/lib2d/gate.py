@@ -17,10 +17,12 @@ class GUIGate(object):
         self._size = None
         self._zoom_window = None
         self._img_filename = None
-        self._points = {}
+        self._points = {'old': {}, 'new': {}}
 
     def connect(self, gui_tx_pipe=None, startup_cmds=None):
-        '''Method invoked by the Pyrtist GUI to allow communicating back with it.'''
+        '''Method invoked by the Pyrtist GUI to allow communicating back
+        with it.
+        '''
         assert self._gui_tx_pipe is None, 'GUIGate object already connected'
         self._gui_tx_pipe = gui_tx_pipe
         self._parse_cmds(startup_cmds)
@@ -36,13 +38,13 @@ class GUIGate(object):
             if method is not None:
                 method(*cmd[1:])
 
-    def _rx_cmd_new_point(self, name, x, y):
-        self._points[name] = Point(x, y)
+    def _rx_cmd_point(self, tag, name, x, y):
+        ps = self._points[tag]
+        ps[name] = Point(x, y)
 
-    def _rx_cmd_new_tri(self, name, x, y, lhs_name, rhs_name):
-        self._points[name] = Tri(self._points.get(lhs_name),
-                                 Point(x, y),
-                                 self._points.get(rhs_name))
+    def _rx_cmd_tri(self, tag, name, x, y, lhs_name, rhs_name):
+        ps = self._points[tag]
+        ps[name] = Tri(ps.get(lhs_name), Point(x, y), ps.get(rhs_name))
 
     def _rx_cmd_full_view(self, size_x, size_y):
         self._full_view = True
@@ -81,7 +83,7 @@ class GUIGate(object):
         '''Put all the variables received from the GUI in the given dictionary.
         '''
         d['gui'] = self
-        d.update(self._points)
+        d.update(self._points['new'])
 
     def move(self, **kwargs):
         if self._gui_tx_pipe is None:

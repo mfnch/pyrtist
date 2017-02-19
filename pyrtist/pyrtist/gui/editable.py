@@ -428,7 +428,14 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       py_coords = event.get_coords()
       self._drag_refpoints(py_coords)
       if event.button == self.get_config("button_left"):
-        self._drag_confirm(py_coords)
+        # Confirm the drag operation.
+        old_rp_values = self._drag_confirm(py_coords)
+
+        # Ensure the next time we run the script and re-draw the view, we pass
+        # information about which points have been updated. Scripts can use
+        # this information to improve their feedback to user actions.
+        self.drawer.give_old_refpoints(old_rp_values)
+
       self._dragged_refpoints = None
       if self.get_config("redraw_on_move"):
         self.refresh()

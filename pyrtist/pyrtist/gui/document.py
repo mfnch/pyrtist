@@ -275,25 +275,40 @@ class Document(Configurable):
   def save_to_str(self, version=version):
     return self.get_part_preamble() + endline + self.get_part_user_code()
 
+  @staticmethod
+  def build_refpoint_set_cmds(tag, refpoints):
+    '''Transform a list of refpoints `refpoints` to commands that can be sent
+    to the script to set its environment consistently. The `tag` string can
+    be either "new" or "old" to specify whether `refpoints` is providing the
+    current value of the reference points or the value before the last user
+    modification (e.g. dragging). Knowing which reference points were last
+    modified and what was their old value offers the script the opportunity
+    of responding better to user actions.
+    '''
+    # We ensure Tri points are generated after their children by appending the
+    # `new_tri' commands after all the `new_point' commands. This is done by
+    # using two separate lists that are then merged.
+    point_cmds = []
+    tri_cmds = []
+    for rp in refpoints:
+      x, y = rp.value
+      if rp.is_parent():
+        cld = rp.get_children()
+        lhs_name = (cld[0].name if len(cld) >= 1 and cld[0] is not None
+                    else None)
+        rhs_name = (cld[1].name if len(cld) >= 2 and cld[1] is not None
+                    else None)
+        tri_cmds.append(('tri', tag, rp.name, x, y, lhs_name, rhs_name))
+      else:
+        point_cmds.append(('point', tag, rp.name, x, y))
+    point_cmds.extend(tri_cmds)
+    return point_cmds
+
   def execute(self, callback=None, startup_cmds=None):
     self.callbacks.call("box_document_execute", self)
 
     # Pass the point names and coordinates to the GUI gate object.
-    # We ensure Tri points are generated after their children by appending the
-    # `new_tri' commands after all the `new_point' commands. This is done by
-    # using two separate list that are then merged.
-    startup_cmds = list(startup_cmds)
-    tri_cmds = []
-    for rp in self.refpoints:
-      x, y = rp.value
-      if rp.is_parent():
-        cld = rp.get_children()
-        lhs_name = (cld[0].name if len(cld) >= 1 and cld[0] is not None else None)
-        rhs_name = (cld[1].name if len(cld) >= 2 and cld[1] is not None else None)
-        tri_cmds.append(('new_tri', rp.name, x, y, lhs_name, rhs_name))
-      else:
-        startup_cmds.append(('new_point', rp.name, x, y))
-    startup_cmds.extend(tri_cmds)
+    startup_cmds.extend(self.build_refpoint_set_cmds('new', self.refpoints))
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
