@@ -20,6 +20,18 @@
  DO_MODE_REDO) = range(3)
 
 
+class UndoableGroup(object):
+  def __init__(self, undoer):
+    self._undoer = undoer
+
+  def __enter__(self):
+    self._undoer.begin_group()
+    return self._undoer
+
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+    self._undoer.end_group()
+
+
 class Undoer(object):
   def __init__(self):
     self.do_mode = DO_MODE_NORMAL
@@ -27,7 +39,7 @@ class Undoer(object):
     self.save_point = None
     self.undo_actions = []
     self.redo_actions = []
-    self.group = []
+    self.group_actions = []
     self.group_level = 0
     self.callbacks = {"modified-changed": [],
                       "can-undo-changed": [],
@@ -41,7 +53,7 @@ class Undoer(object):
         self.callbacks[key].append(cb)
     else:
       cb_list = self.callbacks.get(name, None)
-      assert cb_list != None, "Cannot find callback name %s" % name
+      assert cb_list is not None, "Cannot find callback name %s" % name
       cb_list.append(cb)
 
   def _call_back(self, name, args):
@@ -105,14 +117,20 @@ class Undoer(object):
     """End a group of actions."""
     assert self.group_level > 0
     self.group_level -= 1
-    if self.group_level == 0 and len(self.group) > 0:
+    if self.group_level == 0 and len(self.group_actions) > 0:
       def undo_group(_, group):
         self.begin_group()
         for action in reversed(group):
           action[0](*action)
         self.end_group()
-      self.record_action(undo_group, self.group)
-      self.group = []
+      self.record_action(undo_group, self.group_actions)
+      self.group_actions = []
+
+  def group(self):
+    """Return a context manager which can be used in the `with` statement to
+    automatically call Undoer.begin_group() and Undoer.end_group().
+    """
+    return UndoableGroup(self)
 
   def can_undo(self):
     """Whether there are actions to undo."""
@@ -153,7 +171,7 @@ class Undoer(object):
       return
 
     if self.group_level > 0:
-      self.group.append(args)
+      self.group_actions.append(args)
       return
 
     # If one of these changes, then a callback is called back.
@@ -165,7 +183,8 @@ class Undoer(object):
     elif do_mode == DO_MODE_UNDO:
       self.redo_actions.append(args)
     else:
-      if self.save_point != None and self.save_point > len(self.undo_actions):
+      if (self.save_point is not None and
+          self.save_point > len(self.undo_actions)):
         self.save_point = None
       self.redo_actions = []
       self.undo_actions.append(args)

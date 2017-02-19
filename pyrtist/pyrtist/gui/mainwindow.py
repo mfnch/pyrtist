@@ -693,12 +693,10 @@ class Pyrtist(object):
 
     # Move all the points in a single undoable action.
     editable_area = self.editable_area
-    undoer = editable_area.undoer
-    undoer.begin_group()
-    for name, value in self._new_positions.items():
-      rp = editable_area.document.refpoints[name]
-      editable_area.raw_refpoint_move(rp, value, lazy=True)
-    undoer.end_group()
+    with editable_area.undoer.group():
+      for name, value in self._new_positions.items():
+        rp = editable_area.document.refpoints[name]
+        editable_area.raw_refpoint_move(rp, value, lazy=True)
     self._new_positions = None
 
   def _on_move_point(self, args):
@@ -724,10 +722,9 @@ class Pyrtist(object):
     # Called by EditableArea when a refpoint is selected with the central
     # mouse button.
     tb = self.widget_srcbuf
-    self.undoer.begin_group()
-    insert_char(tb)
-    tb.insert_at_cursor(rp.name)
-    self.undoer.end_group()
+    with self.undoer.group():
+      insert_char(tb)
+      tb.insert_at_cursor(rp.name)
 
     if self.settings.get_prop("update_on_paste"):
       self.update_draw_area(only_if_quick=True)

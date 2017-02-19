@@ -167,11 +167,10 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     refpoints.append(rp)
     self.repaint_rps(rp)
 
-    self.undoer.begin_group()
-    self.undoer.record_action(delete_fn, self, real_name)
-    if with_cb:
-      self.callbacks.call("refpoint_new", self, rp)
-    self.undoer.end_group()
+    with self.undoer.group() as undoer:
+      undoer.record_action(delete_fn, self, real_name)
+      if with_cb:
+        self.callbacks.call("refpoint_new", self, rp)
 
     return rp
 
@@ -226,16 +225,15 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
   def refpoint_delete(self, rp, force=False):
     """Delete the given reference point."""
     if rp.visible or force:
-      self.undoer.begin_group()
-      children = rp.get_children()
-      for child in children:
-        self.refpoint_delete(child, force=True)
+      with self.undoer.group() as undoer:
+        children = rp.get_children()
+        for child in children:
+          self.refpoint_delete(child, force=True)
 
-      self.refpoint_set_visibility(rp, False)
-      self.refpoint_detach(rp)
-      self.document.refpoints.remove(rp)
-      self.undoer.record_action(create_fn, self, rp.name, rp.value)
-      self.undoer.end_group()
+        self.refpoint_set_visibility(rp, False)
+        self.refpoint_detach(rp)
+        self.document.refpoints.remove(rp)
+        undoer.record_action(create_fn, self, rp.name, rp.value)
       self.callbacks.call("refpoint_delete", self, rp)
 
   def refpoint_pick(self, py_coords, include_invisible=False):
@@ -385,11 +383,10 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
           visible_coords = self.get_visible_coords()
           box_coords = visible_coords.pix_to_coord(py_coords)
           if box_coords is not None:
-            self.undoer.begin_group()
-            rp_child = self.refpoint_new(py_coords, with_cb=False)
-            self.refpoint_attach(rp_child, rp)
-            self.callbacks.call("refpoint_new", self, rp_child)
-            self.undoer.end_group()
+            with self.undoer.group():
+              rp_child = self.refpoint_new(py_coords, with_cb=False)
+              self.refpoint_attach(rp_child, rp)
+              self.callbacks.call("refpoint_new", self, rp_child)
 
             self.refpoint_select(rp_child)
             self._dragged_refpoints = \
@@ -440,8 +437,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     drps = self._dragged_refpoints
     rps = self.document.refpoints.selection
     assert drps is not None
-    screen_view = self.get_visible_coords()
-    transform = screen_view.pix_to_coord
+    transform = self.get_visible_coords().pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
     for rp_name, rp in drps.initial_points.items():
@@ -451,20 +447,25 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
         self.refpoint_set_visibility(rp, True)
 
   def _drag_confirm(self, py_coords):
+    """Confirm a drag operation initiated by _on_button_press_event.
+
+    The effect is to change the coordinates of the dragged reference points.
+    The function also returns a list of the moved reference points with their
+    coordinates set to the value they had before they were moved.
+    """
     drps = self._dragged_refpoints
     assert drps is not None
-    screen_view = self.get_visible_coords()
-    transform = screen_view.pix_to_coord
+    transform = self.get_visible_coords().pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
-    move_list = [(rp_name, box_vec)
-                 for rp_name in drps.initial_points]
 
-    self.undoer.begin_group()
-    rps = self.document.refpoints
-    for rp_name in drps.initial_points:
-      rp = rps[rp_name]
-      if rp.visible:
-        self.undoer.record_action(move_fn, self, rp_name, rp.value)
-        rp.translate(box_vec)
-    self.undoer.end_group()
+    rps_before_move = []
+    with self.undoer.group() as undoer:
+      rps = self.document.refpoints
+      for rp_name in drps.initial_points:
+        rp = rps[rp_name]
+        if rp.visible:
+          undoer.record_action(move_fn, self, rp_name, rp.value)
+          rps_before_move.append(rp.copy())
+          rp.translate(box_vec)
+    return rps_before_move
