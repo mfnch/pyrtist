@@ -69,5 +69,6 @@ class Callbacks(object):
 
     def call(self, name, *args):
         fn = self._fns.get(name)
-        if fn is not None:
-            fn(*args)
+        if fn is None:
+            return None
+        return fn(*args)

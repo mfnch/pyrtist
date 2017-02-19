@@ -112,7 +112,9 @@ class RefPoint(object):
 
   def get_children(self):
     """Get the children point of this refpoint."""
-    return self.related if self.kind == REFPOINT_PARENT else []
+    if self.kind == REFPOINT_PARENT and self.related:
+      return self.related
+    return []
 
   def get_parent_and_index(self):
     """Get the parent of this direction point."""
