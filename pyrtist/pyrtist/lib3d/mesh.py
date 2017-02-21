@@ -9,14 +9,6 @@ from pyrtist.lib2d import Point, Tri
 from pyrtist.lib3d import Matrix3, Point3
 
 
-def _extract_point_and_angle(view_point):
-    if isinstance(view_point, Tri):
-        angle = (view_point.ip - view_point.p).angle()
-        return (view_point.p, angle)
-    else:
-        return (Point(view_point), 0.0)
-
-
 class BoneView(object):
     def __init__(self, transform_matrix=None, proj_matrix=None,
                  variables=None):
@@ -54,10 +46,10 @@ class Constraints(object):
             raise ValueError('Invalid view')
 
     def add(self, bone_name, dst_view_points, axis=None, move=False,
-            repose_children=False):
+            repose_children=True):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
-        apply_order = 0
+        max_apply_order = 0
         for i, dst_view_point in enumerate(dst_view_points):
             if '/' not in dst_view_point:
                 raise ValueError("Invalid format for destination view point "
@@ -85,7 +77,7 @@ class Constraints(object):
                 # reposed. In other words, this ensures that dragging a bone
                 # drags all its children as if they were rigidly connected to
                 # it.
-                apply_order = (1 if repose_children else 0)
+                max_apply_order = (1 if repose_children else 0)
             else:
                 resolved_dst_view_points.append(item)
 
@@ -98,14 +90,14 @@ class Constraints(object):
                                  'or two view points from two different views')
             cnst = PreferentialConstraint(bone_name, resolved_dst_view_points,
                                           move)
-        cnst.set_apply_order(apply_order)
-        self._num_applications = max(self._num_applications, apply_order)
+        cnst.set_max_apply_order(max_apply_order)
+        self._num_applications = max(self._num_applications, max_apply_order)
         self._constraints[bone_name] = cnst
 
     def _repose_all(self, bone, parent_matrix, apply_order):
         constraint = self._constraints.get(bone.name)
-        if constraint is not None and constraint.apply_order == apply_order:
-            bone.matrix = constraint.apply(parent_matrix, bone)
+        if constraint is not None and apply_order <= constraint.max_apply_order:
+            bone.matrix = constraint.apply(parent_matrix, bone, apply_order)
 
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         for child in bone.children:
@@ -150,9 +142,21 @@ class GenericConstraint(object):
         self.move = move
         self.apply_order = 0
 
-    def set_apply_order(self, value):
+    def set_max_apply_order(self, value):
         '''Time at which the constraint should be applied.'''
-        self.apply_order = value
+        self.max_apply_order = value
+
+    def _extract_point_and_angle(self, view, name, apply_order):
+        view_point = view.variables[name]
+        angle = 0.0
+        if isinstance(view_point, Tri):
+            angle = (view_point.ip - view_point.p).angle()
+            view_point = view_point.p
+        if apply_order < self.max_apply_order:
+            gui_attrs = getattr(view_point, 'gui', None)
+            if gui_attrs is not None and gui_attrs.old_value is not None:
+                view_point = gui_attrs.old_value
+        return (Point(view_point), angle)
 
 
 class RotationConstraint(GenericConstraint):
@@ -161,7 +165,7 @@ class RotationConstraint(GenericConstraint):
         rpn = Point3(rotation_axis)
         self.rotation_axis = np.array([rpn.x, rpn.y, rpn.z])
 
-    def apply(self, parent_matrix, bone):
+    def apply(self, parent_matrix, bone, apply_order):
         # The first point is the one used to calculate the constraints. The
         # other points are never used as input of the posing, only as output
         # (in case the user wants to see where the bone end is from other
@@ -169,7 +173,7 @@ class RotationConstraint(GenericConstraint):
         child_matrix = bone.matrix
         desired_view, point_name = self.dst_view_points[0]
         desired_bone_end_position, bone_axis_rotation = \
-          _extract_point_and_angle(desired_view.variables[point_name])
+          self._extract_point_and_angle(desired_view, point_name, apply_order)
 
         # We get rid of the rotation part of `matrix', as we are going to
         # recalculate it anyway and we want to do this in a well known
@@ -222,7 +226,7 @@ class PreferentialConstraint(GenericConstraint):
         super(PreferentialConstraint, self).__init__(bone_name,
                                                      dst_view_points, move)
 
-    def apply(self, parent_matrix, bone):
+    def apply(self, parent_matrix, bone, apply_order):
         assert len(self.dst_view_points) >= 2, \
           'PreferentialConstraint requires at least two view points'
 
@@ -255,7 +259,8 @@ class PreferentialConstraint(GenericConstraint):
             line_dir /= line_dir_norm
             lhs_mx[2] = line_dir
 
-            p, angle = _extract_point_and_angle(view.variables[point_name])
+            p, angle = \
+              self._extract_point_and_angle(view, point_name, apply_order)
             bone_axis_rotation += angle
             rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
             lhs_mx_inv = np.linalg.inv(lhs_mx)
