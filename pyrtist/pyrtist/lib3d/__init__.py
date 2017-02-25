@@ -15,4 +15,4 @@
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 from .core_types import *
-from . import mesh
+from . import bone
