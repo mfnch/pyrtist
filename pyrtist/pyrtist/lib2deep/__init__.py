@@ -28,3 +28,4 @@ from .lathe import *
 from .merge import *
 from .sculpt import *
 from .profile import *
+from .skeleton import *
