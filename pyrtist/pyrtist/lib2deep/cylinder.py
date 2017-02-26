@@ -52,7 +52,7 @@ class Cylinder(Primitive):
         p2.set(old_p2)
         if p1.z != p2.z:
             raise InvalidPrimitiveError('Cylinder points should have the same '
-                                        'coordinate')
+                                        'z coordinate')
         return (p1, p2)
 
     def get_radii(self):

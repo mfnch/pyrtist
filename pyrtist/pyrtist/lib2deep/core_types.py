@@ -19,7 +19,7 @@
 This module defines 3D Point and other types commonly used in the library.
 '''
 
-__all__ = ('Point3', 'DeepMatrix')
+__all__ = ('Point3', 'Matrix3', 'DeepMatrix')
 
 import numbers
 import math

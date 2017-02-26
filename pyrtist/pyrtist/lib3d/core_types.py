@@ -170,9 +170,9 @@ class Matrix3(GenericMatrix):
         cth, sth = (math.cos(theta), math.sin(theta))
         cpsi, spsi = (math.cos(psi), math.sin(psi))
         return cls(
-          [[cpsi*cphi - cth*sphi*spsi, cpsi*sphi + cth*cphi*spsi, spsi*sth],
-           [-spsi*cphi - cth*sphi*cpsi, cth*cphi*cpsi - spsi*sphi, cpsi*sth],
-           [sth*sphi, -sth*cphi, cth]]
+          [[cpsi*cphi - cth*sphi*spsi, cpsi*sphi + cth*cphi*spsi, spsi*sth, 0.0],
+           [-spsi*cphi - cth*sphi*cpsi, cth*cphi*cpsi - spsi*sphi, cpsi*sth, 0.0],
+           [sth*sphi, -sth*cphi, cth, 0.0]]
         )
 
     @classmethod

@@ -47,19 +47,17 @@ def rinsert_char(tb, insert=", ", left=False, delims="),"):
   return insert_char(tb, insert=insert, left=left, delims=delims)
 
 def insert_char(tb, insert=", ", left=True, delims="(,"):
-  if tb != None:
+  if tb is not None:
     it = tb.get_iter_at_mark(tb.get_insert())
     border_reached = it.starts_line if left else it.ends_line
     move_to_next = it.backward_char if left else it.forward_char
-    while not border_reached():
-      if move_to_next():
-        c = it.get_char()
-        if c in " \t":
-          continue
-        elif c not in delims:
-          tb.insert_at_cursor(insert)
+    while not border_reached() and move_to_next():
+      c = it.get_char()
+      if c in " \t":
+        continue
+      if c not in delims:
+        tb.insert_at_cursor(insert)
       return
-
 
 class Paste(Action):
   def __init__(self, text):
@@ -91,10 +89,10 @@ class Paste(Action):
           cursorout = tb.create_mark(None, it, True)
 
         elif tag == "LCOMMA":
-          insert_char(tb, delims="[,")
+          insert_char(tb, delims="(,")
 
         elif tag == "RCOMMA":
-          insert_char(tb, delims="],", left=False)
+          insert_char(tb, delims="),", left=False)
 
         elif tag == "LNEWLINE":
           insert_char(tb, delims="", insert="\n")

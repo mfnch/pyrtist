@@ -22,21 +22,21 @@ import gtk
 import gtk.gdk
 
 known_box_colors = {
-  0x000000: "color.black",
-  0xff0000: "color.red",
-  0x00ff00: "color.green",
-  0xffff00: "color.yellow",
-  0x0000ff: "color.blue",
-  0xff00ff: "color.magenta",
-  0x00ffff: "color.cyan",
-  0xffffff: "color.white",
-  0x7f0000: "color.dark_red",
-  0x007f00: "color.dark_green",
-  0x7f7f00: "color.dark_yellow",
-  0x00007f: "color.dark_blue",
-  0x7f007f: "color.dark_magenta",
-  0x007f7f: "color.dark_cyan",
-  0x7f7f7f: "color.grey"
+  0x000000: "Color.black",
+  0xff0000: "Color.red",
+  0x00ff00: "Color.green",
+  0xffff00: "Color.yellow",
+  0x0000ff: "Color.blue",
+  0xff00ff: "Color.magenta",
+  0x00ffff: "Color.cyan",
+  0xffffff: "Color.white",
+  0x7f0000: "Color.dark_red",
+  0x007f00: "Color.dark_green",
+  0x7f7f00: "Color.dark_yellow",
+  0x00007f: "Color.dark_blue",
+  0x7f007f: "Color.dark_magenta",
+  0x007f7f: "Color.dark_cyan",
+  0x7f7f7f: "Color.grey"
 }
 
 def _cstr(cc):
@@ -91,34 +91,31 @@ class MyColor(object):
     self.red, self.green, self.blue, self.alpha = rgba
 
   def to_box_source(self):
-    r, g, b, alpha = rgba = tuple(self)
+    r, g, b, alpha = tuple(self)
     c = known_box_colors.get((int(self) & 0xffffff00) >> 8, None)
-    if c != None:
-      return (c if alpha >= 1.0
-              else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
+    if alpha >= 1.0 and c is not None:
+      return c
 
-    else:
-      if r == g == b:
-        c = _cstr(r)
-        return ("Color[%s]" % c if alpha >= 1.0
-                else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
+    if r == g == b:
+      c = _cstr(r)
+      return ("Grey({})".format(c) if alpha >= 1.0
+              else "Grey({}, {})".format(c, _cstr(alpha)))
 
-      else:
-        rgba = [_cstr(x) for x in (r, g, b)]
-        if alpha < 1.0:
-          rgba.append(_cstr(alpha))
-        return "Color[(%s)]" % (", ".join(rgba))
+    rgba = [_cstr(x) for x in (r, g, b)]
+    if alpha < 1.0:
+      rgba.append(_cstr(alpha))
+    return "Color({})".format(", ".join(rgba))
 
 
 class ColorSelect(Action):
   def __init__(self, text=None, history=None):
-    self.text = text if text != None else "$INPUT$"
+    self.text = text if text is not None else "$INPUT$"
     self.paste = Paste("")
     self.colordlg = None
     self.history = history
 
   def execute(self, parent):
-    if self.colordlg == None:
+    if self.colordlg is None:
       self.colordlg = \
         gtk.ColorSelectionDialog("Select color")
 
@@ -137,7 +134,7 @@ class ColorSelect(Action):
       color_string = my_c.to_box_source()
       self.paste.text = self.text.replace("$COLOR$", color_string)
       self.paste.execute(parent)
-      if self.history != None:
+      if self.history is not None:
         self.history.new_color(my_c)
 
     cd.hide()
@@ -147,7 +144,7 @@ class ColorHistoryPaste(Action):
   def __init__(self, history, index, text):
     self.history = history
     self.index = index
-    self.text = text if text != None else "$COLOR$"
+    self.text = text if text is not None else "$COLOR$"
     self.paste = Paste("")
 
   def execute(self, parent):
@@ -171,14 +168,14 @@ class ColorHistoryButton(Button):
     # Create the button
     b = gtk.Button()
     my_color = self.history.get_color(self.index)
-    if my_color != None:
+    if my_color is not None:
       pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
       pb.fill(int(my_color))
       img = gtk.Image()
       img.set_from_pixbuf(pb)
       b.set_image(img)
 
-    if tooltip == None:
+    if tooltip is None:
       tooltip = "Recent color # $INDEX$: $COLOR$"
 
     if len(tooltip) > 0:

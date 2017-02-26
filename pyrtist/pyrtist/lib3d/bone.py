@@ -18,11 +18,14 @@
 Utilities to load, display and pose 3D meshes.
 '''
 
+__all__ = ('BoneView', 'Bone', 'Constraints')
+
+
 import math
 import numpy as np
 
 from pyrtist.lib2d import Point, Tri
-from pyrtist.lib3d import Matrix3, Point3
+from . import Matrix3, Point3
 
 
 class BoneView(object):
@@ -61,7 +64,7 @@ class Constraints(object):
         if None in views:
             raise ValueError('Invalid view')
 
-    def add(self, bone_name, dst_view_points, axis=None, move=False,
+    def add(self, bone_name, dst_view_points, axis=None, move=True,
             repose_children=True):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
@@ -339,14 +342,11 @@ class Bone(object):
 
     def get_end_pos(self):
         '''Return the end bone position in the bone's own reference system.'''
-        pos = None
-        for child in self.children:
-            t = child.matrix[:, 3]
-            if pos is None:
-                pos = t
-            else:
-                pos = pos + t
-        return pos
+        if len(self.children) == 0:
+            return None
+
+        ps = [child.matrix[:, 3] for child in self.children]
+        return sum(ps[1:], ps[0]) / float(len(ps))
 
     def get_bones(self, bones=None):
         '''Return all bones as a flat dictionary mapping the bone name to the

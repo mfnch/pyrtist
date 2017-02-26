@@ -76,7 +76,7 @@ msg = ("You are building a linear color gradient.\n\n"
        "line which the gradient should follow. You can click on the view "
        "to select the two points.\n\n"
        "At the end, you should have something like:\n\n"
-       "Gradient[Line[point1, point2], ...]")
+       "Gradient(Line(point1, point2), ...)")
 gradient_line_help = \
   Mode("Gradient.Line help",
        tooltip="Get help about this command",
@@ -96,8 +96,8 @@ gradient_line = \
 msg = ("You are building a radial color gradient.\n\n"
        "You then need to specify center and radius of the initial and final "
        "circles. At the end, you should have something like:\n\n"
-       "Gradient[Circles[point1, radius1; radius2], ...] or,\n"
-       "Gradient[Circles[point1, radius1; point2, radius2], ...]\n\n"
+       "Gradient(Circles(point1, radius1, radius2), ...) or,\n"
+       "Gradient(Circles(point1, radius1, point2, radius2), ...)\n\n"
        "The first case is the most common one, and is used when the two "
        "circles share the same center. Pay attention to the semicolon ; "
        "denoting the end of first circle specification. ")
@@ -152,7 +152,7 @@ border_dash = \
   Mode("Border dash",
        tooltip="Dashed borders",
        button=Button("Dash", "borderds.png"),
-       enter_actions=[InputAct("$LCOMMA$Dash[$INPUT$]$RCOMMA$",
+       enter_actions=[InputAct("$LCOMMA$Dash($INPUT$)$RCOMMA$",
                                label="Lengths for dash, space, dash, ...\n"
                                      "(Example: 3, 1)")])
 
@@ -260,7 +260,7 @@ line_close = \
   Mode("Line.Close",
        tooltip="Close the line",
        button=Button("Close", "lineclose.png"),
-       enter_actions=[Paste("$LCOMMA$Close[]$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Close.yes$RCOMMA$"),
                       update_now])
 
 line_cap_arrow =  \

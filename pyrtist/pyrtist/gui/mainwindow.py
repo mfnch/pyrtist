@@ -533,6 +533,7 @@ class Pyrtist(object):
 
     if filename is not None:
       self.raw_file_save(filename)
+      self.update_title()
 
   def menu_file_quit(self, image_menu_item):
     """Called on file->quit to quit the program."""
