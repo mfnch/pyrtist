@@ -24,6 +24,7 @@ from .circle import *
 from .arc import *
 from .poly import *
 from .curve import *
+from .text import *
 from .path import Path
 from .window import *
 from .transform import *

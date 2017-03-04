@@ -19,10 +19,12 @@ __all__ = ('CairoCmdExecutor',)
 import math
 import numbers
 import cairo
+from collections import namedtuple
 
 from .core_types import *
 from .cmd_stream import CmdStream
-from .style import Cap, Join
+from .style import Cap, Join, FillRule, Font, ParagraphFormat
+from .text_formatter import TextFormatter
 
 def ext_arc_to(ctx, ctr, a, b, angle_begin, angle_end, direction):
     prev_mx = ctx.get_matrix()
@@ -45,6 +47,50 @@ def ext_joinarc_to(ctx, a, b, c):
             0.0, 0.5*math.pi)         # angle begin and end.
     ctx.set_matrix(prev_mx)
 
+
+class CairoTextFormatter(TextFormatter):
+    StackFrame = namedtuple('Stack', ['cur_pos', 'cur_mx'])
+
+    def __init__(self, context, paragraph_fmt):
+        super(CairoTextFormatter, self).__init__()
+        self.context = context
+        self.stack = []
+        self.fmt = paragraph_fmt or ParagraphFormat.default
+
+    def cmd_draw(self):
+        self.context.text_path(self.pop_text())
+
+    def cmd_save(self):
+        frame = self.StackFrame(cur_pos=self.context.get_current_point(),
+                                cur_mx=self.context.get_matrix())
+        self.stack.append(frame)
+
+    def cmd_restore(self):
+        frame = self.stack.pop()
+        self.context.set_matrix(frame.cur_mx)
+        _, y = frame.cur_pos
+        x, _ = self.context.get_current_point()
+        self.context.move_to(x, y)
+
+    def change_fmt(self, translation, scale):
+        x, y = self.context.get_current_point()
+        mx = cairo.Matrix(xx=scale, xy=0.0,
+                          yx=0.0, yy=scale,
+                          x0=x, y0=y + translation)
+        self.context.transform(mx)
+        self.context.move_to(0.0, 0.0)
+
+    def cmd_superscript(self):
+        self.change_fmt(self.fmt.superscript_pos, self.fmt.superscript_scale)
+
+    def cmd_subscript(self):
+        self.change_fmt(self.fmt.subscript_pos, self.fmt.subscript_scale)
+
+    def cmd_newline(self):
+        self.context.translate(0.0, -self.fmt.line_spacing)
+        self.context.move_to(0.0, 0.0)
+
+
 class CairoCmdExecutor(object):
     formats = {'a1': cairo.FORMAT_A1,
                'a8': cairo.FORMAT_A8,
@@ -59,6 +105,15 @@ class CairoCmdExecutor(object):
              Join.round: cairo.LINE_JOIN_ROUND,
              Join.bevel: cairo.LINE_JOIN_BEVEL}
 
+    slants = {Font.Slant.normal: cairo.FONT_SLANT_NORMAL,
+              Font.Slant.italic: cairo.FONT_SLANT_ITALIC,
+              Font.Slant.oblique: cairo.FONT_SLANT_OBLIQUE,
+              None: cairo.FONT_SLANT_NORMAL}
+
+    weights = {Font.Weight.normal: cairo.FONT_WEIGHT_NORMAL,
+               Font.Weight.bold: cairo.FONT_WEIGHT_BOLD,
+               None: cairo.FONT_WEIGHT_NORMAL}
+
     pattern_extends = {'none': cairo.EXTEND_NONE,
                        'repeat': cairo.EXTEND_REPEAT,
                        'reflect': cairo.EXTEND_REFLECT,
@@ -70,6 +125,7 @@ class CairoCmdExecutor(object):
                        'nearest': cairo.FILTER_NEAREST,
                        'bilinear': cairo.FILTER_BILINEAR,
                        'gaussian': cairo.FILTER_GAUSSIAN}
+
 
     @classmethod
     def create_image_surface(cls, mode, width, height):
@@ -138,6 +194,9 @@ class CairoCmdExecutor(object):
             context.fill()
             context.restore()
 
+        self.cmd_set_fill_rule(FillRule.even_odd)
+        self.cmd_set_font(None, None, None)
+
     def execute(self, cmds):
         for cmd in cmds:
             method_name = 'cmd_{}'.format(cmd.get_name())
@@ -205,6 +264,14 @@ class CairoCmdExecutor(object):
     def cmd_set_source_rgba(self, r, g, b, a):
         self.context.set_source_rgba(r, g, b ,a)
 
+    def cmd_set_fill_rule(self, fill_rule):
+        if fill_rule == FillRule.winding:
+            self.context.set_fill_rule(cairo.FILL_RULE_WINDING)
+        else:
+            assert fill_rule is FillRule.even_odd, \
+              'Unknown fill rule'
+            self.context.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
+
     def cmd_pattern_set_extend(self, extend):
         if self.pattern is None:
             return
@@ -262,6 +329,55 @@ class CairoCmdExecutor(object):
         if self.pattern is None:
             return
         self.pattern.add_color_stop_rgba(offset, *color)
+
+    def cmd_set_font(self, name, weight, slant):
+        name = name or 'sans'
+        cairo_weight = self.weights.get(weight)
+        cairo_slant = self.slants.get(slant)
+        self.context.select_font_face(name, cairo_slant, cairo_weight)
+
+    def cmd_text_path(self, origin, v10, v01, offset, par_fmt, text):
+        # Matrix for the reference system identified by origin, v10, v01.
+        mx = cairo.Matrix(xx=(v10.x - origin.x), xy=(v01.x - origin.x),
+                          yx=(v10.y - origin.y), yy=(v01.y - origin.y),
+                          x0=origin.x, y0=origin.y)
+
+        # Compute the text path in a separate context, to avoid polluting
+        # the current context.
+        new_context = cairo.Context(self.context.get_target())
+
+        prev_mx = None
+        try:
+            # Save the matrix (so it can be resored later) and change
+            # coordinates.
+            prev_mx = self.context.get_matrix()
+            self.context.transform(mx)
+
+            # Copy settings from self.context.
+            new_context.set_matrix(self.context.get_matrix())
+            new_context.move_to(0.0, 0.0)
+
+            new_context.set_font_face(self.context.get_font_face())
+            font_mx = cairo.Matrix(xx=1.0, yx=0.0,
+                                   xy=0.0, yy=-1.0,
+                                   x0=0.0, y0=0.0)
+            new_context.set_font_matrix(font_mx)
+
+            # Draw the path.
+            fmt = CairoTextFormatter(new_context, par_fmt)
+            fmt.run(text)
+
+            # Obtain the path extent in these coordinates.
+            x1, y1, x2, y2 = new_context.fill_extents()
+            text_path = new_context.copy_path()
+
+            # Position the text path correctly in the main context.
+            self.context.translate(-x1 - (x2 - x1)*offset[0],
+                                   -y1 - (y2 - y1)*offset[1])
+            self.context.append_path(text_path)
+        finally:
+            if prev_mx is not None:
+                self.context.set_matrix(prev_mx)
 
     def cmd_stroke(self):
         self.context.stroke()

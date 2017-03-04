@@ -14,8 +14,9 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('Color', 'Grey', 'Stroke', 'Fill', 'Style',
-           'Border', 'StrokeStyle', 'Join', 'Cap', 'Dash')
+__all__ = ('Color', 'Grey', 'Stroke', 'FillRule', 'Fill', 'Style',
+           'Border', 'StrokeStyle', 'Join', 'Cap', 'Dash', 'Font',
+           'ParagraphFormat')
 
 import numbers
 import colorsys
@@ -219,7 +220,7 @@ def stroke_style_at_cmd_stream(stroke_style, cmd_stream):
 ### Style #####################################################################
 
 class Style(StyleBase):
-    attrs = ('pattern', 'stroke_style', 'make_default')
+    attrs = ('pattern', 'fill_rule', 'stroke_style', 'font', 'make_default')
 
 @combination(Style, Style)
 def fn(child, parent):
@@ -236,12 +237,13 @@ def pattern_at_style(pattern, style):
     style.pattern = pattern
 
 @combination(Style, CmdStream)
-def fn(style, cmd_stream):
+def style_at_cmd_stream(style, cmd_stream):
     preserve = (style.make_default != True)
     if preserve:
         cmd_stream.take(Cmd(Cmd.save))
 
     cmd_stream.take(style.pattern)
+    cmd_stream.take(style.fill_rule)
     if style.stroke_style is None:
         cmd_stream.take(Cmd(Cmd.fill))
     else:
@@ -281,7 +283,22 @@ def fn(stroke_style, stroke):
 def fn(stroke, cmd_stream):
     cmd_stream.take(stroke.path, stroke.stroke_style)
 
+### Fill Rule #################################################################
+
+FillRule = create_enum('FillRule', 'Rule determining how paths are filled',
+                       'winding', 'even_odd')
+
+@combination(FillRule, Style)
+def fill_rule_at_style(fill_rule, style):
+    style.fill_rule = fill_rule
+
+@combination(FillRule, CmdStream)
+def fill_rule_at_cmd_stream(fill_rule, cmd_stream):
+    cmd_stream.take(Cmd(Cmd.set_fill_rule, fill_rule))
+
+
 ### Fill ######################################################################
+
 
 class Fill(Taker):
     def __init__(self, *args):
@@ -301,3 +318,87 @@ def path_at_fill(path, fill):
 @combination(Fill, CmdStream)
 def fill_at_cmd_stream(fill, cmd_stream):
     cmd_stream.take(fill.path, fill.style)
+
+
+### Font ######################################################################
+
+class Font(Taker):
+    Slant = create_enum('Slant', 'Enumeration of font slant styles',
+                        'normal', 'italic', 'oblique')
+
+    Weight = create_enum('Weight', 'Enumeration of font weight styles',
+                         'normal', 'bold')
+
+    italic = Slant.italic
+    oblique = Slant.oblique
+    bold = Weight.bold
+
+    def __init__(self, *args):
+        super(Font, self).__init__()
+        self.name = None
+        self.size = None
+        self.slant = None
+        self.weight = None
+        self.take(*args)
+
+
+@combination(int, Font)
+@combination(float, Font)
+def scalar_at_font(scalar, font):
+    font.size = scalar
+
+@combination(str, Font)
+def string_at_font(string, font):
+    font.name = string
+
+@combination(Font.Slant, Font)
+def slant_at_font(slant, font):
+    font.slant = slant
+
+@combination(Font.Weight, Font)
+def weight_at_font(weight, font):
+    font.weight = weight
+
+@combination(Font, Font)
+def font_at_font(lhs, rhs):
+    for attr in ('name', 'size', 'slant', 'weight'):
+        value = getattr(lhs, attr, None)
+        if value is not None:
+            setattr(rhs, attr, value)
+
+@combination(Font, Style)
+def font_at_style(font, style):
+    if style.font is None:
+        style.font = Font()
+    style.font.take(font)
+
+@combination(Font, CmdStream)
+def font_at_cmd_stream(font, cmd_stream):
+    cmd_stream.take(Cmd(Cmd.set_font, font.name,
+                        font.weight, font.slant))
+
+
+### ParagraphFormat ###########################################################
+
+class ParagraphFormat(object):
+    attrs = ('line_spacing','subscript_scale', 'subscript_pos',
+             'superscript_scale', 'superscript_pos')
+
+    def __init__(self, line_spacing=1.0,
+                 subscript_scale=0.5, subscript_pos=-0.1,
+                 superscript_scale=0.5, superscript_pos=0.5):
+        self.line_spacing = line_spacing
+        self.subscript_scale = subscript_scale
+        self.subscript_pos = subscript_pos
+        self.superscript_scale = superscript_scale
+        self.superscript_pos = superscript_pos
+
+    def __repr__(self):
+        args = ', '.join('{}={}'.format(attr, getattr(self, attr))
+                         for attr in self.attrs)
+        return 'ParagraphFormat({})'.format(args)
+
+
+# The default paragraph format is assumed to be immutable. The user should not
+# change it.
+ParagraphFormat.default = ParagraphFormat()

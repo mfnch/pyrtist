@@ -24,6 +24,7 @@ from .line import Line
 from .poly import Poly
 from .gradient import Gradient
 from .circle import Circle, Circles
+from .text import Text
 
 
 class Drawable(Taker): pass
@@ -44,12 +45,12 @@ class Bar(Drawable):
 
     def __init__(self, interval=(0.0, 1.0), value=None,
                  pos=None, size=None, cursor=None,
-                 fg_color=None, bg_style=None, label='{}'):
+                 fg_color=None, bg_style=None, label='{:.2f}', font=None):
         super(Bar, self).__init__()
         self.interval = interval
-        #self.value = value
         self.pos = pos or self.default_pos
         self.size = size or self.default_size
+        self.font = font or Font(self.size.y)
         self.cursor = cursor or (self.pos + Point(0.5*self.size.x))
         self.fg_color = fg_color or self.default_fg_color
         self.bg_style = bg_style or self.default_bg_style
@@ -67,11 +68,15 @@ class Bar(Drawable):
         q = self.pos + self.size
         px = min(q.x, max(p.x, self.cursor.x))
         ps = [p, Point(q.x, p.y), q, Point(p.x, q.y)]
-        g = Gradient(Line(ps[0], ps[1]), self.fg_color, Color.white, self.fg_color)
-        window.take(Poly(self.bg_style, *ps),
-                    Poly(ps[0], Point(px, p.y), Point(px, q.y), ps[3], g),
-                    Poly(self.bg_style, Color.none, *ps))
-        '''Text[color.black, $.font, p + 0.5*s, Str[$.label, $.value]]'''
+        g = Gradient(Line(ps[0], ps[1]),
+                     self.fg_color, Color.white, self.fg_color)
+        window.take(
+            Poly(self.bg_style, *ps),
+            Poly(ps[0], Point(px, p.y), Point(px, q.y), ps[3], g),
+            Poly(self.bg_style, Color.none, *ps),
+            Text(Color.black, self.font, 0.5*(p + q),
+                 self.label.format(self.value))
+        )
 
 
 class Sphere(Drawable):
@@ -84,7 +89,8 @@ class Sphere(Drawable):
         super(Sphere, self).__init__(*args)
 
     def draw(self, window):
-        cs = Circles(self.center + self.radius*Point(-0.2, 0.2), 0.0, self.radius)
+        cs = Circles(self.center + self.radius*Point(-0.2, 0.2),
+                     0.0, self.radius)
         g = Gradient(cs, Color.white, 0.4, Color.white, self.color)
         window.take(Circle(self.center, self.radius, g))
 

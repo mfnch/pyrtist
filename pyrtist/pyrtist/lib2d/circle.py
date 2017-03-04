@@ -18,7 +18,7 @@ __all__ = ('Circle', 'Circles')
 
 import math
 
-from .core_types import Point, Through
+from .core_types import Point, Through, Radii
 from .primitive import Primitive
 from .base import combination, RejectError
 from .cmd_stream import CmdStream, Cmd
@@ -56,6 +56,12 @@ def fn(scalar, circle):
     if len(circle.radii) >= 2:
         raise RejectError()
     circle.radii.append(float(scalar))
+
+@combination(Radii, Circle)
+def radii_at_circle(radii, circle):
+    if len(circle.radii) != 0:
+        raise RejectError('Circle already has radii')
+    circle.radii.extend(radii)
 
 @combination(tuple, Circle)
 @combination(Point, Circle)
@@ -116,13 +122,25 @@ class Circles(Primitive):
         prev_center = None
         prev_radius = None
         for center, radius in self.circles:
-            item = (prev_center if center is None else center,
-                    prev_radius if radius is None else radius)
-            prev_center, prev_radius = item
-            out.append(item)
-            assert prev_center is not None and prev_radius is not None, \
+            if center is None:
+                center = prev_center
+            else:
+                prev_center = center
+            if radius is None:
+                radius = prev_radius
+            else:
+                prev_radius = radius
+            out.append((center, radius))
+            assert center is not None and radius is not None, \
               'Malformed Circles object'
         return out
+
+    def build_path(self):
+        cmds = []
+        for center, radius in self._get_tuples():
+            circle = Circle(center, radius)
+            cmds.extend(circle.build_path())
+        return cmds
 
     def __iter__(self):
         return iter(Circle(center, radius)
@@ -134,6 +152,7 @@ class Circles(Primitive):
 
 @combination(int, Circles)
 @combination(float, Circles)
+@combination(Radii, Circles)
 @combination(Point, Circles)
 def scalar_at_circle(attr, circles):
     attr_idx = (0 if isinstance(attr, Point) else 1)

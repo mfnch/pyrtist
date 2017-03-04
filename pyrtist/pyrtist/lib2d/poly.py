@@ -24,6 +24,7 @@ from .cmd_stream import CmdStream, Cmd
 from .style import *
 from .primitive import Primitive
 
+
 class Poly(Primitive):
     def __init__(self, *args):
         super(Poly, self).__init__()
