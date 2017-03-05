@@ -35,7 +35,6 @@ v7 = Point(45.9289340102, 29.2087563452)
 v8 = Point(50.5088832487, 27.1681472081)
 #!PYRTIST:REFPOINTS:END
 from pyrtist.lib2d import *
-#import "arrows"
 
 w = Window()
 w.BBox(bbox1, bbox2)
@@ -73,13 +72,13 @@ w.take(
   Poly(s1, 0, 1, ps[1], ps[2], 0, ps2[2], 0, 1, ps2[1], ps2[0], ps[0]),
   Poly(s1, 1, ps[6], ps[7], ps[0], 0, ps2[0], 0, 1, ps2[7], ps2[6]),
 
-  #Line(0.3, Color.black, normal_1, Scale[0.5], arrow, normal_2),
-  Circle(Color.black, normal_1, 0.5),
-  #StrokeStyle[0.2, color.black]
-  #Line(Scale[0.3], arrow_ruler, rulery_1, arrow_ruler, rulery_2)
-  #Line(Scale[0.3], arrow_ruler, rulerz_1, arrow_ruler, rulerz_2)
-  #Line(Scale[0.3], arrow_ruler, rulerx_1, arrow_ruler, rulerx_2)
   Color.black,
+  Line(0.3, Color.black, normal_1, Scale(0.5), normal_2, arrows.normal),
+  Circle(Color.black, normal_1, 0.5),
+  Line(Scale(0.3), arrows.ruler, rulery_1, arrows.ruler, rulery_2),
+  Line(Scale(0.3), arrows.ruler, rulerz_1, arrows.ruler, rulerz_2),
+  Line(Scale(0.3), arrows.ruler, rulerx_1, arrows.ruler, rulerx_2),
+
   Texts(ruler_1, Font("sans", 2.1), "dx", ruler_2, "dy", ruler_3, "dz << dx, dy",
         normal_2, Font("sans", 4), "n", Offset(1, -0.2))
 )

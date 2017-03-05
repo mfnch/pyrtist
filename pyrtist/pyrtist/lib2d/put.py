@@ -44,11 +44,35 @@ def fn(simple_put, window):
 
 class Put(Taker):
     def __init__(self, *args):
+        super(Put, self).__init__()
         self.window = None
         self.transform = Transform()
+        self.matrix = None
         self.auto_transform = AutoTransform()
         self.constraints = []
-        super(Put, self).__init__(*args)
+        self.take(*args)
+        self.place()
+
+    def place(self):
+        resolved_constraints = []
+        for c in self.constraints:
+            src, dst, weight = (c.src, Point(c.dst), float(c.weight))
+            if not isinstance(src, Point):
+                reference_point = self.window.get(src)
+                if reference_point is None:
+                    raise ValueError('Cannot find reference point {}'
+                                     .format(repr(src)))
+                src = reference_point
+            resolved_constraints.append(Near(Point(src), dst, weight))
+
+        self.transform = \
+          self.auto_transform.calculate(self.transform, resolved_constraints)
+        self.matrix = self.transform.get_matrix()
+        return self.transform
+
+    def __getitem__(self, key):
+        return self.matrix.apply(self.window[key])
+
 
 @combination(Window, Put)
 def window_at_put(window, put):
@@ -85,18 +109,6 @@ def near_at_put(near, put):
 
 @combination(Put, Window, 'Put')
 def put_at_window(put, window):
-    resolved_constraints = []
-    for c in put.constraints:
-        src, dst, weight = (c.src, Point(c.dst), float(c.weight))
-        if not isinstance(src, Point):
-            reference_point = put.window.get(src)
-            if reference_point is None:
-                raise ValueError('Cannot find reference point {}'
-                                 .format(repr(src)))
-            src = reference_point
-        resolved_constraints.append(Near(Point(src), dst, weight))
-
-    t = put.auto_transform.calculate(put.transform, resolved_constraints)
-    mx = t.get_matrix()
-    flt = CmdArgFilter.from_matrix(mx)
+    transform = put.place()
+    flt = CmdArgFilter.from_matrix(transform.get_matrix())
     window.cmd_stream.add(put.window.cmd_stream, flt)

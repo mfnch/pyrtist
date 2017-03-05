@@ -25,11 +25,16 @@ from .path import Path
 from .window import Window
 from .cmd_stream import CmdStream, Cmd
 from .style import *
+from .put import Put, Near
+from .transform import Transform
+
 
 class Line(PointTaker):
     def __init__(self, *args):
         self.stroke_style = Border()
         self.close = False
+        self.arrows = None
+        self.scale = Scale(1.0)
         super(Line, self).__init__(*args)
 
     def __getitem__(self, index):
@@ -65,8 +70,12 @@ class Line(PointTaker):
 
 
 @combination(Close, Line)
-def fn(close, line):
+def close_at_line(close, line):
     line.close = (close == Close.yes)
+
+@combination(Scale, Line)
+def scale_at_line(scale, line):
+    line.scale = scale
 
 @combination(int, Line)
 @combination(float, Line)
@@ -74,11 +83,11 @@ def fn(close, line):
 @combination(Cap, Line)
 @combination(Join, Line)
 @combination(StrokeStyle, Line)
-def fn(child, line):
+def style_at_line(child, line):
     line.stroke_style.take(child)
 
 @combination(Line, Path)
-def fn(line, path):
+def line_at_path(line, path):
     if len(line) > 0:
         points = iter(line)
         path.cmd_stream(Cmd(Cmd.move_to, points.next()))
@@ -86,6 +95,71 @@ def fn(line, path):
         if line.close:
             path.cmd_stream(Cmd(Cmd.close_path))
 
-@combination(Line, Window, 'Line')
-def fn(line, window):
-    window.take(Stroke(Path(line), line.stroke_style))
+@combination(Line, Window)
+def line_at_window(line, window):
+    if len(line.points) < 2:
+        return
+    if line.arrows is None:
+        window.take(Stroke(Path(line), line.stroke_style))
+        return
+    else:
+        if line.close:
+            raise NotImplementedError('Cannot place arrows on closed lines')
+
+    path = Path()
+    cmds = path.cmd_stream
+    arrow_window = Window()
+
+    final_idx = len(line.points) - 1
+    point_iter = enumerate(line.points)
+    start_idx, start_point = point_iter.next()
+    for end_idx, end_point in point_iter:
+        if start_idx == 0:
+            if start_idx in line.arrows:
+                # This is the start arrow.
+                scale, arrow = line.arrows[start_idx]
+                head = arrow['head']
+                scale = scale * (0.3 / (head - arrow['tail']).norm())
+                t = Transform(translation=start_point - head,
+                              scale_factors=scale,
+                              rotation_center=head)
+                placed_arrow = Put(arrow, t, 'r', Near('tail', end_point))
+                arrow_window.take(placed_arrow)
+                sp = placed_arrow['join']
+            else:
+                sp = start_point
+            cmds.take(Cmd(Cmd.move_to, sp))
+
+        if end_idx < final_idx:
+            cmds.take(Cmd(Cmd.line_to, end_point))
+        else:
+            if end_idx in line.arrows:
+                # This is the end arrow.
+                scale, arrow = line.arrows[end_idx]
+                head = arrow['head']
+                scale = scale * (0.3 / (head - arrow['tail']).norm())
+                t = Transform(translation=end_point - head,
+                              scale_factors=scale,
+                              rotation_center=head)
+                placed_arrow = Put(arrow, t, 'r', Near('tail', start_point))
+                arrow_window.take(placed_arrow)
+                ep = placed_arrow['join']
+            else:
+                ep = end_point
+            cmds.take(Cmd(Cmd.line_to, ep))
+
+        start_idx, start_point = (end_idx, end_point)
+
+    window.take(Stroke(path, line.stroke_style), arrow_window)
+
+@combination(Window, Line)
+def window_at_line(window, line):
+    if line.arrows is None:
+        line.arrows = {}
+    idx = max(0, len(line.points) - 1)
+    if idx not in line.arrows:
+        line.arrows[idx] = (line.scale, window)
+    elif idx + 1 not in line.arrows:
+        line.arrows[idx + 1] = (line.scale, window)
+    else:
+        raise ValueError('Too many windows given to Line')
