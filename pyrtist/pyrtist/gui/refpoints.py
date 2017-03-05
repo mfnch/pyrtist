@@ -88,9 +88,22 @@ class RefPoint(object):
     rhs_name, rhs_idx = rhs.split_name()
     return cmp(lhs_name, rhs_name) or cmp(lhs_idx, rhs_idx)
 
-  def copy(self, state=None):
+  def copy(self, state=None, deep=False):
     state = (state if state is not None else self.selected)
-    return RefPoint(self.name, self.value, self.visible, self.kind, state)
+    rp = RefPoint(self.name, self.value, self.visible, self.kind, state)
+
+    if self.related is None or not deep:
+      return rp
+
+    if self.kind == REFPOINT_PARENT:
+      rp.related = list(self.related)
+      for i, child in enumerate(self.related):
+        if child is not None:
+          rp.related[i] = cp = child.copy(deep=False)
+          cp.related = rp
+    elif self.kind == REFPOINT_CHILD:
+      raise NotImplementedError('Deep copy of child refpoints not implemented')
+    return rp
 
   def is_child(self):
     """Whether this is a child refpoint."""
@@ -428,7 +441,6 @@ class RefPoints(object):
         if child is not None:
           self.remove(child)
           ret.append(child)
-
     elif rp.kind == REFPOINT_CHILD:
       # Update parent
       parent = rp.related

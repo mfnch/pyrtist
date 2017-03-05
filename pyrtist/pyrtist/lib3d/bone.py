@@ -57,7 +57,7 @@ class Constraints(object):
         views.update(kwargs)
         self._views = views
         self._constraints = {}
-        self._num_applications = 0
+        self._num_applications = 0  # (either 0 or 1).
         if len(views) == 0:
             raise ValueError('Constraints() object must be given at least one '
                              'view')
@@ -92,11 +92,11 @@ class Constraints(object):
                 resolved_dst_view_points.insert(0, item)
 
                 # Apply this constraint after all the others, so that undragged
-                # bones which are child of the dragged bones are automatically
-                # reposed. In other words, this ensures that dragging a bone
-                # drags all its children as if they were rigidly connected to
-                # it.
-                max_apply_order = (1 if repose_children else 0)
+                # bones which are children of the dragged bones are reposed
+                # automatically. In other words, this ensures that dragging a
+                # bone drags all its children as if they were rigidly connected
+                # to it.
+                max_apply_order = 1
             else:
                 resolved_dst_view_points.append(item)
 
@@ -109,9 +109,11 @@ class Constraints(object):
                                  'or two view points from two different views')
             cnst = PreferentialConstraint(bone_name, resolved_dst_view_points,
                                           move)
-        cnst.set_max_apply_order(max_apply_order)
-        self._num_applications = max(self._num_applications, max_apply_order)
         self._constraints[bone_name] = cnst
+
+        if repose_children and max_apply_order > 0:
+            cnst.set_max_apply_order(max_apply_order)
+            self._num_applications = max_apply_order
 
     def _repose_all(self, bone, parent_matrix, apply_order):
         constraint = self._constraints.get(bone.name)
@@ -159,7 +161,7 @@ class GenericConstraint(object):
         self.bone_name = bone_name
         self.dst_view_points = dst_view_points
         self.move = move
-        self.apply_order = 0
+        self.max_apply_order = 0
 
     def set_max_apply_order(self, value):
         '''Time at which the constraint should be applied.'''
@@ -167,14 +169,14 @@ class GenericConstraint(object):
 
     def _extract_point_and_angle(self, view, name, apply_order):
         view_point = view.variables[name]
-        angle = 0.0
-        if isinstance(view_point, Tri):
-            angle = (view_point.ip - view_point.p).angle()
-            view_point = view_point.p
         if apply_order < self.max_apply_order:
             gui_attrs = getattr(view_point, 'gui', None)
             if gui_attrs is not None and gui_attrs.old_value is not None:
                 view_point = gui_attrs.old_value
+        angle = 0.0
+        if isinstance(view_point, Tri):
+            angle = (view_point.ip - view_point.p).angle()
+            view_point = view_point.p
         return (Point(view_point), angle)
 
 
@@ -324,8 +326,9 @@ class Bone(object):
             bone.children.append(cls.from_collada_node(child))
         return bone
 
-    def __init__(self, name, matrix, children=()):
+    def __init__(self, name, matrix, children=(), end_pos=None):
         self.name = name
+        self.end_pos = end_pos
         self.matrix = matrix.copy()
         self.children = list(children)
 
@@ -340,11 +343,17 @@ class Bone(object):
             lines.append(child.to_str(indent, keyword))
         return '\n'.join(line for line in lines if keyword in line)
 
+    def set_end_pos(self, end_pos):
+        '''Set the bone end position.'''
+        self.end_pos = end_pos
+
     def get_end_pos(self):
         '''Return the end bone position in the bone's own reference system.'''
+        if self.end_pos is not None:
+            p = self.end_pos
+            return np.array([p.x, p.y, p.z, 1.0])
         if len(self.children) == 0:
             return None
-
         ps = [child.matrix[:, 3] for child in self.children]
         return sum(ps[1:], ps[0]) / float(len(ps))
 

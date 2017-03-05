@@ -308,7 +308,8 @@ class Document(Configurable):
     self.callbacks.call("box_document_execute", self)
 
     # Pass the point names and coordinates to the GUI gate object.
-    startup_cmds.extend(self.build_refpoint_set_cmds('new', self.refpoints))
+    cmds = self.build_refpoint_set_cmds('new', self.refpoints)
+    cmds.extend(startup_cmds)
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
@@ -333,7 +334,7 @@ class Document(Configurable):
 
     src = self.get_part_user_code()
     return run_script(src_name, src, callback=my_callback, cwd=cwd,
-                      startup_cmds=startup_cmds)
+                      startup_cmds=cmds)
 
 
 if __name__ == '__main__':

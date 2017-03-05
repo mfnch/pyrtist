@@ -226,8 +226,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     """Delete the given reference point."""
     if rp.visible or force:
       with self.undoer.group() as undoer:
-        children = rp.get_children()
-        for child in children:
+        for child in rp.get_children():
           self.refpoint_delete(child, force=True)
 
         self.refpoint_set_visibility(rp, False)
@@ -466,13 +465,34 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
 
-    rps_before_move = []
+    # Obtain the values of all the refpoints before we move them, which will be
+    # the return value for this function. If we are moving any point of a Tri,
+    # then we only include the Tri parent point. This will make it easier to
+    # create a copy of the Tri point hierarchy, before we translate any part of
+    # it.
+    rps_before_move = {}
+    rps = self.document.refpoints
+    for rp_name in drps.initial_points:
+      rp = rps[rp_name]
+      if rp.is_child():
+        rp_parent = rp.get_parent_and_index()[0]
+        rps_before_move[rp_parent.name] = rp_parent
+      else:
+        rps_before_move[rp.name] = rp
+
+    # Now copy all the refpoint, so that they are not affected by the translate
+    # call below and add also all the children to the list.
+    ret = []
+    for rp in rps_before_move.values():
+      rp = rp.copy(deep=True)
+      ret.extend(child for child in rp.get_children() if child is not None)
+      ret.append(rp)
+
+    # Now move the original points.
     with self.undoer.group() as undoer:
-      rps = self.document.refpoints
       for rp_name in drps.initial_points:
         rp = rps[rp_name]
         if rp.visible:
           undoer.record_action(move_fn, self, rp_name, rp.value)
-          rps_before_move.append(rp.copy())
           rp.translate(box_vec)
-    return rps_before_move
+    return ret
