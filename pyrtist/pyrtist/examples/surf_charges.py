@@ -74,13 +74,14 @@ w.take(
   Poly(s1, 1, ps[6], ps[7], ps[0], 0, ps2[0], 0, 1, ps2[7], ps2[6]),
 
   #Line(0.3, Color.black, normal_1, Scale[0.5], arrow, normal_2),
-  Circle(Color.black, normal_1, 0.5)
+  Circle(Color.black, normal_1, 0.5),
   #StrokeStyle[0.2, color.black]
   #Line(Scale[0.3], arrow_ruler, rulery_1, arrow_ruler, rulery_2)
   #Line(Scale[0.3], arrow_ruler, rulerz_1, arrow_ruler, rulerz_2)
   #Line(Scale[0.3], arrow_ruler, rulerx_1, arrow_ruler, rulerx_2)
-  #Texts[Font["sans", 2.1], "dx", ruler_1; "dy", ruler_2; "dz << dx, dy", ruler_3;
-  #      Font["sans", 4], "n", normal_2, From[(1, -0.2)]]
+  Color.black,
+  Texts(ruler_1, Font("sans", 2.1), "dx", ruler_2, "dy", ruler_3, "dz << dx, dy",
+        normal_2, Font("sans", 4), "n", Offset(1, -0.2))
 )
 
 # Uncomment the following line to obtain a proper PNG figure

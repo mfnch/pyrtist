@@ -393,21 +393,21 @@ text_content = \
 
 text_from_submodes = []
 for alignx, aligny in ((1, 1), (0, 0), (2, 0), (0, 2), (2, 2)):
-  s = "(%g, %g)" % (alignx*0.5, aligny*0.5)
+  s = "%g, %g" % (alignx*0.5, aligny*0.5)
   idxs = str(alignx) + str(aligny)
   text_from_submode = \
-    Mode("From" + idxs,
+    Mode("Offset" + idxs,
          tooltip="Position %s" % s,
-         button=Button("From" + idxs, "textfrom%s.png" % idxs),
+         button=Button("Offset" + idxs, "textfrom%s.png" % idxs),
          enter_actions=[Paste(s), exit_action])
   text_from_submodes.append(text_from_submode)
 text_from_submodes.append(exit)
 
 text_from = \
-  Mode("From",
+  Mode("Offset",
        tooltip="Choose the relative position",
-       button=Button("From", "textfrom.png"),
-       enter_actions=Paste("$LCOMMA$From($CURSORIN$)$CURSOROUT$$RCOMMA$"),
+       button=Button("Offset", "textfrom.png"),
+       enter_actions=Paste("$LCOMMA$Offset($CURSORIN$)$CURSOROUT$$RCOMMA$"),
        submodes=text_from_submodes)
 
 text = \

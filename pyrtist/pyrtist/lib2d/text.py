@@ -14,14 +14,18 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('Text',)
+__all__ = ('Text', 'Texts')
+
+import copy
 
 from .base import *
 from .core_types import *
+from .style import Style, StrokeStyle, Font, ParagraphFormat
+from .pattern import Pattern
 from .axes import Axes
 from .primitive import Primitive
-from .style import Font, ParagraphFormat
 from .cmd_stream import CmdStream, Cmd
+from .window import Window
 
 
 class Text(Primitive):
@@ -31,6 +35,14 @@ class Text(Primitive):
         self.offset = Offset(0.5, 0.5)
         self.paragraph_format = None
         super(Text, self).__init__(*args)
+
+    def new_similar(self):
+        '''Return a new Text object with the same style as this one.'''
+        new = Text()
+        new.style.take(self.style)
+        new.offset = Offset(self.offset)
+        new.paragraph_format = copy.deepcopy(self.paragraph_format)
+        return new
 
     def build_path(self):
         cmds = CmdStream()
@@ -66,3 +78,68 @@ def offset_at_text(offset, text):
 @combination(ParagraphFormat, Text)
 def par_fmt_at_text(par_fmt, text):
     text.paragraph_format = par_fmt
+
+
+class Texts(Taker):
+    def __init__(self, *args):
+        super(Texts, self).__init__()
+        self._tip = Text()
+        self._tail = []
+        self.take(*args)
+
+    @property
+    def texts(self):
+        for item in self._tail:
+            yield item
+        yield self._tip
+
+
+@combination(Pattern, Texts)
+@combination(StrokeStyle, Texts)
+@combination(Style, Texts)
+@combination(Font, Texts)
+@combination(str, Texts)
+@combination(Offset, Texts)
+def item_at_texts(item, texts):
+    texts._tip.take(item)
+
+@combination(Point, Texts)
+def point_at_texts(point, texts):
+    point_comes_first = not texts._tip.string
+
+    if point_comes_first:
+        # This typically occurs when the Point is the first argument given to
+        # Texts().
+        texts._tip.take(point)
+        return
+
+    # In all the other cases, Point marks either the end of the current Text
+    # object or the beginning of the next one. Whether we are in the former or
+    # latter case is decided by looking at whether the tip has already a
+    # position.
+    tip_has_position_already = (texts._tip.axes is not None)
+
+    # In both cases, we will have to create a new tip.
+    new_tip = texts._tip.new_similar()
+
+    # If the tip already has a position, then it marks the beginning of a new
+    # Text and we assign the point the new tip. Otherwise, we assign it to the
+    # old tip.
+    if tip_has_position_already:
+        new_tip.take(point)
+    else:
+        texts._tip.take(point)
+
+    # Adjust the Texts object.
+    texts._tail.append(texts._tip)
+    texts._tip = new_tip
+
+
+@combination(Texts, CmdStream)
+def texts_at_cmd_stream(texts, cmd_stream):
+    for text in texts.texts:
+        cmd_stream.take(text)
+
+@combination(Texts, Window)
+def texts_at_window(primitive, window):
+    window.take(CmdStream(primitive))

@@ -110,7 +110,19 @@ class StyleBase(Taker):
         for attr_name in self.attrs:
             attr_value = getattr(stroke_style, attr_name)
             if attr_value is not None:
-                setattr(self, attr_name, attr_value)
+                if isinstance(attr_value, StyleBase):
+                    parent_attr_value = getattr(self, attr_name)
+                    if parent_attr_value is None:
+                        parent_attr_value = type(attr_value)()
+                        setattr(self, attr_name, parent_attr_value)
+                    parent_attr_value.set_from(attr_value)
+                else:
+                    setattr(self, attr_name, attr_value)
+
+@combination(StyleBase, StyleBase)
+def style_base(child, parent):
+    parent.set_from(child)
+
 
 ### StrokeStyle & co. #########################################################
 
@@ -176,10 +188,6 @@ class StrokeStyle(StyleBase):
 # Border is just another name for StrokeStyle.
 Border = StrokeStyle
 
-@combination(StrokeStyle, StrokeStyle)
-def fn(child, parent):
-    parent.set_from(child)
-
 @combination(Pattern, StrokeStyle)
 def pattern_at_stroke_style(pattern, stroke_style):
     stroke_style.pattern = pattern
@@ -222,9 +230,6 @@ def stroke_style_at_cmd_stream(stroke_style, cmd_stream):
 class Style(StyleBase):
     attrs = ('pattern', 'fill_rule', 'stroke_style', 'font', 'make_default')
 
-@combination(Style, Style)
-def fn(child, parent):
-    parent.set_from(child)
 
 @combination(StrokeStyle, Style)
 def fn(stroke_style, style):
@@ -322,7 +327,9 @@ def fill_at_cmd_stream(fill, cmd_stream):
 
 ### Font ######################################################################
 
-class Font(Taker):
+class Font(StyleBase):
+    attrs = ('name', 'size', 'slant', 'weight')
+
     Slant = create_enum('Slant', 'Enumeration of font slant styles',
                         'normal', 'italic', 'oblique')
 
@@ -358,13 +365,6 @@ def slant_at_font(slant, font):
 @combination(Font.Weight, Font)
 def weight_at_font(weight, font):
     font.weight = weight
-
-@combination(Font, Font)
-def font_at_font(lhs, rhs):
-    for attr in ('name', 'size', 'slant', 'weight'):
-        value = getattr(lhs, attr, None)
-        if value is not None:
-            setattr(rhs, attr, value)
 
 @combination(Font, Style)
 def font_at_style(font, style):
