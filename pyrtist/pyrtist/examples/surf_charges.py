@@ -44,8 +44,9 @@ c2 = Color(1.0, 1.0, 0.0, 0.8)
 c3 = Color(0.7, 1, 1)
 
 g = Gradient(Line(gradient_1, gradient_2), c, 0.7, c3, c)
-s1 = Style(Border(Color.black, 0.25, Join.round))
-s2 = Style(Border(Color.black, 0.25, Join.round, Dash(0.4)))
+ss = StrokeStyle(Border(Color.black, 0.25, Join.round))
+s1 = Style(ss)
+s2 = Style(Border(ss, Dash(0.4)))
 s3 = Border(Color(0, 0, 0, 0.5), 0.25, Dash(0.4))
 
 w.take(
@@ -72,7 +73,7 @@ w.take(
   Poly(s1, 0, 1, ps[1], ps[2], 0, ps2[2], 0, 1, ps2[1], ps2[0], ps[0]),
   Poly(s1, 1, ps[6], ps[7], ps[0], 0, ps2[0], 0, 1, ps2[7], ps2[6]),
 
-  Color.black,
+  StrokeStyle(Color.black, 0.2),
   Line(0.3, Color.black, normal_1, Scale(0.5), normal_2, arrows.normal),
   Circle(Color.black, normal_1, 0.5),
   Line(Scale(0.3), arrows.ruler, rulery_1, arrows.ruler, rulery_2),
@@ -84,6 +85,6 @@ w.take(
 )
 
 # Uncomment the following line to obtain a proper PNG figure
-#w.Save["surf_charges.png", Window["rgb24", .Res[Dpi[200]]]]
+#w.save("surf_charges.png", mode='rgb24', resolution=10)
 
 gui(w)

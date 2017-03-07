@@ -20,7 +20,7 @@ import numbers
 
 from .base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
-from .style import Color, Stroke, Fill
+from .style import Style, StrokeStyle, Color, Stroke, Fill
 from .cairo_cmd_exec import CairoCmdExecutor
 from .bbox import BBox
 from .core_types import Point, View
@@ -210,16 +210,23 @@ def fn(bbox, window):
         window.take(CmdStream(cmd))
 
 @combination(Pattern, Window)
-def pattern_at_window(pattern, window):
-    window.take(CmdStream(pattern))
-
 @combination(Stroke, Window)
-def fn(stroke, window):
-    window.take(CmdStream(stroke))
-
 @combination(Fill, Window)
-def fill_at_window(fill, window):
-    window.take(CmdStream(fill))
+def item_at_window(item, window):
+    window.take(CmdStream(item))
+
+@combination(Style, Window)
+def style_at_window(style, window):
+    s = Style(style)
+    s.make_default = True
+    s.stroke_style.make_default = True
+    window.take(CmdStream(s))
+
+@combination(StrokeStyle, Window)
+def stroke_style_at_window(stroke_style, window):
+    ss = StrokeStyle(stroke_style)
+    ss.make_default = True
+    window.take(CmdStream(ss))
 
 @combination(Hot, Window, 'Hot')
 def fn(hot, window):

@@ -69,6 +69,7 @@ from pyrtist.lib2d import *
 w = Window()          # Create a new Window and set the
 w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
 #!PYRTIST:CURSOR:HERE
+#w.save('out.png')    # Uncomment to save the figure.
 gui(w)                # Show the result.
 '''
 

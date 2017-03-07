@@ -196,6 +196,7 @@ class CairoCmdExecutor(object):
 
         self.cmd_set_fill_rule(FillRule.even_odd)
         self.cmd_set_font(None, None, None)
+        self.cmd_set_line_width(0.25*self.scalar_transform)
 
     def execute(self, cmds):
         for cmd in cmds:
