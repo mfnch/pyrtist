@@ -95,6 +95,21 @@ def line_at_path(line, path):
         if line.close:
             path.cmd_stream(Cmd(Cmd.close_path))
 
+def _place_arrow(line, idx, head_point, tail_point, arrow_window):
+    scale, arrow = line.arrows[idx]
+    head = arrow['head']
+    if line.stroke_style is not None:
+        width = line.stroke_style.width
+        if width is not None:
+            scale *= width
+    scale = 0.5 * scale / (head - arrow['tail']).norm()
+    t = Transform(translation=head_point - head,
+                  scale_factors=scale,
+                  rotation_center=head)
+    placed_arrow = Put(arrow, t, 'r', Near('tail', tail_point))
+    arrow_window.take(placed_arrow)
+    return placed_arrow['join']
+
 @combination(Line, Window)
 def line_at_window(line, window):
     if len(line.points) < 2:
@@ -117,15 +132,8 @@ def line_at_window(line, window):
         if start_idx == 0:
             if start_idx in line.arrows:
                 # This is the start arrow.
-                scale, arrow = line.arrows[start_idx]
-                head = arrow['head']
-                scale = scale * (0.3 / (head - arrow['tail']).norm())
-                t = Transform(translation=start_point - head,
-                              scale_factors=scale,
-                              rotation_center=head)
-                placed_arrow = Put(arrow, t, 'r', Near('tail', end_point))
-                arrow_window.take(placed_arrow)
-                sp = placed_arrow['join']
+                sp = _place_arrow(line, start_idx, start_point, end_point,
+                                  arrow_window)
             else:
                 sp = start_point
             cmds.take(Cmd(Cmd.move_to, sp))
@@ -135,15 +143,8 @@ def line_at_window(line, window):
         else:
             if end_idx in line.arrows:
                 # This is the end arrow.
-                scale, arrow = line.arrows[end_idx]
-                head = arrow['head']
-                scale = scale * (0.3 / (head - arrow['tail']).norm())
-                t = Transform(translation=end_point - head,
-                              scale_factors=scale,
-                              rotation_center=head)
-                placed_arrow = Put(arrow, t, 'r', Near('tail', start_point))
-                arrow_window.take(placed_arrow)
-                ep = placed_arrow['join']
+                ep = _place_arrow(line, end_idx, end_point, start_point,
+                                  arrow_window)
             else:
                 ep = end_point
             cmds.take(Cmd(Cmd.line_to, ep))
