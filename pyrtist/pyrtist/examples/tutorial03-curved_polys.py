@@ -27,7 +27,7 @@ w.take(
        "Pyrtist allows creating curves (cubic Bezier splines)."
        "\nThis example explains how."),
   Text(p2, font, Offset(0, 1),
-       "STEP 1: launch Boxer or create a new document (CTRL+N)\n",
+       "STEP 1: launch Pyrtist or create a new document (CTRL+N)\n",
        "STEP 2: click on the button       to create a new curved polygon\n",
        "STEP 3: move the mouse where you want to create the first vertex.\n",
        s, "Click on the left button of the mouse\n",
@@ -44,9 +44,7 @@ w.take(
 
 # The line below is what draws the curved polygon.       
 w.take(Curve(q1, q2, q3, q4))
-
 w.take(Image("curve.png", p4, 2.5))
-
 w.BBox(bbox1, bbox2)
 
 gui(w)

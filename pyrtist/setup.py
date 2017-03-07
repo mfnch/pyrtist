@@ -25,39 +25,37 @@ sudo python setup.py install
 BUILD_DEEPSURFACE = False
 
 import os
+from setuptools import setup, Extension, Feature
 
-try:
-    from setuptools import setup, Extension, Feature
-except ImportError:
-    from distutils.core import setup, Extension
-    Feature = None
-    print('*** USING distutils')
-    print('*** Edit the setup.py script to enable building deepsurface')
-    print('***')
+cfg = dict(name='pyrtist',
+           version='0.0.1',
+           description='A GUI which enables drawing using Python scripts',
+           author='Matteo Franchin',
+           author_email='fnch@users.sf.net',
+           url='http://boxc.sourceforge.net/',
+           license='LGPL',
+           packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
+                       'pyrtist.gui.comparse', 'pyrtist.lib2d',
+                       'pyrtist.lib2d.prefabs',
+                       'pyrtist.lib2deep', 'pyrtist.lib3d'],
+           package_data = {'pyrtist': ['examples/*.py',
+                                       'examples/*.png',
+                                       'icons/24x24/*.png',
+                                       'icons/32x32/*.png',
+                                       'icons/fonts/*.png']},
+           classifiers =
+             ['Programming Language :: Python :: 2',
+              'Programming Language :: Python :: 2.7',
+              'Development Status :: 3 - Alpha',
+              'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
+              ('License :: OSI Approved :: GNU Lesser General Public '
+               'License v3 or later (LGPLv3+)')])
 
-name = 'pyrtist'
-version = '0.0.1'
-description = 'A GUI which enables drawing using Python scripts'
-author = 'Matteo Franchin'
-author_email = 'fnch@users.sf.net'
-url = 'http://boxc.sourceforge.net/',
-download_url = ('http://sourceforge.net/project/'
-                'platformdownload.php?group_id=218051')
-license_name = 'LGPL'
-packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
-            'pyrtist.gui.comparse', 'pyrtist.lib2d', 'pyrtist.lib2deep',
-            'pyrtist.lib3d']
-
-package_data = {'pyrtist': ['examples/*.py',
-                            'icons/24x24/*.png',
-                            'icons/32x32/*.png',
-                            'icons/fonts/*.png']}
-classifiers = \
-  ['Programming Language :: Python :: 2',
-   'Programming Language :: Python :: 2.7',
-   'Development Status :: 3 - Alpha',
-   'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
-   'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)']
+# Take the long description from the README file.
+script_path = os.path.abspath(os.path.dirname(__file__))
+readme_path = os.path.join(script_path, 'README')
+with open(readme_path, 'r') as f:
+    cfg.update(long_description=f.read())
 
 # C++ extensions.
 ext_modules = []
@@ -71,30 +69,10 @@ ext_modules.append(Extension('pyrtist.deepsurface',
                              sources=srcs_full_paths,
                              libraries=['cairo']))
 
-# Add the extensions differently depending on whether we are using
-# setuptools or distutils.
-kwargs = {}
-if Feature is not None:
-    # setuptools way.
-    kwargs['features'] = \
-      {'deepsurface': Feature('the deepsurface module.',
-                              standard=False, ext_modules=ext_modules)}
-    kwargs['entry_points'] = \
-      {'console_scripts': ['pyrtist=pyrtist:main']}
-elif BUILD_DEEPSURFACE:
-    # distutils way.
-    kwargs['ext_modules'] = ext_modules
-    kwargs['scripts'] = ['scripts/pyrtist']
 
-setup(name=name,
-      version=version,
-      description=description,
-      author=author,
-      author_email=author_email,
-      url=url,
-      download_url=download_url,
-      license=license_name,
-      packages=packages,
-      package_data=package_data,
-      classifiers=classifiers,
-      **kwargs)
+cfg.update(features={'deepsurface': Feature('the deepsurface module.',
+                                            standard=False,
+                                            ext_modules=ext_modules)},
+           entry_points={'console_scripts': ['pyrtist=pyrtist:main']})
+
+setup(**cfg)

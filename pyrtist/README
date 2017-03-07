@@ -1,4 +1,11 @@
-This is Boxer, the Box graphical user interface.
+=======
+Pyrtist
+=======
+This is Pyrtist, a graphical user interface for drawing using Python scripts.
 
-For installation instructions take a look at the file INSTALL.
+Status
+======
 
+This software is under development. It can be used already, despite not being
+feature complete. The drawing API is not fully stable, yet. Any feedback and
+contributions are welcome.
