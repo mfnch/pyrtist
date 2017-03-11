@@ -17,7 +17,7 @@
 '''Infrastructure helpers for the library.'''
 
 __all__ = ('getClassName', 'create_enum', 'alias', 'combination',
-           'RejectError', 'Taker')
+           'RejectError', 'Taker', 'Args')
 
 import types
 
@@ -84,8 +84,13 @@ class Taker(object):
             ret = self._take_one(arg)
         return ret
 
-    def __call__(self, *args):
-        return self.take(*args)
+    def __lshift__(self, arg):
+        self._take_one(arg)
+        return self
+
+    def __rshift__(self, parent):
+        parent._take_one(self)
+        return self
 
 
 def create_method(child, parent, fn):
@@ -107,3 +112,24 @@ def combination(child, parent, method_name=None):
             setattr(parent, method_name, create_method(child, parent, fn))
         return fn
     return combination_adder
+
+
+class Args(tuple):
+    '''Tuple object which collects one or more arguments to be passed to a
+    Taker object. The example below:
+
+      taker << Args(one, two, three)
+
+    is equivalent to any of the following:
+
+      taker.take(one, two, three)
+      taker << one << two << three
+    '''
+    def __new__(cls, *args):
+        return tuple.__new__(cls, args)
+
+
+@combination(Args, Taker)
+def args_at_taker(args, taker):
+    for arg in args:
+        taker._take_one(arg)

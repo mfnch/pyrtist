@@ -24,8 +24,8 @@ class Path(Taker):
 
 @combination(Path, Path)
 def fn(child, parent):
-    parent.cmd_stream(child.cmd_stream)
+    parent.cmd_stream.take(child.cmd_stream)
 
 @combination(Path, CmdStream)
 def fn(path, cmd_stream):
-    cmd_stream(path.cmd_stream)
+    cmd_stream.take(path.cmd_stream)

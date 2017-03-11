@@ -119,11 +119,11 @@ class Window(WindowBase):
         '''
         bbox, mode, size, executor = \
           self._check_for_save(mode, size, resolution, executor, bg_color)
+        ex = executor or self.default_executor
+        mode = mode or self.default_mode
         if bg_color is None:
             bg_color = (self.default_bg_color if mode == 'rgb24'
                         else Color(1, 1, 1, 0))
-        ex = executor or self.default_executor
-        mode = mode or self.default_mode
         surface = ex.create_image_surface(mode, size[0], size[1])
         cmd_exec = ex.for_surface(surface, bot_left=bbox.min_point,
                                   top_right=bbox.max_point, bg_color=bg_color)
@@ -235,7 +235,7 @@ def fn(hot, window):
 
 @combination(CmdStream, Window)
 def fn(cmd_stream, window):
-    window.cmd_stream(cmd_stream)
+    window.cmd_stream.take(cmd_stream)
     window._consume_cmds()
 
 @combination(Window, Window)

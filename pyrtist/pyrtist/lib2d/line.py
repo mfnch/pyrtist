@@ -90,10 +90,10 @@ def style_at_line(child, line):
 def line_at_path(line, path):
     if len(line) > 0:
         points = iter(line)
-        path.cmd_stream(Cmd(Cmd.move_to, points.next()))
-        path.cmd_stream(Cmd(Cmd.line_to, point) for point in points)
+        path.cmd_stream.take(Cmd(Cmd.move_to, points.next()))
+        path.cmd_stream.take(Cmd(Cmd.line_to, point) for point in points)
         if line.close:
-            path.cmd_stream(Cmd(Cmd.close_path))
+            path.cmd_stream.take(Cmd(Cmd.close_path))
 
 def _place_arrow(line, idx, head_point, tail_point, arrow_window):
     scale, arrow = line.arrows[idx]

@@ -66,11 +66,16 @@ bbox2 = Point(100, 0)
 #!PYRTIST:REFPOINTS:END
 from pyrtist.lib2d import *
 
-w = Window()          # Create a new Window and set the
-w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
+w = Window()             # Create a new Window and set the
+w << BBox(bbox1, bbox2)  # Bounding box from p1 and p2.
+
+# Args is used to send multiple objects to the same Window.
+w << Args(
 #!PYRTIST:CURSOR:HERE
-#w.save('out.png')    # Uncomment to save the figure.
-gui(w)                # Show the result.
+)
+
+#w.save('out.png')       # Uncomment to save the figure.
+gui(w)                   # Show the result.
 '''
 
 def installation_path():

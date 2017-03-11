@@ -11,8 +11,8 @@ p7 = Point(66.156462585, 19.3027055853)
 #!PYRTIST:REFPOINTS:END
 from pyrtist.lib2d import *
 
-w = Window()          # Create a new Window and set the
-w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
+w = Window()
+w << BBox(bbox1, bbox2)
 
 # The line below defines a Poly object, representing a polygon.
 # The new object is passed directly to the Window object which
@@ -21,8 +21,8 @@ w.BBox(bbox1, bbox2)  # bounding box from p1 and p2.
 # in the GUI as small white squares. They can be selected
 # (they become yellow) with a left mouse click (keep the SHIFT
 # key pressed to select multiple points). Once a point is yellow
-# it can be moved with a drag-and-drop action. 
-w.take(Poly(p1, p2, p3))
+# it can be moved with a drag-and-drop action.
+w << Poly(p1, p2, p3)
 
 # The line below creates a new 'Poly' object and - rather
 # than passing it to the Window - assigns it to a new variable.
@@ -31,11 +31,11 @@ another_polygon = Poly(p4, p5, p6)
 
 # We now create a new Window and draw the second polygon in there.
 new_figure = Window()
-new_figure.take(another_polygon)
+new_figure << another_polygon
 
 # We finally put the new figure inside the first, scaling it down
 # a bit. Try to change the AngleDeg[0] to AngleDeg[20], then
 # press CTRL+RETURN (or try menu Run --> Execute)
-w.take(Put(new_figure, Scale(0.8), AngleDeg(0), Center(p7)))
+w << Put(new_figure, Scale(0.8), AngleDeg(0), Center(p7))
 
 gui(w)

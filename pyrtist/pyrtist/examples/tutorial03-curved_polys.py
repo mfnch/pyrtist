@@ -22,7 +22,7 @@ w = Window()
 
 s = "             "
 font = Font(2, "Helvetica")
-w.take(
+w << Args(
   Text(p1, font, Offset(0, 1), Color.red,
        "Pyrtist allows creating curves (cubic Bezier splines)."
        "\nThis example explains how."),
@@ -42,9 +42,9 @@ w.take(
        s, "the left")
 )
 
-# The line below is what draws the curved polygon.       
-w.take(Curve(q1, q2, q3, q4))
-w.take(Image("curve.png", p4, 2.5))
-w.BBox(bbox1, bbox2)
+# The line below is what draws the curved polygon.
+w << Curve(q1, q2, q3, q4)
+w << Image("curve.png", p4, 2.5)
+w << BBox(bbox1, bbox2)
 
 gui(w)

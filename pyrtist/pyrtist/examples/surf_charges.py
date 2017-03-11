@@ -37,7 +37,7 @@ v8 = Point(50.5088832487, 27.1681472081)
 from pyrtist.lib2d import *
 
 w = Window()
-w.BBox(bbox1, bbox2)
+w << BBox(bbox1, bbox2)
 
 c = Color(0.3, 0.7, 1)
 c2 = Color(1.0, 1.0, 0.0, 0.8)
@@ -49,7 +49,7 @@ s1 = Style(ss)
 s2 = Style(Border(ss, Dash(0.4)))
 s3 = Border(Color(0, 0, 0, 0.5), 0.25, Dash(0.4))
 
-w.take(
+w << Args(
   Poly(s1, gui2, gui3, gui4, 0.5, gui5, gui1, 0, c.darken(0.6)),
   Poly(s1, gui1, gui2, gui6, gui7, c.darken(0.85)),
   Poly(s1, gui7, 0.5, gui8, 0.5, 0, gui9, 0.5, 0, gui4, gui5, 0.5, 0, gui1, g)
@@ -59,7 +59,7 @@ ps = Line(v1, v2, v3, v4, v5, v6, v7, v8)
 ps2 = Line(p + Point(-0.7, 2) for p in ps)
 ps3 = Line(p - Point(-0.7, 2) for p in ps)
 
-w.take(
+w << Args(
   Color(1, 1, 0, 0.5),
   Poly(s2, 1, *ps3),
   Poly(1, ps[0], ps[1], ps[2], 0, ps3[2], 0, 1, ps3[1], ps3[0]),

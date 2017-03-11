@@ -49,11 +49,12 @@ class Arc(Primitive):
         angle_end = self.angle_end
 
     def build_path(self):
-        radius = self.circle.radii[0]
-        center = self.circle.center
-        start = center + radius*Point.vangle(self.angle_begin)
-        one_zero = center + Point(radius, 0.0)
-        zero_one = center + Point(0.0, radius)
+        rx, ry = self.circle.get_radii()
+        ang = self.angle_begin
+        center = self.circle.get_center()
+        start = center + Point(rx * math.cos(ang), ry * math.sin(ang))
+        one_zero = center + Point(rx, 0.0)
+        zero_one = center + Point(0.0, ry)
         cmds = [Cmd(Cmd.move_to, start),
                 Cmd(Cmd.ext_arc_to, center, one_zero, zero_one,
                     self.angle_begin, self.angle_end, self.direction)]
@@ -67,7 +68,7 @@ def close_at_arc(close, arc):
     arc.close = close
 
 @combination(Through, Arc)
-def point_at_arc(through, arc):
+def through_at_arc(through, arc):
     arc.circle.take(through)
     center = arc.circle.center
     angle_inside = (through[1] - center).angle()

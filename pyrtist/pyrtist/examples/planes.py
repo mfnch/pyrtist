@@ -27,11 +27,10 @@ c3 = Color.green
 c4 = Color.blue
 
 # Some controls to let you see through the planes.
-plane1 = Bar(pos=gui1, cursor=gui2, fg_color=c1)
-plane2 = Bar(cursor=gui3, fg_color=c2)
-plane3 = Bar(cursor=gui4, fg_color=c3)
-plane4 = Bar(cursor=gui5, fg_color=c4)
-w.take(plane1, plane2, plane3, plane4)
+plane1 = Bar(pos=gui1, cursor=gui2, fg_color=c1) >> w
+plane2 = Bar(cursor=gui3, fg_color=c2) >> w
+plane3 = Bar(cursor=gui4, fg_color=c3) >> w
+plane4 = Bar(cursor=gui5, fg_color=c4) >> w
 
 c1.a = plane1.value
 c2.a = plane2.value
@@ -56,10 +55,11 @@ up = intersection((fg3, bg4), (bg3, fg4))
 front = intersection((fg1, fg4), (fg2, fg3))
 rear = intersection((bg1, bg4), (bg2, bg3))
 sph = Sphere(Color.blue, 2)
-w.take(Sphere(sph, bg1), Sphere(sph, bg2), Sphere(sph, bg3), Sphere(sph, bg4))
+w << Args(Sphere(sph, bg1), Sphere(sph, bg2),
+          Sphere(sph, bg3), Sphere(sph, bg4))
 
 s1 = Style(Border(Color.black, 0.2, Join.round))
-w.take(
+w << Args(
   Poly(c4, s1, bg2, rear, center),
   Poly(c3, s1, bg4, rear, center),
   Poly(c3, s1, bg1, rear, center),
@@ -87,6 +87,7 @@ w.take(
 )
 
 sph = Sphere(sph, 3)
-w.take(Sphere(sph, fg1), Sphere(sph, fg2), Sphere(sph, fg3), Sphere(sph, fg4))
+w << Args(Sphere(sph, fg1), Sphere(sph, fg2),
+          Sphere(sph, fg3), Sphere(sph, fg4))
 
 gui(w)

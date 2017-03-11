@@ -39,7 +39,7 @@ q17 = Point(64.0925357143, 0.688637458194)
 from pyrtist.lib2d import *
 
 fg = Window()
-fg.take(BBox(bbox1, bbox2))
+fg << BBox(bbox1, bbox2)
 
 # Some examples of usage of Circle, Circles, Poly, Line, and
 # Text are provided here. These five objects allow tracing quite
@@ -47,7 +47,7 @@ fg.take(BBox(bbox1, bbox2))
 # try the help browser: menu Help -> Documentation Browser 
 # or just type CTRL+H.
 
-fg.take(
+fg << Args(
   Circle(p1, 8),                 # Circle
   Circle(p2, 4, 8),              # Ellipse
   Circles(p3, 3, 4, 5, 6),       # Rings
@@ -68,7 +68,7 @@ ss1 = StrokeStyle(1, Dash(3, 1))
 # Stroke style for lines: using round caps and round joints
 ss2 = StrokeStyle(Cap.round, Join.round)
 
-fg.take(
+fg << Args(
   Line(0.5, q4, q5, q6, q7),          # Simple line with width 0.5
   Line(ss1, q8, q9, q10),             # Dashed line
   Line(5, q11, q12, q13, ss2),        # Thick line with round cap

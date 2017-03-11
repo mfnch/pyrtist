@@ -33,34 +33,39 @@ class Circle(Primitive):
         self.take(*args)
 
     def get_radii(self):
+        if len(self.radii) == 0:
+            raise ValueError('No radius given')
         if len(self.radii) == 2:
             return self.radii
         rx = self.radii[0]
         return (rx, rx)
 
-    def build_path(self):
-        if len(self.radii) == 0 or self.center is None:
+    def get_center(self):
+        if self.center is None:
             raise ValueError('Circle is missing the center')
+        return self.center
 
+    def build_path(self):
+        ctr = self.get_center()
         rx, ry = self.get_radii()
-        one_zero = self.center + Point.vx(rx)
-        zero_one = self.center + Point.vy(ry)
+        one_zero = ctr + Point.vx(rx)
+        zero_one = ctr + Point.vy(ry)
         return [Cmd(Cmd.move_to, one_zero),
-                Cmd(Cmd.ext_arc_to, self.center, one_zero, zero_one,
+                Cmd(Cmd.ext_arc_to, ctr, one_zero, zero_one,
                     0.0, 2.0*math.pi, 1)]
 
 
 @combination(int, Circle)
 @combination(float, Circle)
-def fn(scalar, circle):
+def scalar_at_circle(scalar, circle):
     if len(circle.radii) >= 2:
-        raise RejectError()
+        raise ValueError('Radius already provided')
     circle.radii.append(float(scalar))
 
 @combination(Radii, Circle)
 def radii_at_circle(radii, circle):
     if len(circle.radii) != 0:
-        raise RejectError('Circle already has radii')
+        raise ValueError('Radius already provided')
     circle.radii.extend(radii)
 
 @combination(tuple, Circle)

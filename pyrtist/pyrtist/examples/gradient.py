@@ -13,7 +13,7 @@ g2 = Gradient(Circles(Point(10, 5), 0, 12), Color.white, Color.black)
 
 ball = Window(Circle(g2, Point(10, 5), 12))
 
-w.take(
+w << Args(
   Poly(g1, (-25, -25), (25, -25), (25, 25), (-25, 25)),
   Put(ball),  # Just place the ball, as it is.
   Put(ball, Point(-15, -10), Scale(0.2, 0.5), AngleDeg(45))  # Scale and rotate it.

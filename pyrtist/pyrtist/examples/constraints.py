@@ -10,11 +10,11 @@ p5 = Point(78.8827259507, 22.3629947834)
 from pyrtist.lib2d import *
 
 w = Window()
-w.BBox(bbox1, bbox2)
+w << BBox(bbox1, bbox2)
 
-w.take(Line(p1, p2, 0.3))
+w << Line(p1, p2, 0.3)
 radius = 10.0
-w.take(Circle(p3, radius, Style(Color.none, Border(0.3, Color.black))))
+w << Circle(p3, radius, Style(Color.none, Border(0.3, Color.black)))
 
 # Project p4 onto the line.
 v = (p2 - p1).normalized()

@@ -20,13 +20,13 @@ class Bar(object):
         px = lx * min(1.0, max(0.0, self.completed))
         ps = [Point(0, 0), Point(lx, 0), Point(lx, ly), Point(0, ly)]
         g = Gradient(Line(ps[0], ps[1]), self.fg_color, Color.white, self.fg_color)
-        w.take(Poly(self.bg_color, *ps),
-               Poly(ps[0], Point(px, 0), Point(px, ly), ps[3], g),
-               Poly(Style(Color.none, Border(Color.black, 0.2)), *ps))
+        w << Poly(self.bg_color, *ps)
+        w << Poly(ps[0], Point(px, 0), Point(px, ly), ps[3], g)
+        w << Poly(Style(Color.none, Border(Color.black, 0.2)), *ps)
 
 # Example using the Bar object
 w = Window()
-w.BBox(gui2, gui3)
+w << BBox(gui2, gui3)
 
 b = Bar(Point(50, 5), completed=gui1.x/50.0)
 b.draw(w)

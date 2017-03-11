@@ -95,7 +95,7 @@ class Paste(Action):
           insert_char(tb, delims="),", left=False)
 
         elif tag == "LNEWLINE":
-          insert_char(tb, delims="", insert="\n")
+          insert_char(tb, delims="", insert=",\n")
 
         elif tag == "RNEWLINE":
           insert_char(tb, delims="", insert="\n", left=False)
