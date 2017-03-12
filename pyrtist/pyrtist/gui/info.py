@@ -31,7 +31,7 @@ along with Pyrtist; if not, write to the Free Software Foundation, Inc.,
 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA"""
 
 name = "Pyrtist"
-version = (0, 0, 1)
+version = (0, 0, 2)
 version_string = "%d.%d.%d" % version
 full_name = "%s %s" % (name, version_string)
 comment = "Pyrtist, the Python drawing tool"
