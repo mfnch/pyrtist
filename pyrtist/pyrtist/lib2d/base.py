@@ -55,6 +55,68 @@ class RejectError(Exception):
 
 
 class Taker(object):
+    '''Base class for taker objects.
+
+    The Taker base class gives to inherited classes the ability of "taking"
+    other objects via the take() method. Every argument, `x`, given to
+    Taker.take() is handled by calling a separate function which was provided
+    via the `combination` annotation and is identified by looking at the type
+    of `x`. Let's see an example:
+
+      class Line(Taker):
+          def __init__(self, *args):
+              super(self, Line).__init__()
+              self.points = []
+              self.color = None
+              self.take(*args)
+
+      @combination(Point, Taker)
+      def point_at_line(point, line):
+          line.points.append(point)
+
+      @combination(Color, Taker)
+      def color_at_line(color, line):
+          assert line.color is None, 'Color should be given only once'
+          line.color = color
+
+    The code above defines a new taker object `Line` which can be given `Point`
+    objects. Every `Point` object given to `Line.take` is handled by calling
+    the function `point_at_line`. Similarly, `Color` objects can also be given
+    to `Line.take` and are handled by calling the function `color_at_line`.
+    The user can now do:
+
+      line = Line(Point(p1), Point(p2), Color(c), Point(p3))
+
+    Which ends up being equivalent to:
+
+      line = Line()
+      point_at_line(Point(p1), line)
+      point_at_line(Point(p2), line)
+      color_at_line(Color(c), line)
+      point_at_line(Point(p3), line)
+
+    `Taker` also overrides the operators << and >>, providing an alternative
+    to using the Taker.take method. For example:
+
+      line << Point(p1) << Point(p2) << Color(c) << Point(p3)
+      # equivalent to: line.take(Point(p2), Color(c), Point(p3))
+
+      line = Line(Point(p1), Color(c), Point(p3)) >> window1 >> window2
+      # Equivalent to:
+      #   line = Line(Point(p1), Color(c), Point(p3))
+      #   window1.take(line)
+      #   window2.take(line)
+
+    Additionally arguments can be grouped using the `Args` object:
+
+      args = Args(p1, c, p3)
+      line1 = Line(args, p2)
+      line2 = Line(args, p4)
+      # Equivalent to:
+      #   line1 = Line(p1, c, p3, p2)
+      #   line2 = Line(p1, c, p3, p4)
+    '''
+
     def __init__(self, *args):
         self.take(*args)
 
@@ -131,5 +193,8 @@ class Args(tuple):
 
 @combination(Args, Taker)
 def args_at_taker(args, taker):
+    '''Give all the members of `Args` to the `Taker` in the same order they
+    were originally provided when constructing the `Args` object.
+    '''
     for arg in args:
         taker._take_one(arg)
