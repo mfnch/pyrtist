@@ -123,7 +123,7 @@ class DeepWindow(WindowBase):
 
 @combination(CmdStream, DeepWindow)
 def cmd_stream_at_deep_window(cmd_stream, deep_window):
-    deep_window.cmd_stream(cmd_stream)
+    deep_window.cmd_stream.take(cmd_stream)
     deep_window._consume_cmds()
 
 @combination(DeepWindow, BBox)
@@ -146,7 +146,8 @@ def deep_window_at_deep_window(child, parent):
 def bbox_at_deep_window(bbox, deep_window):
     if not bbox:
         return
-    deep_window(CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
+    deep_window.take(
+        CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
 
 @combination(Hot, DeepWindow, 'Hot')
 def hot_at_deep_window(hot, deep_window):

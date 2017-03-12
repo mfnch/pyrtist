@@ -66,10 +66,10 @@ bbox2 = Point(100, 0)
 #!PYRTIST:REFPOINTS:END
 from pyrtist.lib2d import *
 
-w = Window()             # Create a new Window and set the
-w << BBox(bbox1, bbox2)  # Bounding box from p1 and p2.
+w = Window()             # Create a new Window.
+w << BBox(bbox1, bbox2)  # Give bounding box (containing bbox1, bbox2) to w.
 
-# Args is used to send multiple objects to the same Window.
+# Args is used to give multiple objects to the same Window.
 w << Args(
 #!PYRTIST:CURSOR:HERE
 )
