@@ -252,7 +252,6 @@ class PreferentialConstraint(GenericConstraint):
           'PreferentialConstraint requires at least two view points'
 
         mx = bone.matrix.copy()
-        mx[:3, :3] = np.identity(3, dtype=np.float64)
         abs_matrix = np.dot(parent_matrix, mx)
 
         # Rotation around the bone axis.
@@ -309,11 +308,11 @@ class PreferentialConstraint(GenericConstraint):
 
         # We can now compute the new bone direction, r, and from this the bone
         # rotation matrix.
-        r = Point3(*(primary[0] + alpha*primary[1]))
-        bone_end_pos = Point3(*bone.get_end_pos()[:3])
+        r = Point3.from_np(primary[0] + alpha*primary[1])
+        bone_end_pos = Point3.from_np(bone.get_end_pos())
         mx = (Matrix3.rotation_by_example(bone_end_pos, r) *
               Matrix3.rotation(bone_axis_rotation, axis=bone_end_pos))
-        bone.matrix[:3, :3] = mx.to_np33()
+        bone.matrix[:3, :3] = np.dot(bone.matrix[:3, :3], mx.to_np33())
         return bone.matrix
 
 

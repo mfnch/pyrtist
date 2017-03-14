@@ -39,6 +39,12 @@ class Point3(object):
       others from the remaining arguments.
     '''
 
+    @classmethod
+    def from_np(cls, np_array):
+        if len(np_array) == 3:
+            return cls(*np_array)
+        return cls(*np_array[:3])
+
     def __init__(self, *args):
         self.x = 0.0
         self.y = 0.0
