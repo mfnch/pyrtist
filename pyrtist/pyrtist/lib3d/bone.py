@@ -327,7 +327,7 @@ class Bone(object):
 
     def __init__(self, name, matrix, children=(), end_pos=None):
         self.name = name
-        self.end_pos = end_pos
+        self.end_pos = (end_pos.copy() if end_pos is not None else None)
         self.matrix = matrix.copy()
         self.children = list(children)
 
@@ -379,7 +379,8 @@ class Bone(object):
 
     def copy(self):
         '''Return a new independent copy of this object.'''
-        self_copy = self.__class__(self.name, self.matrix.copy())
+        self_copy = self.__class__(self.name, self.matrix.copy(),
+                                   end_pos=self.end_pos)
         for child in self.children:
             self_copy.children.append(child.copy())
         return self_copy
