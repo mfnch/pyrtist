@@ -1,4 +1,4 @@
-# Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2008, 2017 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Pyrtist.
 #
@@ -36,4 +36,4 @@ version_string = "%d.%d.%d" % version
 full_name = "%s %s" % (name, version_string)
 comment = "Pyrtist, the Python drawing tool"
 authors = ["Matteo Franchin (fnch@users.sourceforge.net)"]
-website = "http://boxc.sourceforge.net"
+website = "https://github.com/mfnch/pyrtist"
