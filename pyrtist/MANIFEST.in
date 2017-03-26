@@ -1,3 +1,3 @@
-include README INSTALL COPYING COPYING.LESSER ChangeLog
+include README.rst INSTALL COPYING COPYING.LESSER ChangeLog
 recursive-include pyrtist/examples fractal.box fractree.box wheatstone.box planes.py
 recursive-exclude pyrtist win_setup.py

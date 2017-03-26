@@ -51,9 +51,9 @@ cfg = dict(name='pyrtist',
               ('License :: OSI Approved :: GNU Lesser General Public '
                'License v3 or later (LGPLv3+)')])
 
-# Take the long description from the README file.
+# Take the long description from the README.rst file.
 script_path = os.path.abspath(os.path.dirname(__file__))
-readme_path = os.path.join(script_path, 'README')
+readme_path = os.path.join(script_path, 'README.rst')
 with open(readme_path, 'r') as f:
     cfg.update(long_description=f.read())
 
