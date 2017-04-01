@@ -16,3 +16,4 @@
 
 from .core_types import *
 from .bone import *
+from .mesh import *
