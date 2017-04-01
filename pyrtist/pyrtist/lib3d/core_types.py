@@ -191,8 +191,8 @@ class Matrix3(GenericMatrix):
         '''
 
         # Check for rotations around the x, y, z axes.
-        idx_rot = {'x': 0, 'y': 1, 'z': 2}.get(axis)
-        if idx_rot is not None:
+        if axis in ('x', 'y', 'z'):
+            idx_rot = {'x': 0, 'y': 1, 'z': 2}.get(axis)
             zero, one, two = [(i + idx_rot) % 3 for i in range(3)]
             c, s = (math.cos(angle), math.sin(angle))
             value = [[0.0]*4 for _ in range(3)]
@@ -333,7 +333,6 @@ class Matrix3(GenericMatrix):
 
     def multiply(self, b):
         '''Right multiply this matrix with another matrix.'''
-        print('multiply')
         self.value = self.get_product(b).value
 
     def scale(self, s):
