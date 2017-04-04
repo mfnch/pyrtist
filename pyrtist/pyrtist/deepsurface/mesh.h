@@ -18,7 +18,9 @@
 #define _MESH_H
 
 #include "geom.h"
+#include "texture.h"
 
+#include <memory>
 #include <array>
 #include <vector>
 #include <map>
@@ -61,7 +63,6 @@ struct Face {
 };
 
 
-
 class Mesh {
  public:
   using Scalar = float;
@@ -71,20 +72,47 @@ class Mesh {
   static Mesh* LoadObj(const char* file_name);
   static Mesh* LoadObj(std::istream& in);
 
+  Mesh() {
+    SetTexture(std::unique_ptr<Texture>(new UniformTexture(~UINT32_C(0))));
+  }
+
   void AddVertex(const Point3& v) { vertices_.push_back(v); }
+
+  void AddTexCoords(const Point2& tc) { tex_coords_.push_back(tc); }
 
   Face* CreateFace() {
     faces_.emplace_back();
     return &faces_.back();
   }
 
+  void SetTexture(std::unique_ptr<Texture> texture) {
+    if (tex_zones_.size() > 0 &&
+        tex_zones_.back().starting_face == faces_.size()) {
+      // No faces were added since the last texture definition, meaning that
+      // the last material has no associated faces: replace it!
+      tex_zones_.back().texture = std::move(texture);
+    } else {
+      tex_zones_.emplace_back();
+      auto& new_zone = tex_zones_.back();
+      new_zone.starting_face = faces_.size();
+      new_zone.texture = std::move(texture);
+    }
+  }
+
   void Draw(DepthBuffer* db, ARGBImageBuffer* ib, const Affine3<Scalar>& mx);
 
  private:
+  struct TextureZone {
+    std::unique_ptr<Texture> texture;
+    size_t starting_face;
+  };
+
   bool ReadLine(std::istream& in);
   void DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
-                    const Point3& p1, const Point3& p2, const Point3& p3);
+                    const Point3& p1, const Point3& p2, const Point3& p3,
+                    uint32_t color);
 
+  std::vector<TextureZone> tex_zones_;
   std::map<std::string, int> groups_;
   std::unordered_map<std::string, int> material_files_;
   std::vector<Point3> vertices_;

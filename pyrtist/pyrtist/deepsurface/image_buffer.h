@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <algorithm>
+#include <memory>
 
 template <typename T>
 class ImageBuffer {
@@ -103,6 +104,18 @@ class ImageBuffer {
   int32_t height_;
 };
 
+// Utility functions (Little-endian implementation).
+inline uint32_t GetA(uint32_t argb) { return (argb >> 24) & 0xff; }
+inline uint32_t GetR(uint32_t argb) { return (argb >> 16) & 0xff; }
+inline uint32_t GetG(uint32_t argb) { return (argb >> 8) & 0xff; }
+inline uint32_t GetB(uint32_t argb) { return argb & 0xff; }
+inline uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
+  return ((static_cast<uint32_t>(a) << 24) |
+          (static_cast<uint32_t>(r) << 16) |
+          (static_cast<uint32_t>(g) << 8) |
+          (static_cast<uint32_t>(b)));
+}
+
 class ARGBImageBuffer : public ImageBuffer<uint32_t> {
  private:
   using BaseType = ImageBuffer<uint32_t>;
@@ -118,4 +131,4 @@ class ARGBImageBuffer : public ImageBuffer<uint32_t> {
   bool SaveToFile(const char* file_name);
 };
 
-#endif /* _IMAGE_BUFFER_H */
+#endif  /* _IMAGE_BUFFER_H */

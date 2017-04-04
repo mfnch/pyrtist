@@ -18,18 +18,6 @@
 
 #include "deep_surface.h"
 
-// Utility functions.
-static uint32_t GetA(uint32_t argb) { return (argb >> 24) & 0xff; }
-static uint32_t GetR(uint32_t argb) { return (argb >> 16) & 0xff; }
-static uint32_t GetG(uint32_t argb) { return (argb >> 8) & 0xff; }
-static uint32_t GetB(uint32_t argb) { return argb & 0xff; }
-static uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
-  return ((static_cast<uint32_t>(a) << 24) |
-          (static_cast<uint32_t>(r) << 16) |
-          (static_cast<uint32_t>(g) << 8) |
-          (static_cast<uint32_t>(b)));
-}
-
 // Blending between premultiplied ARGB values.
 // Premultiplied means that R, G, B are intended as already multiplied by the
 // corresponding A value, which is the format we use here.

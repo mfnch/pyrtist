@@ -14,7 +14,9 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import logging
+import collections
 import numpy as np
 
 import collada
@@ -43,6 +45,7 @@ class ColladaMesh(Mesh):
         self.pose = None
         self.collada_node = None
         self.polygons = None
+        self._textures = None
 
         if collada_node is not None:
             self.collada_node = collada_node
@@ -54,6 +57,47 @@ class ColladaMesh(Mesh):
         else:
             raise TypeError('ColladaMesh needs one of its key arguments '
                             'collada_node or file_name')
+
+    @property
+    def textures(self):
+        if self._textures is None:
+            self._textures = self._build_textures()
+        return self._textures
+
+    def _build_textures(self):
+        try:
+            import PIL.Image as pil
+        except ImportError:
+            pil = None
+            logging.warn("No PIL module found. Without PIL textures won't be "
+                         "loaded properly.")
+
+        parent_dir = self.collada_node.filename
+        if parent_dir:
+            parent_dir = os.path.dirname(parent_dir)
+
+        images = collections.OrderedDict()
+        for image in self.collada_node.images:
+            image_obj = None
+            if pil is not None:
+                image_path = image.path
+                if not os.path.exists(image_path):
+                    file_prefix = 'file://'
+                    if image_path.lower().startswith(file_prefix):
+                        image_path = image_path[len(file_prefix):]
+                    if parent_dir:
+                        image_path = os.path.join(parent_dir, image_path)
+                pil_image = pil.open(image_path)
+                pil_image.load()
+                image_obj = self._adjust_texture(pil_image)
+            images[image.id] = image_obj
+        return images
+
+    def _adjust_texture(self, pil_image):
+        ib = deepsurface.ImageBuffer(pil_image.size[0], pil_image.size[1])
+        ib.set_from_string(pil_image.tobytes(), pil_image.size[0],
+                           pil_image.mode)
+        return ib
 
     def _build_posed_vertices(self, skel, pose):
         bind_matrices = skel.build_matrices()
@@ -89,7 +133,8 @@ class ColladaMesh(Mesh):
     def _build_polygons(self):
         ret = []
         start_idx = 1
-        for geom in self.collada_node.geometries:
+        materials = self.collada_node.materials
+        for geom_idx, geom in enumerate(self.collada_node.geometries):
             for prim in geom.primitives:
                 if isinstance(prim, collada.polylist.Polylist):
                     ps = [[(prim.vertex_index[idx] + start_idx,
@@ -97,7 +142,10 @@ class ColladaMesh(Mesh):
                             prim.normal_index[idx] + start_idx)
                             for idx in range(start, end)]
                           for start, end in prim.polyindex]
-                    ret.append(ps)
+                    material = prim.material
+                    if material is None and geom_idx < len(materials):
+                        material = materials[geom_idx]
+                    ret.append((ps, material))
                     start_idx += len(prim.vertex)
         return ret
 
@@ -109,17 +157,45 @@ class ColladaMesh(Mesh):
                     vertices.extend(prim.vertex)
         return vertices
 
-    def _build_raw_mesh(self):
+    def _build_tex_coords(self):
+        tex_coords = []
+        for geom in self.collada_node.geometries:
+            for prim in geom.primitives:
+                if isinstance(prim, collada.polylist.Polylist):
+                    tex_coords.extend(prim.texcoordset[0].tolist())
+        return tex_coords
+
+    def _build_raw_mesh(self, default_color=(1.0, 1.0, 1.0, 1.0)):
+        vertices = self._build_vertices()
         if self.pose is not None:
             vertices = self._build_posed_vertices(self.origin_pose, self.pose)
         else:
             vertices = self._build_vertices()
+        tex_coords = self._build_tex_coords()
 
         if self.polygons is None:
             self.polygons = self._build_polygons()
 
         raw_mesh = deepsurface.Mesh()
         raw_mesh.add_vertices(vertices)
-        for polys in self.polygons:
-            raw_mesh.add_polygons(polys)
+        raw_mesh.add_tex_coords(tex_coords)
+
+        for polys, material in self.polygons:
+            # Just look at the diffuse part.
+            diffuse_mat = default_color
+            if material:
+                if material.effect.shadingtype != 'phong':
+                    logging.warn('Material shadingtype {} is not supported'
+                                 .format(material.effect.shadingtype))
+                diffuse_mat = material.effect.diffuse
+
+            if isinstance(diffuse_mat, collada.material.Map):
+                surface = diffuse_mat.sampler.surface
+                assert surface.format == 'A8R8G8B8'
+                diffuse_mat = self.textures[surface.image.id]
+            elif not isinstance(diffuse_mat, tuple):
+                loging.warn('Unknown diffuse material')
+                diffuse_mat = default_color
+
+            raw_mesh.add_polygons(polys, diffuse_mat)
         return raw_mesh

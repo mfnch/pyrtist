@@ -18,6 +18,7 @@
 #include "py_mesh.h"
 #include "py_depth_buffer.h"
 #include "py_image_buffer.h"
+#include "py_helper.h"
 
 #include <memory>
 
@@ -27,12 +28,14 @@ static PyObject* PyMesh_New(PyTypeObject* type,
 static void PyMesh_Dealloc(PyObject* py_obj);
 static PyObject* PyMesh_Draw(PyObject* m, PyObject* args);
 static PyObject* PyMesh_AddVertices(PyObject* mesh, PyObject* args);
+static PyObject* PyMesh_AddTexCoords(PyObject* mesh, PyObject* args);
 static PyObject* PyMesh_AddPolygons(PyObject* mesh, PyObject* args);
 
 // PyMesh object methods.
 static PyMethodDef pymesh_methods[] = {
   {"draw", PyMesh_Draw, METH_VARARGS},
   {"add_vertices", PyMesh_AddVertices, METH_VARARGS},
+  {"add_tex_coords", PyMesh_AddTexCoords, METH_VARARGS},
   {"add_polygons", PyMesh_AddPolygons, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
@@ -186,13 +189,14 @@ static PyObject* PyMesh_Draw(PyObject* mesh, PyObject* args) {
 
 #include <iostream>
 
+using Point2 = deepsurface::Mesh::Point2;
 using Point3 = deepsurface::Mesh::Point3;
 
-static bool
-Point3FromPy(Point3* out, PyObject* in) {
+template <typename T, int N>
+static bool PointFromPy(deepsurface::Point<T, N>* out, PyObject* in) {
   PyObject* iter = PyObject_GetIter(in);
   bool ok = (iter != nullptr);
-  for (int i = 0; ok && i < 3; i++) {
+  for (int i = 0; ok && i < N; i++) {
     PyObject* py_coord = PyIter_Next(iter);
     ok = SetScalarFromPy(&(*out)[i], py_coord);
     Py_XDECREF(py_coord);
@@ -205,7 +209,7 @@ static bool
 AddVerticesFromPy(deepsurface::Mesh* mesh, PyObject* py_vertices) {
   return ForEachPyObj(py_vertices, [mesh](PyObject* py_obj, int i)->bool {
     Point3 vertex;
-    if (!Point3FromPy(&vertex, py_obj))
+    if (!PointFromPy(&vertex, py_obj))
       return false;
     mesh->AddVertex(vertex);
     return true;
@@ -221,6 +225,31 @@ PyMesh_AddVertices(PyObject* mesh, PyObject* args) {
   PyMesh* py_mesh = reinterpret_cast<PyMesh*>(mesh);
   if (py_mesh->mesh != nullptr &&
       AddVerticesFromPy(py_mesh->mesh, py_vertices))
+    Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
+}
+
+static PyObject*
+PyMesh_AddTexCoords(PyObject* mesh, PyObject* args) {
+  PyObject* py_tex_coords;
+  if (!PyArg_ParseTuple(args, "O:Mesh.add_tex_coords", &py_tex_coords))
+    return nullptr;
+
+  PyMesh* py_mesh = reinterpret_cast<PyMesh*>(mesh);
+  bool success = (py_mesh->mesh != nullptr);
+  if (success) {
+    deepsurface::Mesh* mesh = py_mesh->mesh;
+    success = ForEachPyObj(py_tex_coords,
+      [mesh](PyObject* py_obj, int i)->bool {
+        Point2 tex_coord;
+        if (!PointFromPy(&tex_coord, py_obj))
+          return false;
+        mesh->AddTexCoords(tex_coord);
+        return true;
+      });
+  }
+
+  if (success)
     Py_RETURN_TRUE;
   Py_RETURN_FALSE;
 }
@@ -249,15 +278,70 @@ AddPolygonsFromPy(deepsurface::Mesh* mesh, PyObject* py_polygons) {
   });
 }
 
+static bool ARGBColorFromRGBAPyTuple(PyObject* tp, uint32_t* argb_out) {
+  std::array<int, 4> rgba;
+  auto setter = [&rgba](PyObject* py_color_component, int i)->bool {
+    if (i < 0 || i > 3 || !PyFloat_Check(py_color_component)) {
+      return false;
+    }
+    double cc = PyFloat_AsDouble(py_color_component);
+    rgba[i] = static_cast<int>(255.0 * std::min(1.0, std::max(0.0, cc)));
+    return true;
+  };
+  if (!ForEachPyObj(tp, setter)) {
+    return false;
+  }
+  *argb_out = GetARGB(rgba[3], rgba[0], rgba[1], rgba[2]);
+  return true;
+}
+
+// PyImageTexture is an ImageTexture which holds a Python reference to the
+// original PyImageBuffer which contains the ImageBuffer. Instances of
+// PyImageBuffer will be held as unique_ptr inside the Mesh and will thus be
+// alive for the time they are needed.
+class PyImageTexture : public deepsurface::ImageTexture {
+ public:
+  PyImageTexture(PyImageBuffer* py_ib)
+    : deepsurface::ImageTexture(py_ib->image_buffer),
+      ref_to_py_material_(reinterpret_cast<PyObject*>(py_ib)) { }
+
+ private:
+  deepsurface::PyRef ref_to_py_material_;
+};
+
+static std::unique_ptr<deepsurface::Texture>
+NewMaterialFromPy(PyObject* py_material) {
+  if (PyObject_TypeCheck(py_material, &PyImageBuffer_Type)) {
+    // Create an ImageTexture holding a Python reference to the PyImageBuffer.
+    auto py_ib = reinterpret_cast<PyImageBuffer*>(py_material);
+    return std::unique_ptr<deepsurface::Texture>{new PyImageTexture(py_ib)};
+  } else {
+    // Try creating a UniformTexture.
+    uint32_t argb;
+    if (!ARGBColorFromRGBAPyTuple(py_material, &argb))
+      return std::unique_ptr<deepsurface::Texture>();
+    return std::unique_ptr<deepsurface::Texture>{
+      new deepsurface::UniformTexture(argb)};
+  }
+}
+
 static PyObject*
 PyMesh_AddPolygons(PyObject* mesh, PyObject* args) {
   PyObject* py_polygons;
-  if (!PyArg_ParseTuple(args, "O:Mesh.add_polygons", &py_polygons))
+  PyObject* py_material;
+  if (!PyArg_ParseTuple(args, "OO:Mesh.add_polygons",
+                        &py_polygons, &py_material))
     return nullptr;
 
   PyMesh* py_mesh = reinterpret_cast<PyMesh*>(mesh);
-  if (py_mesh->mesh != nullptr &&
-      AddPolygonsFromPy(py_mesh->mesh, py_polygons))
-    Py_RETURN_TRUE;
-  Py_RETURN_FALSE;
+  auto tex = NewMaterialFromPy(py_material);
+
+  if (py_mesh->mesh == nullptr || !tex)
+    Py_RETURN_FALSE;
+
+  py_mesh->mesh->SetTexture(std::move(tex));
+  if (!AddPolygonsFromPy(py_mesh->mesh, py_polygons))
+    Py_RETURN_FALSE;
+
+  Py_RETURN_TRUE;
 }

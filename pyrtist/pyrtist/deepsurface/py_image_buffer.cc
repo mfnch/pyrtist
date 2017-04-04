@@ -14,6 +14,8 @@
 //   You should have received a copy of the GNU Lesser General Public License
 //   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <string.h>
+
 #include "deep_surface.h"
 #include "py_image_buffer.h"
 
@@ -21,12 +23,14 @@
 static PyObject* PyImageBuffer_New(PyTypeObject* type,
                                    PyObject* args, PyObject* kwds);
 static void PyImageBuffer_Dealloc(PyObject* py_obj);
+static PyObject* PyImageBuffer_SetFromString(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args);
 
 // PyImageBuffer object methods.
 static PyMethodDef pyimagebuffer_methods[] = {
+  {"set_from_string", PyImageBuffer_SetFromString, METH_VARARGS},
   {"clear", PyImageBuffer_Clear, METH_NOARGS},
   {"get_data", PyImageBuffer_GetData, METH_NOARGS},
   {"save_to_file", PyImageBuffer_SaveToFile, METH_VARARGS},
@@ -153,6 +157,78 @@ static void PyImageBuffer_Dealloc(PyObject* py_obj) {
     // This buffer is embedded inside py_ib->base: just do a DECREF.
     Py_DECREF(py_ib->base);
   py_ib->ob_type->tp_free(py_obj);
+}
+
+static bool SetFromString(ARGBImageBuffer* dst,
+                          Py_buffer* src, int src_stride, int src_pixel_size,
+                          std::function<void(uint8_t*, uint8_t*)> setter) {
+  int dst_width = dst->GetWidth();
+  int dst_height = dst->GetHeight();
+  int dst_stride = dst->GetStride();
+  int src_size = src_pixel_size*src_stride*dst_height;
+
+  if (src_size < src->len)
+    return false;
+
+  uint8_t* initial_src_ptr = reinterpret_cast<uint8_t*>(src->buf);
+  uint32_t* dst_bol_ptr = dst->GetPtr();
+  uint32_t* dst_end_ptr = dst_bol_ptr + dst_stride*dst_height;
+  src_stride *= src_pixel_size;
+  while (dst_bol_ptr < dst_end_ptr) {
+    uint32_t* dst_eol_ptr = dst_bol_ptr + dst_width;
+    uint32_t* dst_ptr = dst_bol_ptr;
+    dst_bol_ptr += dst_stride;
+    uint8_t* src_ptr = initial_src_ptr;
+    initial_src_ptr += src_stride;
+    while (dst_ptr < dst_eol_ptr) {
+      setter(reinterpret_cast<uint8_t*>(dst_ptr), src_ptr);
+      src_ptr += src_pixel_size;
+      dst_ptr++;
+    }
+  }
+
+  return true;
+}
+
+static PyObject* PyImageBuffer_SetFromString(PyObject* py_obj, PyObject* args) {
+  Py_buffer buffer;
+  int src_stride;
+  const char* mode;
+  if (!PyArg_ParseTuple(args, "s*is:ImageBuffer.set_from_string",
+                        &buffer, &src_stride, &mode))
+    return nullptr;
+
+  if (buffer.shape != nullptr || buffer.strides != nullptr ||
+      buffer.suboffsets != nullptr || buffer.ndim != 1) {
+    PyErr_SetString(PyExc_ValueError, "Only simple buffers are supported");
+    return nullptr;
+  }
+
+  bool success = false;
+  ARGBImageBuffer* ib = reinterpret_cast<PyImageBuffer*>(py_obj)->image_buffer;
+  if (strcmp(mode, "RGBA") == 0) {
+    auto setter = [](uint8_t* dst, uint8_t* src)->void {
+      uint32_t a = src[3];
+      dst[0] = (src[2]*a)/255;
+      dst[1] = (src[1]*a)/255;
+      dst[2] = (src[0]*a)/255;
+      dst[3] = a;
+    };
+    success = SetFromString(ib, &buffer, src_stride, 4, setter);
+  } else if (strcmp(mode, "RGB") == 0) {
+    auto setter = [](uint8_t* dst, uint8_t* src)->void {
+      dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; dst[3] = 0xff;
+    };
+    success = SetFromString(ib, &buffer, src_stride, 3, setter);
+  }
+  PyBuffer_Release(&buffer);
+
+  if (!success) {
+    PyErr_SetString(PyExc_ValueError, "Invalid mode");
+    return nullptr;
+  }
+
+  Py_RETURN_TRUE;
 }
 
 static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject*) {
