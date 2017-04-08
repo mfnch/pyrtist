@@ -151,21 +151,23 @@ class ColladaMesh(Mesh):
 
     def _build_polygons(self):
         ret = []
-        start_idx = 1
+        start_v_idx, start_t_idx, start_n_idx = (1, 1, 1)
         materials = self.collada_node.materials
         for geom_idx, geom in enumerate(self.collada_node.geometries):
             for prim in geom.primitives:
                 if isinstance(prim, collada.polylist.Polylist):
-                    ps = [[(prim.vertex_index[idx] + start_idx,
-                            prim.texcoord_indexset[0][idx] + start_idx,
-                            prim.normal_index[idx] + start_idx)
+                    ps = [[(prim.vertex_index[idx] + start_v_idx,
+                            prim.texcoord_indexset[0][idx] + start_t_idx,
+                            prim.normal_index[idx] + start_n_idx)
                             for idx in range(start, end)]
                           for start, end in prim.polyindex]
                     material = prim.material
                     if material is None and geom_idx < len(materials):
                         material = materials[geom_idx]
                     ret.append((ps, material))
-                    start_idx += len(prim.vertex)
+                    start_v_idx += len(prim.vertex)
+                    start_t_idx += len(prim.texcoordset[0])
+                    start_n_idx += len(prim.normal)
         return ret
 
     def _build_vertices(self):
