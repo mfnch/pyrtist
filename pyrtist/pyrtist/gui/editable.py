@@ -154,9 +154,12 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     of the class.
     RETURN the name finally chosen for the point.
     """
-    screen_view = self.get_visible_coords()
-    box_coords = (screen_view.pix_to_coord(coords) if use_py_coords
-                  else coords)
+    if use_py_coords:
+      screen_view = self.get_visible_coords()
+      box_coords = screen_view.pix_to_coord(coords)
+    else:
+      box_coords = coords
+
     refpoints = self.document.refpoints
     real_name = refpoints.new_name(name)
     if real_name in refpoints:
@@ -383,7 +386,16 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
           box_coords = visible_coords.pix_to_coord(py_coords)
           if box_coords is not None:
             with self.undoer.group():
-              rp_child = self.refpoint_new(py_coords, with_cb=False)
+              # Ensure the reference point is created with exactly the same
+              # coordinates as its parent. This is the value that will be seen
+              # by the script when inspecting refpoint.gui.old_value. It is
+              # also the value restored when the drag is undone. Admittedly,
+              # it would make more sense for an undo to remove the point as
+              # well, since the point was created and moved in one single drag
+              # operation (TODO?).
+              rp_child = self.refpoint_new(Point(rp.value),
+                                           use_py_coords=False,
+                                           with_cb=False)
               self.refpoint_attach(rp_child, rp)
               self.callbacks.call("refpoint_new", self, rp_child)
 

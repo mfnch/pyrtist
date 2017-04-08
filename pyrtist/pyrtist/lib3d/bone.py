@@ -175,8 +175,10 @@ class GenericConstraint(object):
                 view_point = gui_attrs.old_value
         angle = 0.0
         if isinstance(view_point, Tri):
-            angle = (view_point.ip - view_point.p).angle()
+            dp = view_point.ip - view_point.p
             view_point = view_point.p
+            if dp.norm2() > 0.0:
+                angle = dp.angle()
         return (Point(view_point), angle)
 
 
