@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <assert.h>
 
 #include "image_buffer.h"
 
@@ -67,5 +68,132 @@ void DrawDepth(ImageBuffer<PixelType>* buffer,
   }
 }
 
+namespace deepsurface {
+
+/// @brief A linearly changing scalar field over a 2D lattice.
+/// @details This object allows to compute a linear scalar field defined over
+///   a 2-dimensional lattice. The nodes of the lattice are identified using a
+///   pair of indices `ix, iy`. This object allows to retrieve the value of the
+///   vector at a given node `ix0, iy0`. It then allows incrementing this value
+///   to obtain the value of the scalar field at neighbouring nodes. The value
+///   of the scalar field is just a number of type `Scalar`.
+template <typename Scalar>
+class ScalarAttribute {
+ public:
+  ScalarAttribute() {  }
+
+  void Set(Scalar v0, Scalar v1, Scalar v2) {
+    inc_x = v0; inc_y = v1; value_at_00 = v2;
+  }
+
+  /// @brief Obtain the value of the scalar field at the given position.
+  Scalar ValueAt(int ix, int iy) const {
+    return inc_x * ix + inc_y * iy + value_at_00;
+  }
+
+  /// @brief Increment the given scalar field value to obtain the value at the
+  ///   next node in the x direction.
+  void IncX(Scalar& v) const { v += inc_x; }
+
+  /// @brief Increment the given scalar field value to obtain the value at the
+  ///   next node in the y direction.
+  void IncY(Scalar& v) const { v += inc_y; }
+
+ private:
+  Scalar inc_x;
+  Scalar inc_y;
+  Scalar value_at_00;
+};
+
+/// @brief A linearly changing vector field over a 2D lattice.
+/// @details This is object similar to ScalarAttribute, except that it computes
+///   a vector (an array of Scalars) over a 2D lattice.
+/// @see ScalarAttribute
+template <typename Scalar, int N>
+class VectorAttribute {
+ public:
+  using Value = std::array<Scalar, N>;
+
+  VectorAttribute() { }
+
+  /// @brief Set the i-th component of the vector field mapping.
+  void Set(size_t i, Scalar v0, Scalar v1, Scalar v2) {
+    attrs_[i].Set(v0, v1, v2);
+  }
+
+  /// @brief Obtain the value of the vector field at the given position.
+  Value ValueAt(int ix, int iy) const {
+    Value ret;
+    for (size_t i = 0; i < attrs_.size(); i++)
+      ret[i] = attrs_[i].ValueAt(ix, iy);
+    return std::move(ret);
+  }
+
+  /// @brief Increment the given vector field value to obtain the value at the
+  ///   next node in the x direction.
+  void IncX(Value& value) const {
+    for (size_t i = 0; i < attrs_.size(); i++)
+      attrs_[i].IncX(value[i]);
+  }
+
+  /// @brief Increment the given vector field value to obtain the value at the
+  ///   next node in the y direction.
+  void IncY(Value& value) const {
+    for (size_t i = 0; i < attrs_.size(); i++)
+      attrs_[i].IncY(value[i]);
+  }
+
+ private:
+  std::array<ScalarAttribute<Scalar>, N> attrs_;
+};
+
+/// @brief Draw a primitive to a pair (depth-buffer, image-buffer).
+template<typename Attrs,
+         typename DepthType, typename PixelType, typename DepthFn>
+void DrawDepth(ImageBuffer<DepthType>* depth_buffer,
+               ImageBuffer<PixelType>* image_buffer,
+               float clip_start_x, float clip_start_y,
+               float clip_end_x, float clip_end_y,
+               const Attrs& attrs, DepthFn depth_fn) {
+  if (clip_end_x < clip_start_x) std::swap(clip_start_x, clip_end_x);
+  if (clip_end_y < clip_start_y) std::swap(clip_start_y, clip_end_y);
+  int ix0 = static_cast<int>(floorf(clip_start_x));
+  int iy0 = static_cast<int>(floorf(clip_start_y));
+  int ix1 = static_cast<int>(ceilf(clip_end_x));
+  int iy1 = static_cast<int>(ceilf(clip_end_y));
+  auto depth_region = depth_buffer->GetRegion(ix0, iy0, ix1, iy1);
+  auto image_region = image_buffer->GetRegion(ix0, iy0, ix1, iy1);
+  if (!(depth_region.IsValid() && image_region.IsValid())) {
+    return;
+  }
+
+  auto values_at_line_start = attrs.ValueAt(ix0, iy0);
+  int32_t width = depth_region.GetWidth();
+  int32_t stride = depth_region.GetStride();
+  int32_t height = depth_region.GetHeight();
+  assert(image_region.GetWidth() == width);
+  assert(image_region.GetWidth() == stride);
+  assert(image_region.GetHeight() == height);
+
+  int32_t skip = stride - width;
+  DepthType* depth_ptr = depth_region.GetPtr();
+  PixelType* image_ptr = image_region.GetPtr();
+  DepthType* end_depth_ptr = depth_ptr + stride*height;
+  DepthType* end_line;
+  while ((end_line = depth_ptr + width) < end_depth_ptr) {
+    auto values = values_at_line_start;
+    while (depth_ptr < end_line) {
+      depth_fn(depth_ptr, image_ptr, values);
+      depth_ptr++;
+      image_ptr++;
+      attrs.IncX(values);
+    }
+    depth_ptr += skip;
+    image_ptr += skip;
+    attrs.IncY(values_at_line_start);
+  }
+}
+
+}  // namespace deepsurface
 
 #endif  /* _DRAW_DEPTH_H */

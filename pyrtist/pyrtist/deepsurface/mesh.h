@@ -51,14 +51,13 @@ struct Face {
   Face() : size(0) {}
 
   bool Append(Indices& item) {
-    int max_nr_indices = sizeof(indices)/sizeof(indices[0]);
-    if (size >= max_nr_indices)
+    if (size >= indices.size())
       return false;
     indices[size++] = item;
     return true;
   }
 
-  int size;
+  unsigned int size;
   std::array<Indices, 4> indices;
 };
 
