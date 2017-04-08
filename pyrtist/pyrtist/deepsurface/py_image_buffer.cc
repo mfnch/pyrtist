@@ -217,7 +217,10 @@ static PyObject* PyImageBuffer_SetFromString(PyObject* py_obj, PyObject* args) {
     success = SetFromString(ib, &buffer, src_stride, 4, setter);
   } else if (strcmp(mode, "RGB") == 0) {
     auto setter = [](uint8_t* dst, uint8_t* src)->void {
-      dst[0] = src[2]; dst[1] = src[1]; dst[2] = src[0]; dst[3] = 0xff;
+      dst[0] = src[2];
+      dst[1] = src[1];
+      dst[2] = src[0];
+      dst[3] = 0xff;
     };
     success = SetFromString(ib, &buffer, src_stride, 3, setter);
   }

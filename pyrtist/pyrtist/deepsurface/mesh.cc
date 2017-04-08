@@ -141,14 +141,24 @@ void Quad::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
         float u = values[0];
         float v = values[1];
         if (u >= 0.0 && v >= 0.0 && u + v <= 1.0) {
-          float bg = *depth_out;
-          float candidate = values[2];
-          if (DepthBuffer::IsInfiniteDepth(bg) || candidate > bg) {
+          uint32_t bg_color = *image_out;
+          float bg_z = *depth_out;
+          float z = values[2];
+          if (DepthBuffer::IsInfiniteDepth(bg_z) || z >= bg_z) {
+            // We are painting on top of what is already there.
             float tex_u = values[3];
             float tex_v = values[4];
             uint32_t color = texture->ColorAt(tex_u, tex_v);
-            *depth_out = candidate;
-            *image_out = BlendSrcOverDst(color, *image_out);
+            if (GetA(color) > 0) {
+              *depth_out = z;
+              *image_out = BlendSrcOverDst(color, bg_color);
+            }
+          } else if (GetA(bg_color) < 255) {
+            // We are painting behind a transparent background.
+            float tex_u = values[3];
+            float tex_v = values[4];
+            uint32_t color = texture->ColorAt(tex_u, tex_v);
+            *image_out = BlendSrcOverDst(bg_color, color);
           }
         }
     };
