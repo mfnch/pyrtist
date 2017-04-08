@@ -82,27 +82,38 @@ class ScalarAttribute {
  public:
   ScalarAttribute() {  }
 
-  void Set(Scalar v0, Scalar v1, Scalar v2) {
-    inc_x = v0; inc_y = v1; value_at_00 = v2;
+  /// @brief Set the coefficient of the linear mapping.
+  /// @details The scalar field is calculated from the integer tuple (ix, iy)
+  ///   as c0*ix + c1+iy + c2. The three coefficient c0, c1, and c2 can be set
+  ///   by calling this function.
+  void Set(Scalar c0, Scalar c1, Scalar c2) {
+    inc_x_ = c0; inc_y_ = c1; value_at_00_ = c2;
+  }
+
+  void Set(Scalar c0, Scalar c1, Scalar c2, Scalar (&matrix)[6]) {
+    Scalar t0 = c0*matrix[0] + c1*matrix[3];
+    Scalar t1 = c0*matrix[1] + c1*matrix[4];
+    Scalar t2 = c0*matrix[2] + c1*matrix[5] + c2;
+    Set(t0, t1, t2);
   }
 
   /// @brief Obtain the value of the scalar field at the given position.
   Scalar ValueAt(int ix, int iy) const {
-    return inc_x * ix + inc_y * iy + value_at_00;
+    return inc_x_ * ix + inc_y_ * iy + value_at_00_;
   }
 
   /// @brief Increment the given scalar field value to obtain the value at the
   ///   next node in the x direction.
-  void IncX(Scalar& v) const { v += inc_x; }
+  void IncX(Scalar& v) const { v += inc_x_; }
 
   /// @brief Increment the given scalar field value to obtain the value at the
   ///   next node in the y direction.
-  void IncY(Scalar& v) const { v += inc_y; }
+  void IncY(Scalar& v) const { v += inc_y_; }
 
  private:
-  Scalar inc_x;
-  Scalar inc_y;
-  Scalar value_at_00;
+  Scalar inc_x_;
+  Scalar inc_y_;
+  Scalar value_at_00_;
 };
 
 /// @brief A linearly changing vector field over a 2D lattice.
@@ -115,11 +126,6 @@ class VectorAttribute {
   using Value = std::array<Scalar, N>;
 
   VectorAttribute() { }
-
-  /// @brief Set the i-th component of the vector field mapping.
-  void Set(size_t i, Scalar v0, Scalar v1, Scalar v2) {
-    attrs_[i].Set(v0, v1, v2);
-  }
 
   /// @brief Obtain the value of the vector field at the given position.
   Value ValueAt(int ix, int iy) const {
@@ -142,6 +148,8 @@ class VectorAttribute {
     for (size_t i = 0; i < attrs_.size(); i++)
       attrs_[i].IncY(value[i]);
   }
+
+  ScalarAttribute<Scalar>& operator[](int idx) { return attrs_[idx]; }
 
  private:
   std::array<ScalarAttribute<Scalar>, N> attrs_;

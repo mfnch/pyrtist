@@ -116,6 +116,14 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T, M, N>& m) {
 }
 
 template <typename T>
+class Affine2 : public Matrix<T, 2, 3> {
+  using Point2 = Point<T, 2>;
+
+  // Inherit Matrix's constructors.
+  using Matrix<T, 2, 3>::Matrix;
+};
+
+template <typename T>
 class Affine3 : public Matrix<T, 3, 4> {
  public:
   using Point3 = Point<T, 3>;

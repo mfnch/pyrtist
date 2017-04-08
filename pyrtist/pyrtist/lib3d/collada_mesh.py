@@ -76,6 +76,12 @@ class ColladaMesh(Mesh):
         if parent_dir:
             parent_dir = os.path.dirname(parent_dir)
 
+
+
+
+        idx = 0
+
+
         images = collections.OrderedDict()
         for image in self.collada_node.images:
             image_obj = None
@@ -90,7 +96,20 @@ class ColladaMesh(Mesh):
                 pil_image = pil.open(image_path)
                 pil_image.load()
                 image_obj = self._adjust_texture(pil_image)
+
+                if False:
+                    import cairo
+                    idx += 1
+                    tmp = cairo.ImageSurface(cairo.FORMAT_ARGB32,
+                                             pil_image.size[0],
+                                             pil_image.size[1])
+                    tmp_data = tmp.get_data()
+                    img_data = image_obj.get_data()
+                    tmp_data[:] = img_data[:]
+                    tmp.write_to_png('/tmp/{}.png'.format(idx))
+
             images[image.id] = image_obj
+
         return images
 
     def _adjust_texture(self, pil_image):

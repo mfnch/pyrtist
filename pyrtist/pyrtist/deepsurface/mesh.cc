@@ -93,34 +93,6 @@ void Mesh::Draw(DepthBuffer* db, ARGBImageBuffer* ib,
   }
 }
 
-static void DrawTriangleRaw(DepthBuffer* db, ARGBImageBuffer* ib,
-                            float clip_start_x, float clip_start_y,
-                            float clip_end_x, float clip_end_y,
-                            const VectorAttribute<float, 2>& attrs,
-                            float z00, float z10, float z01,
-                            //Texture* texture
-                            uint32_t color) {
-  //uint32_t color = (texture) ? texture->ColorAt(0.0f, 0.0f) : 0xffffffff;
-  z01 -= z00;
-  z10 -= z00;
-  auto depth_fn =
-    [z00, z10, z01, color](float* depth_out, uint32_t* image_out,
-                           const std::array<float, 2>& values) -> void {
-      float u = values[0];
-      float v = values[1];
-      if (u >= 0.0 && v >= 0.0 && u + v <= 1.0) {
-        float bg = *depth_out;
-        float candidate = z00 + u*z01 + v*z10;
-        if (DepthBuffer::IsInfiniteDepth(bg) || candidate > bg) {
-          *depth_out = candidate;
-          *image_out = BlendSrcOverDst(color, *image_out);
-        }
-      }
-    };
-  DrawDepth(db, ib, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
-            attrs, depth_fn);
-}
-
 template <typename Scalar>
 static bool InvertMatrix(Scalar* mx_out, Scalar* mx_in) {
   Scalar* m0 = &mx_in[0];
@@ -158,11 +130,27 @@ void Quad::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
     float clip_end_x   = std::max(std::max(p00[0], p10[0]), p01[0]);
     float clip_end_y   = std::max(std::max(p00[1], p10[1]), p01[1]);
 
-    VectorAttribute<float, 2> attrs;
-    attrs.Set(0, inv_mx[0], inv_mx[1], inv_mx[2]);
-    attrs.Set(1, inv_mx[3], inv_mx[4], inv_mx[5]);
-    DrawTriangleRaw(db, ib, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
-                    attrs, p00[2], p01[2], p10[2], color);
+    VectorAttribute<float, 3> attrs;
+    attrs[0].Set(inv_mx[0], inv_mx[1], inv_mx[2]);                   // u
+    attrs[1].Set(inv_mx[3], inv_mx[4], inv_mx[5]);                   // v
+    attrs[2].Set(p10[2] - p00[2], p01[2] - p00[2], p00[2], inv_mx);  // z
+
+    auto depth_fn =
+      [color](float* depth_out, uint32_t* image_out,
+              const std::array<float, 3>& values) -> void {
+        float u = values[0];
+        float v = values[1];
+        if (u >= 0.0 && v >= 0.0 && u + v <= 1.0) {
+          float bg = *depth_out;
+          float candidate = values[2];
+          if (DepthBuffer::IsInfiniteDepth(bg) || candidate > bg) {
+            *depth_out = candidate;
+            *image_out = BlendSrcOverDst(color, *image_out);
+          }
+        }
+    };
+    DrawDepth(db, ib, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+              attrs, depth_fn);
   }
 }
 
