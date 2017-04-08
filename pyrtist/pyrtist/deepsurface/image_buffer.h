@@ -116,6 +116,21 @@ inline uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
           (static_cast<uint32_t>(b)));
 }
 
+// Blending between premultiplied ARGB values.
+// Premultiplied means that R, G, B are intended as already multiplied by the
+// corresponding A value, which is the format we use here.
+inline uint32_t BlendSrcOverDst(uint32_t src_argb, uint32_t dst_argb) {
+  uint32_t src_a = GetA(src_argb);
+  if (src_a == 0xff)
+    return src_argb;
+  uint32_t src_am1 = UINT32_C(0xff) - src_a;
+  uint32_t out_a = src_a          + (GetA(dst_argb)*src_am1)/UINT32_C(0xff);
+  uint32_t out_r = GetR(src_argb) + (GetR(dst_argb)*src_am1)/UINT32_C(0xff);
+  uint32_t out_g = GetG(src_argb) + (GetG(dst_argb)*src_am1)/UINT32_C(0xff);
+  uint32_t out_b = GetB(src_argb) + (GetB(dst_argb)*src_am1)/UINT32_C(0xff);
+  return GetARGB(out_a, out_r, out_g, out_b);
+}
+
 class ARGBImageBuffer : public ImageBuffer<uint32_t> {
  private:
   using BaseType = ImageBuffer<uint32_t>;

@@ -18,21 +18,6 @@
 
 #include "deep_surface.h"
 
-// Blending between premultiplied ARGB values.
-// Premultiplied means that R, G, B are intended as already multiplied by the
-// corresponding A value, which is the format we use here.
-static uint32_t BlendSrcOverDst(uint32_t src_argb, uint32_t dst_argb) {
-  uint32_t src_a = GetA(src_argb);
-  if (src_a == 0xff)
-    return src_argb;
-  uint32_t src_am1 = UINT32_C(0xff) - src_a;
-  uint32_t out_a = src_a          + (GetA(dst_argb)*src_am1)/UINT32_C(0xff);
-  uint32_t out_r = GetR(src_argb) + (GetR(dst_argb)*src_am1)/UINT32_C(0xff);
-  uint32_t out_g = GetG(src_argb) + (GetG(dst_argb)*src_am1)/UINT32_C(0xff);
-  uint32_t out_b = GetB(src_argb) + (GetB(dst_argb)*src_am1)/UINT32_C(0xff);
-  return GetARGB(out_a, out_r, out_g, out_b);
-}
-
 template <typename MergeFn>
 bool MergeBuffers(DepthBuffer* src_depth, ARGBImageBuffer* src_image,
                   DepthBuffer* dst_depth, ARGBImageBuffer* dst_image,

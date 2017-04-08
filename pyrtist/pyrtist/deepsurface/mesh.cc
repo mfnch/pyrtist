@@ -153,7 +153,7 @@ static void DrawTriangleRaw(DepthBuffer* db, ARGBImageBuffer* ib,
         float candidate = z00 + u*z01 + v*z10;
         if (DepthBuffer::IsInfiniteDepth(bg) || candidate > bg) {
           *depth_out = candidate;
-          *image_out = color;
+          *image_out = BlendSrcOverDst(color, *image_out);
         }
       }
     };
