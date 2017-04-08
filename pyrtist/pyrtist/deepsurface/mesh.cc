@@ -115,11 +115,9 @@ void Quad::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
   const Point3& p00 = vertices_[idx0];
   const Point3& p10 = vertices_[idx1];
   const Point3& p01 = vertices_[idx2];
-
-  Point2
-  tc{(tex_coords_[idx0][0] + tex_coords_[idx1][0] + tex_coords_[idx2][0])/3.0f,
-     (tex_coords_[idx0][1] + tex_coords_[idx1][1] + tex_coords_[idx2][1])/3.0f};
-  uint32_t color = texture->ColorAt(tc[0], tc[1]);
+  const Point2& t00 = tex_coords_[idx0];
+  const Point2& t10 = tex_coords_[idx1];
+  const Point2& t01 = tex_coords_[idx2];
 
   float mx[6] = {p10[0] - p00[0], p01[0] - p00[0], p00[0],
                  p10[1] - p00[1], p01[1] - p00[1], p00[1]};
@@ -130,20 +128,25 @@ void Quad::DrawTriangle(DepthBuffer* db, ARGBImageBuffer* ib,
     float clip_end_x   = std::max(std::max(p00[0], p10[0]), p01[0]);
     float clip_end_y   = std::max(std::max(p00[1], p10[1]), p01[1]);
 
-    VectorAttribute<float, 3> attrs;
+    VectorAttribute<float, 5> attrs;
     attrs[0].Set(inv_mx[0], inv_mx[1], inv_mx[2]);                   // u
     attrs[1].Set(inv_mx[3], inv_mx[4], inv_mx[5]);                   // v
     attrs[2].Set(p10[2] - p00[2], p01[2] - p00[2], p00[2], inv_mx);  // z
+    attrs[3].Set(t10[0] - t00[0], t01[0] - t00[0], t00[0], inv_mx);  // tex_u
+    attrs[4].Set(t10[1] - t00[1], t01[1] - t00[1], t00[1], inv_mx);  // tex_v
 
     auto depth_fn =
-      [color](float* depth_out, uint32_t* image_out,
-              const std::array<float, 3>& values) -> void {
+      [texture](float* depth_out, uint32_t* image_out,
+                const std::array<float, 5>& values) -> void {
         float u = values[0];
         float v = values[1];
         if (u >= 0.0 && v >= 0.0 && u + v <= 1.0) {
           float bg = *depth_out;
           float candidate = values[2];
           if (DepthBuffer::IsInfiniteDepth(bg) || candidate > bg) {
+            float tex_u = values[3];
+            float tex_v = values[4];
+            uint32_t color = texture->ColorAt(tex_u, tex_v);
             *depth_out = candidate;
             *image_out = BlendSrcOverDst(color, *image_out);
           }
