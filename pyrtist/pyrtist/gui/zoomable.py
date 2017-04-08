@@ -206,7 +206,7 @@ class ZoomableArea(gtk.DrawingArea):
 
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
-               zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
+               zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.5,
                config=None, callbacks=None):
 
     super(ZoomableArea, self).__init__()
