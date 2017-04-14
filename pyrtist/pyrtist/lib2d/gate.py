@@ -42,6 +42,7 @@ class GUIGate(object):
         self._zoom_window = None
         self._img_filename = None
         self._points = {'old': {}, 'new': {}}
+        self._tris = {}
 
     def connect(self, gui_tx_pipe=None, startup_cmds=None):
         '''Method invoked by the Pyrtist GUI to allow communicating back
@@ -69,6 +70,7 @@ class GUIGate(object):
     def _rx_cmd_tri(self, tag, name, x, y, lhs_name, rhs_name):
         ps = self._points[tag]
         ps[name] = Tri(ps.get(lhs_name), Point(x, y), ps.get(rhs_name))
+        self._tris[name] = (lhs_name, name, rhs_name)
 
     def _rx_cmd_full_view(self, size_x, size_y):
         self._full_view = True
@@ -117,8 +119,15 @@ class GUIGate(object):
         if self._gui_tx_pipe is None:
             return
         for name, value in kwargs.items():
-            self._gui_tx_pipe.send(('script_move_point',
-                                    (name,) + tuple(value)))
+            if isinstance(value, Tri):
+                for i, name in enumerate(self._tris.get(name, [])):
+                    v = value.args[i]
+                    if name is not None and v is not None:
+                        self._gui_tx_pipe.send(('script_move_point',
+                                                (name,) + tuple(v)))
+            else:
+                self._gui_tx_pipe.send(('script_move_point',
+                                        (name,) + tuple(value)))
 
 
 gui = GUIGate()
