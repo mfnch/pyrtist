@@ -296,12 +296,9 @@ class Matrix3(GenericMatrix):
         '''Create a new Matrix3 from a 3x4 or 4x4 NumPy matrix.'''
         return cls(np_array[:3] if len(np_array) != 3 else np_array)
 
-    def get_axis_and_angle(self):
-        '''Return the axis and angle of rotation for the rotational part of
-        this Matrix3 object. For the identity matrix, this function returns
-        None for the axis and 0.0 for the angle.
-        '''
-        mx = self.to_np33()
+    @staticmethod
+    def np_get_axis_and_angle(mx):
+        '''Similar to get_axis_and_angle, but operate on NumPy matrices.'''
         axis = np.array([mx[2, 1] - mx[1, 2],
                          mx[0, 2] - mx[2, 0],
                          mx[1, 0] - mx[0, 1]])
@@ -311,6 +308,14 @@ class Matrix3(GenericMatrix):
         sin_angle = 0.5*axis_norm
         cos_angle = 0.5*(sum(mx[i, i] for i in range(3)) - 1.0)
         return (axis/axis_norm, math.atan2(sin_angle, cos_angle))
+
+    def get_axis_and_angle(self):
+        '''Return the axis and angle of rotation for the rotational part of
+        this Matrix3 object. For the identity matrix, this function returns
+        None for the axis and 0.0 for the angle.
+        '''
+        axis, angle = self.np_get_axis_and_angle(self.to_np33())
+        return (Point3.from_np(axis), angle)
 
     def get_product(self, b):
         '''Return the result of right-multiplying this matrix by another one.

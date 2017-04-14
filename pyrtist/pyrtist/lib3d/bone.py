@@ -182,7 +182,18 @@ class Constraints(object):
             for view, point_name in constraint.dst_view_points:
                 mx = np.dot(view.view_matrix, mxs[name])
                 new_end_pos = np.dot(mx, bone_end_pos)[:2]
-                view.variables[point_name] = new_end_pos
+
+                new_value = Point(*new_end_pos)
+                old_value = view.variables[point_name]
+                if isinstance(old_value, Tri) and old_value.ip is not None:
+                    # If we are dealing with a Tri, then new_value must be a
+                    # Tri as well.
+                    r = (old_value.p - old_value.ip).norm()
+                    angle = bone.get_self_rotation()
+                    p = new_value
+                    new_value = Tri(p + r*Point.vangle(angle), p)
+
+                view.variables[point_name] = new_value
                 moved_view_points.append((view, point_name))
         return moved_view_points
 
@@ -211,13 +222,31 @@ class GenericConstraint(object):
         return pose_type in (UNIQUE_POSE, INITIAL_POSE)
 
     def _extract_point_and_angle(self, view, name, pose_type):
-        view_point = view.variables[name]
-        if pose_type == INITIAL_POSE:
-            gui_attrs = getattr(view_point, 'gui', None)
-            if gui_attrs is not None and gui_attrs.old_value is not None:
-                view_point = gui_attrs.old_value
-        angle = 0.0
+        # Get the "new" and "old" values of the reference point.
+        new_view_point = view.variables[name]
+        gui_attrs = getattr(new_view_point, 'gui', None)
+        if gui_attrs is not None and gui_attrs.old_value is not None:
+            old_view_point = gui_attrs.old_value
+        else:
+            old_view_point = None
+
+        view_point = new_view_point
+        if pose_type == INITIAL_POSE and old_view_point:
+            # Look at the old values of the reference point.
+            view_point = old_view_point
+
+        angle = None
         if isinstance(view_point, Tri):
+            if pose_type == FINAL_POSE and old_view_point:
+                dp_old = old_view_point.ip - old_view_point.p
+                tri_was_just_created = (dp_old.norm() == 0.0)
+                if tri_was_just_created:
+                    # This Tri reference point was just created. We ignore its
+                    # value so that apply_backward() can set the initial
+                    # rotation angle. The user will have a chance of changing
+                    # the reference point and the associated angle in future
+                    # drag actions.
+                    return (Point(view_point.p), angle)
             dp = view_point.ip - view_point.p
             view_point = view_point.p
             if dp.norm2() > 0.0:
@@ -300,7 +329,7 @@ class PreferentialConstraint(GenericConstraint):
         abs_matrix = np.dot(parent_matrix, mx)
 
         # Rotation around the bone axis.
-        bone_axis_rotation = 0.0
+        self_rotation_angles = []
 
         # For every constraint we determine the 3D line it corresponds to.
         # (see comment in the class' docstring.) The line is identified by
@@ -326,7 +355,9 @@ class PreferentialConstraint(GenericConstraint):
 
             p, angle = \
               self._extract_point_and_angle(view, point_name, pose_type)
-            bone_axis_rotation += angle
+            if angle is not None:
+                self_rotation_angles.append(angle)
+
             rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
             lhs_mx_inv = np.linalg.inv(lhs_mx)
             line_memb = np.dot(lhs_mx_inv, rhs)
@@ -354,10 +385,22 @@ class PreferentialConstraint(GenericConstraint):
         # We can now compute the new bone direction, r, and from this the bone
         # rotation matrix.
         r = Point3.from_np(primary[0] + alpha*primary[1])
-        bone_end_pos = Point3.from_np(bone.get_end_pos())
-        mx = (Matrix3.rotation_by_example(bone_end_pos, r) *
-              Matrix3.rotation(bone_axis_rotation, axis=bone_end_pos))
-        bone.matrix[:3, :3] = np.dot(bone.matrix[:3, :3], mx.to_np33())
+        bone_end_pos_np = bone.get_end_pos()
+        bone_end_pos = Point3.from_np(bone_end_pos_np)
+
+        mx = np.dot(bone.matrix[:3, :3],
+                    Matrix3.rotation_by_example(bone_end_pos, r).to_np33())
+        if self_rotation_angles:
+            # The user provided a custom rotation around the bone's axis.
+            angle = sum(self_rotation_angles)/float(len(self_rotation_angles))
+            self_mx = Matrix3.rotation(angle, bone_end_pos).to_np33()
+
+            final_pos = np.dot(mx, bone_end_pos_np[:3])
+            mx = Matrix3.rotation_by_example(bone_end_pos,
+                                             Point3.from_np(final_pos))
+            mx = np.dot(mx.to_np33(), self_mx)
+
+        bone.matrix[:3, :3] = mx
         return bone.matrix
 
 
@@ -400,6 +443,19 @@ class Bone(object):
             return None
         ps = [child.matrix[:, 3] for child in self.children]
         return sum(ps[1:], ps[0]) / float(len(ps))
+
+    def get_self_rotation(self):
+        '''Get the angle of rotation around the bone itself.'''
+        initial_pos = self.get_end_pos()[:3]
+        final_pos = np.dot(self.matrix[:3, :3], initial_pos)
+        mx = Matrix3.rotation_by_example(Point3.from_np(final_pos),
+                                         Point3.from_np(initial_pos))
+        self_rot_mx = np.dot(mx.to_np33(), self.matrix[:3, :3])
+        axis, angle = Matrix3.np_get_axis_and_angle(self_rot_mx)
+        if np.dot(axis, initial_pos) >= 0.0:
+            return angle
+        else:
+            return -angle
 
     def get_bones(self, bones=None):
         '''Return all bones as a flat dictionary mapping the bone name to the
