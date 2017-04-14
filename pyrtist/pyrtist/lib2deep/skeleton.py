@@ -40,24 +40,27 @@ class Skeleton(object):
                 print('hide_bones: bone {} not found'.format(name))
             self.hidden_bone_names.add(name)
 
-    def _draw_bone(self, dw, bone, parent_matrix):
+    def _draw_bone(self, dw, bone, parent_matrix, radius=0.15):
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         if bone.name not in self.hidden_bone_names:
             mx = abs_matrix[:3, :]
             origin = np.array([0.0, 0.0, 0.0, 1.0])
-            s = Point3(*np.dot(mx, origin))
-            dw.take(Sphere(s, 0.15, self.joint_color))
+            start = Point3(*np.dot(mx, origin))
 
             end_pos = bone.get_end_pos()
             if end_pos is not None:
-                e = Point3(*np.dot(mx, bone.get_end_pos()))
-                e.z = s.z
-                r = 0.1
-                #r = 0.03*(e - s).norm()
-                dw.take(Cylinder(s, e, r, r*self.radii_ratio, self.bone_color))
+                end = Point3(*np.dot(mx, end_pos))
+                end.z = start.z
+                bone_length = (end - start).norm()
+                radius = min(0.15, 0.25*bone_length)
+                r = 0.75*radius
+                dw.take(Cylinder(start, end, r, r*self.radii_ratio,
+                                 self.bone_color))
+
+            dw.take(Sphere(start, radius, self.joint_color))
 
         for child in bone.children:
-            self._draw_bone(dw, child, abs_matrix)
+            self._draw_bone(dw, child, abs_matrix, radius)
 
     def draw(self, dw, parent_matrix):
         self._draw_bone(dw, self.root_bone, parent_matrix)
