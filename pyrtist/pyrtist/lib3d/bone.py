@@ -15,7 +15,7 @@
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-Utilities to load, display and pose 3D meshes.
+Utilities to pose 3D meshes and manipulate their bones.
 '''
 
 __all__ = ('BoneView', 'Bone', 'Constraints')
@@ -50,6 +50,34 @@ class BoneView(object):
         return np.dot(self.proj_matrix, self.transform_matrix)
 
 
+# Posing can be done in two ways, depending whether any of the reference points
+# was dragged by the user.
+#
+# 1. When there are no dragged point, the posing is done in one single step (in
+#    the enum below we call it UNIQUE_POSE), where all constraints are treated
+#    equally and are applied in one go.
+#
+# 2. When there are one or more dragged point, the posing is done in two posing
+#    steps (in the enum we call them INITIAL_POSE, FINAL_POSE), where:
+#
+#   - in the first initial pose we use the old values of all the dragged
+#     reference points. This way we get the skeleton in an initial pose, which
+#     is obtained applying all the constraints,
+#
+#   - in the second final pose we only apply constraints corresponding to
+#     reference points which were dragged by the user (i.e. those that have
+#     p.gui.old_value attribute). In this case, we automatically move all the
+#     reference points that were not dragged by the user. To give an example of
+#     what is achieved, when the user moves the elbow reference point all the
+#     reference points which are children of the elbow node are automatically
+#     re-posed. The user doesn't need to adjust the hand and each of the
+#     reference points of the fingers as these are moved automatically in the
+#     second posing phase.
+(INITIAL_POSE,
+ FINAL_POSE,
+ UNIQUE_POSE) = range(3)
+
+
 class Constraints(object):
     def __init__(self, views=None, **kwargs):
         if views is None:
@@ -57,7 +85,7 @@ class Constraints(object):
         views.update(kwargs)
         self._views = views
         self._constraints = {}
-        self._num_applications = 0  # (either 0 or 1).
+        self._do_two_poses = False
         if len(views) == 0:
             raise ValueError('Constraints() object must be given at least one '
                              'view')
@@ -68,7 +96,7 @@ class Constraints(object):
             repose_children=True):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
-        max_apply_order = 0
+        two_poses_constraint = False
         for i, dst_view_point in enumerate(dst_view_points):
             if '/' not in dst_view_point:
                 raise ValueError("Invalid format for destination view point "
@@ -96,7 +124,7 @@ class Constraints(object):
                 # automatically. In other words, this ensures that dragging a
                 # bone drags all its children as if they were rigidly connected
                 # to it.
-                max_apply_order = 1
+                two_poses_constraint = True
             else:
                 resolved_dst_view_points.append(item)
 
@@ -111,18 +139,18 @@ class Constraints(object):
                                           move)
         self._constraints[bone_name] = cnst
 
-        if repose_children and max_apply_order > 0:
-            cnst.set_max_apply_order(max_apply_order)
-            self._num_applications = max_apply_order
+        if repose_children and two_poses_constraint:
+            self._do_two_poses = True
+            cnst.enable_two_poses()
 
-    def _repose_all(self, bone, parent_matrix, apply_order):
+    def _repose_all(self, bone, parent_matrix, pose_type):
         constraint = self._constraints.get(bone.name)
-        if constraint is not None and apply_order <= constraint.max_apply_order:
-            bone.matrix = constraint.apply(parent_matrix, bone, apply_order)
+        if constraint is not None and constraint.is_applicable(pose_type):
+            bone.matrix = constraint.apply(parent_matrix, bone, pose_type)
 
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         for child in bone.children:
-            self._repose_all(child, abs_matrix, apply_order)
+            self._repose_all(child, abs_matrix, pose_type)
 
     def apply_forward(self, root_bone):
         '''Compute the mesh pose in `root_bone` from the constraints and the
@@ -131,9 +159,12 @@ class Constraints(object):
         This method computed the `root_bone` matrices to reflect the values of
         the view variables (`BoneView.variables`).
         '''
-        for apply_order in range(self._num_applications + 1):
+
+        pose_types = ((INITIAL_POSE, FINAL_POSE) if self._do_two_poses
+                      else (UNIQUE_POSE,))
+        for pose_type in pose_types:
             parent_matrix = np.identity(4, dtype=np.float64)
-            self._repose_all(root_bone, parent_matrix, apply_order)
+            self._repose_all(root_bone, parent_matrix, pose_type)
 
     def apply_backward(self, root_bone):
         '''Compute the position of view points from the given pose `root_bone`.
@@ -161,15 +192,27 @@ class GenericConstraint(object):
         self.bone_name = bone_name
         self.dst_view_points = dst_view_points
         self.move = move
-        self.max_apply_order = 0
+        self.do_two_poses = False
 
-    def set_max_apply_order(self, value):
-        '''Time at which the constraint should be applied.'''
-        self.max_apply_order = value
+    def enable_two_poses(self, value=True):
+        '''Set the range of applicability of this constraint.
 
-    def _extract_point_and_angle(self, view, name, apply_order):
+        When the two poses mode is enabled, the constraint is applied twice
+        during the initial phase, where the old value of the reference point
+        associated to the constraint is used (.gui.old_value), and during the
+        final phase, where the ordinary value is used.
+        '''
+        self.do_two_poses = value
+
+    def is_applicable(self, pose_type):
+        '''Whether the constraint is applicable to this pose type.'''
+        if self.do_two_poses:
+            return True
+        return pose_type in (UNIQUE_POSE, INITIAL_POSE)
+
+    def _extract_point_and_angle(self, view, name, pose_type):
         view_point = view.variables[name]
-        if apply_order < self.max_apply_order:
+        if pose_type == INITIAL_POSE:
             gui_attrs = getattr(view_point, 'gui', None)
             if gui_attrs is not None and gui_attrs.old_value is not None:
                 view_point = gui_attrs.old_value
@@ -188,7 +231,7 @@ class RotationConstraint(GenericConstraint):
         rpn = Point3(rotation_axis)
         self.rotation_axis = np.array([rpn.x, rpn.y, rpn.z])
 
-    def apply(self, parent_matrix, bone, apply_order):
+    def apply(self, parent_matrix, bone, pose_type):
         # The first point is the one used to calculate the constraints. The
         # other points are never used as input of the posing, only as output
         # (in case the user wants to see where the bone end is from other
@@ -196,7 +239,7 @@ class RotationConstraint(GenericConstraint):
         child_matrix = bone.matrix
         desired_view, point_name = self.dst_view_points[0]
         desired_bone_end_position, bone_axis_rotation = \
-          self._extract_point_and_angle(desired_view, point_name, apply_order)
+          self._extract_point_and_angle(desired_view, point_name, pose_type)
 
         # We get rid of the rotation part of `matrix', as we are going to
         # recalculate it anyway and we want to do this in a well known
@@ -223,7 +266,7 @@ class RotationConstraint(GenericConstraint):
         new_bone_dir = np.dot(np.linalg.inv(lhs_mx), rhs)
 
         # From the new bone direction, recompute the bone rotation matrix.
-        bone_end_pos = Point3(*bone.get_end_pos()[:3])
+        bone_end_pos = Point3.from_np(bone.get_end_pos())
         mx = (Matrix3.rotation_by_example(bone_end_pos, Point3(*new_bone_dir)) *
               Matrix3.rotation(bone_axis_rotation, axis=bone_end_pos))
         child_matrix[:3, :3] = mx.to_np33()
@@ -249,7 +292,7 @@ class PreferentialConstraint(GenericConstraint):
         super(PreferentialConstraint, self).__init__(bone_name,
                                                      dst_view_points, move)
 
-    def apply(self, parent_matrix, bone, apply_order):
+    def apply(self, parent_matrix, bone, pose_type):
         assert len(self.dst_view_points) >= 2, \
           'PreferentialConstraint requires at least two view points'
 
@@ -282,7 +325,7 @@ class PreferentialConstraint(GenericConstraint):
             lhs_mx[2] = line_dir
 
             p, angle = \
-              self._extract_point_and_angle(view, point_name, apply_order)
+              self._extract_point_and_angle(view, point_name, pose_type)
             bone_axis_rotation += angle
             rhs = np.array([p.x - full_proj[0, 3], p.y - full_proj[1, 3], 0.0])
             lhs_mx_inv = np.linalg.inv(lhs_mx)
