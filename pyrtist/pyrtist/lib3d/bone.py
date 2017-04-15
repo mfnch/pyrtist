@@ -22,6 +22,7 @@ __all__ = ('BoneView', 'Bone', 'Constraints')
 
 
 import math
+import logging
 import numpy as np
 
 from pyrtist.lib2d import Point, Tri
@@ -92,8 +93,8 @@ class Constraints(object):
         if None in views:
             raise ValueError('Invalid view')
 
-    def add(self, bone_name, dst_view_points, axis=None, move=True,
-            repose_children=True):
+    def add(self, bone_name, dst_view_points, axis=None, cnst_type=None,
+            forward=True, back=True, repose_children=True):
         # Resolve the views in `dst_view_points' from their names.
         resolved_dst_view_points = []
         two_poses_constraint = False
@@ -130,13 +131,19 @@ class Constraints(object):
 
         if axis is not None:
             cnst = RotationConstraint(bone_name, resolved_dst_view_points,
-                                      axis, move)
+                                      axis, forward, back)
         else:
             if len(resolved_dst_view_points) < 2:
                 raise ValueError('You should provide either the rotation axis '
                                  'or two view points from two different views')
-            cnst = PreferentialConstraint(bone_name, resolved_dst_view_points,
-                                          move)
+            if cnst_type in (None, 'rotation'):
+                cnst_bld = PrefRotationConstraint
+            elif cnst_type == 'translation':
+                cnst_bld = PrefTranslationConstraint
+            else:
+                raise ValueError("Unknown constraint type `{}'"
+                                 .format(cnst_type))
+            cnst = cnst_bld(bone_name, resolved_dst_view_points, forward, back)
         self._constraints[bone_name] = cnst
 
         if repose_children and two_poses_constraint:
@@ -144,9 +151,9 @@ class Constraints(object):
             cnst.enable_two_poses()
 
     def _repose_all(self, bone, parent_matrix, pose_type):
-        constraint = self._constraints.get(bone.name)
-        if constraint is not None and constraint.is_applicable(pose_type):
-            bone.matrix = constraint.apply(parent_matrix, bone, pose_type)
+        cnst = self._constraints.get(bone.name)
+        if cnst is not None and cnst.is_applicable(pose_type):
+            bone.matrix = cnst.apply_forward(parent_matrix, bone, pose_type)
 
         abs_matrix = np.dot(parent_matrix, bone.matrix)
         for child in bone.children:
@@ -174,35 +181,21 @@ class Constraints(object):
         bones = root_bone.get_bones()
         mxs = root_bone.build_matrices()
         moved_view_points = []
-        for name, constraint in self._constraints.items():
-            if not constraint.move:
+        for name, cnst in self._constraints.items():
+            if not cnst.back:
                 continue
             bone = bones[name]
-            bone_end_pos = bone.get_end_pos()
-            for view, point_name in constraint.dst_view_points:
-                mx = np.dot(view.view_matrix, mxs[name])
-                new_end_pos = np.dot(mx, bone_end_pos)[:2]
-
-                new_value = Point(*new_end_pos)
-                old_value = view.variables[point_name]
-                if isinstance(old_value, Tri) and old_value.ip is not None:
-                    # If we are dealing with a Tri, then new_value must be a
-                    # Tri as well.
-                    r = (old_value.p - old_value.ip).norm()
-                    angle = bone.get_self_rotation()
-                    p = new_value
-                    new_value = Tri(p + r*Point.vangle(angle), p)
-
-                view.variables[point_name] = new_value
-                moved_view_points.append((view, point_name))
+            pts = cnst.apply_backward(mxs[name], bone)
+            moved_view_points.extend(pts)
         return moved_view_points
 
 
 class GenericConstraint(object):
-    def __init__(self, bone_name, dst_view_points, move):
+    def __init__(self, bone_name, dst_view_points, forward, back):
         self.bone_name = bone_name
         self.dst_view_points = dst_view_points
-        self.move = move
+        self.forward = forward
+        self.back = back
         self.do_two_poses = False
 
     def enable_two_poses(self, value=True):
@@ -217,6 +210,8 @@ class GenericConstraint(object):
 
     def is_applicable(self, pose_type):
         '''Whether the constraint is applicable to this pose type.'''
+        if not self.forward:
+            return False
         if self.do_two_poses:
             return True
         return pose_type in (UNIQUE_POSE, INITIAL_POSE)
@@ -255,12 +250,14 @@ class GenericConstraint(object):
 
 
 class RotationConstraint(GenericConstraint):
-    def __init__(self, bone_name, dst_view_points, rotation_axis, move):
-        super(RotationConstraint, self).__init__(bone_name, dst_view_points, move)
+    def __init__(self, bone_name, dst_view_points, rotation_axis,
+                 forward, back):
+        super(RotationConstraint, self).__init__(bone_name, dst_view_points,
+                                                 forward, back)
         rpn = Point3(rotation_axis)
         self.rotation_axis = np.array([rpn.x, rpn.y, rpn.z])
 
-    def apply(self, parent_matrix, bone, pose_type):
+    def apply_forward(self, parent_matrix, bone, pose_type):
         # The first point is the one used to calculate the constraints. The
         # other points are never used as input of the posing, only as output
         # (in case the user wants to see where the bone end is from other
@@ -303,12 +300,18 @@ class RotationConstraint(GenericConstraint):
 
 
 class PreferentialConstraint(GenericConstraint):
-    '''Every element of self.dst_view_points provides 2 constraints on the 3
-    coordinates of the 3D point we are trying to determine, r, the end bone
-    position. Consequently, every such element identifies a line in 3D space
-    which - in theory - should contain r. However, two lines in 3D space are
-    not guaranteed to have an intersection. We must therefore adopt a strategy
-    to identify r, even when there are no intersections between the lines (e.g.
+    '''This class provides an algorithm to determine the coordinates of a 3D
+    point from the 2D projections of this point on two or more views.
+    Constraints inheriting from this class, use this algorithm to map the 2D
+    reference points for the same joint in different views into one single
+    set of 3D coordinates.
+
+    DETAILS: Every element of self.dst_view_points provides 2 constraints on
+    the 3 coordinates of the 3D point we are trying to determine, r.
+    Consequently, every such element identifies a line in 3D space which - in
+    theory - should contain r. However, two lines in 3D space are not
+    guaranteed to have an intersection. We must therefore adopt a strategy to
+    identify r, even when there are no intersections between the lines (e.g.
     due to calculation errors). `PreferentialConstraint` adopts the strategy of
     partitioning the list of constraints in one primary constraint and other
     many secondary constraints. It assumes r lies inside the line identified by
@@ -317,16 +320,9 @@ class PreferentialConstraint(GenericConstraint):
     secondary constraints.
     '''
 
-    def __init__(self, bone_name, dst_view_points, move):
-        super(PreferentialConstraint, self).__init__(bone_name,
-                                                     dst_view_points, move)
-
-    def apply(self, parent_matrix, bone, pose_type):
+    def _calc_point3_and_angles(self, bone_matrix, pose_type):
         assert len(self.dst_view_points) >= 2, \
           'PreferentialConstraint requires at least two view points'
-
-        mx = bone.matrix.copy()
-        abs_matrix = np.dot(parent_matrix, mx)
 
         # Rotation around the bone axis.
         self_rotation_angles = []
@@ -338,7 +334,7 @@ class PreferentialConstraint(GenericConstraint):
         lines = []
         for view, point_name in self.dst_view_points:
             # full_proj below is a 2x4 matrix.
-            full_proj = np.dot(view.view_matrix, abs_matrix)
+            full_proj = np.dot(view.view_matrix, bone_matrix)
 
             # We now build a 3x3 matrix from full_proj.
             # The third row is obtained from the vector product of the top
@@ -385,14 +381,47 @@ class PreferentialConstraint(GenericConstraint):
         # We can now compute the new bone direction, r, and from this the bone
         # rotation matrix.
         r = Point3.from_np(primary[0] + alpha*primary[1])
+        return (r, self_rotation_angles)
+
+    def _calc_refpoints(self, bone_matrix, point3, angle):
+        moved_view_points = []
+        for view, point_name in self.dst_view_points:
+            mx = np.dot(view.view_matrix, bone_matrix)
+            new_value = Point(*np.dot(mx, point3)[:2])
+            old_value = view.variables[point_name]
+            if isinstance(old_value, Tri) and old_value.ip is not None:
+                # If we are dealing with a Tri, then new_value must be a
+                # Tri as well.
+                r = (old_value.p - old_value.ip).norm()
+                p = new_value
+                new_value = Tri(p + r*Point.vangle(angle), p)
+
+            view.variables[point_name] = new_value
+            moved_view_points.append((view, point_name))
+        return moved_view_points
+
+
+class PrefRotationConstraint(PreferentialConstraint):
+    '''Use the preferential view algorithm (see PreferentialConstraint) to find
+    where the bone end-position should go. From this determine the bone matrix,
+    also allowing the user to specify the rotation around the bone axis via a
+    Tri point. This is done as follow: when the end bone is a Tri point, the
+    in-point of the Tri is used to encode the angle of rotation around the bone
+    axis (with something like `(tri.p - tri.ip).angle()`.
+    '''
+
+    def apply_forward(self, parent_matrix, bone, pose_type):
+        bone_matrix = np.dot(parent_matrix, bone.matrix)
+        r, angles = (super(PrefRotationConstraint, self)
+                     ._calc_point3_and_angles(bone_matrix, pose_type))
+
         bone_end_pos_np = bone.get_end_pos()
         bone_end_pos = Point3.from_np(bone_end_pos_np)
-
         mx = np.dot(bone.matrix[:3, :3],
                     Matrix3.rotation_by_example(bone_end_pos, r).to_np33())
-        if self_rotation_angles:
+        if angles:
             # The user provided a custom rotation around the bone's axis.
-            angle = sum(self_rotation_angles)/float(len(self_rotation_angles))
+            angle = sum(angles) / float(len(angles))
             self_mx = Matrix3.rotation(angle, bone_end_pos).to_np33()
 
             final_pos = np.dot(mx, bone_end_pos_np[:3])
@@ -402,6 +431,32 @@ class PreferentialConstraint(GenericConstraint):
 
         bone.matrix[:3, :3] = mx
         return bone.matrix
+
+    def apply_backward(self, bone_matrix, bone):
+        return self._calc_refpoints(bone_matrix, bone.get_end_pos(),
+                                    bone.get_self_rotation())
+
+
+class PrefTranslationConstraint(PreferentialConstraint):
+    '''This constraint only affects the translation part of the bone matrix.
+    It uses the preferential view algorithm (see PreferentialConstraint) to
+    determine the position of the bone start point. This is typically used on
+    the root node to translate the whole mesh.
+    '''
+
+    def apply_forward(self, parent_matrix, bone, pose_type):
+        r, angles = (super(PrefTranslationConstraint, self)
+                     ._calc_point3_and_angles(parent_matrix, pose_type))
+        if angles:
+            logging.warn("You gave angle to a translation constraint for "
+                         "`{}', but translation constraints don't take angles"
+                         .format(bone.name))
+        bone.matrix[:3, 3] = r.to_np()
+        return bone.matrix
+
+    def apply_backward(self, bone_matrix, bone):
+        bone_start = np.array([0.0, 0.0, 0.0, 1.0])
+        return self._calc_refpoints(bone_matrix, bone_start, 0.0)
 
 
 class Bone(object):
@@ -452,6 +507,8 @@ class Bone(object):
                                          Point3.from_np(initial_pos))
         self_rot_mx = np.dot(mx.to_np33(), self.matrix[:3, :3])
         axis, angle = Matrix3.np_get_axis_and_angle(self_rot_mx)
+        if axis is None:
+            return 0.0
         if np.dot(axis, initial_pos) >= 0.0:
             return angle
         else:

@@ -114,6 +114,11 @@ class Point3(object):
         'Return the x and y components as a Point object.'
         return Point(self.x, self.y)
 
+    def to_np(self, dtype=None):
+        'Convert to a numpy array.'
+        dtype = (dtype or np.float64)
+        return np.array(list(self), dtype=dtype)
+
     def dot(self, p):
         'Return the scalar product with another 3D point.'
         return self.x*p.x + self.y*p.y + self.z*p.z
