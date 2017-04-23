@@ -4,9 +4,11 @@ Pyrtist
 
 Pyrtist is a library and IDE which enables **drawing using Python scripts**.
 
-Pyrtist is a vector graphics editor. It is similar to Inkscape, except that the
-main input for drawing comes from a Python script. The main Pyrtist window is
-subdivided in two halves:
+Pyrtist is a vector graphics editor. The main difference with respect to
+traditional vector graphics editors like `Inkscape <https://inkscape.org/>`_ is
+that the input for drawing comes from a Python script.
+
+The Pyrtist window is subdivided in two halves:
 
 * The **script view** allows to write and adjust the Python script which draws
   the graphics,
@@ -16,15 +18,15 @@ subdivided in two halves:
   points (with the mouse for example), which the Python script sees as regular
   variables.
 
-The two views allows you to create pictures that can exploit the scripting
+The two views allow you to create pictures that can exploit the scripting
 capabilities of Python while still allowing you to naturally interact with the
-graphical output. At the same time, your drawings can be saved to disk as
-ordinary Python scripts. You can execute them on their own, outside the Pyrtist
-user interface. Your scripts can exploit the full power of Python and can be as
-smart as you want them to be.
+graphics. Your drawings can be saved to disk as ordinary Python scripts.
+You can execute them on their own, outside the Pyrtist user interface,
+or you can re-open them with Pyrtist if you need to change them.
 
-If you are a programmer, you can then use the tools you are familiar with. You
-can track different versions of your drawings using
+Your scripts can exploit the full power of Python and can be as smart as you
+want them to be. If you are a programmer, you can then use the tools you are
+familiar with. You can track different versions of your drawings using
 `git <https://git-scm.com/>`_. You can use Makefiles to automatically rebuild a
 large collection of Pyrtist drawings, which all import the same module defining
 color and style. Need a different color scheme or line width scheme for all
