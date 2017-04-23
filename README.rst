@@ -1,8 +1,40 @@
 =======
 Pyrtist
 =======
-This is Pyrtist, a graphical user interface for drawing using Python scripts.
 
+Pyrtist is a library and IDE which enables **drawing using Python scripts**.
+
+Pyrtist is a vector graphics editor. It is similar to Inkscape, except that the
+main input for drawing comes from a Python script. The main Pyrtist window is
+subdivided in two halves:
+
+* The **script view** allows to write and adjust the Python script which draws
+  the graphics,
+
+* The **picture view** shows the graphical output produced by the script and
+  allows to interact with the picture and adjust it, by moving some reference
+  points (with the mouse for example), which the Python script sees as regular
+  variables.
+
+The two views allows you to create pictures that can exploit the scripting
+capabilities of Python while still allowing you to naturally interact with the
+graphical output. At the same time, your drawings can be saved to disk as
+ordinary Python scripts. You can execute them on their own, outside the Pyrtist
+user interface. Your scripts can exploit the full power of Python and can be as
+smart as you want them to be.
+
+If you are a programmer, you can then use the tools you are familiar with. You
+can track different versions of your drawings using
+`git <https://git-scm.com/>`_. You can use Makefiles to automatically rebuild a
+large collection of Pyrtist drawings, which all import the same module defining
+color and style. Need a different color scheme or line width scheme for all
+your pictures? Just change one file and type ``make``. They will all be
+generated automatically for you. Importantly, you can easily reuse old
+drawings. They are text and as such you can easily copy and paste them. You can
+create modules containing them and you can couple them with the thousands
+Python libraries out there.
+
+======
 Status
 ======
 
