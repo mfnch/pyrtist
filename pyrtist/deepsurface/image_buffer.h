@@ -60,17 +60,22 @@ class ImageBuffer {
   PixelType* GetPtr() { return ptr_; }
   size_t GetSizeInBytes() { return height_*stride_*sizeof(PixelType); }
 
-  /// Fill the buffer with a uniform value.
-  void Fill(PixelType value) {
+  /// @brief Call the given function for every pixel, passing the pixel pointer.
+  void Map(std::function<void(PixelType*)> fn) {
     PixelType* end_ptr = ptr_ + stride_*height_;
     int32_t skip = stride_ - width_;
     PixelType* end_line;
     PixelType* ptr = ptr_;
     while ((end_line = ptr + width_) < end_ptr) {
       while (ptr < end_line)
-        *ptr++ = value;
+        fn(ptr++);
       ptr += skip;
     }
+  }
+
+  /// @brief Fill the buffer with a uniform value.
+  void Fill(PixelType value) {
+    Map([value](PixelType* pixel)->void { *pixel = value; });
   }
 
   /// Return a region of the buffer as a new buffer.
@@ -105,11 +110,11 @@ class ImageBuffer {
 };
 
 // Utility functions (Little-endian implementation).
-inline uint32_t GetA(uint32_t argb) { return (argb >> 24) & 0xff; }
-inline uint32_t GetR(uint32_t argb) { return (argb >> 16) & 0xff; }
-inline uint32_t GetG(uint32_t argb) { return (argb >> 8) & 0xff; }
-inline uint32_t GetB(uint32_t argb) { return argb & 0xff; }
-inline uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
+constexpr uint32_t GetA(uint32_t argb) { return (argb >> 24) & 0xff; }
+constexpr uint32_t GetR(uint32_t argb) { return (argb >> 16) & 0xff; }
+constexpr uint32_t GetG(uint32_t argb) { return (argb >> 8) & 0xff; }
+constexpr uint32_t GetB(uint32_t argb) { return argb & 0xff; }
+constexpr uint32_t GetARGB(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
   return ((static_cast<uint32_t>(a) << 24) |
           (static_cast<uint32_t>(r) << 16) |
           (static_cast<uint32_t>(g) << 8) |

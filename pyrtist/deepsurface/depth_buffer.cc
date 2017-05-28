@@ -204,6 +204,9 @@ ARGBImageBuffer* DepthBuffer::ComputeNormals() {
   DepthType* begin_ptr = GetPtr();
   DepthType* ptr = &begin_ptr[width_];
 
+  // Color to use for the background.
+  constexpr uint32_t kDefaultDepthColor = GetARGB(0xff, 0x80, 0x80, 0xff);
+
   for (int iy = 1; iy < ny; iy++) {
     DepthType lft = *ptr++;
     DepthType* top_ptr = ptr - width_;
@@ -220,7 +223,7 @@ ARGBImageBuffer* DepthBuffer::ComputeNormals() {
 
       if ((x_mask & 2U) != 0) {
         // Point with infinite depth: use default colors.
-        out_ptr[offset] = 0xff8080ff;
+        out_ptr[offset] = kDefaultDepthColor;
       } else {
         top_ptr = ptr - 2 - width_;
         bot_ptr = ptr - 2 + width_;
@@ -248,13 +251,10 @@ ARGBImageBuffer* DepthBuffer::ComputeNormals() {
         // Now compute the norm of the unnormalized normal vector.
         float d = sqrtf(1.0f + dx*dx + dy*dy);
 
-        uint8_t red   = 128 + static_cast<uint8_t>((dx*127.0f)/d);
+        uint8_t red   = 128 - static_cast<uint8_t>((dx*127.0f)/d);
         uint8_t green = 128 + static_cast<uint8_t>((dy*127.0f)/d);
         uint8_t blue  = 128 + static_cast<uint8_t>(127.0/d);
-        out_ptr[offset] = ((static_cast<uint32_t>(blue)) |
-                           (static_cast<uint32_t>(green) << 8) |
-                           (static_cast<uint32_t>(red) << 16) |
-                           (UINT32_C(0xff) << 24));
+        out_ptr[offset] = GetARGB(255, red, green, blue);
       }
 
       lft = ctr;
@@ -264,4 +264,60 @@ ARGBImageBuffer* DepthBuffer::ComputeNormals() {
   }
 
   return normals;
+}
+
+template <typename T1, typename T2, typename Fn>
+bool Map2(ImageBuffer<T1>* buf1, ImageBuffer<T2>* buf2, Fn fn) {
+  if (buf1->GetWidth() != buf2->GetWidth() ||
+      buf1->GetHeight() != buf2->GetHeight())
+    return false;
+
+  T1* end_ptr = (buf1->GetPtr() + buf1->GetStride()*buf1->GetHeight());
+  int width1 = buf1->GetWidth();
+  int32_t skip1 = buf1->GetStride() - buf1->GetWidth();
+  int32_t skip2 = buf2->GetStride() - buf2->GetWidth();
+  T1* end_line;
+  T1* ptr1 = buf1->GetPtr();
+  T2* ptr2 = buf2->GetPtr();
+  while ((end_line = ptr1 + width1) < end_ptr) {
+    while (ptr1 < end_line)
+      fn(ptr1++, ptr2++);
+    ptr1 += skip1;
+    ptr2 += skip2;
+  }
+
+  return true;
+}
+
+ARGBImageBuffer* DepthBuffer::ComputeDepth() {
+  auto out = new ARGBImageBuffer(width_, width_, height_);
+
+  // Find the range of variation of the depth.
+  DepthType min_value = 1e10;
+  DepthType max_value = -1e10;
+  Map( [&min_value, &max_value](PixelType* pixel)->void {
+         DepthType d = *pixel;
+         if (!IsInfiniteDepth(d)) {
+           min_value = std::min(min_value, d);
+           max_value = std::max(max_value, d);
+         }
+       } );
+
+  DepthType depth_scale = 255.5/(max_value - min_value);
+  constexpr uint32_t kDefaultDepthColor = GetARGB(0xff, 0x80, 0x80, 0x80);
+
+  auto fn =
+    [min_value, depth_scale](uint32_t* out_pixel, DepthType* depth)->void {
+      DepthType d = *depth;
+      if (IsInfiniteDepth(d)) {
+        *out_pixel = kDefaultDepthColor;
+      } else {
+        uint8_t v = static_cast<uint8_t>((d - min_value)*depth_scale);
+        *out_pixel = GetARGB(0xff, v, v, v);
+      }
+    };
+  bool success = Map2(out, this, fn);
+  if (!success)
+    abort();
+  return out;
 }

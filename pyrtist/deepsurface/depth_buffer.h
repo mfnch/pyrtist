@@ -57,12 +57,20 @@ class DepthBuffer : public ImageBuffer<float> {
   void Clear() { Fill(kInfiniteDepth); }
 
   ARGBImageBuffer* ComputeNormals();
+  ARGBImageBuffer* ComputeDepth();
 
   bool SaveToFile(const char* file_name) {
     if (file_name == nullptr)
       return false;
     std::unique_ptr<ARGBImageBuffer> normals_image{ComputeNormals()};
     return normals_image->SaveToFile(file_name);
+  }
+
+  bool SaveDepthToFile(const char* file_name) {
+    if (file_name == nullptr)
+      return false;
+    std::unique_ptr<ARGBImageBuffer> depth_image{ComputeDepth()};
+    return depth_image->SaveToFile(file_name);
   }
 
   void DrawPlane(float clip_start_x, float clip_start_y,
