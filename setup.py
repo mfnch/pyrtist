@@ -28,7 +28,7 @@ import os
 from setuptools import setup, Extension, Feature
 
 cfg = dict(name='pyrtist',
-           version='0.0.2',
+           version='0.0.3',
            description='A GUI which enables drawing using Python scripts',
            author='Matteo Franchin',
            author_email='fnch@users.sf.net',
