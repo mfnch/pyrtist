@@ -1,10 +1,10 @@
-# Copyright (C) 2012-2017 by Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2012-2017 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
 #   Pyrtist is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU Lesser General Public License as published
-#   by the Free Software Foundation, either version 3 of the License, or
+#   by the Free Software Foundation, either version 2.1 of the License, or
 #   (at your option) any later version.
 #
 #   Pyrtist is distributed in the hope that it will be useful,
@@ -49,7 +49,7 @@ cfg = dict(name='pyrtist',
               'Development Status :: 3 - Alpha',
               'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
               ('License :: OSI Approved :: GNU Lesser General Public '
-               'License v3 or later (LGPLv3+)')])
+               'License v2 or later (LGPLv2+)')])
 
 # Take the long description from the README.rst file.
 script_path = os.path.abspath(os.path.dirname(__file__))
