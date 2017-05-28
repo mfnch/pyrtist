@@ -1,6 +1,0 @@
-
-Window.Text
------------
-
-The ``Text`` instruction can be used to write text.
-

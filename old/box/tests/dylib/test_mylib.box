@@ -1,5 +1,0 @@
-// Example of usage of an external Box C-library
-include "mylib.box"
-
-MyLibPrintA["Hello world\n"]
-

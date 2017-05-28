@@ -1,5 +1,0 @@
-include "g"
-w = Figure[
-  \ .Line[(5, 5), (20, 10), (30, 45), .Close[]]
-  .Save["closed_line.eps"]
-]

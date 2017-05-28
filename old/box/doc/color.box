@@ -1,6 +1,0 @@
-include "g"
-
-//{def
-red = Color[.a=.r=1.0, .g=.b=0.0]    // define the opaque red
-transparent_red = Color[red, .a=0.5] // copy red and change the alpha channel
-//}
