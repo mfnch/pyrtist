@@ -16,7 +16,7 @@
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 license = \
-"""Pyrtist is free software; you can redistribute it and/or modify it
+'''Pyrtist is free software; you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published
 by the Free Software Foundation; either version 2.1 of the License, or
 (at your option) any later version.
@@ -28,12 +28,12 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with Pyrtist; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA  02111-1307  USA"""
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA'''
 
-name = "Pyrtist"
-version = (0, 0, 2)
-version_string = "%d.%d.%d" % version
-full_name = "%s %s" % (name, version_string)
-comment = "Pyrtist, the Python drawing tool"
-authors = ["Matteo Franchin (fnch@users.sourceforge.net)"]
-website = "https://github.com/mfnch/pyrtist"
+name = 'Pyrtist'
+version = (0, 0, 4)
+version_string = '.'.join(str(v) for v in version)
+full_name = '{name} {ver}'.format(name=name, ver=version_string)
+comment = 'Pyrtist, the Python drawing tool'
+authors = ['Matteo Franchin (fnch@users.sourceforge.net)']
+website = 'https://github.com/mfnch/pyrtist'

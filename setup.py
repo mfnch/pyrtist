@@ -27,8 +27,19 @@ BUILD_DEEPSURFACE = False
 import os
 from setuptools import setup, Extension, Feature
 
+
+version = '0.0.4.dev0'
+
+# Sanity check: ensure consistency with version in pyrtist.gui.info.
+import pyrtist.gui.info
+if not version.startswith(pyrtist.gui.info.version_string):
+    raise ValueError('Version {} is inconsistent with '
+                     'pyrtist.info.version_string ({})'
+                     .format(version, pyrtist.gui.info.version_string))
+
+
 cfg = dict(name='pyrtist',
-           version='0.0.3',
+           version=version,
            description='A GUI which enables drawing using Python scripts',
            author='Matteo Franchin',
            author_email='fnch@users.sf.net',
