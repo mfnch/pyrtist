@@ -63,6 +63,9 @@ bool Mesh::ReadLine(std::istream& in) {
 
   if (line_head_size == 1) {
     switch (line_head[0]) {
+      case 'o':
+        // Object: for now just assume we only have one and ignore this.
+        return SkipLine(in);
       case 'v':
         // Vertices.
         float x, y, z;
