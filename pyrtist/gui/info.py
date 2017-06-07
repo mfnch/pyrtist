@@ -32,7 +32,10 @@ along with Pyrtist; if not, write to the Free Software Foundation, Inc.,
 
 name = 'Pyrtist'
 version = (0, 0, 4)
-version_string = '.'.join(str(v) for v in version)
+dev_version = 0
+version_string = ('.'.join(str(v) for v in version) +
+                  ('.dev{}'.format(dev_version)
+                   if dev_version is not None else ''))
 full_name = '{name} {ver}'.format(name=name, ver=version_string)
 comment = 'Pyrtist, the Python drawing tool'
 authors = ['Matteo Franchin (fnch@users.sourceforge.net)']
