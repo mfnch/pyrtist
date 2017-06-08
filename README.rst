@@ -18,8 +18,7 @@ The Pyrtist window is subdivided in two halves:
   points (with the mouse for example), which the Python script sees as regular
   variables.
 
-.. figure:: pyrtist_house.png
-   :scale: 50 %
+.. figure:: doc/pyrtist_house.png
 
    The cartoon house example opened in the Pyrtist GUI.
 
