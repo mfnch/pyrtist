@@ -32,6 +32,11 @@ info = {}
 root_dir = os.path.dirname(os.path.realpath(__file__))
 execfile(os.path.join(root_dir, 'pyrtist', 'gui', 'info.py'), info)
 
+# Take the long description from the README.rst file.
+readme_path = os.path.join(root_dir, 'README.rst')
+with open(readme_path, 'r') as f:
+    long_description = f.read()
+
 cfg = dict(name='pyrtist',
            version=info['version_string'],
            description='A GUI which enables drawing using Python scripts',
@@ -39,28 +44,23 @@ cfg = dict(name='pyrtist',
            author_email='fnch@users.sf.net',
            url='https://github.com/mfnch/pyrtist',
            license='LGPL',
-           packages = ['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
-                       'pyrtist.gui.comparse', 'pyrtist.lib2d',
-                       'pyrtist.lib2d.prefabs',
-                       'pyrtist.lib2deep', 'pyrtist.lib3d'],
-           package_data = {'pyrtist': ['examples/*.py',
-                                       'examples/*.png',
-                                       'icons/24x24/*.png',
-                                       'icons/32x32/*.png',
-                                       'icons/fonts/*.png']},
-           classifiers =
+           packages=['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
+                     'pyrtist.gui.comparse', 'pyrtist.lib2d',
+                     'pyrtist.lib2d.prefabs',
+                     'pyrtist.lib2deep', 'pyrtist.lib3d'],
+           package_data={'pyrtist': ['examples/*.py',
+                                     'examples/*.png',
+                                      'icons/24x24/*.png',
+                                      'icons/32x32/*.png',
+                                      'icons/fonts/*.png']},
+           classifiers=
              ['Programming Language :: Python :: 2',
               'Programming Language :: Python :: 2.7',
               'Development Status :: 3 - Alpha',
               'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
               ('License :: OSI Approved :: GNU Lesser General Public '
-               'License v2 or later (LGPLv2+)')])
-
-# Take the long description from the README.rst file.
-script_path = os.path.abspath(os.path.dirname(__file__))
-readme_path = os.path.join(script_path, 'README.rst')
-with open(readme_path, 'r') as f:
-    cfg.update(long_description=f.read())
+               'License v2 or later (LGPLv2+)')],
+           long_description=long_description)
 
 # C++ extensions.
 ext_modules = []
@@ -73,7 +73,6 @@ ext_modules.append(Extension('pyrtist.deepsurface',
                              extra_compile_args=['-std=c++11'],
                              sources=srcs_full_paths,
                              libraries=['cairo']))
-
 
 cfg.update(features={'deepsurface': Feature('the deepsurface module.',
                                             standard=False,

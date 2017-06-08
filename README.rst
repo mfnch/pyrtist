@@ -18,6 +18,11 @@ The Pyrtist window is subdivided in two halves:
   points (with the mouse for example), which the Python script sees as regular
   variables.
 
+.. figure:: pyrtist_house.png
+   :scale: 50 %
+
+   The cartoon house example opened in the Pyrtist GUI.
+
 The two views allow you to create pictures that can exploit the scripting
 capabilities of Python while still allowing you to naturally interact with the
 graphics. Your drawings can be saved to disk as ordinary Python scripts.
