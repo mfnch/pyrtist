@@ -19,6 +19,7 @@ The Pyrtist window is subdivided in two halves:
   variables.
 
 .. figure:: doc/pyrtist_house.png
+   :align: center
 
    The cartoon house example opened in the Pyrtist GUI.
 
