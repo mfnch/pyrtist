@@ -40,13 +40,23 @@ class WindowBase(Taker):
         self.cmd_stream = cmd_stream
         self.cmd_executor = cmd_executor
         self.hot_points = {}
+        self.hot_names = []
         super(WindowBase, self).__init__()
 
     def __getitem__(self, name):
-        return self.hot_points[name]
+        try:
+            return self.hot_points[name]
+        except KeyError:
+            if isinstance(name, int) and (0 <= name < len(self.hot_names)):
+                return self.hot_points[self.hot_names[name]]
+            raise KeyError("Window does not have hot point with name `{}'"
+                           .format(name))
 
     def get(self, name, default=None):
-        return self.hot_points.get(name, default)
+        try:
+            return self[name]
+        except KeyError:
+            return default
 
     def _consume_cmds(self):
         cmd_exec = self.cmd_executor
@@ -229,8 +239,9 @@ def stroke_style_at_window(stroke_style, window):
     window.take(CmdStream(ss))
 
 @combination(Hot, Window, 'Hot')
-def fn(hot, window):
+def hot_at_window(hot, window):
     window.hot_points[hot.name] = hot.point
+    window.hot_names.append(hot.name)
 
 
 @combination(CmdStream, Window)
