@@ -1,8 +1,7 @@
 # Some symbols used in electronics
+import math
 from pyrtist.lib2d import *
-'''
-include "arrows"
-'''
+from pyrtist.lib2d import arrows
 
 def build_diode(a=2.0, b=3.0, d1=4.0, s=0.4):
     p1 = Point(-d1, 0)
@@ -95,33 +94,29 @@ def build_capacitor(h=4.0, d=1.0):
 #          |(**view:fg*)
 capacitor = build_capacitor()
 
-def build_transistor(transistor_type):
-    '''
-[
-  r = 5.0
-  d = 0.8, hd = 0.5*d
-  ld = r*0.4, ll = r*0.5, lp = r*0.2
-  a = -0.65*const.pi
-  base = (r-hd, 0)
-  collector = (r-hd)*(Cos[a], Sin[a])
-  emitter = (r-hd)*(Cos[-a], Sin[-a])
-  \ transistor_NPN[
-    \ .Circle[(0, 0), r; r-hd]
-    \ .Line[color.black, d, (ld, -ll), (ld, ll); hd, base, (ld, 0)]
-    \ .Hot["C", collector, "E", emitter, "B", base]
-  ]
-  \ transistor_PNP[
-    \ .Put[transistor_NPN]
-    \ .Line[hd, collector, arrow_triangle, (ld-hd, -lp);
-            (ld, lp), emitter]
-    \ .Hot["C", collector, "E", emitter, "B", base]
-  ]
-  \ transistor_NPN[
-    \ .Line[(ld, -lp), collector; (ld, lp), arrow_triangle, emitter]
-  ]
-]
-'''
-    return Window()
+def build_transistor(transistor_type, r=5.0, d=0.8):
+    hd = 0.5*d
+    ld = r*0.4
+    ll = r*0.5
+    lp = r*0.2
+    a = -0.65*math.pi
+    base = Point(r - hd, 0)
+    collector = (r - hd)*Point(math.cos(a), math.sin(a))
+    emitter = (r - hd)*Point(math.cos(-a), math.sin(-a))
+
+    ret = Window()
+    ret << Args(Circles(Point(0, 0), r, r - hd),
+                Line(d, Point(ld, -ll), Point(ld, ll)),
+                Line(d, hd, base, (ld, 0)),
+                Hot("C", collector), Hot("E", emitter), Hot("B", base))
+    style = Args(hd, Cap.round)
+    if transistor_type == 'NPN':
+        ret << Line(style, collector, arrows.triangle, Point(ld - hd, -lp))
+        ret << Line(style, Point(ld, lp), emitter)
+    else:
+        ret << Line(style, (ld, -lp), collector)
+        ret << Line(style, (ld, lp), arrows.triangle, emitter)
+    return ret
 
 # Intro: schematic symbol of an NPN transistor.
 # This is a {type(Figure)} with three hot points ``"B"``, ``"C"``, ``"E"``
