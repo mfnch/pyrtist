@@ -42,6 +42,9 @@ class Poly(Primitive):
     def __iter__(self):
         return iter(self.points)
 
+    def __getitem__(self, index):
+        return Point.interpolate(self.points, index)
+
     def build_path(self):
         cmds = []
         points = self.points

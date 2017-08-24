@@ -66,6 +66,44 @@ class Point(object):
     def sum(points, default=None):
         return sum(points, default or Point())
 
+    @staticmethod
+    def interpolate(point_list, index):
+        '''Interpolate a point according to the given index.
+
+        Given a list of points `point_list` return an interpolated point,
+        according to the given index `index`. In particular, if `index` is:
+
+        - an integer, then this function simply returns `point_list[index]`
+
+        - a floating point number, then this function returns an interpolation
+          of `points_list[floor(index)]` and `points_list[ceil(index)]`.
+
+        - a Point, then the result is similar to just giving a single float
+          `index.x`, with the additional addition of a vector `index.y * ort`
+          where `ort` is the vector orthogonal to the segment selected by
+          `index.x`.
+        '''
+        if isinstance(index, int):
+            return point_list[index]
+        elif isinstance(index, float):
+            index = Point(index, 0.0)
+        else:
+            index = Point(index)
+        n = len(point_list)
+        if n < 2:
+            if n == 0:
+                raise ValueError('Attempt to index empty point container')
+            return point_list[0]
+        prev_idx = math.floor(index.x)
+        x = index.x - prev_idx
+        prev = point_list[int(prev_idx) % n]
+        succ = point_list[(int(prev_idx) + 1) % n]
+        ret = prev*(1.0 - x) + succ*x
+        if index.y == 0.0:
+            return ret
+        ort = (succ - prev).ort()
+        return ret + ort * index.y
+
     def __init__(self, *args, **kwargs):
         self.x = self.y = 0.0
         self.set(*args, **kwargs)
@@ -78,7 +116,7 @@ class Point(object):
             elif isinstance(arg0, (Point, tuple)):
                 xy = tuple(arg0) + args[1:]
             else:
-                raise TypeError('Unknown type of first argument of {}()'
+                raise TypeError('Cannot handle first argument of {}()'
                                 .format(self.__class__.__name__))
             if len(xy) == 2:
                 self.x = float(xy[0])
