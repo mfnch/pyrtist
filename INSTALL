@@ -1,9 +1,7 @@
 INSTALLATION
 ============
 
-These are the instruction to compiler Pyrtist on your Unix (Linux/Mac) machine.
-
-To install Boxer:
+These are the instruction to compile Pyrtist on your Unix (Linux/Mac) machine.
 
 - make sure PyGTK is installed on the Python interpreter you want to use
 
@@ -13,7 +11,7 @@ To install Boxer:
 
   where ``python'' is the Python interpreter you want to use.
 
-- you should then be able to launch Boxer with
+- you should then be able to launch Pyrtist with
 
     pyrtist
 

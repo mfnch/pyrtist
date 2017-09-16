@@ -163,7 +163,7 @@ class Constraints(object):
         '''Compute the mesh pose in `root_bone` from the constraints and the
         current values of the associated view points.
 
-        This method computed the `root_bone` matrices to reflect the values of
+        This method computes the `root_bone` matrices to reflect the values of
         the view variables (`BoneView.variables`).
         '''
 
