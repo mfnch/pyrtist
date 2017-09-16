@@ -144,15 +144,15 @@ class ColladaMesh(Mesh):
 
             # Use matrices to re-pose mesh.
             bind_matrix = controller.bind_shape_matrix.T
+            weight = controller.weights.data.reshape(-1)
             for prim in controller.geometry.primitives:
                 ext_vertices = extend_point_array(prim.vertex).dot(bind_matrix)
                 for i, ext_vertex in enumerate(ext_vertices):
                     out_vertex = out_vertices[out_idx]
                     out_idx += 1
                     for midx, widx in controller.index[i]:
-                        weight = controller.weights[widx]
                         mx = joint_matrices[midx]
-                        out_vertex += weight*np.dot(mx, ext_vertex)
+                        out_vertex += weight[widx]*np.dot(mx, ext_vertex)
 
         return out_vertices.tolist()
 
