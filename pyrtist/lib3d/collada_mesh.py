@@ -118,13 +118,20 @@ class ColladaMesh(Mesh):
                            pil_image.mode)
         return ib
 
-    def _build_posed_vertices(self, skel, pose):
+    def _build_posed_vertices(self, skel, pose, dtype=np.float32):
         bind_matrices = skel.build_matrices()
         inv_bind_matrices = {k: np.linalg.inv(mx)
                              for k, mx in bind_matrices.items()}
         pose_matrices = pose.build_matrices()
-        out_vertex = np.array([0.0, 0.0, 0.0])
-        out_vertices = []
+
+        # Compute total number of vertices.
+        num_vertices = sum(len(prim.vertex)
+                           for controller in self.collada_node.controllers
+                           for prim in controller.geometry.primitives)
+
+        # Create array of output vertices.
+        out_vertices = np.zeros((num_vertices, 3), dtype)
+        out_idx = 0
 
         for controller in self.collada_node.controllers:
             # Pre-compute matrices.
@@ -133,21 +140,21 @@ class ColladaMesh(Mesh):
             for i in range(controller.max_joint_index + 1):
                 name = joint_names[i]
                 mx44 = np.dot(pose_matrices[name], inv_bind_matrices[name])
-                joint_matrices.append(mx44[:3])
+                joint_matrices.append(mx44[:3].astype(dtype=dtype))
 
             # Use matrices to re-pose mesh.
             bind_matrix = controller.bind_shape_matrix.T
             for prim in controller.geometry.primitives:
                 ext_vertices = extend_point_array(prim.vertex).dot(bind_matrix)
                 for i, ext_vertex in enumerate(ext_vertices):
-                    out_vertex = 0.0
+                    out_vertex = out_vertices[out_idx]
+                    out_idx += 1
                     for midx, widx in controller.index[i]:
                         weight = controller.weights[widx]
                         mx = joint_matrices[midx]
                         out_vertex += weight*np.dot(mx, ext_vertex)
-                    out_vertices.append(out_vertex.tolist())
 
-        return out_vertices
+        return out_vertices.tolist()
 
     def _build_polygons(self):
         ret = []
