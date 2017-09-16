@@ -25,6 +25,12 @@ from .. import deepsurface
 from .mesh import Mesh
 from .bone import Bone
 
+# Use the optimised version of ColladaMesh._pose_calc, if available.
+try:
+    from .perf_critical import _pose_calc_opt
+except:
+    _pose_calc_opt = None
+
 
 def extend_point_array(point3_array):
     '''Given a numpy array of 3D points, extend it to an array of 4D points,
@@ -133,28 +139,42 @@ class ColladaMesh(Mesh):
         out_vertices = np.zeros((num_vertices, 3), dtype)
         out_idx = 0
 
+        calc = _pose_calc_opt or self._pose_calc
+
         for controller in self.collada_node.controllers:
             # Pre-compute matrices.
-            joint_names = list(controller.sourcebyid[controller.joint_source])
-            joint_matrices = []
-            for i in range(controller.max_joint_index + 1):
+            joint_names = controller.sourcebyid[controller.joint_source]
+            num_matrices = controller.max_joint_index + 1
+            joint_matrices = np.zeros((num_matrices, 3, 4), dtype)
+            for i in range(num_matrices):
                 name = joint_names[i]
                 mx44 = np.dot(pose_matrices[name], inv_bind_matrices[name])
-                joint_matrices.append(mx44[:3].astype(dtype=dtype))
+                joint_matrices[i] = mx44[:3]
 
             # Use matrices to re-pose mesh.
             bind_matrix = controller.bind_shape_matrix.T
-            weight = controller.weights.data.reshape(-1)
+            weights = controller.weights.data.reshape(-1).astype(dtype)
             for prim in controller.geometry.primitives:
                 ext_vertices = extend_point_array(prim.vertex).dot(bind_matrix)
-                for i, ext_vertex in enumerate(ext_vertices):
-                    out_vertex = out_vertices[out_idx]
-                    out_idx += 1
-                    for midx, widx in controller.index[i]:
-                        mx = joint_matrices[midx]
-                        out_vertex += weight[widx]*np.dot(mx, ext_vertex)
+                out_idx = calc(out_vertices, out_idx, ext_vertices,
+                               weights, joint_matrices, controller.index)
 
         return out_vertices.tolist()
+
+    @staticmethod
+    def _pose_calc(out_vertices, out_idx,
+                   vertices, weights, matrices, indices):
+        '''Internal computation used by _build_posed_vertices.
+
+        This is performance critical. An optimised implementation of this
+        is provided in the pyrtist.lib3d.perf_critical module.
+        '''
+        for i, vertex in enumerate(vertices):
+            out_vertex = out_vertices[out_idx]
+            out_idx += 1
+            for midx, widx in indices[i]:
+                out_vertex += weights[widx] * np.dot(matrices[midx], vertex)
+        return out_idx
 
     def _build_polygons(self):
         ret = []

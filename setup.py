@@ -20,10 +20,6 @@
 sudo python setup.py install
 '''
 
-# In systems where the setuptools module cannot be used, the variable below
-# can be used to select whether to build the deepsurface module.
-BUILD_DEEPSURFACE = False
-
 import os
 from setuptools import setup, Extension, Feature
 
@@ -63,20 +59,44 @@ cfg = dict(name='pyrtist',
            long_description=long_description)
 
 # C++ extensions.
-ext_modules = []
 srcs = ['image_buffer.cc', 'depth_buffer.cc', 'deep_surface.cc',
         'py_image_buffer.cc', 'py_depth_buffer.cc', 'texture.cc',
         'mesh.cc', 'py_mesh.cc', 'obj_parser.cc', 'py_init.cc']
 srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
                    for file_name in srcs]
-ext_modules.append(Extension('pyrtist.deepsurface',
-                             extra_compile_args=['-std=c++11'],
-                             sources=srcs_full_paths,
-                             libraries=['cairo']))
+deepsurface_module = [Extension('pyrtist.deepsurface',
+                                extra_compile_args=['-std=c++11'],
+                                sources=srcs_full_paths,
+                                libraries=['cairo'])]
 
-cfg.update(features={'deepsurface': Feature('the deepsurface module.',
-                                            standard=False,
-                                            ext_modules=ext_modules)},
+# Cython extensions.
+try:
+    from Cython.Build import cythonize
+except:
+    cython_modules = []
+else:
+    cython_modules = \
+      cythonize(os.path.join('pyrtist', 'lib3d', 'perf_critical.pyx'))
+
+srcs = ['image_buffer.cc', 'depth_buffer.cc', 'deep_surface.cc',
+        'py_image_buffer.cc', 'py_depth_buffer.cc', 'texture.cc',
+        'mesh.cc', 'py_mesh.cc', 'obj_parser.cc', 'py_init.cc']
+srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
+                   for file_name in srcs]
+deepsurface_module = [Extension('pyrtist.deepsurface',
+                                extra_compile_args=['-std=c++11'],
+                                sources=srcs_full_paths,
+                                libraries=['cairo'])]
+
+features = \
+  {'deepsurface': Feature('the deepsurface module.',
+                          standard=False,
+                          ext_modules=deepsurface_module),
+   'cython-accel': Feature('critical computations speedups via Cython',
+                           standard=False,
+                           available=bool(cython_modules),
+                           ext_modules=cython_modules)}
+cfg.update(features=features,
            entry_points={'console_scripts': ['pyrtist=pyrtist:main']})
 
 setup(**cfg)
