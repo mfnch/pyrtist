@@ -21,3 +21,18 @@ def _pose_calc_opt(np.ndarray[np.float32_t, ndim=2] out_vertices,
                 out_vertices[out_idx, j] += weight * contrib
         out_idx += 1
     return out_idx
+
+def _poly_calc_opt(np.ndarray[np.int32_t, ndim=1] v,
+                   np.ndarray[np.int32_t, ndim=1] t,
+                   np.ndarray[np.int32_t, ndim=1] n,
+                   int sv, int st, int sn,
+                   np.ndarray[np.int64_t, ndim=2] indices):
+    cdef int num_polys = indices.shape[0]
+    cdef int i, start, end, idx
+    ret = [None] * num_polys
+    for i in range(num_polys):
+        start = indices[i, 0]
+        end = indices[i, 1]
+        ret[i] = [(v[idx] + sv, t[idx] + st, n[idx] + sn)
+                  for idx in range(start, end)]
+    return ret

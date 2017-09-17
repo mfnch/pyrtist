@@ -27,10 +27,10 @@ from .bone import Bone
 
 # Use the optimised version of ColladaMesh._pose_calc, if available.
 try:
-    from .perf_critical import _pose_calc_opt
+    from .perf_critical import _pose_calc_opt, _poly_calc_opt
 except:
     _pose_calc_opt = None
-
+    _poly_calc_opt = None
 
 def extend_point_array(point3_array):
     '''Given a numpy array of 3D points, extend it to an array of 4D points,
@@ -180,14 +180,17 @@ class ColladaMesh(Mesh):
         ret = []
         start_v_idx, start_t_idx, start_n_idx = (1, 1, 1)
         materials = self.collada_node.materials
+        calc = _poly_calc_opt or self._poly_calc
+
         for geom_idx, geom in enumerate(self.collada_node.geometries):
             for prim in geom.primitives:
                 if isinstance(prim, collada.polylist.Polylist):
-                    ps = [[(prim.vertex_index[idx] + start_v_idx,
-                            prim.texcoord_indexset[0][idx] + start_t_idx,
-                            prim.normal_index[idx] + start_n_idx)
-                            for idx in range(start, end)]
-                          for start, end in prim.polyindex]
+                    ps = calc(prim.vertex_index,
+                              prim.texcoord_indexset[0],
+                              prim.normal_index,
+                              start_v_idx, start_t_idx, start_n_idx,
+                              prim.polyindex)
+
                     material = prim.material
                     if material is None and geom_idx < len(materials):
                         material = materials[geom_idx]
@@ -196,6 +199,12 @@ class ColladaMesh(Mesh):
                     start_t_idx += len(prim.texcoordset[0])
                     start_n_idx += len(prim.normal)
         return ret
+
+    @staticmethod
+    def _poly_calc(v, t, n, sv, st, sn, indices):
+        return [[(v[idx] + sv, t[idx] + st, n[idx] + sn)
+                 for idx in range(start, end)]
+                for start, end in indices]
 
     def _build_vertices(self):
         vertices = []
