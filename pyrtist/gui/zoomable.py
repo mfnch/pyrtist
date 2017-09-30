@@ -543,7 +543,12 @@ class ZoomableArea(gtk.DrawingArea):
       new_buf.saturate_and_pixelate(new_buf, 0.5, True)
       visible_of_buf = new_buf
 
+    if width <= 0 or height <= 0:
+      return
     buf_area = visible_of_buf.subpixbuf(x, y, width, height)
+    if buf_area is None:
+      return
+
     rowstride = buf_area.get_rowstride()
     pixels = buf_area.get_pixels()
 
