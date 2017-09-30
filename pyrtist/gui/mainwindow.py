@@ -373,7 +373,7 @@ class Pyrtist(object):
     changes or is set."""
     filename = self.filename or "New file"
     modified_char = " [modified]" if self.undoer.is_modified() else ""
-    self.mainwin.set_title("%s%s - Pyrtist" % (filename, modified_char))
+    self.mainwin.set_title("{}{} - Pyrtist".format(filename, modified_char))
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
@@ -397,8 +397,8 @@ class Pyrtist(object):
     self.undoer.end_not_undoable_action()
     self.undoer.clear(mark_as_unmodified=True)
 
-  def _new_file(self, filename=None):
-    '''This function is used after setting self.editable_area.document to
+  def _document_changed(self, filename=None):
+    '''This function is used after changing self.editable_area.document to
     update the GUI to this change: update the title bar with the file name,
     update the text shown in the text view and the output image.
     '''
@@ -411,13 +411,13 @@ class Pyrtist(object):
     self.editable_area.zoom_off()
     self.update_title()
 
-  def raw_file_new(self):
+  def raw_file_new(self, filename=None):
     """Start a new box program and set the content of the main textview."""
     from config import source_of_new_script
     d = self.editable_area.document
     d.new()
     d.load_from_str(source_of_new_script)
-    self._new_file()
+    self._document_changed(filename)
 
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
@@ -427,7 +427,7 @@ class Pyrtist(object):
       self.error('Error loading the file "{}". Details: "{}"'
                  .format(filename, str(the_exception)))
     finally:
-      self._new_file(filename)
+      self._document_changed(filename)
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -1003,12 +1003,12 @@ class Pyrtist(object):
     mainwin.show_all()
 
     # Set a template program to start with...
-    if filename is None:
-      self.raw_file_new()
+    if filename is None or not os.path.exists(filename):
+      self.raw_file_new(filename)
     else:
       self.raw_file_open(filename)
 
-    # Now set the focus on the text view
+    # Now set the focus on the text view.
     self.widget_srcview.grab_focus()
 
   def _fill_example_menu(self):
