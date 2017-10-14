@@ -18,8 +18,7 @@
 
 __all__ = ('Pattern', 'Extend')
 
-from .base import combination
-from .core_types import create_enum
+from .core_types import create_enum, combination
 from .cmd_stream import Cmd, CmdStream
 
 

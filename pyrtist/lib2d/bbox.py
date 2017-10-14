@@ -18,8 +18,7 @@ __all__ = ('BBox',)
 
 import math
 
-from .base import Taker, combination
-from .core_types import Point
+from .core_types import Point, Taker, combination
 from .cmd_stream import CmdStream
 
 

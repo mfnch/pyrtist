@@ -18,12 +18,11 @@ __all__ = ('Hot', 'Window')
 
 import numbers
 
-from .base import Taker, combination
 from .cmd_stream import Cmd, CmdStream
 from .style import Style, StrokeStyle, Color, Stroke, Fill
 from .cairo_cmd_exec import CairoCmdExecutor
 from .bbox import BBox
-from .core_types import Point, View
+from .core_types import Point, View, Taker, combination
 from .pattern import Pattern
 
 

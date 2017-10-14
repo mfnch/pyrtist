@@ -16,11 +16,10 @@
 
 __all__ = ('Primitive',)
 
-from .core_types import Point
+from .core_types import Point, Taker, combination
 from .style import Stroke, Fill, StrokeStyle, Style
 from .pattern import Pattern
 from .path import Path
-from .base import Taker, combination
 from .cmd_stream import CmdStream, Cmd
 from .window import Window
 from .bbox import BBox

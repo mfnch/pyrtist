@@ -18,9 +18,8 @@ __all__ = ('Circle', 'Circles')
 
 import math
 
-from .core_types import Point, Through, Radii
+from .core_types import Point, Through, Radii, combination, RejectError
 from .primitive import Primitive
-from .base import combination, RejectError
 from .cmd_stream import CmdStream, Cmd
 from .window import Window
 

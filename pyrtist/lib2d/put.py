@@ -18,7 +18,6 @@ __all__ = ('Put', 'SimplePut', 'Near')
 
 import math
 
-from .base import *
 from .core_types import *
 from .cmd_stream import *
 from .window import Window

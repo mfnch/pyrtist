@@ -14,18 +14,19 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from base import Taker, combination
-from cmd_stream import CmdStream
+from .core_types import Taker, combination
+from .cmd_stream import CmdStream
 
 class Path(Taker):
     def __init__(self, *args):
+        super(Path, self).__init__()
         self.cmd_stream = CmdStream()
-        super(Path, self).__init__(*args)
+        self.take(*args)
 
 @combination(Path, Path)
-def fn(child, parent):
+def path_at_path(child, parent):
     parent.cmd_stream.take(child.cmd_stream)
 
 @combination(Path, CmdStream)
-def fn(path, cmd_stream):
+def path_at_cmd_stream(path, cmd_stream):
     cmd_stream.take(path.cmd_stream)

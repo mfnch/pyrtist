@@ -18,8 +18,7 @@ __all__ = ('Image', 'Filter')
 
 import cairo
 
-from .base import Taker, combination
-from .core_types import Point, Offset, create_enum
+from .core_types import Point, Offset, create_enum, Taker, combination
 from .axes import Axes
 from .window import Window
 from .cmd_stream import Cmd, CmdStream

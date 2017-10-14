@@ -23,13 +23,13 @@ library.
 __all__ = ('create_enum', 'alias', 'Scalar', 'Point', 'Px', 'Py', 'Pang',
            'PointTaker', 'GenericMatrix', 'Matrix', 'Close', 'Container',
            'Offset', 'Scale', 'Center', 'AngleDeg', 'Radii', 'Through', 'Tri',
-           'View')
+           'View', 'Taker', 'combination', 'RejectError', 'Args')
 
 import math
 import numbers
 import copy
 
-from base import *
+from .base import Taker, combination, RejectError, Args
 
 
 class Enum(object):

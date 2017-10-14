@@ -18,8 +18,7 @@
 
 __all__ = ('Plane',)
 
-from ..lib2d import BBox, Point, Rectangle
-from ..lib2d.base import combination
+from ..lib2d import combination, BBox, Point, Rectangle
 from .core_types import Point3
 from .cmd_stream import CmdStream, Cmd
 from .primitive import Primitive

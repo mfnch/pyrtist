@@ -16,7 +16,6 @@
 
 __all__ = ('Bar', 'Sphere')
 
-from .base import *
 from .core_types import *
 from .style import *
 from .window import Window

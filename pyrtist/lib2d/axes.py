@@ -16,8 +16,7 @@
 
 __all__ = ('Axes',)
 
-from .base import Taker, combination
-from .core_types import Point, Scale, Matrix
+from .core_types import Point, Scale, Matrix, Taker, combination
 
 
 class Axes(Taker):

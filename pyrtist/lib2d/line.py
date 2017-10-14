@@ -19,7 +19,6 @@ __all__ = ('Line',)
 import math
 import copy
 
-from .base import *
 from .core_types import *
 from .path import Path
 from .window import Window

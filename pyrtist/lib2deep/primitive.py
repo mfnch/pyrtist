@@ -16,8 +16,7 @@
 
 __all__ = ('Primitive', 'InvalidPrimitiveError')
 
-from ..lib2d import Window, Color
-from ..lib2d.base import Taker, combination
+from ..lib2d import Window, Color, Taker, combination
 from .cmd_stream import Cmd, CmdStream
 from .deep_window import DeepWindow
 

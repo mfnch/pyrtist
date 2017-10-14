@@ -18,8 +18,7 @@
 
 __all__ = ('Lathe',)
 
-from ..lib2d.base import combination
-from ..lib2d import Point, Radii, Window, Poly, Color, Axes
+from ..lib2d import combination, Point, Radii, Window, Poly, Color, Axes
 from .core_types import Point3, Z
 from .profile import Profile
 from .cmd_stream import Cmd, CmdStream

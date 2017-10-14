@@ -18,7 +18,6 @@ __all__ = ('Text', 'Texts')
 
 import copy
 
-from .base import *
 from .core_types import *
 from .style import Style, StrokeStyle, Font, ParagraphFormat
 from .pattern import Pattern

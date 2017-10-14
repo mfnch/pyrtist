@@ -16,7 +16,6 @@
 
 __all__ = ('Poly', 'Rectangle')
 
-from .base import *
 from .core_types import *
 from .path import Path
 from .window import Window

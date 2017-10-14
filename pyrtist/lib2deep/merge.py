@@ -18,8 +18,7 @@
 
 __all__ = ('Merge',)
 
-from ..lib2d.base import combination
-from ..lib2d import Window
+from ..lib2d import combination, Window
 from .primitive import Primitive
 from .cmd_stream import Cmd
 

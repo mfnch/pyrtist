@@ -18,8 +18,7 @@
 
 __all__ = ('Cylinder',)
 
-from ..lib2d.base import combination, RejectError
-from ..lib2d import Point, Radii, Poly
+from ..lib2d import combination, RejectError, Point, Radii, Poly
 from .core_types import Point3
 from .cmd_stream import Cmd
 from .primitive import Primitive, InvalidPrimitiveError

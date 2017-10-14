@@ -18,8 +18,8 @@
 
 __all__ = ('Crescent',)
 
-from ..lib2d import Point, Window, Arc, Through, Close, Fill, Radii
-from ..lib2d.base import combination
+from ..lib2d \
+  import combination, Point, Window, Arc, Through, Close, Fill, Radii
 from .core_types import Point3
 from .cmd_stream import Cmd
 from .primitive import Primitive, InvalidPrimitiveError

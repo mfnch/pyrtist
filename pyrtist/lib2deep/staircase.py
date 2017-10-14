@@ -19,8 +19,7 @@
 
 __all__ = ('Staircase',)
 
-from ..lib2d import Window, Point, Axes
-from ..lib2d.base import combination, RejectError
+from ..lib2d import combination, RejectError, Window, Point, Axes
 from .core_types import Z
 from .profile import Profile
 from .cmd_stream import Cmd, CmdStream

@@ -18,8 +18,7 @@
 
 __all__ = ('Sphere',)
 
-from ..lib2d import Circle, Point
-from ..lib2d.base import combination, RejectError
+from ..lib2d import combination, RejectError, Circle, Point
 from .core_types import Point3, Z
 from .cmd_stream import Cmd, CmdStream
 from .primitive import Primitive

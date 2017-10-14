@@ -21,7 +21,6 @@ __all__ = ('Color', 'Grey', 'Stroke', 'FillRule', 'Fill', 'Style',
 import numbers
 import colorsys
 
-from .base import *
 from .core_types import *
 from .path import Path
 from .cmd_stream import Cmd, CmdStream

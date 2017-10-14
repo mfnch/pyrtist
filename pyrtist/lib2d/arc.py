@@ -18,9 +18,8 @@ __all__ = ('Arc',)
 
 import math
 
-from .core_types import Point, Close, Through
+from .core_types import Point, Close, Through, combination
 from .primitive import Primitive
-from .base import combination
 from .circle import Circle
 from .cmd_stream import Cmd
 

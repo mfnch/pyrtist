@@ -16,8 +16,7 @@
 
 __all__ = ('Curve',)
 
-from .base import Taker, combination
-from .core_types import Point, Tri, Close
+from .core_types import Point, Tri, Close, Taker, combination
 from .path import Path
 from .window import Window
 from .cmd_stream import CmdStream, Cmd

@@ -18,7 +18,6 @@ __all__ = ('CmdBase', 'Cmd', 'CmdStream', 'CmdArgFilter')
 
 import math
 
-from .base import *
 from .core_types import *
 
 
@@ -65,8 +64,9 @@ class CmdBase(object):
 
 class CmdStreamBase(Taker):
     def __init__(self, *args):
+        super(CmdStreamBase, self).__init__()
         self.cmds = []
-        super(CmdStreamBase, self).__init__(*args)
+        self.take(*args)
 
     def __iter__(self):
         return iter(self.cmds)

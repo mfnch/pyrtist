@@ -23,8 +23,7 @@ in the pyrtist.lib2d module.
 
 __all__ = ('SimplePut', 'Put', 'Near')
 
-from ..lib2d.base import combination
-from ..lib2d import SimplePut, Put, Near
+from ..lib2d import combination, SimplePut, Put, Near
 from .core_types import Point, Point3, DeepMatrix
 from .deep_window import DeepWindow
 from .cmd_stream import DeepCmdArgFilter

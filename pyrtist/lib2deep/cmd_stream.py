@@ -14,9 +14,8 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from ..lib2d.base import combination
 from ..lib2d import cmd_stream as twod
-from ..lib2d import Window, Scalar
+from ..lib2d import combination, Window, Scalar
 
 from .core_types import Point3, Matrix3, Z, DeepMatrix
 

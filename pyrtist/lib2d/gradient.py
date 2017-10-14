@@ -16,8 +16,7 @@
 
 __all__ = ('Gradient',)
 
-from .base import Taker, combination
-from .core_types import Point
+from .core_types import Point, Taker, combination
 from .pattern import Pattern, Extend
 from .style import Color
 from .line import Line
