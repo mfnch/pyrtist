@@ -174,6 +174,10 @@ class Point(object):
         return self.copy()
 
     def __add__(self, value):
+        if value == 0.0:
+            # This allows using `sum' without having to provide a `start'
+            # value. For example: sum([Point(...), Point(...), ...])
+            return self.copy()
         return Point(x=self.x + value.x, y=self.y + value.y)
 
     def __sub__(self, value):
