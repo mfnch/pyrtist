@@ -16,38 +16,12 @@
 
 '''Infrastructure helpers for the library.'''
 
-__all__ = ('getClassName', 'create_enum', 'alias', 'combination',
-           'RejectError', 'Taker', 'Args')
+__all__ = ('get_class_name', 'combination', 'RejectError', 'Taker', 'Args')
 
 import types
 
-def getClassName(obj):
+def get_class_name(obj):
     return obj.__class__.__name__
-get_class_name = getClassName
-
-class Enum(object):
-    def __init__(self, name, value=None):
-        self.name = name
-        self.value = value
-
-    def __str__(self):
-        return '{}.{}'.format(get_class_name(self), self.name)
-
-    def __repr__(self):
-        args = ((self.name,) if self.value is None
-                else (self.name, self.value))
-        return '{}({})'.format(get_class_name(self),
-                               ', '.join(map(repr, args)))
-
-def create_enum(name, doc, *enums):
-    d = ({'__doc__': doc} if doc is not None else {})
-    new_class = type(name, (Enum,), d)
-    for name in enums:
-        setattr(new_class, name, new_class(name))
-    return new_class
-
-def alias(name, target, **attrs):
-    return type(name, (target,), attrs)
 
 
 class RejectError(Exception):
@@ -138,7 +112,7 @@ class Taker(object):
                     return ret
 
         raise RejectError('{} doesn\'t take {}'
-                          .format(getClassName(self), getClassName(arg)))
+                          .format(get_class_name(self), get_class_name(arg)))
 
     def take(self, *args):
         ret = None

@@ -210,11 +210,11 @@ class Window(WindowBase):
 
 
 @combination(Window, BBox)
-def fn(window, bbox):
+def window_at_bbox(window, bbox):
     bbox.take(window.cmd_stream)
 
 @combination(BBox, Window, 'BBox')
-def fn(bbox, window):
+def bbox_at_window(bbox, window):
     if bbox:
         cmd = Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)
         window.take(CmdStream(cmd))
@@ -243,14 +243,13 @@ def hot_at_window(hot, window):
     window.hot_points[hot.name] = hot.point
     window.hot_names.append(hot.name)
 
-
 @combination(CmdStream, Window)
-def fn(cmd_stream, window):
+def cmd_stream_at_window(cmd_stream, window):
     window.cmd_stream.take(cmd_stream)
     window._consume_cmds()
 
 @combination(Window, Window)
-def fn(child, parent):
+def window_at_window(child, parent):
     cmd_exec = parent.cmd_executor
     if cmd_exec is not None:
         cmd_exec.execute(child.cmd_stream)

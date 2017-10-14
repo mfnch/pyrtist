@@ -20,15 +20,41 @@ This module defines Point, Matrix, and other types commonly used in the
 library.
 '''
 
-__all__ = ('Scalar', 'Point', 'Px', 'Py', 'Pang', 'PointTaker',
-           'GenericMatrix', 'Matrix', 'Close', 'Container', 'Offset',
-           'Scale', 'Center', 'AngleDeg', 'Radii', 'Through', 'Tri', 'View')
+__all__ = ('create_enum', 'alias', 'Scalar', 'Point', 'Px', 'Py', 'Pang',
+           'PointTaker', 'GenericMatrix', 'Matrix', 'Close', 'Container',
+           'Offset', 'Scale', 'Center', 'AngleDeg', 'Radii', 'Through', 'Tri',
+           'View')
 
 import math
 import numbers
 import copy
 
 from base import *
+
+
+class Enum(object):
+    def __init__(self, name, value=None):
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        return '{}.{}'.format(get_class_name(self), self.name)
+
+    def __repr__(self):
+        args = ((self.name,) if self.value is None
+                else (self.name, self.value))
+        return '{}({})'.format(get_class_name(self),
+                               ', '.join(map(repr, args)))
+
+def create_enum(name, doc, *enums):
+    d = ({'__doc__': doc} if doc is not None else {})
+    new_class = type(name, (Enum,), d)
+    for name in enums:
+        setattr(new_class, name, new_class(name))
+    return new_class
+
+def alias(name, target, **attrs):
+    return type(name, (target,), attrs)
 
 
 class Scalar(float):
