@@ -34,10 +34,9 @@ void DrawDepth(ImageBuffer<PixelType>* buffer,
   int iy0 = static_cast<int>(floorf(clip_start_y));
   int ix1 = static_cast<int>(ceilf(clip_end_x));
   int iy1 = static_cast<int>(ceilf(clip_end_y));
-  auto region = buffer->GetRegion(ix0, iy0, ix1, iy1);
-  if (!region.IsValid()) {
+  auto region = buffer->GetRegion(&ix0, &iy0, ix1, iy1);
+  if (!region.IsValid())
     return;
-  }
 
   float u_at_line_start = matrix[0]*ix0 + matrix[1]*iy0 + matrix[2];
   float v_at_line_start = matrix[3]*ix0 + matrix[4]*iy0 + matrix[5];
@@ -169,11 +168,10 @@ void DrawDepth(ImageBuffer<DepthType>* depth_buffer,
   int iy0 = static_cast<int>(floorf(clip_start_y));
   int ix1 = static_cast<int>(ceilf(clip_end_x));
   int iy1 = static_cast<int>(ceilf(clip_end_y));
-  auto depth_region = depth_buffer->GetRegion(ix0, iy0, ix1, iy1);
-  auto image_region = image_buffer->GetRegion(ix0, iy0, ix1, iy1);
-  if (!(depth_region.IsValid() && image_region.IsValid())) {
+  auto depth_region = depth_buffer->GetRegion(&ix0, &iy0, ix1, iy1);
+  auto image_region = image_buffer->GetRegion(&ix0, &iy0, ix1, iy1);
+  if (!(depth_region.IsValid() && image_region.IsValid()))
     return;
-  }
 
   auto values_at_line_start = attrs.ValueAt(ix0, iy0);
   int32_t width = depth_region.GetWidth();

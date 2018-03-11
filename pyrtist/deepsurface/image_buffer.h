@@ -79,9 +79,11 @@ class ImageBuffer {
   }
 
   /// Return a region of the buffer as a new buffer.
-  ImageBuffer<T> GetRegion(int start_x, int start_y, int end_x, int end_y) {
-    if (start_x >= end_x) std::swap(start_x, end_x);
-    if (start_y >= end_y) std::swap(start_y, end_y);
+  ImageBuffer<T> GetRegion(int* start_x_ptr, int* start_y_ptr,
+                           int end_x, int end_y) {
+    int start_x = *start_x_ptr, start_y = *start_y_ptr;
+    if (start_x > end_x) std::swap(start_x, end_x);
+    if (start_y > end_y) std::swap(start_y, end_y);
     if (start_x < 0) start_x = 0;
     if (start_y < 0) start_y = 0;
     if (end_x > width_) end_x = width_;
@@ -90,8 +92,11 @@ class ImageBuffer {
     int32_t height = end_y - start_y;
     if (width <= 0 || height <= 0)
       return BuildInvalid();
-    size_t offset = (static_cast<size_t>(start_y)*static_cast<size_t>(stride_)
-                     + static_cast<size_t>(start_x));
+    *start_x_ptr = start_x;
+    *start_y_ptr = start_y;
+    size_t offset =
+      (static_cast<size_t>(start_y) * static_cast<size_t>(stride_)
+       + static_cast<size_t>(start_x));
     return ImageBuffer<T>(width, stride_, height, &ptr_[offset]);
   }
 
