@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2018 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -14,24 +14,28 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from .gate import *
-from .core_types import *
-from .drawable2 import *
-from .pattern import *
-from .axes import *
-from .line import *
-from .circle import *
-from .arc import *
-from .poly import *
-from .curve import *
-from .text import *
-from .path import Path
-from .window import *
-from .transform import *
-from .put import *
-from .image import *
-from .gradient import *
-from .style import *
-from .bbox import BBox
-from .cairo_cmd_exec import *
-from prefabs import arrows
+__all__ = ('Drawable2',)
+
+from .core_types import Taker, combination
+from .window import Window
+
+
+class Drawable2(Taker):
+  defaults = {}
+
+  def __init__(self, **kwargs):
+    super(Drawable2, self).__init__()
+    for name, value in self.defaults.items():
+      setattr(self, name, kwargs.pop(name, value))
+    if len(kwargs):
+      raise ValueError('Invalid keyword argument(s): {}.'
+                       .format(', '.join(kwargs)))
+
+  def draw(self, target):
+    '''Override this to implement drawing.'''
+    raise ValueError('Object cannot be drawn')
+
+
+@combination(Drawable2, Window)
+def drawable2_at_window(drawable2, window):
+  drawable2.draw(window)
