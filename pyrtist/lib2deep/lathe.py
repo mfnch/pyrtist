@@ -79,7 +79,7 @@ def radii_at_lathe(radii, lathe):
 
 @combination(int, Lathe)
 @combination(float, Lathe)
-def point3_at_lathe(scalar, lathe):
+def scalar_at_lathe(scalar, lathe):
     lathe.take(Radii(scalar))
 
 @combination(Point, Lathe)

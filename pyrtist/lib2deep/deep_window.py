@@ -128,10 +128,15 @@ def cmd_stream_at_deep_window(cmd_stream, deep_window):
 @combination(DeepWindow, BBox)
 def deep_window_at_bbox(deep_window, bbox):
     for cmd in deep_window.cmd_stream:
-        args = cmd.get_args()
-        for arg in args:
-            if isinstance(arg, (Point, Window)):
-                bbox.take(arg)
+        cmd_name = cmd.get_name()
+        if cmd_name == 'set_bbox':
+            bbox.reset()
+            bbox.take(*cmd.get_args())
+        else:
+            args = cmd.get_args()
+            for arg in args:
+                if isinstance(arg, (Point, Window)):
+                    bbox.take(arg)
 
 @combination(DeepWindow, DeepWindow)
 def deep_window_at_deep_window(child, parent):
@@ -143,10 +148,9 @@ def deep_window_at_deep_window(child, parent):
 
 @combination(BBox, DeepWindow, 'BBox')
 def bbox_at_deep_window(bbox, deep_window):
-    if not bbox:
-        return
-    deep_window.take(
-        CmdStream(Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)))
+    if bbox:
+        cmd = Cmd(Cmd.set_bbox, bbox.min_point, bbox.max_point)
+        deep_window.take(CmdStream(cmd))
 
 @combination(Hot, DeepWindow, 'Hot')
 def hot_at_deep_window(hot, deep_window):

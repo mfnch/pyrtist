@@ -76,7 +76,7 @@ class CmdExecutor(object):
             scale = Point3(scale)
             scale.z = z_scale
 
-        mx = DeepMatrix.diag(*scale)*DeepMatrix.translation(-origin)
+        mx = DeepMatrix.diag(*scale) * DeepMatrix.translation(-origin)
         self.arg_filter = DeepCmdArgFilter.from_matrix(mx)
 
         # Stacks of auxiliary image and depth buffers.

@@ -34,7 +34,7 @@ new_figure = Window()
 new_figure << another_polygon
 
 # We finally put the new figure inside the first, scaling it down
-# a bit. Try to change the AngleDeg[0] to AngleDeg[20], then
+# a bit. Try to change the AngleDeg(0) to AngleDeg(20), then
 # press CTRL+RETURN (or try menu Run --> Execute)
 w << Put(new_figure, Scale(0.8), AngleDeg(0), Center(p7))
 
