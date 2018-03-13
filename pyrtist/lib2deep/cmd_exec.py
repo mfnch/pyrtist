@@ -139,6 +139,11 @@ class CmdExecutor(object):
         image_window = Window(target)
         self.aux_image_buffers.append((image_buffer, image_window))
 
+    def cmd_image_del(self):
+        '''Delete the topmost image buffer in the stack.'''
+        src_image_buffer, _ = self.aux_image_buffers.pop()
+        self.deep_surface.give_image_buffer(src_image_buffer)
+
     def cmd_image_draw(self, window):
         '''Draw the given window on the topmost image buffer.'''
         self.src_bbox.take(window)

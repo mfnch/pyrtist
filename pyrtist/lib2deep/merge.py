@@ -29,21 +29,17 @@ class Merge(Primitive):
         self.primitives = []
         self.take(*args)
 
-    def get_window(self, *args):
-        w = Window()
-        for p in self.primitives:
-            w.take(p.get_window())
-        return w
-
     def build_cmds(self):
         cmds = []
-        w = ([Cmd(Cmd.image_draw, self.window)]
-             if self.window is not None else None)
         for p in self.primitives:
             do_merge = (len(cmds) > 0)
             cmds.extend(p.build_cmds())
             if do_merge:
                 cmds.append(Cmd(Cmd.merge))
+        if self.window is not None:
+            cmds.append(Cmd(Cmd.image_del))
+            cmds.append(Cmd(Cmd.image_new))
+            cmds.extend(self.build_image_cmds())
         return cmds
 
 @combination(Primitive, Merge)

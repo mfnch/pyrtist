@@ -27,7 +27,7 @@ class Cmd(twod.CmdBase):
     # All commands.
     names = draw_cmd_names + \
       ('set_bbox', 'depth_new', 'merge', 'sculpt',
-       'image_new', 'image_draw', 'draw_mesh', 'transfer')
+       'image_new', 'image_del', 'image_draw', 'draw_mesh', 'transfer')
 Cmd.register_commands()
 
 
