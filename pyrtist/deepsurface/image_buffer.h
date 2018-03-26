@@ -62,11 +62,11 @@ class ImageBuffer {
 
   /// @brief Call the given function for every pixel, passing the pixel pointer.
   void Map(std::function<void(PixelType*)> fn) {
-    PixelType* end_ptr = ptr_ + stride_*height_;
+    PixelType* end_ptr = ptr_ + stride_ * height_;
     int32_t skip = stride_ - width_;
     PixelType* end_line;
     PixelType* ptr = ptr_;
-    while ((end_line = ptr + width_) < end_ptr) {
+    while ((end_line = ptr + width_) <= end_ptr) {
       while (ptr < end_line)
         fn(ptr++);
       ptr += skip;

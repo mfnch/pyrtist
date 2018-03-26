@@ -182,7 +182,7 @@ void DepthBuffer::DrawCircular(float clip_start_x, float clip_start_y,
                                float* mx, float scale_z, float translate_z,
                                std::function<float(float)> radius_fn) {
   auto depth_fn =
-      [scale_z, translate_z, radius_fn](float* out, float u, float v) -> void {
+    [scale_z, translate_z, radius_fn](float* out, float u, float v) -> void {
       float r = radius_fn(u);
       v /= r;
       float z2 = 1.0f - v*v;
@@ -193,19 +193,36 @@ void DepthBuffer::DrawCircular(float clip_start_x, float clip_start_y,
             mx, depth_fn);
 }
 
+void DepthBuffer::DrawRadial(float clip_start_x, float clip_start_y,
+                             float clip_end_x, float clip_end_y,
+                             float* mx, float scale_z, float translate_z,
+                             std::function<float(float)> height_fn) {
+  auto depth_fn =
+    [scale_z, translate_z, height_fn](float* out, float u, float v) -> void {
+      *out = translate_z + scale_z * height_fn(sqrt(u * u + v * v));
+    };
+  DrawDepth(this, clip_start_x, clip_start_y, clip_end_x, clip_end_y,
+            mx, depth_fn);
+}
+
 ARGBImageBuffer* DepthBuffer::ComputeNormals() {
+  // Color to use for the background.
+  constexpr uint32_t kDefaultDepthColor = GetARGB(0xff, 0x80, 0x80, 0xff);
+
   auto normals = new ARGBImageBuffer(width_, width_, height_);
-  if (normals == nullptr || width_ < 3 || height_ < 3)
+  if (normals == nullptr)
     return normals;
+
+  normals->Fill(kDefaultDepthColor);
+  if (width_ < 3 || height_ < 3)
+    return normals;
+
   int32_t* out_ptr = reinterpret_cast<int32_t*>(normals->GetPtr());
 
   int nx = width_ - 2;
   int ny = height_ - 2;
   DepthType* begin_ptr = GetPtr();
   DepthType* ptr = &begin_ptr[width_];
-
-  // Color to use for the background.
-  constexpr uint32_t kDefaultDepthColor = GetARGB(0xff, 0x80, 0x80, 0xff);
 
   for (int iy = 1; iy < ny; iy++) {
     DepthType lft = *ptr++;
@@ -303,7 +320,7 @@ ARGBImageBuffer* DepthBuffer::ComputeDepth() {
          }
        } );
 
-  DepthType depth_scale = 255.5/(max_value - min_value);
+  DepthType depth_scale = 255.5 / (max_value - min_value);
   constexpr uint32_t kDefaultDepthColor = GetARGB(0xff, 0x80, 0x80, 0x80);
 
   auto fn =

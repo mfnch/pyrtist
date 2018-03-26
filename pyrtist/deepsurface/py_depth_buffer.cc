@@ -36,6 +36,7 @@ static PyObject* PyDepthBuffer_DrawStep(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawSphere(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCylinder(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args);
+static PyObject* PyDepthBuffer_DrawRadial(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args);
@@ -53,6 +54,7 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {"draw_cylinder", PyDepthBuffer_DrawCylinder, METH_VARARGS},
   {"draw_circular", PyDepthBuffer_DrawCircular, METH_VARARGS},
   {"draw_crescent", PyDepthBuffer_DrawCrescent, METH_VARARGS},
+  {"draw_radial", PyDepthBuffer_DrawRadial, METH_VARARGS},
   {"compute_normals", PyDepthBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDepthBuffer_SaveNormals, METH_VARARGS},
   {"get_data", PyDepthBuffer_GetData, METH_NOARGS},
@@ -267,7 +269,14 @@ static PyObject* PyDepthBuffer_DrawCylinder(PyObject* db, PyObject* args) {
   Py_RETURN_NONE;
 }
 
-static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args) {
+using DrawFn = std::function<void(DepthBuffer* db,
+                                  float clip_start_x, float clip_start_y,
+                                  float clip_end_x, float clip_end_y,
+                                  float* mx, float scale_z, float translate_z,
+                                  std::function<float(float)> height_fn)>;
+
+static PyObject* SampledDrawHelper(PyObject* db, PyObject* args,
+                                   DrawFn draw_fn) {
   float clip_start_x, clip_start_y, clip_end_x, clip_end_y;
   float mx[6];
   float translate_z, scale_z;
@@ -321,14 +330,23 @@ static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args) {
       return nullptr;
     }
 
-    radius_fn = [&sampler](float x)->float {return sampler(x);};
+    radius_fn = [&sampler](float x)->float{ return sampler(x); };
   }
 
   PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
-  py_db->depth_buffer->
-    DrawCircular(clip_start_x, clip_start_y, clip_end_x, clip_end_y, mx,
-                 scale_z, translate_z, radius_fn);
+  draw_fn(py_db->depth_buffer, clip_start_x, clip_start_y,
+          clip_end_x, clip_end_y, mx, scale_z, translate_z, radius_fn);
   Py_RETURN_NONE;
+}
+
+static PyObject* PyDepthBuffer_DrawCircular(PyObject* db, PyObject* args) {
+  DrawFn draw_fn = &DepthBuffer::DrawCircular;
+  return SampledDrawHelper(db, args, draw_fn);
+}
+
+static PyObject* PyDepthBuffer_DrawRadial(PyObject* db, PyObject* args) {
+  DrawFn draw_fn = &DepthBuffer::DrawRadial;
+  return SampledDrawHelper(db, args, draw_fn);
 }
 
 static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args) {

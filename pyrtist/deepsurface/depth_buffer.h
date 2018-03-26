@@ -100,6 +100,11 @@ class DepthBuffer : public ImageBuffer<float> {
                     float* mx, float scale_z, float translate_z,
                     std::function<float(float)> radius_fn);
 
+  void DrawRadial(float clip_start_x, float clip_start_y,
+                  float clip_end_x, float clip_end_y,
+                  float* mx, float scale_z, float translate_z,
+                  std::function<float(float)> height_fn);
+
   void DrawCrescent(float clip_start_x, float clip_start_y,
                     float clip_end_x, float clip_end_y,
                     float* mx, float scale_z, float translate_z,

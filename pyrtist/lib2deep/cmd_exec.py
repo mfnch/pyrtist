@@ -247,6 +247,19 @@ class CmdExecutor(object):
         args = list(float_args) + [radius_fn]
         dst.draw_circular(*args)
 
+    def draw_on_radial(self, dst, clip_start, clip_end,
+                       start_point, end_point, start_edge, height_fn):
+        translation_z = start_point.z
+        scale_z = start_edge.z - start_point.z
+
+        mx = Axes(start_point.xy, end_point.xy, start_edge.xy).get_matrix()
+        mx.invert()
+
+        float_args = map(float, (tuple(clip_start) + tuple(clip_end) +
+                                 mx.get_entries() + (scale_z, translation_z)))
+        args = list(float_args) + [height_fn]
+        dst.draw_radial(*args)
+
     def draw_on_crescent(self, dst, clip_start, clip_end,
                          center, one_zero, zero_one, first_arc, second_arc):
         translation_z = center.z

@@ -25,6 +25,7 @@ from .cylinder import *
 from .sphere import *
 from .crescent import *
 from .lathe import *
+from .radial import *
 from .merge import *
 from .sculpt import *
 from .profile import *
