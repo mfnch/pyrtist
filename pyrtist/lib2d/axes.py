@@ -33,8 +33,9 @@ class Axes(Taker):
         return Axes(origin, origin + Point.vy(delta_y))
 
     def __init__(self, *args):
+        super(Axes, self).__init__()
         self.points = []
-        super(Axes, self).__init__(*args)
+        self.take(*args)
 
     @property
     def origin(self):

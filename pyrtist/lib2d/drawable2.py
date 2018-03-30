@@ -14,17 +14,17 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('Drawable2',)
+__all__ = ('Drawable', 'Drawable2')
 
 from .core_types import Taker, combination
 from .window import Window
 
 
-class Drawable2(Taker):
+class Drawable(Taker):
   defaults = {}
 
   def __init__(self, **kwargs):
-    super(Drawable2, self).__init__()
+    super(Drawable, self).__init__()
     for name, value in self.defaults.items():
       setattr(self, name, kwargs.pop(name, value))
     if len(kwargs):
@@ -34,6 +34,10 @@ class Drawable2(Taker):
   def draw(self, target):
     '''Override this to implement drawing.'''
     raise ValueError('Object cannot be drawn')
+
+
+class Drawable2(Drawable):
+  pass
 
 
 @combination(Drawable2, Window)
