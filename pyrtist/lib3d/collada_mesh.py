@@ -125,14 +125,16 @@ class ColladaMesh(Mesh):
         return ib
 
     def _build_posed_vertices(self, skel, pose, dtype=np.float32):
+        controllers = self.collada_node.controllers
         bind_matrices = skel.build_matrices()
-        inv_bind_matrices = {k: np.linalg.inv(mx)
-                             for k, mx in bind_matrices.items()}
         pose_matrices = pose.build_matrices()
+        final_matrices = \
+          {name: np.dot(pose_matrices[name], np.linalg.inv(mx))[:3]
+           for name, mx in bind_matrices.items()}
 
         # Compute total number of vertices.
         num_vertices = sum(len(prim.vertex)
-                           for controller in self.collada_node.controllers
+                           for controller in controllers
                            for prim in controller.geometry.primitives)
 
         # Create array of output vertices.
@@ -141,15 +143,12 @@ class ColladaMesh(Mesh):
 
         calc = _pose_calc_opt or self._pose_calc
 
-        for controller in self.collada_node.controllers:
-            # Pre-compute matrices.
+        for controller in controllers:
+            # Re-index matrices.
             joint_names = controller.sourcebyid[controller.joint_source]
-            num_matrices = controller.max_joint_index + 1
-            joint_matrices = np.zeros((num_matrices, 3, 4), dtype)
-            for i in range(num_matrices):
-                name = joint_names[i]
-                mx44 = np.dot(pose_matrices[name], inv_bind_matrices[name])
-                joint_matrices[i] = mx44[:3]
+            joint_matrices = np.zeros((len(joint_names), 3, 4), dtype)
+            for idx, name in enumerate(joint_names):
+                joint_matrices[idx] = final_matrices[name]
 
             # Use matrices to re-pose mesh.
             bind_matrix = controller.bind_shape_matrix.T
@@ -223,7 +222,6 @@ class ColladaMesh(Mesh):
         return tex_coords
 
     def _build_raw_mesh(self, default_color=(1.0, 1.0, 1.0, 1.0)):
-        vertices = self._build_vertices()
         if self.pose is not None:
             vertices = self._build_posed_vertices(self.origin_pose, self.pose)
         else:
