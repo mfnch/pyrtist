@@ -29,8 +29,8 @@ typedef struct {
                             /// This is nullptr for standalone objects.
 } PyDepthBuffer;
 
-/// The Python type for a DepthBuffer wrapper.
-extern PyTypeObject PyDepthBuffer_Type;
+/// @brief Get the Python type for a DepthBuffer wrapper.
+PyTypeObject* PyDepthBuffer_GetType();
 
 PyObject* PyDepthBuffer_FromC(PyTypeObject* type, DepthBuffer* db,
                              PyObject* base);

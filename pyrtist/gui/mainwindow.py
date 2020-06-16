@@ -174,8 +174,8 @@ class Pyrtist(object):
 
     try:
       mergeid = merge.add_ui_from_string(self.ui_info)
-    except gobject.GError, msg:
-      sys.stdout.write("building menus failed: %s\n" % msg)
+    except gobject.GError as exc:
+      sys.stdout.write("building menus failed: %s\n" % exc)
 
     # Retrieve the menu bar and the tool bar and add them at the top of the
     # VBox

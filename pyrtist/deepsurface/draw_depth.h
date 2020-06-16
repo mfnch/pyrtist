@@ -131,7 +131,7 @@ class VectorAttribute {
     Value ret;
     for (size_t i = 0; i < attrs_.size(); i++)
       ret[i] = attrs_[i].ValueAt(ix, iy);
-    return std::move(ret);
+    return ret;
   }
 
   /// @brief Increment the given vector field value to obtain the value at the

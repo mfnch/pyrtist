@@ -15,6 +15,7 @@
 //   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "deep_surface.h"
+#include "py_helper.h"
 #include "py_depth_buffer.h"
 #include "py_image_buffer.h"
 #include "sampler.h"
@@ -62,6 +63,28 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+
+#if PY_MAJOR_VERSION >= 3
+///////////////////////////////////////////////////////////////////////////////
+// Implement the new buffer API.
+
+static int PyDepthBuffer_GetBuffer(PyObject* exporter,
+                                   Py_buffer* view, int flags) {
+  PyErr_SetString(PyExc_BufferError, "ImageBuffer has only one segment");
+  view->obj = nullptr;
+  return -1;
+}
+
+static void PyDepthBuffer_ReleaseBuffer(PyObject* exporter,
+                                        Py_buffer* view) {
+}
+
+static PyBufferProcs depthbuffer_as_buffer = {
+  PyDepthBuffer_GetBuffer,
+  PyDepthBuffer_ReleaseBuffer
+};
+
+#elif PY_MAJOR_VERSION >=2
 ///////////////////////////////////////////////////////////////////////////////
 // Implement the old buffer API.
 
@@ -91,54 +114,31 @@ static PyBufferProcs depthbuffer_as_buffer = {
   PyDepthBuffer_GetSegCount,
   nullptr,
 };
+#else
+#  error "Unsupported Python version"
+#endif
+
+PyTypeObject* PyDepthBuffer_GetType() {
+  struct Setter {
+    Setter() : py_type{PyObject_HEAD_INIT(NULL)} {
+      auto& t = py_type;
+      t.tp_name = "deepsurface.DepthBuffer";
+      t.tp_basicsize = sizeof(PyDepthBuffer);
+      t.tp_dealloc = PyDepthBuffer_Dealloc;
+      t.tp_as_buffer = &depthbuffer_as_buffer;
+      t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+      t.tp_methods = pydepthbuffer_methods;
+      t.tp_new = PyDepthBuffer_New;
+    }
+
+    PyTypeObject py_type;
+  };
+
+  static Setter instance{};
+  return &instance.py_type;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
-
-// PyDepthBuffer object type.
-PyTypeObject PyDepthBuffer_Type = {
-  PyObject_HEAD_INIT(NULL)
-  0,                                         // ob_size
-  "deepsurface.DepthBuffer",                  // tp_name
-  sizeof(PyDepthBuffer),                      // tp_basicsize
-  0,                                         // tp_itemsize
-  PyDepthBuffer_Dealloc,                      // tp_dealloc
-  0,                                         // tp_print
-  0,                                         // tp_getattr
-  0,                                         // tp_setattr
-  0,                                         // tp_compare
-  0,                                         // tp_repr
-  0,                                         // tp_as_number
-  0,                                         // tp_as_sequence
-  0,                                         // tp_as_mapping
-  0,                                         // tp_hash
-  0,                                         // tp_call
-  0,                                         // tp_str
-  0,                                         // tp_getattro
-  0,                                         // tp_setattro
-  &depthbuffer_as_buffer,                    // tp_as_buffer
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
-  0,                                         // tp_doc
-  0,                                         // tp_traverse
-  0,                                         // tp_clear
-  0,                                         // tp_richcompare
-  0,                                         // tp_weaklistoffset
-  0,                                         // tp_iter
-  0,                                         // tp_iternext
-  pydepthbuffer_methods,                     // tp_methods
-  0,                                         // tp_members
-  0,                                         // tp_getset
-  0,                                         // tp_base
-  0,                                         // tp_dict
-  0,                                         // tp_descr_get
-  0,                                         // tp_descr_set
-  0,                                         // tp_dictoffset
-  0,                                         // tp_init
-  0,                                         // tp_alloc
-  PyDepthBuffer_New,                          // tp_new
-  0,                                         // tp_free
-  0,                                         // tp_is_gc
-  0,                                         // tp_bases
-};
 
 PyObject* PyDepthBuffer_FromC(PyTypeObject* type, DepthBuffer* db,
                              PyObject* base) {
@@ -149,7 +149,7 @@ PyObject* PyDepthBuffer_FromC(PyTypeObject* type, DepthBuffer* db,
     return nullptr;
   }
 
-  PyObject *py_obj = PyDepthBuffer_Type.tp_alloc(type, 0);
+  PyObject *py_obj = PyDepthBuffer_GetType()->tp_alloc(type, 0);
   if (py_obj == nullptr) {
     delete db;
     return nullptr;
@@ -180,19 +180,19 @@ static void PyDepthBuffer_Dealloc(PyObject* py_obj) {
   else
     // This buffer is embedded inside py_db->base: just do a DECREF.
     Py_DECREF(py_db->base);
-  py_db->ob_type->tp_free(py_obj);
+  DS_GET_PY_HEAD(py_db)->ob_type->tp_free(py_obj);
 }
 
 static PyObject* PyDepthBuffer_GetWidth(PyObject* db, PyObject*) {
   PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
   long v = py_db->depth_buffer->GetWidth();
-  return PyLong_FromLong(static_cast<long>(v));
+  return DS_PyLong_FromLong(static_cast<long>(v));
 }
 
 static PyObject* PyDepthBuffer_GetHeight(PyObject* db, PyObject*) {
   PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
   long v = py_db->depth_buffer->GetHeight();
-  return PyLong_FromLong(static_cast<long>(v));
+  return DS_PyLong_FromLong(static_cast<long>(v));
 }
 
 static PyObject* PyDepthBuffer_Clear(PyObject* db, PyObject*) {
@@ -371,7 +371,7 @@ static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args) {
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args) {
   PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(db);
   ARGBImageBuffer* normals = py_db->depth_buffer->ComputeNormals();
-  return PyImageBuffer_FromC(&PyImageBuffer_Type, normals, nullptr);
+  return PyImageBuffer_FromC(PyImageBuffer_GetType(), normals, nullptr);
 }
 
 static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args) {
@@ -389,7 +389,7 @@ static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args) {
 }
 
 static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args) {
-  return PyBuffer_FromReadWriteObject(db, 0, Py_END_OF_BUFFER);
+  return nullptr; // TODO: PyBuffer_FromReadWriteObject(db, 0, Py_END_OF_BUFFER);
 }
 
 static PyObject* PyDepthBuffer_SaveToFile(PyObject* db, PyObject* args) {

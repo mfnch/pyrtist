@@ -33,10 +33,10 @@ static PyObject* Py_Transfer(PyObject* ds, PyObject* args) {
                         &py_dst_depth, &py_dst_image))
     return nullptr;
 
-  if (!(PyObject_TypeCheck(py_src_depth, &PyDepthBuffer_Type) &&
-        PyObject_TypeCheck(py_src_image, &PyImageBuffer_Type) &&
-        PyObject_TypeCheck(py_dst_depth, &PyDepthBuffer_Type) &&
-        PyObject_TypeCheck(py_dst_image, &PyImageBuffer_Type))) {
+  if (!(PyObject_TypeCheck(py_src_depth, PyDepthBuffer_GetType()) &&
+        PyObject_TypeCheck(py_src_image, PyImageBuffer_GetType()) &&
+        PyObject_TypeCheck(py_dst_depth, PyDepthBuffer_GetType()) &&
+        PyObject_TypeCheck(py_dst_image, PyImageBuffer_GetType()))) {
     PyErr_SetString(PyExc_ValueError,
                     "Invalid arguments to DeepSurface.transfer");
     return nullptr;
@@ -60,10 +60,10 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
                         &py_dst_depth, &py_dst_image))
     return nullptr;
 
-  if (!(PyObject_TypeCheck(py_src_depth, &PyDepthBuffer_Type) &&
-        PyObject_TypeCheck(py_src_image, &PyImageBuffer_Type) &&
-        PyObject_TypeCheck(py_dst_depth, &PyDepthBuffer_Type) &&
-        PyObject_TypeCheck(py_dst_image, &PyImageBuffer_Type))) {
+  if (!(PyObject_TypeCheck(py_src_depth, PyDepthBuffer_GetType()) &&
+        PyObject_TypeCheck(py_src_image, PyImageBuffer_GetType()) &&
+        PyObject_TypeCheck(py_dst_depth, PyDepthBuffer_GetType()) &&
+        PyObject_TypeCheck(py_dst_image, PyImageBuffer_GetType()))) {
     PyErr_SetString(PyExc_ValueError,
                     "Invalid arguments to DeepSurface.sculpt");
     return nullptr;
@@ -77,31 +77,58 @@ static PyObject* Py_Sculpt(PyObject* ds, PyObject* args) {
   Py_RETURN_NONE;
 }
 
-static PyMethodDef deepsurface_methods[] = {
-  {"transfer", Py_Transfer, METH_VARARGS},
-  {"sculpt", Py_Sculpt, METH_VARARGS},
-  {nullptr, nullptr, 0, nullptr}
-};
-
 #define PYTYPE_READY(t) \
-  if (PyType_Ready(&(t)) < 0) return
+  if (PyType_Ready(t) < 0) return nullptr
 
 #define PYMODULE_ADDOBJECT(m, n, t) \
-  do { Py_INCREF(&(t)); \
-       PyModule_AddObject(m, n, reinterpret_cast<PyObject*>(&(t))); } while (0)
+  do { Py_INCREF(t); \
+       PyModule_AddObject(m, n, reinterpret_cast<PyObject*>(t)); } while (0)
+
+static PyObject* Module_Init() {
+  static PyMethodDef method_def[] = {
+    {"transfer", Py_Transfer, METH_VARARGS},
+    {"sculpt", Py_Sculpt, METH_VARARGS},
+    {nullptr, nullptr, 0, nullptr}
+  };
+
+#if PY_MAJOR_VERSION >= 3
+  static struct PyModuleDef module_def = {
+    PyModuleDef_HEAD_INIT,
+    "deepsurface",
+    nullptr,  // Documentation.
+    -1,
+    method_def
+  };
+
+  PyObject* m = PyModule_Create(&module_def);
+  if (m == nullptr)
+    return nullptr;
+#elif PY_MAJOR_VERSION >= 2
+  PyObject* m = Py_InitModule("deepsurface", method_def);
+#else
+#error "Unsupported Python version"
+#endif
+  PYTYPE_READY(PyImageBuffer_GetType());
+  PYTYPE_READY(PyDepthBuffer_GetType());
+  PYTYPE_READY(PyMesh_GetType());
+
+  PYMODULE_ADDOBJECT(m, "ImageBuffer", PyImageBuffer_GetType());
+  PYMODULE_ADDOBJECT(m, "DepthBuffer", PyDepthBuffer_GetType());
+  PYMODULE_ADDOBJECT(m, "Mesh", PyMesh_GetType());
+
+  return m;
+}
 
 extern "C" {
 
-  PyMODINIT_FUNC initdeepsurface() {
-    PYTYPE_READY(PyImageBuffer_Type);
-    PYTYPE_READY(PyDepthBuffer_Type);
-    PYTYPE_READY(PyMesh_Type);
-
-    PyObject* m = Py_InitModule("deepsurface", deepsurface_methods);
-
-    PYMODULE_ADDOBJECT(m, "ImageBuffer", PyImageBuffer_Type);
-    PYMODULE_ADDOBJECT(m, "DepthBuffer", PyDepthBuffer_Type);
-    PYMODULE_ADDOBJECT(m, "Mesh", PyMesh_Type);
+#if PY_MAJOR_VERSION >= 3
+  PyMODINIT_FUNC PyInit_deepsurface() {
+    return Module_Init();
   }
+#else
+  PyMODINIT_FUNC initdeepsurface() {
+    Module_Init();
+  }
+#endif
 
 }  // extern "C"

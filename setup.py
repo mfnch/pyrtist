@@ -20,13 +20,18 @@
 sudo python setup.py install
 '''
 
+import sys
 import os
 from setuptools import setup, Extension, Feature
 
 # Get app information from info file.
 info = {}
 root_dir = os.path.dirname(os.path.realpath(__file__))
-execfile(os.path.join(root_dir, 'pyrtist', 'gui', 'info.py'), info)
+info_file = os.path.join(root_dir, 'pyrtist', 'gui', 'info.py')
+if sys.version_info.major >= 3:
+    exec(open(info_file).read(), info)
+else:
+    execfile(info_file, info)
 
 # Take the long description from the README.rst file.
 readme_path = os.path.join(root_dir, 'README.rst')

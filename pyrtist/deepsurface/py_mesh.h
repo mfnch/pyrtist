@@ -27,8 +27,8 @@ typedef struct {
   deepsurface::Mesh* mesh;  ///< The C++ object.
 } PyMesh;
 
-/// The Python type for a DepthBuffer wrapper.
-extern PyTypeObject PyMesh_Type;
+/// @brief Get the Python type for a DepthBuffer wrapper.
+PyTypeObject* PyMesh_GetType();
 
 PyObject* PyMesh_FromC(PyTypeObject* type, ARGBImageBuffer* ib,
                        PyObject* base);

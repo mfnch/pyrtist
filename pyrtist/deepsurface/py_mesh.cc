@@ -42,51 +42,24 @@ static PyMethodDef pymesh_methods[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// PyMesh object type.
-PyTypeObject PyMesh_Type = {
-  PyObject_HEAD_INIT(NULL)
-  0,                                         // ob_size
-  "deepsurface.Mesh",                        // tp_name
-  sizeof(PyMesh),                            // tp_basicsize
-  0,                                         // tp_itemsize
-  PyMesh_Dealloc,                            // tp_dealloc
-  0,                                         // tp_print
-  0,                                         // tp_getattr
-  0,                                         // tp_setattr
-  0,                                         // tp_compare
-  0,                                         // tp_repr
-  0,                                         // tp_as_number
-  0,                                         // tp_as_sequence
-  0,                                         // tp_as_mapping
-  0,                                         // tp_hash
-  0,                                         // tp_call
-  0,                                         // tp_str
-  0,                                         // tp_getattro
-  0,                                         // tp_setattro
-  0,                                         // tp_as_buffer
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
-  0,                                         // tp_doc
-  0,                                         // tp_traverse
-  0,                                         // tp_clear
-  0,                                         // tp_richcompare
-  0,                                         // tp_weaklistoffset
-  0,                                         // tp_iter
-  0,                                         // tp_iternext
-  pymesh_methods,                            // tp_methods
-  0,                                         // tp_members
-  0,                                         // tp_getset
-  0,                                         // tp_base
-  0,                                         // tp_dict
-  0,                                         // tp_descr_get
-  0,                                         // tp_descr_set
-  0,                                         // tp_dictoffset
-  0,                                         // tp_init
-  0,                                         // tp_alloc
-  PyMesh_New,                                // tp_new
-  0,                                         // tp_free
-  0,                                         // tp_is_gc
-  0,                                         // tp_bases
-};
+PyTypeObject* PyMesh_GetType() {
+  struct Setter {
+    Setter() : py_type{PyObject_HEAD_INIT(NULL)} {
+      auto& t = py_type;
+      t.tp_name = "deepsurface.Mesh";
+      t.tp_basicsize = sizeof(PyMesh);
+      t.tp_dealloc = PyMesh_Dealloc;
+      t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+      t.tp_methods = pymesh_methods;
+      t.tp_new = PyMesh_New;
+    }
+
+    PyTypeObject py_type;
+  };
+
+  static Setter instance{};
+  return &instance.py_type;
+}
 
 static PyObject* PyMesh_New(PyTypeObject* type,
                             PyObject* args, PyObject* kwds) {
@@ -102,7 +75,7 @@ static PyObject* PyMesh_New(PyTypeObject* type,
     return nullptr;
   }
 
-  PyObject *py_obj = PyMesh_Type.tp_alloc(type, 0);
+  PyObject *py_obj = PyMesh_GetType()->tp_alloc(type, 0);
   if (py_obj == nullptr)
     return nullptr;
 
@@ -114,7 +87,7 @@ static PyObject* PyMesh_New(PyTypeObject* type,
 static void PyMesh_Dealloc(PyObject* py_obj) {
   PyMesh* py_mesh = reinterpret_cast<PyMesh*>(py_obj);
   delete py_mesh->mesh;
-  py_mesh->ob_type->tp_free(py_obj);
+  DS_GET_PY_HEAD(py_mesh)->ob_type->tp_free(py_obj);
 }
 
 bool ForEachPyObj(PyObject* in, std::function<bool(PyObject*, int)> fn) {
@@ -142,8 +115,8 @@ SetScalarFromPy(float* out, PyObject* in) {
     return false;
   else if (PyFloat_Check(in))
     *out = static_cast<float>(PyFloat_AsDouble(in));
-  else if (PyInt_Check(in))
-    *out = static_cast<float>(PyInt_AsLong(in));
+  else if (DS_PyLong_Check(in))
+    *out = static_cast<float>(DS_PyLong_AsLong(in));
   else
     return false;
   return true;
@@ -167,8 +140,8 @@ static PyObject* PyMesh_Draw(PyObject* mesh, PyObject* args) {
                         &py_depth, &py_image, &py_matrix))
     return nullptr;
 
-  if (!(PyObject_TypeCheck(py_depth, &PyDepthBuffer_Type) &&
-        PyObject_TypeCheck(py_image, &PyImageBuffer_Type))) {
+  if (!(PyObject_TypeCheck(py_depth, PyDepthBuffer_GetType()) &&
+        PyObject_TypeCheck(py_image, PyImageBuffer_GetType()))) {
     PyErr_SetString(PyExc_ValueError,
                     "Invalid arguments to Mesh.draw");
     return nullptr;
@@ -263,8 +236,8 @@ AddPolygonsFromPy(deepsurface::Mesh* mesh, PyObject* py_polygons) {
       bool indices_ok =
         ForEachPyObj(py_indices, [&indices](PyObject* py_index, int i)->bool {
           if (i >= 0 && static_cast<size_t>(i) < indices.size() &&
-              PyInt_Check(py_index)) {
-            indices[i] = PyInt_AsLong(py_index);
+              DS_PyLong_Check(py_index)) {
+            indices[i] = DS_PyLong_AsLong(py_index);
             return true;
           }
           return false;
@@ -311,7 +284,7 @@ class PyImageTexture : public deepsurface::ImageTexture {
 
 static std::unique_ptr<deepsurface::Texture>
 NewMaterialFromPy(PyObject* py_material) {
-  if (PyObject_TypeCheck(py_material, &PyImageBuffer_Type)) {
+  if (PyObject_TypeCheck(py_material, PyImageBuffer_GetType())) {
     // Create an ImageTexture holding a Python reference to the PyImageBuffer.
     auto py_ib = reinterpret_cast<PyImageBuffer*>(py_material);
     return std::unique_ptr<deepsurface::Texture>{new PyImageTexture(py_ib)};

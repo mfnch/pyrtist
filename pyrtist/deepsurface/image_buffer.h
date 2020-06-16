@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <algorithm>
 #include <memory>
+#include <functional>
 
 template <typename T>
 class ImageBuffer {

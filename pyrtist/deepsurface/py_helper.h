@@ -19,6 +19,22 @@
 
 #include "Python.h"
 
+#if PY_MAJOR_VERSION >= 3
+#define DS_GET_PY_HEAD(py_obj) (&((py_obj)->ob_base))
+#define DS_PyLong_Check PyLong_Check
+#define DS_PyLong_FromLong PyLong_FromLong
+#define DS_PyLong_AsLong PyLong_AsLong
+#elif PY_MAJOR_VERSION >= 2
+#define DS_GET_PY_HEAD(py_obj) (py_obj)
+#define DS_PyLong_Check PyInt_Check
+#define DS_PyLong_FromLong PyInt_FromLong
+#define DS_PyLong_AsLong PyInt_AsLong
+#else
+#error "Unsupported version of Python"
+#endif
+
+#include "Python.h"
+
 namespace deepsurface {
 
 class PyRef {

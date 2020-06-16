@@ -18,6 +18,7 @@
 
 #include "deep_surface.h"
 #include "py_image_buffer.h"
+#include "py_helper.h"
 
 // Forward declarations.
 static PyObject* PyImageBuffer_New(PyTypeObject* type,
@@ -37,6 +38,27 @@ static PyMethodDef pyimagebuffer_methods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+///////////////////////////////////////////////////////////////////////////////
+// Implement the new buffer API.
+
+static int PyImageBuffer_GetBuffer(PyObject* exporter,
+                                   Py_buffer* view, int flags) {
+  PyErr_SetString(PyExc_BufferError, "ImageBuffer has only one segment");
+  view->obj = nullptr;
+  return -1;
+}
+
+static void PyImageBuffer_ReleaseBuffer(PyObject* exporter,
+                                        Py_buffer* view) {
+}
+
+static PyBufferProcs imagebuffer_as_buffer = {
+  PyImageBuffer_GetBuffer,
+  PyImageBuffer_ReleaseBuffer
+};
+
+#elif PY_MAJOR_VERSION >=2
 ///////////////////////////////////////////////////////////////////////////////
 // Implement the old buffer API.
 
@@ -68,53 +90,32 @@ static PyBufferProcs imagebuffer_as_buffer = {
   nullptr,
 };
 
+#else
+#  error "Unsupported Python version"
+#endif
+
+PyTypeObject* PyImageBuffer_GetType() {
+  struct Setter {
+    Setter() : py_type{PyObject_HEAD_INIT(NULL)} {
+      auto& t = py_type;
+      t.tp_name = "deepsurface.ImageBuffer";
+      t.tp_basicsize = sizeof(PyImageBuffer);
+      t.tp_dealloc = PyImageBuffer_Dealloc;
+      t.tp_as_buffer = &imagebuffer_as_buffer;
+      t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+      t.tp_methods = pyimagebuffer_methods;
+      t.tp_new = PyImageBuffer_New;
+    }
+
+    PyTypeObject py_type;
+  };
+
+  static Setter instance{};
+  return &instance.py_type;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
-// PyImageBuffer object type.
-PyTypeObject PyImageBuffer_Type = {
-  PyObject_HEAD_INIT(NULL)
-  0,                                         // ob_size
-  "deepsurface.ImageBuffer",                 // tp_name
-  sizeof(PyImageBuffer),                     // tp_basicsize
-  0,                                         // tp_itemsize
-  PyImageBuffer_Dealloc,                     // tp_dealloc
-  0,                                         // tp_print
-  0,                                         // tp_getattr
-  0,                                         // tp_setattr
-  0,                                         // tp_compare
-  0,                                         // tp_repr
-  0,                                         // tp_as_number
-  0,                                         // tp_as_sequence
-  0,                                         // tp_as_mapping
-  0,                                         // tp_hash
-  0,                                         // tp_call
-  0,                                         // tp_str
-  0,                                         // tp_getattro
-  0,                                         // tp_setattro
-  &imagebuffer_as_buffer,                    // tp_as_buffer
-  Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
-  0,                                         // tp_doc
-  0,                                         // tp_traverse
-  0,                                         // tp_clear
-  0,                                         // tp_richcompare
-  0,                                         // tp_weaklistoffset
-  0,                                         // tp_iter
-  0,                                         // tp_iternext
-  pyimagebuffer_methods,                     // tp_methods
-  0,                                         // tp_members
-  0,                                         // tp_getset
-  0,                                         // tp_base
-  0,                                         // tp_dict
-  0,                                         // tp_descr_get
-  0,                                         // tp_descr_set
-  0,                                         // tp_dictoffset
-  0,                                         // tp_init
-  0,                                         // tp_alloc
-  PyImageBuffer_New,                         // tp_new
-  0,                                         // tp_free
-  0,                                         // tp_is_gc
-  0,                                         // tp_bases
-};
 
 PyObject* PyImageBuffer_FromC(PyTypeObject* type, ARGBImageBuffer* ib,
                               PyObject* base) {
@@ -125,7 +126,7 @@ PyObject* PyImageBuffer_FromC(PyTypeObject* type, ARGBImageBuffer* ib,
     return nullptr;
   }
 
-  PyObject *py_obj = PyImageBuffer_Type.tp_alloc(type, 0);
+  PyObject *py_obj = PyImageBuffer_GetType()->tp_alloc(type, 0);
   if (py_obj == nullptr) {
     delete ib;
     return nullptr;
@@ -156,7 +157,7 @@ static void PyImageBuffer_Dealloc(PyObject* py_obj) {
   else
     // This buffer is embedded inside py_ib->base: just do a DECREF.
     Py_DECREF(py_ib->base);
-  py_ib->ob_type->tp_free(py_obj);
+  DS_GET_PY_HEAD(py_ib)->ob_type->tp_free(py_obj);
 }
 
 static bool SetFromString(ARGBImageBuffer* dst,
@@ -241,7 +242,7 @@ static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject*) {
 }
 
 static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args) {
-  return PyBuffer_FromReadWriteObject(ib, 0, Py_END_OF_BUFFER);
+  return nullptr;  //TODO: PyBuffer_FromReadWriteObject(ib, 0, Py_END_OF_BUFFER);
 }
 
 static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args) {

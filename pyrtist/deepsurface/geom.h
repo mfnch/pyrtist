@@ -86,7 +86,7 @@ class Matrix {
         x += rows_[r][c]*p[c];
       out[r] = x;
     }
-    return std::move(out);
+    return out;
   }
 
   Row& operator[](int idx) { return rows_[idx]; }
@@ -144,7 +144,7 @@ class Affine3 : public Matrix<T, 3, 4> {
         x += this->rows_[r][c]*p[c];
       out[r] = x + this->rows_[r][3];
     }
-    return std::move(out);
+    return out;
   }
 };
 
