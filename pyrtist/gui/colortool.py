@@ -16,10 +16,9 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Action, Paste, Button
+from .assistant import Action, Paste, Button
 
-import gtk
-import gtk.gdk
+from gi.repository import Gtk, Gdk
 
 known_box_colors = {
   0x000000: "Color.black",
@@ -117,7 +116,7 @@ class ColorSelect(Action):
   def execute(self, parent):
     if self.colordlg is None:
       self.colordlg = \
-        gtk.ColorSelectionDialog("Select color")
+        Gtk.ColorSelectionDialog("Select color")
 
     cd = self.colordlg
     colorsel = cd.colorsel
@@ -127,7 +126,7 @@ class ColorSelect(Action):
 
     response = cd.run()
 
-    if response == gtk.RESPONSE_OK:
+    if response == Gtk.ResponseType.OK:
       c = colorsel.get_current_color()
       alpha = colorsel.get_current_alpha()
       my_c = MyColor(c.red, c.green, c.blue, alpha, max_color=0xffff)
@@ -166,12 +165,12 @@ class ColorHistoryButton(Button):
     img = None
 
     # Create the button
-    b = gtk.Button()
+    b = Gtk.Button()
     my_color = self.history.get_color(self.index)
     if my_color is not None:
-      pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
+      pb = GdkPixbuf.Pixbuf(GdkPixbuf.Colorspace.RGB, False, 8, width, height)
       pb.fill(int(my_color))
-      img = gtk.Image()
+      img = Gtk.Image()
       img.set_from_pixbuf(pb)
       b.set_image(img)
 

@@ -17,7 +17,7 @@
 
 import re
 
-from config import debug
+from .config import debug
 
 _variable_re = re.compile("[$][^$]*[$]")
 

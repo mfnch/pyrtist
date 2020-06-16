@@ -15,12 +15,12 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant \
+from .assistant \
   import Mode, ExitMode, GUISet, GUIAct, Paste, IncludeSrc
-from inputtool import InputAct
-from colortool import ColorSelect, ColorHistory
-from fonttool import FontAct
-from toolbox import Button, HelpAct
+from .inputtool import InputAct
+from .colortool import ColorSelect, ColorHistory
+from .fonttool import FontAct
+from .toolbox import Button, HelpAct
 
 def shorten_string(s, max_length=5):
   return "%s..." % s[:3] if len(s) > max_length else s

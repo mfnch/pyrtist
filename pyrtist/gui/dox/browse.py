@@ -16,10 +16,10 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+from gi.repository import GObject
 
 from ..config import get_configuration
 from ..editable import BoxViewArea
@@ -44,7 +44,7 @@ class DoxBrowser(object):
     self.quit_gtk = quit_gtk
 
     # Create the window
-    self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
     self.window.set_border_width(spacing)
     self.window.set_title(title)
     self.window.set_size_request(*size)
@@ -55,7 +55,7 @@ class DoxBrowser(object):
     # This is composed by a descriptor window at the top (showing the text
     # describing the selected object), plus a list of properties of the object
     # at the bottom
-    right_top = gtk.VBox(False, 4)
+    right_top = Gtk.VBox(False, 4)
     description_text = self._build_widget_description()
     properties_list = self._build_widget_combinations()
     right_top.pack_start(description_text, expand=True, fill=True, padding=4)
@@ -87,7 +87,7 @@ class DoxBrowser(object):
 
     self.previewer = previewer = self._build_widget_preview()
     self.set_preview_code(None, refresh=False)
-    left_top = gtk.VPaned()
+    left_top = Gtk.VPaned()
     left_top.pack1(selector, resize=True, shrink=True)
     left_top.pack2(previewer, resize=False, shrink=True)
 
@@ -99,22 +99,22 @@ class DoxBrowser(object):
     #   preview of the selected object.
     # - on the right we can read the documentation of the selected object
     #   and inspect its various properties.
-    top_part = gtk.HPaned()
+    top_part = Gtk.HPaned()
     top_part.pack1(left_top)
     top_part.pack2(right_top)
 
     # BOTTOM PART OF THE WINDOW
     #
     # Create the buttons which will be positioned at the bottom of the window
-    self.window_button_hide = gtk.Button(label="_Hide")
-    self.window_butbox = bottom_part = gtk.HButtonBox()
+    self.window_button_hide = Gtk.Button(label="_Hide")
+    self.window_butbox = bottom_part = Gtk.HButtonBox()
     bottom_part.add(self.window_button_hide)
-    bottom_part.set_layout(gtk.BUTTONBOX_END)
+    bottom_part.set_layout(Gtk.ButtonBoxStyle.END)
     bottom_part.set_spacing(spacing)
 
     # The window has one top main region and a bottom region where the
     # ok/cancel buttons are
-    window_content = gtk.VBox()
+    window_content = Gtk.VBox()
     window_content.pack_start(top_part, expand=True, fill=True, padding=0)
     window_content.pack_start(bottom_part, expand=False, fill=False, padding=0)
     self.window.add(window_content)
@@ -128,9 +128,9 @@ class DoxBrowser(object):
     # Create the TextView where the documentation will be shown
     self.window_textview = dox_textview = \
       DoxTextView(on_click_link=self._on_click_link)
-    scrolledwin1 = gtk.ScrolledWindow()
-    scrolledwin1.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-    scrolledwin1.set_shadow_type(gtk.SHADOW_IN)
+    scrolledwin1 = Gtk.ScrolledWindow()
+    scrolledwin1.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+    scrolledwin1.set_shadow_type(Gtk.ShadowType.IN)
     scrolledwin1.add(dox_textview)
     return scrolledwin1
 
@@ -141,12 +141,12 @@ class DoxBrowser(object):
     # Create the table where the procedure of the current type are shown
     self.window_table = dox_table = \
       DoxTable(on_click_link=self._on_click_link)
-    scrolledwin = gtk.ScrolledWindow()
-    scrolledwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-    scrolledwin.set_shadow_type(gtk.SHADOW_IN)
-    viewport = gtk.Viewport()
+    scrolledwin = Gtk.ScrolledWindow()
+    scrolledwin.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scrolledwin.set_shadow_type(Gtk.ShadowType.IN)
+    viewport = Gtk.Viewport()
     viewport.add(dox_table)
-    viewport.set_shadow_type(gtk.SHADOW_NONE)
+    viewport.set_shadow_type(Gtk.ShadowType.NONE)
     scrolledwin.add(viewport)
     return scrolledwin
 
@@ -156,9 +156,9 @@ class DoxBrowser(object):
 
     # create and populate the treestore
     self.treestore = treestore = \
-      gtk.TreeStore(gobject.TYPE_STRING,  # Type name
-                    gobject.TYPE_STRING,  # Brief description
-                    gobject.TYPE_BOOLEAN) # Visible?
+      Gtk.TreeStore(GObject.TYPE_STRING,  # Type name
+                    GObject.TYPE_STRING,  # Brief description
+                    GObject.TYPE_BOOLEAN) # Visible?
     self._populate_treestore_from_dox()
 
     # the treestore filter (to show and hide rows as a result of a search)
@@ -166,14 +166,14 @@ class DoxBrowser(object):
     treestore_flt.set_visible_column(2)
 
     # create the TreeView using the treestore
-    tv = gtk.TreeView(treestore_flt)
+    tv = Gtk.TreeView(treestore_flt)
     tvcols = []
     for nr_col, tvcol_name in enumerate(("Type", "Description")):
-      tvcol = gtk.TreeViewColumn(tvcol_name)
+      tvcol = Gtk.TreeViewColumn(tvcol_name)
       tvcol.set_resizable(True)
       tvcols.append(tvcol)
       tv.append_column(tvcol)
-      cell = gtk.CellRendererText()
+      cell = Gtk.CellRendererText()
       tvcol.pack_start(cell, True)
       tvcol.add_attribute(cell, 'text', nr_col)
 
@@ -182,20 +182,20 @@ class DoxBrowser(object):
     self.treeview = tv
 
     # Put the treeview inside a scrolled window
-    scrolledwin = gtk.ScrolledWindow()
+    scrolledwin = Gtk.ScrolledWindow()
     scrolledwin.set_size_request(int(self.size[0]/2), -1)
-    scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     scrolledwin.add(tv)
 
     # We put a text entry and a button at the top of the treeview. This can
     # be used to search/filter items in the treeview
-    label = gtk.Label("Search:")
-    self.entry = entry = gtk.Entry()
-    hsplit = gtk.HBox(False, 4)
+    label = Gtk.Label(label="Search:")
+    self.entry = entry = Gtk.Entry()
+    hsplit = Gtk.HBox(False, 4)
     hsplit.pack_start(label, expand=False, fill=True, padding=4)
     hsplit.pack_start(entry, expand=True, fill=True, padding=4)
 
-    vsplit = gtk.VBox(False, 4)
+    vsplit = Gtk.VBox(False, 4)
     vsplit.pack_start(hsplit, expand=False, fill=True, padding=4)
     vsplit.pack_start(scrolledwin, expand=True, fill=True, padding=4)
 
@@ -219,8 +219,8 @@ class DoxBrowser(object):
                 "refpoint_size": cfg.getint("GUIView", "refpoint_size")}
     self.viewarea = viewarea = BoxViewArea(config=cfg_dict)
 
-    scroll_win = gtk.ScrolledWindow()
-    scroll_win.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scroll_win = Gtk.ScrolledWindow()
+    scroll_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     scroll_win.add(viewarea)
     scroll_win.set_size_request(200, 200)
     return scroll_win
@@ -315,7 +315,7 @@ class DoxBrowser(object):
   def quit(self):
     self.window.hide()
     if self.quit_gtk:
-      gtk.main_quit()
+      Gtk.main_quit()
 
   def _on_delete_event(self, widget, event, data=None):
     self.quit()
@@ -439,7 +439,7 @@ class DoxBrowser(object):
       
 
 def main():
-  gtk.main()
+  Gtk.main()
 
 if __name__ == "__main__":
 

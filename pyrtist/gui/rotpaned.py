@@ -16,12 +16,12 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+from gi.repository import Gtk
 
 class RotPaned(object):
   def __init__(self, child1=None, child2=None, rotation=0):
-    self.child1 = child1
-    self.child2 = child2
+    #self.get_child()1 = child1
+    #self.get_child()2 = child2
     self.rotation = rotation
     self._container = None
     self._vpaned = None
@@ -35,7 +35,7 @@ class RotPaned(object):
       return self._vpaned
 
     else:
-      self._vpaned = vp = gtk.VPaned()
+      self._vpaned = vp = Gtk.VPaned()
       return vp
 
   def get_hpaned(self):
@@ -43,14 +43,14 @@ class RotPaned(object):
       return self._hpaned
 
     else:
-      self._hpaned = hp = gtk.HPaned()
+      self._hpaned = hp = Gtk.HPaned()
       return hp
 
   def get_container(self):
     if self._container != None:
       return self._container
     else:
-      self._container = hb = gtk.HBox()
+      self._container = hb = Gtk.HBox()
       return hb
 
   def rotate(self, rotation=None):
@@ -71,10 +71,10 @@ class RotPaned(object):
       for child in prev_paned.get_children():
         prev_paned.remove(child)
 
-    if rotation < 2:
-      c1, c2 = (self.child1, self.child2)
-    else:
-      c1, c2 = (self.child2, self.child1)
+    #if rotation < 2:
+      #c1, c2 = (self.get_child()1, self.get_child()2)
+    #else:
+      #c1, c2 = (self.get_child()2, self.get_child()1)
 
     cur_paned.pack1(c1, resize=True, shrink=True)
     cur_paned.pack2(c2, resize=True, shrink=True)
@@ -82,7 +82,7 @@ class RotPaned(object):
     # Show the right paned on the main container
     for child in container.get_children():
       container.remove(child)
-    container.pack_start(cur_paned)
+    container.pack_start(cur_paned, True, True, 0)
 
     container.show_all()
 

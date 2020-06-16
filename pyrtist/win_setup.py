@@ -18,9 +18,9 @@
 
 # example basictreeview.py
 
-import pygtk
-pygtk.require('2.0')
-import gtk
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 import gui.config as config
 from gui.boxer import debug
@@ -34,7 +34,7 @@ class ConfigTab(object):
 class BoxerWindowSettings(object):
   def __init__(self, size=(600, 400)):
     # Create a new window
-    self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
     self.window.set_border_width(spacing)
     self.window.set_title("Boxer configuration editor")
     self.window.set_size_request(*size)
@@ -43,54 +43,54 @@ class BoxerWindowSettings(object):
 
     # The window has one top main region and a bottom region where the
     # ok/cancel buttons are
-    self.window_versplit = gtk.VBox()
+    self.window_versplit = Gtk.VBox()
     self.window.add(self.window_versplit)
 
     # The window is split horizontally into two parts:
     # - on the left we have the zone where we can select the setting to change
     # - on the right we can actually manipulate the setting
-    self.window_horsplit = gtk.HPaned()
+    self.window_horsplit = Gtk.HPaned()
     self.window_versplit.pack_start(self.window_horsplit, expand=True,
                                     fill=True, padding=0)
 
-    self.window_button_ok = gtk.Button(label="_Ok")
-    self.window_button_cancel = gtk.Button(label="_Cancel")
+    self.window_button_ok = Gtk.Button(label="_Ok")
+    self.window_button_cancel = Gtk.Button(label="_Cancel")
 
-    self.window_butbox = gtk.HButtonBox()
+    self.window_butbox = Gtk.HButtonBox()
     self.window_butbox.add(self.window_button_ok)
     self.window_butbox.add(self.window_button_cancel)
-    self.window_butbox.set_layout(gtk.BUTTONBOX_END)
+    self.window_butbox.set_layout(Gtk.ButtonBoxStyle.END)
     self.window_butbox.set_spacing(spacing)
     self.window_versplit.pack_start(self.window_butbox, expand=False,
                                     fill=False, padding=0)
 
     # We first define the right part, which is split vertically in two
-    self.window_versplit2 = gtk.VBox(False, 4)
+    self.window_versplit2 = Gtk.VBox(False, 4)
     self.window_horsplit.pack2(self.window_versplit2)
 
     # RIGHT PART: In the upper part we have a text entry, which is initially
     # filled with the current setting and the user can edit in order to change
     # it.
-    self.window_label = wd = gtk.Label("No option selected.")
+    self.window_label = wd = Gtk.Label(label="No option selected.")
     wd.set_single_line_mode(False)
     wd.set_line_wrap(True)
     wd.set_alignment(0, 0)
     
     self.window_versplit2.pack_start(wd, expand=False, fill=False, padding=0)
 
-    self.window_entry = gtk.Entry()
+    self.window_entry = Gtk.Entry()
     self.window_versplit2.pack_start(self.window_entry, expand=False,
                                     fill=False, padding=0)
 
-    self.window_textview = gtk.TextView()
+    self.window_textview = Gtk.TextView()
     self.window_textview.set_editable(False)
     self.window_textview.set_cursor_visible(False)
-    self.window_textview.set_wrap_mode(gtk.WRAP_NONE)
+    self.window_textview.set_wrap_mode(Gtk.WrapMode.NONE)
     self.window_versplit2.pack_start(self.window_textview, expand=True,
                                      fill=True, padding=4)
 
     # create a TreeStore with one string column to use as the model
-    self.treestore = gtk.TreeStore(str)
+    self.treestore = Gtk.TreeStore(str)
 
     self.config = cfg = config.get_configuration()
     sections = cfg.get_sections()
@@ -101,16 +101,16 @@ class BoxerWindowSettings(object):
         self.treestore.append(piter, [option])
 
     # create the TreeView using treestore
-    self.treeview = gtk.TreeView(self.treestore)
+    self.treeview = Gtk.TreeView(self.treestore)
 
     # create the TreeViewColumn to display the data
-    self.tvcolumn = gtk.TreeViewColumn('Available settings')
+    self.tvcolumn = Gtk.TreeViewColumn('Available settings')
 
     # add tvcolumn to treeview
     self.treeview.append_column(self.tvcolumn)
 
     # create a CellRendererText to render the data
-    self.cell = gtk.CellRendererText()
+    self.cell = Gtk.CellRendererText()
 
     # add the cell to the tvcolumn and allow it to expand
     self.tvcolumn.pack_start(self.cell, True)
@@ -130,9 +130,9 @@ class BoxerWindowSettings(object):
                                       self._on_button_cancel_press)
 
     # Insert objects one inside the other
-    self.window_scrolledwin = scrolledwin = gtk.ScrolledWindow()
+    self.window_scrolledwin = scrolledwin = Gtk.ScrolledWindow()
     scrolledwin.set_size_request(int(size[0]/3), -1)
-    scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     scrolledwin.add(self.treeview)
     self.window_horsplit.pack1(scrolledwin)
 
@@ -145,10 +145,10 @@ class BoxerWindowSettings(object):
 
   def quit(self):
     self.window.hide()
-    gtk.main_quit()
+    Gtk.main_quit()
 
   def _on_delete_event(self, widget, event, data=None):
-    gtk.main_quit()
+    Gtk.main_quit()
     return False
 
   def _on_button_ok_press(self, *args):
@@ -208,7 +208,7 @@ class BoxerWindowSettings(object):
 
 
 def main():
-  gtk.main()
+  Gtk.main()
 
 if __name__ == "__main__":
   tmp = BoxerWindowSettings()

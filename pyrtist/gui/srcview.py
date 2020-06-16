@@ -15,10 +15,10 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+from gi.repository import Gtk
 
-import config
-from undoer import Undoer
+from . import config
+from .undoer import Undoer
 
 # Functions for the undoer.
 def delete_fn(_, srcview, del_offs, del_len):
@@ -38,7 +38,7 @@ def insert_fn(_, srcview, ins_text, ins_offs):
 
 class BoxSrcView(object):
   def _init_textview(self):
-    view = gtk.TextView()
+    view = Gtk.TextView()
     buf = view.get_buffer()
     return (0, view, buf)
 
@@ -97,7 +97,7 @@ class BoxSrcView(object):
     self.view = view
     self.buf = buf
 
-    view.set_wrap_mode(gtk.WRAP_WORD)
+    view.set_wrap_mode(Gtk.WrapMode.WORD)
     view.set_property("has-tooltip", True)
     view.connect("query-tooltip", self._sighandler_query_tooltip)
     buf.connect("insert-text", self._sighandler_insert_text)
@@ -124,7 +124,7 @@ class BoxSrcView(object):
                               del_iter_start.get_offset())
 
   def get_iter_at_coords(self, x, y):
-    bx, by = self.view.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
+    bx, by = self.view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, x, y)
     return self.view.get_iter_at_location(bx, by)
 
   def get_word_at_coords(self, x, y, max_length=20):

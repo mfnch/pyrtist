@@ -14,7 +14,10 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from cStringIO import StringIO
+try:
+    from io import StringIO         # Python 3
+except:
+    from cStringIO import StringIO  # Python 2
 
 __all__ = ('TextFormatter',)
 

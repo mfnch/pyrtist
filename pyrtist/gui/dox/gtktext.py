@@ -15,10 +15,10 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
-import pango
+from gi.repository import Pango
 
 import rstparser
 from tree import DoxProc
@@ -47,34 +47,34 @@ def get_content_text(content):
       t_piece = type(piece)
       if t_piece == str:
         text += piece
-      elif t_piece == gtk.TextChildAnchor:
+      elif t_piece == Gtk.TextChildAnchor:
         pass
       else:
         text += piece[0]
   return text
 
 
-class DoxTextView(gtk.TextView):
+class DoxTextView(Gtk.TextView):
   def __init__(self, on_click_link=None):
-    gtk.TextView.__init__(self)
+    GObject.GObject.__init__(self)
     self.set_editable(False)
     self.set_cursor_visible(False)
-    self.set_wrap_mode(gtk.WRAP_WORD)
+    self.set_wrap_mode(Gtk.WrapMode.WORD)
     self.set_pixels_above_lines(4)
 
     self.dox_on_click_link = on_click_link
     self.dox_cursor_normal = None
-    self.dox_cursor_link = gtk.gdk.Cursor(gtk.gdk.HAND2)
+    self.dox_cursor_link = Gdk.Cursor.new(Gdk.HAND2)
     
     self.dox_tags = tags = {}
     tb = self.get_buffer()
-    tags["bold"] = tb.create_tag("bold", weight=pango.WEIGHT_BOLD)
-    tags["italic"] = tb.create_tag("italic", style=pango.STYLE_ITALIC)
-    tags["link"] = tb.create_tag("link", underline=pango.UNDERLINE_SINGLE,
+    tags["bold"] = tb.create_tag("bold", weight=Pango.Weight.BOLD)
+    tags["italic"] = tb.create_tag("italic", style=Pango.Style.ITALIC)
+    tags["link"] = tb.create_tag("link", underline=Pango.Underline.SINGLE,
                                  foreground="#0000ff")
-    tags["title1"] = tb.create_tag("title1", scale=pango.SCALE_LARGE,
-                                   scale_set=True, weight=pango.WEIGHT_BOLD)
-    tags["title1"] = tb.create_tag("title2", weight=pango.WEIGHT_BOLD)
+    tags["title1"] = tb.create_tag("title1", scale=Pango.SCALE_LARGE,
+                                   scale_set=True, weight=Pango.Weight.BOLD)
+    tags["title1"] = tb.create_tag("title2", weight=Pango.Weight.BOLD)
     tags["code"] = tb.create_tag("code", font="Courier", background="#dfdfff")
 
     self.connect("button-press-event", self.dox_on_click)
@@ -82,12 +82,12 @@ class DoxTextView(gtk.TextView):
     self.connect("realize", self.dox_on_realize)
 
   def dox_on_realize(self, widget):
-    w = self.get_window(gtk.TEXT_WINDOW_TEXT)
+    w = self.get_window(Gtk.TextWindowType.TEXT)
     w.set_cursor(self.dox_cursor_normal)
 
   def dox_get_iter_at_event(self, event):
     wx, wy = map(int, event.get_coords())
-    bx, by = self.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, wx, wy)
+    bx, by = self.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, wx, wy)
     return self.get_iter_at_location(bx, by)
 
   def dox_is_over_link(self, event):
@@ -95,7 +95,7 @@ class DoxTextView(gtk.TextView):
     return it.has_tag(self.dox_tags["link"])
 
   def dox_on_move(self, myself, event):
-    w = self.get_window(gtk.TEXT_WINDOW_TEXT)
+    w = self.get_window(Gtk.TextWindowType.TEXT)
     w.set_cursor(self.dox_cursor_link
                  if self.dox_is_over_link(event)
                  else self.dox_cursor_normal)
@@ -137,15 +137,15 @@ class DoxTextView(gtk.TextView):
         t_piece = type(piece)
         if t_piece == str:
           tb.insert(it, piece)
-        elif t_piece == gtk.TextChildAnchor:
+        elif t_piece == Gtk.TextChildAnchor:
           tb.insert_child_anchor(it, piece)
         else:
           tb.insert_with_tags_by_name(it, *piece)
 
 
-class DoxTable(gtk.Table):
+class DoxTable(Gtk.Table):
   def __init__(self, rows=1, cols=2, on_click_link=None):
-    gtk.Table.__init__(self)
+    GObject.GObject.__init__(self)
     self.dox_cells = []
     self.dox_cur_cell = 0
     self.dox_on_click_link = on_click_link
@@ -169,8 +169,8 @@ class DoxTable(gtk.Table):
     self.dox_cur_cell = 0
 
   def populate(self, rows, title=None,
-               xoptions=gtk.EXPAND|gtk.FILL,
-               yoptions=gtk.FILL,
+               xoptions=Gtk.AttachOptions.EXPAND|Gtk.AttachOptions.FILL,
+               yoptions=Gtk.AttachOptions.FILL,
                xpadding=0, ypadding=0):
     nr_rows = len(rows)
     nr_cols = (len(rows[0]) if nr_rows > 0 else 1)

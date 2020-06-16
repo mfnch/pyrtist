@@ -16,14 +16,14 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Action, Paste
+from .assistant import Action, Paste
 
-import gtk
+from gi.repository import Gtk
 
 class InputTool(object):
   def __init__(self, parent=None, label="Input:"):
-    self.window = w = gtk.Window(gtk.WINDOW_TOPLEVEL)
-    self.border_frame = border_frame = gtk.Frame()
+    self.window = w = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    self.border_frame = border_frame = Gtk.Frame()
 
     self._value = None
     if parent != None:
@@ -31,19 +31,19 @@ class InputTool(object):
       w.set_modal(True)
 
     border_frame.set_border_width(0)
-    border_frame.set_shadow_type(gtk.SHADOW_IN)
+    border_frame.set_shadow_type(Gtk.ShadowType.IN)
 
     w.set_decorated(False)
-    w.set_position(gtk.WIN_POS_MOUSE)
+    w.set_position(Gtk.WindowPosition.MOUSE)
     w.add(border_frame)
 
-    self.widget_vbox = vb = gtk.VBox()
-    self.widget_label = l = gtk.Label(label)
-    self.widget_entry = e = gtk.Entry()
+    self.widget_vbox = vb = Gtk.VBox()
+    self.widget_label = l = Gtk.Label(label=label)
+    self.widget_entry = e = Gtk.Entry()
     e.grab_focus()
 
-    vb.pack_start(l, expand=False)
-    vb.pack_start(e, expand=False)
+    vb.pack_start(l, False, True, 0)
+    vb.pack_start(e, False, True, 0)
     border_frame.add(vb)
 
     # Connect events
@@ -53,15 +53,15 @@ class InputTool(object):
 
   def quit(self):
     self.window.hide()
-    gtk.main_quit()
+    Gtk.main_quit()
 
   def on_key_press(self, widget, event):
-    if event.keyval == gtk.keysyms.Return:
+    if event.keyval == Gdk.KEY_Return:
       self._value = self.widget_entry.get_text()
       self.quit()
       return False
 
-    elif event.keyval == gtk.keysyms.Escape:
+    elif event.keyval == Gdk.KEY_Escape:
       self.quit()
       return False
 
@@ -81,7 +81,7 @@ class InputTool(object):
   def run(self):
     self._value = None
     self.window.show()
-    gtk.main()
+    Gtk.main()
     return self.value
 
 class InputAct(Action):

@@ -27,11 +27,9 @@ __all__ = ["ImageDrawer", "DrawSucceded", "DrawStillWorking", "DrawFailed",
 import os
 import time
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gtk.gdk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
 
 from .config import debug, debug_msg
 from .geom2 import *
@@ -201,7 +199,7 @@ class View(Rectangle):
             int(max(0.0, min(self.view_size[1], py))))
 
 
-class ZoomableArea(gtk.DrawingArea):
+class ZoomableArea(Gtk.DrawingArea):
   set_scroll_adjustment_signal_id = None
 
   def __init__(self, drawer,
@@ -249,10 +247,10 @@ class ZoomableArea(gtk.DrawingArea):
 
     if not ZoomableArea.set_scroll_adjustment_signal_id:
       ZoomableArea.set_scroll_adjustment_signal_id = \
-        gobject.signal_new("set-scroll-adjustment", self.__class__,
-                           gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gtk.Adjustment, gtk.Adjustment))
+        GObject.signal_new("set-scroll-adjustment", self.__class__,
+                           GObject.SignalFlags.RUN_LAST,
+                           None,
+                           (Gtk.Adjustment, Gtk.Adjustment))
 
     self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
 
@@ -391,7 +389,7 @@ class ZoomableArea(gtk.DrawingArea):
     new_bsx, new_bsy = (2*fx + lx, 2*fy + ly)
     debug_msg("DrawableArea has size %s x %s" % (lx, ly))
     debug_msg("Creating buffer with size %s x %s" % (new_bsx, new_bsy))
-    new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
+    new_buf = GdkPixbuf.Pixbuf(GdkPixbuf.Colorspace.RGB, False, 8,
                              new_bsx, new_bsy)
     new_buf.fill(color_background) # we clean it
 
@@ -538,7 +536,7 @@ class ZoomableArea(gtk.DrawingArea):
       new_buf = visible_of_buf.copy()
       dx = visible_of_buf.get_width()
       dy = visible_of_buf.get_height()
-      new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, dx, dy)
+      new_buf = GdkPixbuf.Pixbuf(GdkPixbuf.Colorspace.RGB, False, 8, dx, dy)
       visible_of_buf.copy_area(0, 0, dx, dy, new_buf, 0, 0)
       new_buf.saturate_and_pixelate(new_buf, 0.5, True)
       visible_of_buf = new_buf
@@ -626,10 +624,10 @@ class ZoomableArea(gtk.DrawingArea):
   def scroll_adjustment(self, hadjustment, vadjustment):
     self._hadjustment = hadjustment
     self._vadjustment = vadjustment
-    if isinstance(hadjustment, gtk.Adjustment):
+    if isinstance(hadjustment, Gtk.Adjustment):
       self._hadj_valchanged_handler = \
         hadjustment.connect("value-changed", self._adjustments_changed)
-    if isinstance(vadjustment, gtk.Adjustment):
+    if isinstance(vadjustment, Gtk.Adjustment):
       self._vadj_valchanged_handler = \
         vadjustment.connect("value-changed", self._adjustments_changed)
 

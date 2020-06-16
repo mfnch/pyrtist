@@ -18,7 +18,7 @@
 import math
 import fnmatch
 
-from gtk.gdk import Rectangle
+#from Gtk.gdk import Rectangle
 
 from .geom2 import square_metric, Point, rectangles_overlap
 from .renderer import draw_square, draw_circle, cut_square

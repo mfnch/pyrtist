@@ -21,7 +21,7 @@ import os
 import tempfile
 import atexit
 
-import gtk
+from gi.repository import Gtk
 
 def debug():
   import sys
@@ -53,7 +53,10 @@ platform = p.system()
 platform_is_win = (platform == "Windows")
 platform_is_win_py2exe = main_is_frozen()
 
-import ConfigParser as cfgp
+try:
+  import configparser as cfgp
+except:
+  import ConfigParser as cfgp
 
 # By default this is the text put inside a new program
 # created with File->New
