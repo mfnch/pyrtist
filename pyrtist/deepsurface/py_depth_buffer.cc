@@ -41,7 +41,6 @@ static PyObject* PyDepthBuffer_DrawRadial(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_DrawCrescent(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_ComputeNormals(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args);
-static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args);
 static PyObject* PyDepthBuffer_SaveToFile(PyObject* ib, PyObject* args);
 
 // PyDepthBuffer object methods.
@@ -58,79 +57,45 @@ static PyMethodDef pydepthbuffer_methods[] = {
   {"draw_radial", PyDepthBuffer_DrawRadial, METH_VARARGS},
   {"compute_normals", PyDepthBuffer_ComputeNormals, METH_NOARGS},
   {"save_normals", PyDepthBuffer_SaveNormals, METH_VARARGS},
-  {"get_data", PyDepthBuffer_GetData, METH_NOARGS},
   {"save_to_file", PyDepthBuffer_SaveToFile, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
 
-
-#if PY_MAJOR_VERSION >= 3
 ///////////////////////////////////////////////////////////////////////////////
 // Implement the new buffer API.
 
 static int PyDepthBuffer_GetBuffer(PyObject* exporter,
                                    Py_buffer* view, int flags) {
-  PyErr_SetString(PyExc_BufferError, "ImageBuffer has only one segment");
-  view->obj = nullptr;
-  return -1;
+  PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(exporter);
+  DepthBuffer* db = py_db->depth_buffer;
+  return PyBuffer_FillInfo(view, exporter, db->GetPtr(), db->GetSizeInBytes(),
+                           /* readonly */ 0, flags);
 }
-
-static void PyDepthBuffer_ReleaseBuffer(PyObject* exporter,
-                                        Py_buffer* view) {
-}
-
-static PyBufferProcs depthbuffer_as_buffer = {
-  PyDepthBuffer_GetBuffer,
-  PyDepthBuffer_ReleaseBuffer
-};
-
-#elif PY_MAJOR_VERSION >=2
-///////////////////////////////////////////////////////////////////////////////
-// Implement the old buffer API.
-
-static Py_ssize_t
-PyDepthBuffer_GetReadBuf(PyObject* py_obj, Py_ssize_t segment, void** ptr) {
-  if (segment != 0) {
-    PyErr_SetString(PyExc_SystemError, "DepthBuffer has only one segment");
-    return -1;
-  }
-  DepthBuffer* db = reinterpret_cast<PyDepthBuffer*>(py_obj)->depth_buffer;
-  *ptr = db->GetPtr();
-  return db->GetSizeInBytes();
-}
-
-static Py_ssize_t
-PyDepthBuffer_GetSegCount(PyObject* py_obj, Py_ssize_t* lenp) {
-  if (lenp) {
-    DepthBuffer* db = reinterpret_cast<PyDepthBuffer*>(py_obj)->depth_buffer;
-    *lenp = db->GetSizeInBytes();
-  }
-  return 1;  // Only one segment.
-}
-
-static PyBufferProcs depthbuffer_as_buffer = {
-  PyDepthBuffer_GetReadBuf,
-  PyDepthBuffer_GetReadBuf,
-  PyDepthBuffer_GetSegCount,
-  nullptr,
-};
-#else
-#  error "Unsupported Python version"
-#endif
 
 PyTypeObject* PyDepthBuffer_GetType() {
   struct Setter {
-    Setter() : py_type{PyObject_HEAD_INIT(NULL)} {
+    Setter()
+        : buffer_procs{},
+          py_type{PyObject_HEAD_INIT(NULL)} {
+      // Set the buffer protocol functions.
+      buffer_procs.bf_getbuffer = PyDepthBuffer_GetBuffer;
+
+      // Set the type struct.
       auto& t = py_type;
       t.tp_name = "deepsurface.DepthBuffer";
       t.tp_basicsize = sizeof(PyDepthBuffer);
       t.tp_dealloc = PyDepthBuffer_Dealloc;
-      t.tp_as_buffer = &depthbuffer_as_buffer;
+      t.tp_as_buffer = &buffer_procs;
+#if PY_MAJOR_VERSION >= 3
       t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+#else
+      t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_NEWBUFFER;
+#endif
       t.tp_methods = pydepthbuffer_methods;
       t.tp_new = PyDepthBuffer_New;
     }
 
+    PyBufferProcs buffer_procs;
     PyTypeObject py_type;
   };
 
@@ -386,10 +351,6 @@ static PyObject* PyDepthBuffer_SaveNormals(PyObject* db, PyObject* args) {
   if (success)
     Py_RETURN_TRUE;
   Py_RETURN_FALSE;
-}
-
-static PyObject* PyDepthBuffer_GetData(PyObject* db, PyObject* args) {
-  return nullptr; // TODO: PyBuffer_FromReadWriteObject(db, 0, Py_END_OF_BUFFER);
 }
 
 static PyObject* PyDepthBuffer_SaveToFile(PyObject* db, PyObject* args) {

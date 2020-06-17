@@ -26,87 +26,51 @@ static PyObject* PyImageBuffer_New(PyTypeObject* type,
 static void PyImageBuffer_Dealloc(PyObject* py_obj);
 static PyObject* PyImageBuffer_SetFromString(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject* args);
-static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args);
 static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args);
 
 // PyImageBuffer object methods.
 static PyMethodDef pyimagebuffer_methods[] = {
   {"set_from_string", PyImageBuffer_SetFromString, METH_VARARGS},
   {"clear", PyImageBuffer_Clear, METH_NOARGS},
-  {"get_data", PyImageBuffer_GetData, METH_NOARGS},
   {"save_to_file", PyImageBuffer_SaveToFile, METH_VARARGS},
   {NULL, NULL, 0, NULL}
 };
 
-#if PY_MAJOR_VERSION >= 3
 ///////////////////////////////////////////////////////////////////////////////
 // Implement the new buffer API.
 
 static int PyImageBuffer_GetBuffer(PyObject* exporter,
                                    Py_buffer* view, int flags) {
-  PyErr_SetString(PyExc_BufferError, "ImageBuffer has only one segment");
-  view->obj = nullptr;
-  return -1;
+  PyImageBuffer* py_ib = reinterpret_cast<PyImageBuffer*>(exporter);
+  ARGBImageBuffer* ib = py_ib->image_buffer;
+  return PyBuffer_FillInfo(view, exporter, ib->GetPtr(), ib->GetSizeInBytes(),
+                           /* readonly */ 0, flags);
 }
-
-static void PyImageBuffer_ReleaseBuffer(PyObject* exporter,
-                                        Py_buffer* view) {
-}
-
-static PyBufferProcs imagebuffer_as_buffer = {
-  PyImageBuffer_GetBuffer,
-  PyImageBuffer_ReleaseBuffer
-};
-
-#elif PY_MAJOR_VERSION >=2
-///////////////////////////////////////////////////////////////////////////////
-// Implement the old buffer API.
-
-static Py_ssize_t
-PyImageBuffer_GetReadBuf(PyObject* py_obj, Py_ssize_t segment, void** ptr) {
-  if (segment != 0) {
-    PyErr_SetString(PyExc_SystemError, "ImageBuffer has only one segment");
-    return -1;
-  }
-  ARGBImageBuffer* ib = reinterpret_cast<PyImageBuffer*>(py_obj)->image_buffer;
-  *ptr = ib->GetPtr();
-  return ib->GetSizeInBytes();
-}
-
-static Py_ssize_t
-PyImageBuffer_GetSegCount(PyObject* py_obj, Py_ssize_t* lenp) {
-  if (lenp) {
-    ARGBImageBuffer* ib =
-      reinterpret_cast<PyImageBuffer*>(py_obj)->image_buffer;
-    *lenp = ib->GetSizeInBytes();
-  }
-  return 1;  // Only one segment.
-}
-
-static PyBufferProcs imagebuffer_as_buffer = {
-  PyImageBuffer_GetReadBuf,
-  PyImageBuffer_GetReadBuf,
-  PyImageBuffer_GetSegCount,
-  nullptr,
-};
-
-#else
-#  error "Unsupported Python version"
-#endif
 
 PyTypeObject* PyImageBuffer_GetType() {
   struct Setter {
-    Setter() : py_type{PyObject_HEAD_INIT(NULL)} {
+    Setter()
+        : buffer_procs{},
+          py_type{PyObject_HEAD_INIT(NULL)} {
+      // Set the buffer protocol functions.
+      buffer_procs.bf_getbuffer = PyImageBuffer_GetBuffer;
+
+      // Set the type struct.
       auto& t = py_type;
       t.tp_name = "deepsurface.ImageBuffer";
       t.tp_basicsize = sizeof(PyImageBuffer);
       t.tp_dealloc = PyImageBuffer_Dealloc;
-      t.tp_as_buffer = &imagebuffer_as_buffer;
+      t.tp_as_buffer = &buffer_procs;
+#if PY_MAJOR_VERSION >= 3
       t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+#else
+      t.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_NEWBUFFER;
+#endif
       t.tp_methods = pyimagebuffer_methods;
       t.tp_new = PyImageBuffer_New;
     }
 
+    PyBufferProcs buffer_procs;
     PyTypeObject py_type;
   };
 
@@ -239,10 +203,6 @@ static PyObject* PyImageBuffer_Clear(PyObject* ib, PyObject*) {
   PyImageBuffer* py_ib = reinterpret_cast<PyImageBuffer*>(ib);
   py_ib->image_buffer->Clear();
   Py_RETURN_NONE;
-}
-
-static PyObject* PyImageBuffer_GetData(PyObject* ib, PyObject* args) {
-  return nullptr;  //TODO: PyBuffer_FromReadWriteObject(ib, 0, Py_END_OF_BUFFER);
 }
 
 static PyObject* PyImageBuffer_SaveToFile(PyObject* ib, PyObject* args) {

@@ -131,7 +131,7 @@ class CmdExecutor(object):
         height = self.deep_surface.get_height()
         image_buffer = self.deep_surface.take_image_buffer()
         cairo_surface = \
-          cairo.ImageSurface.create_for_data(image_buffer.get_data(),
+          cairo.ImageSurface.create_for_data(memoryview(image_buffer),
                                              cairo.FORMAT_ARGB32,
                                              width, height, width*4)
         target = CairoCmdExecutor(cairo_surface,

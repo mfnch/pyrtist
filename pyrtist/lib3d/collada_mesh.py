@@ -109,8 +109,8 @@ class ColladaMesh(Mesh):
                     tmp = cairo.ImageSurface(cairo.FORMAT_ARGB32,
                                              pil_image.size[0],
                                              pil_image.size[1])
-                    tmp_data = tmp.get_data()
-                    img_data = image_obj.get_data()
+                    tmp_data = memoryview(tmp)
+                    img_data = memoryview(image_obj)
                     tmp_data[:] = img_data[:]
                     tmp.write_to_png('/tmp/{}.png'.format(idx))
 
