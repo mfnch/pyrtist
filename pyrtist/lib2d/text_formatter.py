@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -14,7 +14,7 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-from cStringIO import StringIO
+from io import StringIO
 
 __all__ = ('TextFormatter',)
 
@@ -37,7 +37,7 @@ class TextFormatter(object):
 
     def pop_text(self):
         ret = self.out.getvalue()
-        self.out.reset()
+        self.out = StringIO()
         self.out.truncate()
         return ret
 

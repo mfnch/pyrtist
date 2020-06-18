@@ -45,7 +45,7 @@ def fn(close, curve):
 def curve_at_path(curve, path):
     if len(curve.tris) >= 2:
         tris = iter(curve.tris)
-        prev_tri = first_tri = tris.next()
+        prev_tri = first_tri = next(tris)
         path.cmd_stream.take(Cmd(Cmd.move_to, first_tri.p))
 
         for tri in tris:

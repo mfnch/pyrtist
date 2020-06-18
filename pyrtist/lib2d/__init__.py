@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -34,4 +34,4 @@ from .gradient import *
 from .style import *
 from .bbox import BBox
 from .cairo_cmd_exec import *
-from prefabs import arrows
+from .prefabs import arrows

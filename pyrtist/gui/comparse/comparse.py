@@ -152,7 +152,7 @@ class Parser(object):
     comments = []             # Store recursive comments descriptors
 
     while True:
-      token = tok.next()
+      token = next(tok)
       token_start, token_end = tok.token
 
       if state == STATE_SOURCE:

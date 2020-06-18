@@ -82,7 +82,7 @@ def style_at_line(child, line):
 def line_at_path(line, path):
     if len(line) > 0:
         points = iter(line)
-        path.cmd_stream.take(Cmd(Cmd.move_to, points.next()))
+        path.cmd_stream.take(Cmd(Cmd.move_to, next(points)))
         path.cmd_stream.take(Cmd(Cmd.line_to, point) for point in points)
         if line.close:
             path.cmd_stream.take(Cmd(Cmd.close_path))
@@ -119,7 +119,7 @@ def line_at_window(line, window):
 
     final_idx = len(line.points) - 1
     point_iter = enumerate(line.points)
-    start_idx, start_point = point_iter.next()
+    start_idx, start_point = next(point_iter)
     for end_idx, end_point in point_iter:
         if start_idx == 0:
             if start_idx in line.arrows:

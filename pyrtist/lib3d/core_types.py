@@ -102,6 +102,8 @@ class Point3(object):
     def __div__(self, value):
         return self.__class__(self.x/value, self.y/value, self.z/value)
 
+    __truediv__ = __div__
+
     def copy(self):
         'Return a copy of the point.'
         return Point3(self.x, self.y, self.z)
