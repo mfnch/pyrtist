@@ -37,7 +37,7 @@ class TextFormatter(object):
 
     def pop_text(self):
         ret = self.out.getvalue()
-        self.out.reset()
+        self.out = StringIO()
         self.out.truncate()
         return ret
 

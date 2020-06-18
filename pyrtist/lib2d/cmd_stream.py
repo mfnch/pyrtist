@@ -39,7 +39,7 @@ class CmdBase(object):
         if len(self.args) < 1:
             return 'Cmd()'
         args = iter(self.args)
-        cmd_nr = args.next()
+        cmd_nr = next(args)
         arg_strs = ['Cmd.{}'.format(self.names[cmd_nr])
                     if 0 <= cmd_nr < len(self.names) else '???']
         arg_strs.extend(str(arg) for arg in args)
@@ -56,7 +56,7 @@ class CmdBase(object):
         function.
         '''
         args = iter(self.args)
-        new_args = [args.next()]
+        new_args = [next(args)]
         for arg in args:
             new_args.append(arg_filter(arg))
         return self.__class__(*new_args)

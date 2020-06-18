@@ -195,6 +195,8 @@ class Point(object):
     def __div__(self, value):
         return Point(x=self.x/value, y=self.y/value)
 
+    __truediv__ = __div__
+
     def copy(self):
         return Point(x=self.x, y=self.y)
 
