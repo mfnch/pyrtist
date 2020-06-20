@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2017 Matteo Franchin
+# Copyright (C) 2012-2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -102,6 +102,6 @@ features = \
                            available=bool(cython_modules),
                            ext_modules=cython_modules)}
 cfg.update(features=features,
-           entry_points={'console_scripts': ['pyrtist=pyrtist:main']})
+           entry_points={'console_scripts': ['pyrtist=pyrtist.gui:main']})
 
 setup(**cfg)
