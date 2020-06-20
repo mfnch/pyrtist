@@ -130,8 +130,10 @@ class CmdExecutor(object):
         width = self.deep_surface.get_width()
         height = self.deep_surface.get_height()
         image_buffer = self.deep_surface.take_image_buffer()
+        # Note: ImageSurface.create_for_data is available for Python 3 in
+        # pycairo 1.16 but not in 1.10, for example.
         cairo_surface = \
-          cairo.ImageSurface.create_for_data(memoryview(image_buffer),
+          cairo.ImageSurface.create_for_data(image_buffer,
                                              cairo.FORMAT_ARGB32,
                                              width, height, width*4)
         target = CairoCmdExecutor(cairo_surface,

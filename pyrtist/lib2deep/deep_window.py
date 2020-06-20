@@ -65,7 +65,9 @@ class DeepWindowRenderer(object):
             db = deep_surface.get_dst_image_buffer()
 
         src_data = memoryview(db)
-        dst_data = memoryview(target_surface)
+        dst_data = target_surface.get_data()
+        if not isinstance(dst_data, memoryview):
+            dst_data = memoryview(dst_data)
         dst_data[:] = src_data[:]
         return View(bb, origin, size)
 

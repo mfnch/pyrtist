@@ -64,8 +64,9 @@ static PyMethodDef pydepthbuffer_methods[] = {
 ///////////////////////////////////////////////////////////////////////////////
 // Implement the new buffer API.
 
-static int PyDepthBuffer_GetBuffer(PyObject* exporter,
-                                   Py_buffer* view, int flags) {
+static int
+PyDepthBuffer_GetBuffer(PyObject* exporter,
+                        Py_buffer* view, int flags) {
   PyDepthBuffer* py_db = reinterpret_cast<PyDepthBuffer*>(exporter);
   DepthBuffer* db = py_db->depth_buffer;
   return PyBuffer_FillInfo(view, exporter, db->GetPtr(), db->GetSizeInBytes(),
@@ -106,7 +107,7 @@ PyTypeObject* PyDepthBuffer_GetType() {
 ///////////////////////////////////////////////////////////////////////////////
 
 PyObject* PyDepthBuffer_FromC(PyTypeObject* type, DepthBuffer* db,
-                             PyObject* base) {
+                              PyObject* base) {
   if (!db->IsValid()) {
     // Destroy db and raise an exception.
     delete db;
