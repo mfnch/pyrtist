@@ -320,7 +320,7 @@ class DoxTree(DoxParentNode):
     return node
 
   def _build_links(self):
-    for proc in self.procs.itervalues():
+    for proc in self.procs.values():
       missing = proc.link_types(self.types)
       if missing:
         names_missing = map(str, missing)
@@ -335,7 +335,7 @@ class DoxTree(DoxParentNode):
     new_types = []
     found_subtypes = []
 
-    for t_name, t in self.types.iteritems():
+    for t_name, t in self.types.items():
       if t.subtype_parent != None:
         found_subtypes.append(t_name)
         stp_name = t.subtype_parent
@@ -351,11 +351,11 @@ class DoxTree(DoxParentNode):
 
   def _build_section_list(self):
     self.sections = sections = {}
-    for p in self.procs.itervalues():
+    for p in self.procs.values():
       sections.setdefault(p.get_section(), []).append(p)
-    for t in self.types.itervalues():
+    for t in self.types.values():
       sections.setdefault(t.get_section(), []).append(t)
-    for i in self.instances.itervalues():
+    for i in self.instances.values():
       sections.setdefault(i.get_section(), []).append(i)
 
   def process(self):

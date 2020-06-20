@@ -57,7 +57,7 @@ class RSTWriter(Writer):
     encountered_types = {}
     duplicate_types = {}
     ts = self.tree.types
-    for t_name, t in ts.iteritems():
+    for t_name, t in ts.items():
       normalized_name = rst_normalize(t_name)
       dups = encountered_types.setdefault(normalized_name, [])
       dups.append(t)
@@ -66,7 +66,7 @@ class RSTWriter(Writer):
         duplicate_types[normalized_name] = dups
 
     type_name_map = self.type_name_map
-    for t_name, dups in duplicate_types.iteritems():
+    for t_name, dups in duplicate_types.items():
       for i, t in enumerate(dups):
         unique_name = t_name + str(i)
         type_name_map[str(t)] = unique_name

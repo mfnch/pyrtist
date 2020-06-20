@@ -201,8 +201,8 @@ class BoxerWindowSettings(object):
 
   def _apply_changes(self):
     self._save_tab_settings()
-    for section, section_dict in self.option_changed_vals.iteritems():
-      for option, val in section_dict.iteritems():
+    for section, section_dict in self.option_changed_vals.items():
+      for option, val in section_dict.items():
         desc = self.config.get_desc(section, option)
         self.config.set(section, option, str(desc.set(val)))
 

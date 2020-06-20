@@ -85,7 +85,7 @@ class Settings(object):
     # We could check whether the old value is the same and avoid setting
     # but don't think this will make much difference here
     layer = self.layers[-1]
-    for key, value in props.iteritems():
+    for key, value in props.items():
       layer[key] = value
 
   def set_prop(self, name, value):
@@ -763,14 +763,14 @@ class Pyrtist(object):
     return self.widget_pastenewbutton.get_active()
 
   def set_props(self, **props):
-    for key, value in props.iteritems():
+    for key, value in props.items():
       if key == "paste_point":
         self.widget_pastenewbutton.set_active(value)
       else:
         self.settings.set_prop(key, value)
 
   def do(self, **props):
-    for key, value in props.iteritems():
+    for key, value in props.items():
       if key == "push_settings":
         self.settings.push()
       elif key == "pop_settings":

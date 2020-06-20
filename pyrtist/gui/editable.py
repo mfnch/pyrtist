@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2017 Matteo Franchin
+# Copyright (C) 2010-2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -119,7 +119,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     for rp in self.document.refpoints:
       yield rp
     if include_dragged and self._dragged_refpoints is not None:
-      for rp in self._dragged_refpoints.initial_points.itervalues():
+      for rp in self._dragged_refpoints.initial_points.values():
         yield rp
 
   def _realize(self, myself):

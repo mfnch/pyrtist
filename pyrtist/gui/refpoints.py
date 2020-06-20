@@ -364,7 +364,7 @@ class RefPoints(object):
 
   def clear_selection(self):
     """Clear the current selection of RefPoint-s."""
-    for rp in self.selection.itervalues():
+    for rp in self.selection.values():
       rp.selected = REFPOINT_UNSELECTED
     self.selection = {}
 

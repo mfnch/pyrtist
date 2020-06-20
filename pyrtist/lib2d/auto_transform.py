@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class AutoTransform(object):
     def is_auto(self):
         'Whether any auto transformation is set.'
 
-        for full in AutoTransform.var_mapping.itervalues():
+        for full in AutoTransform.var_mapping.values():
             if getattr(self, full):
                 return True
         return False
@@ -101,7 +101,7 @@ class AutoTransform(object):
         '''
 
         s = ''
-        for short, full in AutoTransform.var_mapping.iteritems():
+        for short, full in AutoTransform.var_mapping.items():
             if getattr(self, full):
                 s += short
         return s

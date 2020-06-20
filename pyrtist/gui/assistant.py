@@ -219,7 +219,7 @@ class Assistant(object):
   def __init__(self, main_mode):
     self.main_mode = main_mode
     self.start()
-    self.permanent_modes = filter(lambda m: m.permanent, main_mode.submodes)
+    self.permanent_modes = [m for m in main_mode.submodes if m.permanent]
     self.window = None
     self.textview = None
     self.textbuffer = None
@@ -254,7 +254,7 @@ class Assistant(object):
   def choose(self, new_mode):
     """Choose a submode from the ones available in the current mode."""
     modes = self.get_available_modes()
-    mode_names = map(lambda m: m.name, modes)
+    mode_names = [m.name for m in modes]
 
     # Add mode to opened modes
     try:
@@ -333,8 +333,8 @@ class Assistant(object):
     """Return the buttons which should be currently displayed."""
     perm_modes = self.permanent_modes
     av_modes = self.get_available_modes()
-    other_modes = filter(lambda m: m not in perm_modes, av_modes)
-    return filter(lambda m: m.button != None, perm_modes + other_modes)
+    other_modes = [m for m in av_modes if m not in perm_modes]
+    return [m for m in perm_modes + other_modes if m.button is not None]
 
   def get_current_mode(self):
     """Return the mode currently selected."""

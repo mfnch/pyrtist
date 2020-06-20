@@ -456,7 +456,7 @@ class Configurable(object):
       "no value given for name %s" % nameval_list[-1]
     for i in range(0, n/2, 2):
       self._config.setdefault(nameval_list[i], nameval_list[i + 1])
-    for name, val in nameval_dict.iteritems():
+    for name, val in nameval_dict.items():
       self._config.setdefault(name, val)
 
   def get_config(self, name, opt=None):
