@@ -23,8 +23,7 @@ Here we provide a Python interface to call Python and get back a view
 import os
 import time
 
-import gtk.gdk
-from gtk.gdk import pixbuf_new_from_file
+from gi.repository import Gdk, GdkPixbuf
 
 from . import config
 from .callbacks import Callbacks
@@ -72,8 +71,8 @@ class PyImageDrawer(ImageDrawer):
         if self._image_data is not None:
           stride, width, height, data = self._image_data
           self._image_data = None
-          pixbuf = gtk.gdk.pixbuf_new_from_data(data, gtk.gdk.COLORSPACE_RGB,
-                                                False, 8, width, height, stride)
+          pixbuf = GdkPixbuf.Pixbuf.new_from_data(data, GdkPixbuf.Colorspace.RGB,
+                                                  False, 8, width, height, stride)
           sx = pixbuf.get_width()
           sy = pixbuf.get_height()
           pixbuf.copy_area(0, 0, sx, sy, self._pixbuf_output, 0, 0)
@@ -90,8 +89,12 @@ class PyImageDrawer(ImageDrawer):
     if method is None:
       return
     if name in ('exit', 'out'):
-      with gtk.gdk.lock:
+      try:
+        Gdk.threads_enter()
         method(*args)
+      finally:
+        Gdk.threads_leave()
+
     else:
       method(*args)
 
@@ -142,7 +145,7 @@ class PyImageDrawer(ImageDrawer):
     # lock of the GTK threads, otherwise the other threads will be waiting
     # for this one (which is having a very high time per Python opcode...)
     try:
-      gtk.gdk.threads_leave()
+      Gdk.threads_leave()
 
       for i in range(10):
         if not self._executing:
@@ -150,7 +153,7 @@ class PyImageDrawer(ImageDrawer):
         time.sleep(0.05)
 
     finally:
-      gtk.gdk.threads_enter()
+      Gdk.threads_enter()
 
     if self._executing:
       return DrawStillWorking(self, killer)

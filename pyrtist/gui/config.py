@@ -21,7 +21,7 @@ import os
 import tempfile
 import atexit
 
-import gtk
+from gi.repository import Gtk
 
 def debug():
   import sys
@@ -53,7 +53,10 @@ platform = p.system()
 platform_is_win = (platform == "Windows")
 platform_is_win_py2exe = main_is_frozen()
 
-import ConfigParser as cfgp
+try:
+  import configparser as cfgp
+except:
+  import ConfigParser as cfgp
 
 # By default this is the text put inside a new program
 # created with File->New
@@ -270,7 +273,7 @@ class EnumOption(ConfigOption):
 class BoxerConfigParser(cfgp.SafeConfigParser):
   def __init__(self, defaults=None, default_config=[],
                user_cfg_file=None):
-    cfgp.SafeConfigParser.__init__(self, defaults)
+    super(BoxerConfigParser, self).__init__(defaults)
 
     # Generate default configuration
     default_config_dict = {}
@@ -311,13 +314,12 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
     """Get a description for the option in the section."""
     return self._option_descs[section][option]
 
-  def get(self, section, option, raw=False, vars=None):
+  def get(self, section, option, **kwargs):
     if (not self.has_option(section, option)
         and self.has_default_option(section, option)):
       return self._default_config[section][option]
-
     else:
-      return cfgp.SafeConfigParser.get(self, section, option, raw, vars)
+      return super(BoxerConfigParser, self).get(section, option, **kwargs)
 
   def remove_option(self, section, option):
     if self.has_option(section, option):
@@ -445,7 +447,7 @@ class Configurable(object):
     n = len(nameval_list)
     assert n % 2 == 0, \
       "no value given for name %s" % nameval_list[-1]
-    for i in range(0, n/2, 2):
+    for i in range(0, n // 2, 2):
       self._config[nameval_list[i]] = nameval_list[i + 1]
     self._config.update(nameval_dict)
 
@@ -454,7 +456,7 @@ class Configurable(object):
     n = len(nameval_list)
     assert n % 2 == 0, \
       "no value given for name %s" % nameval_list[-1]
-    for i in range(0, n/2, 2):
+    for i in range(0, n // 2, 2):
       self._config.setdefault(nameval_list[i], nameval_list[i + 1])
     for name, val in nameval_dict.items():
       self._config.setdefault(name, val)

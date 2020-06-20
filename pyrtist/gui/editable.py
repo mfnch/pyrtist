@@ -22,7 +22,7 @@ the Boxer reference points and allows the user to insert/move/... them.
 
 import sys
 
-import gtk
+from gi.repository import Gtk, Gdk
 
 from .config import Configurable
 from .callbacks import Callbacks
@@ -104,9 +104,9 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
                             refpoint_size=4, redraw_on_move=True)
 
     # Enable events and connect signals
-    mask = (gtk.gdk.POINTER_MOTION_MASK |
-            gtk.gdk.BUTTON_PRESS_MASK |
-            gtk.gdk.BUTTON_RELEASE_MASK)
+    mask = (Gdk.EventMask.POINTER_MOTION_MASK |
+            Gdk.EventMask.BUTTON_PRESS_MASK |
+            Gdk.EventMask.BUTTON_RELEASE_MASK)
     self.add_events(mask)
     self.connect("realize", self._realize)
     self.connect("button-press-event", self._on_button_press_event)
@@ -130,17 +130,17 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     sel_gc = self.window.new_gc()
     sel_gc.copy(self.style.white_gc)
     colormap = sel_gc.get_colormap()
-    sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(65535, 65535, 0))
+    sel_gc.foreground = colormap.alloc_color(Gdk.Color(65535, 65535, 0))
 
     drag_gc = self.window.new_gc()
     drag_gc.copy(self.style.white_gc)
     colormap = drag_gc.get_colormap()
     drag_gc.foreground = \
-      colormap.alloc_color(gtk.gdk.Color(32767, 65535, 32767))
+      colormap.alloc_color(Gdk.Color(32767, 65535, 32767))
 
     line_gc = self.window.new_gc()
     line_gc.copy(self.style.white_gc)
-    line_gc.set_function(gtk.gdk.XOR)
+    line_gc.set_function(Gdk.XOR)
 
     self.set_config_default(refpoint_gc=unsel_gc,
                             refpoint_sel_gc=sel_gc,
@@ -282,7 +282,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     if clip_rect is not None:
       new_args = list(args)
       for i, arg in enumerate(args):
-        if isinstance(arg, gtk.gdk.GC):
+        if isinstance(arg, Gdk.GC):
           new_arg = self.window.new_gc()
           new_arg.copy(arg)
           new_arg.set_clip_rectangle(clip_rect)
@@ -377,8 +377,8 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       rp = picked[0]
       self.callbacks.call("refpoint_pick", self, rp)
 
-    shift_pressed = (state & gtk.gdk.SHIFT_MASK)
-    ctrl_pressed = (state & gtk.gdk.CONTROL_MASK)
+    shift_pressed = (state & Gdk.ModifierType.SHIFT_MASK)
+    ctrl_pressed = (state & Gdk.ModifierType.CONTROL_MASK)
     if event.button == self.get_config("button_left"):
       if rp is not None:
         if ctrl_pressed and not shift_pressed and rp.can_procreate():

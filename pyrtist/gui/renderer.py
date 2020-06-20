@@ -19,7 +19,7 @@
 Renderer routines to draw the refpoints.
 """
 
-from geom2 import Point
+from .geom2 import Point
 
 
 def cut_point(size, x, y):

@@ -86,7 +86,7 @@ class GUIGate(object):
 
     def _tx_cmd_image_data(self, sf):
         data = numpy.frombuffer(sf.get_data(), dtype=numpy.int8).reshape(-1, 4)
-        data = str(numpy.getbuffer(numpy.fliplr(data[:, :3]).ravel()))
+        data = bytes(numpy.fliplr(data[:, :3]).ravel())
         args = (sf.get_stride() / 4 * 3, sf.get_width(), sf.get_height(), data)
         self._gui_tx_pipe.send(('image_data', args))
 

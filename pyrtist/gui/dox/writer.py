@@ -126,7 +126,7 @@ class Writer(object):
 
         if identifier == "type":
           if arg in [".@", "@."] and isinstance(target, DoxProc):
-            t = (target.child if arg == ".@" else target.parent)
+            t = (target.get_child() if arg == ".@" else target.parent)
           elif arg == "." and isinstance(target, DoxType):
             t = target
           else:
@@ -141,7 +141,7 @@ class Writer(object):
             for i, item_in in enumerate(child_parent_in):
               if item_in == ".":
                 if isinstance(target, DoxProc):
-                  target_child_parent = [target.child, target.parent]
+                  target_child_parent = [target.get_child(), target.parent]
                   t = target_child_parent[i]
                 else:
                   t = None

@@ -33,7 +33,7 @@ _typedef_re = re.compile(r'\s*([A-Z][A-Za-z0-9_.\s]*)[=]')
 _instdef_re = re.compile(r'\s*([a-z][A-Za-z0-9_.\s]*)[=]')
 _procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_\s.]*)')
 
-  
+
 def dox_classify_code(line):
   '''Parse the line and return a DoxType, a DoxInstance , a DoxProc or None
   depending on whether the line represents a type definition, a procedure
@@ -264,18 +264,18 @@ class DoxProc(DoxTreeNode):
 
   def __init__(self, child, parent, *args, **kwargs):
     DoxTreeNode.__init__(self, *args, **kwargs)
-    self.child = child
+    #self.get_child() = child
     self.parent = parent
 
   def __repr__(self):
-    return 'DoxProc("%s", "%s")' % (self.child, self.parent)
+    return 'DoxProc("%s", "%s")' % (self.get_child(), self.parent)
 
   def __str__(self):
-    return "%s@%s" % (self.child, self.parent)
+    return "%s@%s" % (self.get_child(), self.parent)
 
   def link_types(self, types):
     parent = types.get(self.parent, None)
-    child = types.get(self.child, None)
+    child = types.get(self.get_child(), None)
 
     # If the types are missing, create them and put them in the same section.
     missing = []
@@ -285,7 +285,7 @@ class DoxProc(DoxTreeNode):
         missing.append(parent)
 
     if child == None:
-      child = DoxType(self.child, section=self.section)
+      child = DoxType(self.get_child(), section=self.section)
       if not child.is_anonymous():
         missing.append(child)
 

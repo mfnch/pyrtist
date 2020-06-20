@@ -1,4 +1,4 @@
-# Copyright (C) 2010
+# Copyright (C) 2010, 2020
 #  by Matteo Franchin (fnch@users.sourceforge.net)
 #
 # This file is part of Pyrtist.
@@ -16,7 +16,7 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+from gi.repository import Gtk
 
 class RotPaned(object):
   def __init__(self, child1=None, child2=None, rotation=0):
@@ -31,30 +31,25 @@ class RotPaned(object):
     self.rotate(rotation)
 
   def get_vpaned(self):
-    if self._vpaned != None:
+    if self._vpaned is not None:
       return self._vpaned
-
-    else:
-      self._vpaned = vp = gtk.VPaned()
-      return vp
+    self._vpaned = vp = Gtk.VPaned()
+    return vp
 
   def get_hpaned(self):
-    if self._hpaned != None:
+    if self._hpaned is not None:
       return self._hpaned
-
-    else:
-      self._hpaned = hp = gtk.HPaned()
-      return hp
+    self._hpaned = hp = Gtk.HPaned()
+    return hp
 
   def get_container(self):
-    if self._container != None:
+    if self._container is not None:
       return self._container
-    else:
-      self._container = hb = gtk.HBox()
-      return hb
+    self._container = hb = Gtk.HBox()
+    return hb
 
   def rotate(self, rotation=None):
-    if rotation == None:
+    if rotation is None:
       rotation = (self.rotation + 1) % 4
     else:
       rotation = rotation % 4
@@ -64,10 +59,10 @@ class RotPaned(object):
 
     # Hide all object in main container before doing modifications
     container = self.get_container()
-    container.hide_all()
+    container.hide()
 
     # Remove children in previous paned
-    if prev_paned != None:
+    if prev_paned is not None:
       for child in prev_paned.get_children():
         prev_paned.remove(child)
 
@@ -76,13 +71,16 @@ class RotPaned(object):
     else:
       c1, c2 = (self.child2, self.child1)
 
-    cur_paned.pack1(c1, resize=True, shrink=True)
-    cur_paned.pack2(c2, resize=True, shrink=True)
+    do_resize = do_shrink = True
+    cur_paned.pack1(c1, do_resize, do_shrink)
+    cur_paned.pack2(c2, do_resize, do_shrink)
 
     # Show the right paned on the main container
     for child in container.get_children():
       container.remove(child)
-    container.pack_start(cur_paned)
+    do_expand = do_fill = True
+    zero_padding = 0
+    container.pack_start(cur_paned, do_expand, do_fill, zero_padding)
 
     container.show_all()
 

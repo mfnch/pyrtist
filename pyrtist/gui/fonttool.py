@@ -18,11 +18,11 @@
 
 import os
 
-import gtk
+from gi.repository import Gtk
 
-import config
-from toolbox import ToolBox, Button
-from assistant import Assistant, Mode, Action, CallAction, Paste
+from . import config
+from .toolbox import ToolBox, Button
+from .assistant import Assistant, Mode, Action, CallAction, Paste
 
 def create_font_modes(exit_action):
   default_fonts = [
@@ -70,14 +70,14 @@ def create_font_modes(exit_action):
 
 class FontTool(object):
   def __init__(self, parent=None, label="Input:"):
-    self.window = w = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.window = w = Gtk.Window(Gtk.WindowType.TOPLEVEL)
     self._value = None
     if parent != None:
       w.set_transient_for(parent)
       w.set_modal(True)
 
     w.set_decorated(False)
-    w.set_position(gtk.WIN_POS_MOUSE)
+    w.set_position(Gtk.WindowPosition.MOUSE)
 
     # Connect events
     self.window.connect("key-press-event", self.on_key_press)
@@ -102,15 +102,15 @@ class FontTool(object):
 
   def quit(self):
     self.window.hide()
-    gtk.main_quit()
+    Gtk.main_quit()
 
   def on_key_press(self, widget, event):
-    if event.keyval == gtk.keysyms.Return:
+    if event.keyval == Gdk.KEY_Return:
       self._value = self.widget_entry.get_text()
       self.quit()
       return False
 
-    elif event.keyval == gtk.keysyms.Escape:
+    elif event.keyval == Gdk.KEY_Escape:
       self.quit()
       return False
 
@@ -130,7 +130,7 @@ class FontTool(object):
   def run(self):
     self._value = None
     self.window.show()
-    gtk.main()
+    Gtk.main()
     return self.value
 
 

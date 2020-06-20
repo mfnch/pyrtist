@@ -18,10 +18,10 @@
 import os
 import types
 
-import gtk
+from gi.repository import Gtk
 
-import config
-import assistant
+from . import config
+from . import assistant
 
 def build_icon_path(filename, icon_path=None):
   if icon_path == None:
@@ -44,16 +44,16 @@ class Button(assistant.Button):
     if self.filename:
       icon_filename = build_icon_path(self.filename, icon_path=icon_path)
       if os.path.exists(icon_filename):
-        img = gtk.Image()
+        img = Gtk.Image()
         img.set_from_file(icon_filename)
 
     # Create the button
     if img != None:
-      b = gtk.Button()
+      b = Gtk.Button()
       b.set_image(img)
 
     else:
-      b = gtk.Button(self.name)
+      b = Gtk.Button(self.name)
 
     if tooltip != None:
       b.set_tooltip_text(tooltip)
@@ -65,16 +65,16 @@ class HelpAct(assistant.Action):
     self.help_text = help_text
 
   def execute(self, parent):
-    md = gtk.MessageDialog(parent=parent.window,
+    md = Gtk.MessageDialog(parent=parent.window,
                            flags=0,
-                           type=gtk.MESSAGE_INFO,
-                           buttons=gtk.BUTTONS_OK,
+                           type=Gtk.MessageType.INFO,
+                           buttons=Gtk.ButtonsType.OK,
                            message_format=self.help_text)
     _ = md.run()
     md.destroy()
 
 
-class ToolBox(gtk.Table):
+class ToolBox(Gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
                size_request=(-1, -1), config=None, icon_path=None):
     self.config = config
@@ -82,8 +82,8 @@ class ToolBox(gtk.Table):
     self.columns = columns
     self.assistant = assistant
     rows = self._compute_rows_from_cols()
-    gtk.Table.__init__(self, rows=rows, columns=columns,
-                       homogeneous=homogeneous)
+    super(ToolBox, self).__init__(self, rows=rows, columns=columns,
+                                  homogeneous=homogeneous)
     self._update_buttons()
     self.set_size_request(*size_request)
 

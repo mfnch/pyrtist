@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2010, 2017  Matteo Franchin
+# Copyright (C) 2008-2010, 2017, 2020  Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -26,12 +26,12 @@ __all__ = ["ImageDrawer", "DrawSucceded", "DrawStillWorking", "DrawFailed",
 
 import os
 import time
+import logging as L
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gtk.gdk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject, GdkPixbuf
+import cairo
 
 from .config import debug, debug_msg
 from .geom2 import *
@@ -201,7 +201,7 @@ class View(Rectangle):
             int(max(0.0, min(self.view_size[1], py))))
 
 
-class ZoomableArea(gtk.DrawingArea):
+class ZoomableArea(Gtk.DrawingArea):
   set_scroll_adjustment_signal_id = None
 
   def __init__(self, drawer,
@@ -249,14 +249,14 @@ class ZoomableArea(gtk.DrawingArea):
 
     if not ZoomableArea.set_scroll_adjustment_signal_id:
       ZoomableArea.set_scroll_adjustment_signal_id = \
-        gobject.signal_new("set-scroll-adjustment", self.__class__,
-                           gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gtk.Adjustment, gtk.Adjustment))
+        GObject.signal_new("set-scroll-adjustment", self.__class__,
+                           GObject.SignalFlags.RUN_LAST,
+                           None,
+                           (Gtk.Adjustment, Gtk.Adjustment))
 
     self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
 
-    self.connect("expose_event", self.expose)
+    self.connect("draw", self.draw)
     self.connect("set-scroll-adjustment", ZoomableArea.scroll_adjustment)
     self.connect("configure_event", self.size_change)
 
@@ -371,6 +371,10 @@ class ZoomableArea(gtk.DrawingArea):
     not yet been allocated."""
     return get_pixbuf_size(self.buf)
 
+  def get_widget_size(self):
+    """Get the size of the zoomable area widget."""
+    return (self.get_allocated_width(), self.get_allocated_height())
+
   def alloc_buffer(self, copy_old=True, only_if_smaller=True):
     """(internal) Updates the buffer to the new window size.
     Called whenever the screen view size changes (for example, when the user
@@ -378,7 +382,7 @@ class ZoomableArea(gtk.DrawingArea):
     only_if_smaller=True is given. If copy_old=True the part of the old buffer
     overlapping with the new one is copied back to the new buffer."""
 
-    lx, ly = self.window.get_size()
+    lx, ly = self.get_widget_size()
     bsx, bsy = self.get_buf_size()
 
     # If the old buffer contains the new visible area we just exit
@@ -391,8 +395,8 @@ class ZoomableArea(gtk.DrawingArea):
     new_bsx, new_bsy = (2*fx + lx, 2*fy + ly)
     debug_msg("DrawableArea has size %s x %s" % (lx, ly))
     debug_msg("Creating buffer with size %s x %s" % (new_bsx, new_bsy))
-    new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
-                             new_bsx, new_bsy)
+    new_buf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8,
+                                   new_bsx, new_bsy)
     new_buf.fill(color_background) # we clean it
 
     # And, if required, we copy from the old buffer the overlapping content
@@ -421,10 +425,10 @@ class ZoomableArea(gtk.DrawingArea):
     is positioned at the center of the refreshed buffer again.
     """
     assert self.buf is not None, "Cannot use get_central_buf: buffer not present!"
-    lx, ly = self.window.get_size()
+    lx, ly = self.get_widget_size()
     bsx, bsy = self.get_buf_size()
-    marginx, marginy = ((bsx - lx)/2, (bsy - ly)/2)
-    return self.buf.subpixbuf(marginx, marginy, lx, ly)
+    marginx, marginy = ((bsx - lx) // 2, (bsy - ly) // 2)
+    return self.buf.new_subpixbuf(marginx, marginy, lx, ly)
 
   def get_visible_buf(self):
     buf_view = self.buf_view
@@ -436,7 +440,7 @@ class ZoomableArea(gtk.DrawingArea):
       c1x, c1y = buf_view.coord_to_pix(vis_view.corner1)
       c2x, c2y = buf_view.coord_to_pix(vis_view.corner2)
       px, py = (int(min(c1x, c2x)), int(min(c1y, c2y)))
-      lx, ly = self.window.get_size()
+      lx, ly = self.get_widget_size()
       buf = self.buf
       if px + lx < buf.get_width() and py + ly < buf.get_height():
         return buf.subpixbuf(px, py, lx, ly)
@@ -522,7 +526,7 @@ class ZoomableArea(gtk.DrawingArea):
 
     self.redraw_buffer()
 
-  def repaint(self, x, y, width, height):
+  def repaint(self, context, x, y, width, height):
     """Just repaint the given area of the widget."""
 
     visible_of_buf = self.get_visible_buf()
@@ -538,34 +542,30 @@ class ZoomableArea(gtk.DrawingArea):
       new_buf = visible_of_buf.copy()
       dx = visible_of_buf.get_width()
       dy = visible_of_buf.get_height()
-      new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, dx, dy)
+      new_buf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, dx, dy)
       visible_of_buf.copy_area(0, 0, dx, dy, new_buf, 0, 0)
       new_buf.saturate_and_pixelate(new_buf, 0.5, True)
       visible_of_buf = new_buf
 
     if width <= 0 or height <= 0:
       return
-    buf_area = visible_of_buf.subpixbuf(x, y, width, height)
+    buf_area = visible_of_buf.new_subpixbuf(x, y, width, height)
     if buf_area is None:
       return
 
-    rowstride = buf_area.get_rowstride()
-    pixels = buf_area.get_pixels()
+    Gdk.cairo_set_source_pixbuf(context, buf_area, 0.0, 0.0)
+    context.paint()
 
-    # The following hangs sometimes on a poll() syscall.
-    # gdk_draw_rgb_image_dithalign seems to call gdk_flush, which hangs on
-    # xcb_wait_for_reply().
-    self.window.draw_rgb_image(self.style.black_gc,
-                               x, y, width, height,
-                               'normal', pixels, rowstride,
-                               x, y)
-
-  def expose(self, draw_area, event):
-    """Expose callback for the drawing area."""
-    assert draw_area == self
+  def draw(self, widget, context):
+    """Draw callback for the drawing area."""
     self.update_buffer()
-    ea = event.area
-    self.repaint(ea.x, ea.y, ea.width, ea.height)
+
+    ok, r = Gdk.cairo_get_clip_rectangle(context)
+    if not ok:
+      L.error('Failed getting clip rectangle in ZoomableArea.draw')
+      return False
+
+    self.repaint(context, r.x, r.y, r.width, r.height)
     self._update_scrollbars()
     return True
 
@@ -626,10 +626,10 @@ class ZoomableArea(gtk.DrawingArea):
   def scroll_adjustment(self, hadjustment, vadjustment):
     self._hadjustment = hadjustment
     self._vadjustment = vadjustment
-    if isinstance(hadjustment, gtk.Adjustment):
+    if isinstance(hadjustment, Gtk.Adjustment):
       self._hadj_valchanged_handler = \
         hadjustment.connect("value-changed", self._adjustments_changed)
-    if isinstance(vadjustment, gtk.Adjustment):
+    if isinstance(vadjustment, Gtk.Adjustment):
       self._vadj_valchanged_handler = \
         vadjustment.connect("value-changed", self._adjustments_changed)
 

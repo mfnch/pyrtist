@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017 Matteo Franchin
+# Copyright (C) 2008-2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -29,18 +29,17 @@ import sys
 import time
 import os
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import gtk.gdk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
 
 from . import config
+from . import info
 from . import document
 from . import boxmode
 from .callbacks import Callbacks
 from .undoer import Undoer
-from .srcview import BoxSrcView
+from .srcview import SrcView
 from .assistant import Assistant, insert_char, rinsert_char
 from .toolbox import ToolBox
 from .editable import ScriptEditableArea
@@ -49,15 +48,15 @@ from .rotpaned import RotPaned
 
 def create_filechooser(parent, title="Choose a file", action=None,
                        buttons=None, add_default_filters=True):
-  fc = gtk.FileChooserDialog(title=title,
+  fc = Gtk.FileChooserDialog(title=title,
                              parent=parent,
                              action=action,
                              buttons=buttons)
   if add_default_filters:
-    flt_box_sources = gtk.FileFilter()
+    flt_box_sources = Gtk.FileFilter()
     flt_box_sources.set_name("Python sources")
     flt_box_sources.add_pattern("*.py")
-    flt_all_files = gtk.FileFilter()
+    flt_all_files = Gtk.FileFilter()
     flt_all_files.set_name("All files")
     flt_all_files.add_pattern("*")
     fc.add_filter(flt_box_sources)
@@ -162,32 +161,31 @@ class Pyrtist(object):
   def _init_menu_and_toolbar(self):
     # The window will contain a VBox as its main object: the menu bar is the
     # first object at the top of the VBox object
-    vbox = gtk.VBox(homogeneous=False, spacing=0)
+    vbox = Gtk.VBox(homogeneous=False, spacing=0)
     mainwin = self.mainwin
     mainwin.add(vbox)
 
-    # Use a gtk.UIManager instance to create menu and toolbar
-    merge = gtk.UIManager()
+    # Use a Gtk.UIManager instance to create menu and toolbar
+    merge = Gtk.UIManager()
     mainwin.set_data("ui-manager", merge)
     merge.insert_action_group(self._init_action_group(), 0)
     mainwin.add_accel_group(merge.get_accel_group())
 
     try:
       mergeid = merge.add_ui_from_string(self.ui_info)
-    except gobject.GError as exc:
+    except GObject.GError as exc:
       sys.stdout.write("building menus failed: %s\n" % exc)
 
     # Retrieve the menu bar and the tool bar and add them at the top of the
     # VBox
     menubar = merge.get_widget("/MenuBar")
-    vbox.pack_start(menubar, expand=False)
+    vbox.pack_start(menubar, False, True, 0)
     toolbar = merge.get_widget("/ToolBar")
 
-    toolbar.set_style(gtk.TOOLBAR_ICONS)
+    toolbar.set_style(Gtk.ToolbarStyle.ICONS)
     big_buttons = self.config.getboolean("GUI", "big_buttons")
-    toolbar.set_icon_size(gtk.ICON_SIZE_SMALL_TOOLBAR if big_buttons
-                          else gtk.ICON_SIZE_MENU)
-    toolbar.set_tooltips(True)
+    toolbar.set_icon_size(Gtk.IconSize.SMALL_TOOLBAR if big_buttons
+                          else Gtk.IconSize.MENU)
     toolbar.set_show_arrow(False)
 
     self.menubutton_run_execute = merge.get_widget("/MenuBar/RunMenu/Execute")
@@ -201,7 +199,7 @@ class Pyrtist(object):
     self.menubutton_edit_undo.set_sensitive(self.undoer.can_undo())
     self.menubutton_edit_redo.set_sensitive(self.undoer.can_redo())
 
-    self.examplesmenu = mn = gtk.Menu()
+    self.examplesmenu = mn = Gtk.Menu()
     emn = merge.get_widget("/MenuBar/FileMenu/ExamplesMenu")
     emn.set_submenu(mn)
 
@@ -210,24 +208,24 @@ class Pyrtist(object):
     mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
 
     # HBox containing the toolbar, the refpoint combobox, etc
-    hbox = gtk.HBox(homogeneous=False, spacing=0)
-    hbox.pack_start(toolbar, expand=False, fill=False)
-    vbox2 = gtk.VBox()
+    hbox = Gtk.HBox(homogeneous=False, spacing=0)
+    hbox.pack_start(toolbar, False, False, 0)
+    vbox2 = Gtk.VBox()
     rhbox = self._init_toolbox_rhs()
-    vbox2.pack_start(rhbox, expand=False, fill=False)
-    hbox.pack_start(gtk.SeparatorToolItem(), expand=False)
-    hbox.pack_start(vbox2, expand=False)
+    vbox2.pack_start(rhbox, False, False, 0)
+    #hbox.pack_start(Gtk.SeparatorToolItem(, True, True, 0), expand=False)
+    hbox.pack_start(vbox2, False, True, 0)
 
     # Finally add the toolbar to the VBox
-    vbox.pack_start(hbox, expand=False)
+    vbox.pack_start(hbox, False, True, 0)
     return vbox
 
   def _init_toolbox_rhs(self):
     # The right part of the toolbox
-    rhbox = gtk.HBox(homogeneous=False, spacing=0)
+    rhbox = Gtk.HBox(homogeneous=False, spacing=0)
 
     # The reference point combo box and show/hide button
-    self.widget_refpoint_box = combo = gtk.ComboBoxEntry()
+    self.widget_refpoint_box = combo = Gtk.ComboBoxText()
     self.widget_refpoint_entry = entry = combo.get_child()
     entry.connect("changed", self.refpoint_entry_changed)
     combo.set_tooltip_text(
@@ -235,12 +233,12 @@ class Pyrtist(object):
       "text here to select reference points. You can use wildcards, such "
       "as 'point*'. '*' selects all reference points.")
     combo.set_size_request(100, -1)
-    liststore = gtk.ListStore(gobject.TYPE_STRING)
+    liststore = Gtk.ListStore(GObject.TYPE_STRING)
     combo.set_model(liststore)
-    combo.set_text_column(0)
-    rhbox.pack_start(combo, expand=False)
+    combo.set_entry_text_column(0)
+    rhbox.pack_start(combo, False, True, 0)
 
-    self.widget_refpoint_show = button = gtk.Button("show")
+    self.widget_refpoint_show = button = Gtk.Button("show")
     button.connect("clicked", self.refpoint_show_clicked)
 
 
@@ -248,64 +246,64 @@ class Pyrtist(object):
                             "Write 'point*' into the box to select "
                             "point1, point2, etc.")
     button.set_size_request(60, -1)
-    rhbox.pack_start(button, expand=False)
+    rhbox.pack_start(button, False, True, 0)
     return rhbox
 
     # TODO: PORT THE DOCUMENTATION SYSTEM TO PYTHON.
     #   Major work is required to achieve this. For now we return above without
     #   adding the Help button to the GUI.
 
-    rhbox.pack_start(gtk.SeparatorToolItem(), expand=False)
+    #rhbox.pack_start(Gtk.SeparatorToolItem(, True, True, 0), expand=False)
     # The help entry and button in the toolbar
-    self.widget_help_entry = entry = gtk.Entry()
+    self.widget_help_entry = entry = Gtk.Entry()
     entry.set_tooltip_text("Write here a type you want to know about and "
                            "press [ENTER]")
     entry.set_size_request(100, -1)
     entry.connect("activate", self.on_help_entry_activate)
-    rhbox.pack_start(entry, expand=False)
-    button = gtk.Button("Help")
+    rhbox.pack_start(entry, False, True, 0)
+    button = Gtk.Button("Help")
     button.connect("clicked", self.on_help_button_clicked)
     button.set_tooltip_text("Show the help browser")
-    rhbox.pack_start(button, expand=False)
+    rhbox.pack_start(button, False, True, 0)
     return rhbox
 
   def _init_action_group(self):
     entries = (
       ("FileMenu", None, "_File"),
-      ("New", gtk.STOCK_NEW, "_New", "<control>N",
+      ("New", Gtk.STOCK_NEW, "_New", "<control>N",
        "Create a new Box program", self.menu_file_new),
-      ("Open", gtk.STOCK_OPEN, "_Open", "<control>O",
+      ("Open", Gtk.STOCK_OPEN, "_Open", "<control>O",
        "Open an existing Box program", self.menu_file_open),
       ("ExamplesMenu", None, "_Examples"),
-      ("Save", gtk.STOCK_SAVE, "_Save", "<control>S",
+      ("Save", Gtk.STOCK_SAVE, "_Save", "<control>S",
        "Save the current Box program", self.menu_file_save),
-      ("SaveAs", gtk.STOCK_SAVE, "Save _As...", None,
+      ("SaveAs", Gtk.STOCK_SAVE, "Save _As...", None,
        "Save to a file", self.menu_file_save_as),
-      ("Quit", gtk.STOCK_QUIT, "_Quit", "<control>Q",
+      ("Quit", Gtk.STOCK_QUIT, "_Quit", "<control>Q",
        "Quit Pyrtist", self.menu_file_quit),
 
       ("EditMenu", None, "_Edit"),
-      ("Undo", gtk.STOCK_UNDO, "_Undo", "<control>Z",
+      ("Undo", Gtk.STOCK_UNDO, "_Undo", "<control>Z",
        "Create a new Box program", self.menu_edit_undo),
-      ("Redo", gtk.STOCK_REDO, "_Redo", "<control><shift>Z",
+      ("Redo", Gtk.STOCK_REDO, "_Redo", "<control><shift>Z",
        "Create a new Box program", self.menu_edit_redo),
-      ("Cut", gtk.STOCK_CUT, "Cu_t", "<control>X",
+      ("Cut", Gtk.STOCK_CUT, "Cu_t", "<control>X",
        "Create a new Box program", self.menu_edit_cut),
-      ("Copy", gtk.STOCK_COPY, "_Copy", "<control>C",
+      ("Copy", Gtk.STOCK_COPY, "_Copy", "<control>C",
        "Create a new Box program", self.menu_edit_copy),
-      ("Paste", gtk.STOCK_PASTE, "_Paste", "<control>V",
+      ("Paste", Gtk.STOCK_PASTE, "_Paste", "<control>V",
        "Create a new Box program", self.menu_edit_paste),
-      ("Delete", gtk.STOCK_DELETE, "_Delete", None,
+      ("Delete", Gtk.STOCK_DELETE, "_Delete", None,
        "Create a new Box program", self.menu_edit_delete),
 
       ("LibraryMenu", None, "_Library"),
-      ("ConfigureLibrary", gtk.STOCK_PREFERENCES, "_Configure library", None,
+      ("ConfigureLibrary", Gtk.STOCK_PREFERENCES, "_Configure library", None,
        "Configure the Pyrtist library", self.menu_library_config),
 
       ("RunMenu", None, "_Run"),
-      ("Execute", gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
+      ("Execute", Gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
        "Execute the Box program", self.menu_run_execute),
-      ("Stop", gtk.STOCK_STOP, "_Stop", "<control>BackSpace",
+      ("Stop", Gtk.STOCK_STOP, "_Stop", "<control>BackSpace",
        "Stop a running Box program", self.menu_run_stop),
 
       ("ViewMenu", None, "_View"),
@@ -326,25 +324,25 @@ class Pyrtist(object):
        self.menu_view_forget_win_size),
 
       ("HelpMenu", None, "_Help"),
-      ("About", gtk.STOCK_ABOUT, "_About", None,
+      ("About", Gtk.STOCK_ABOUT, "_About", None,
        "Show information about the program", self.menu_help_about),
 
-      ("ZoomIn", gtk.STOCK_ZOOM_IN, "_Zoom In", None,
+      ("ZoomIn", Gtk.STOCK_ZOOM_IN, "_Zoom In", None,
        "Zoom in", self.menu_zoom_in),
-      ("ZoomOut", gtk.STOCK_ZOOM_OUT, "_Zoom Out", None,
+      ("ZoomOut", Gtk.STOCK_ZOOM_OUT, "_Zoom Out", None,
        "Zoom in", self.menu_zoom_out),
-      ("Zoom100", gtk.STOCK_ZOOM_100, "_See whole figure", None,
+      ("Zoom100", Gtk.STOCK_ZOOM_100, "_See whole figure", None,
        "See whole figure", self.menu_zoom_norm),
     )
 
     toggle_entries = (
-      ("PasteRP", gtk.STOCK_EDIT, "_Paste on click", None,
+      ("PasteRP", Gtk.STOCK_EDIT, "_Paste on click", None,
        "Paste the name of reference points whenever they are created",
        None),
     )
 
     # Create the menubar and toolbar
-    action_group = gtk.ActionGroup("AppWindowActions")
+    action_group = Gtk.ActionGroup("AppWindowActions")
     action_group.add_actions(entries)
     action_group.add_toggle_actions(toggle_entries)
     return action_group
@@ -356,7 +354,7 @@ class Pyrtist(object):
     """Called to quit the program."""
     self.editable_area.kill_drawer() # Terminate running processes if any
     self.config.save_configuration() # Save the configuration to file
-    gtk.main_quit()
+    Gtk.main_quit()
 
   def destroy(self, widget, data=None):
     self.raw_quit()
@@ -377,8 +375,7 @@ class Pyrtist(object):
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
-    tb = self.widget_srcbuf
-    return tb.get_text(tb.get_start_iter(), tb.get_end_iter())
+    return self.part_srcview.get_text()
 
   def _set_main_source(self, text):
     '''Set the content of the main textview from the string 'text'.'''
@@ -388,7 +385,7 @@ class Pyrtist(object):
     # Remove the "here" marker and put the cursor there!
     here_marker = document.marker_cursor_here
     si = self.widget_srcbuf.get_start_iter()
-    found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
+    found = si.forward_search(here_marker, Gtk.TextSearchFlags.TEXT_ONLY)
     if found is not None:
       mark0, mark1 = found
       self.widget_srcbuf.select_range(mark0, mark1)
@@ -413,10 +410,9 @@ class Pyrtist(object):
 
   def raw_file_new(self, filename=None):
     """Start a new box program and set the content of the main textview."""
-    from config import source_of_new_script
     d = self.editable_area.document
     d.new()
-    d.load_from_str(source_of_new_script)
+    d.load_from_str(config.source_of_new_script)
     self._document_changed(filename)
 
   def raw_file_open(self, filename):
@@ -455,29 +451,29 @@ class Pyrtist(object):
       return True
 
     msg = "The file contains unsaved changes. Do you want to save it now?"
-    md = gtk.MessageDialog(parent=self.mainwin,
-                           type=gtk.MESSAGE_QUESTION,
+    md = Gtk.MessageDialog(parent=self.mainwin,
+                           type=Gtk.MessageType.QUESTION,
                            message_format=msg,
-                           buttons=gtk.BUTTONS_NONE)
-    md.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
-                   gtk.STOCK_NO, gtk.RESPONSE_NO,
-                   gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+                           buttons=Gtk.ButtonsType.NONE)
+    md.add_buttons(Gtk.STOCK_YES, Gtk.ResponseType.YES,
+                   Gtk.STOCK_NO, Gtk.ResponseType.NO,
+                   Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL)
 
     response = md.run()
     md.destroy()
 
-    if response == gtk.RESPONSE_NO:
+    if response == Gtk.ResponseType.NO:
       return True
-    elif response == gtk.RESPONSE_YES:
+    elif response == Gtk.ResponseType.YES:
       self.menu_file_save(None)
       return (not self.widget_srcbuf.get_modified())
     return False
 
   def error(self, msg):
-    md = gtk.MessageDialog(parent=self.mainwin,
-                           type=gtk.MESSAGE_ERROR,
+    md = Gtk.MessageDialog(parent=self.mainwin,
+                           type=Gtk.MessageType.ERROR,
                            message_format=msg,
-                           buttons=gtk.BUTTONS_OK)
+                           buttons=Gtk.ButtonsType.OK)
     md.run()
     md.destroy()
 
@@ -495,13 +491,13 @@ class Pyrtist(object):
       self.dialog_fileopen = \
         create_filechooser(self.mainwin,
                            title="Open Box program",
-                           action=gtk.FILE_CHOOSER_ACTION_OPEN,
-                           buttons=("_Cancel", gtk.RESPONSE_CANCEL,
-                                    "_Open", gtk.RESPONSE_OK))
+                           action=Gtk.FileChooserAction.OPEN,
+                           buttons=("_Cancel", Gtk.ResponseType.CANCEL,
+                                    "_Open", Gtk.ResponseType.OK))
 
     fc = self.dialog_fileopen
     response = fc.run()
-    filename = fc.get_filename() if response == gtk.RESPONSE_OK else None
+    filename = fc.get_filename() if response == Gtk.ResponseType.OK else None
     fc.hide()
 
     if filename is not None:
@@ -521,13 +517,13 @@ class Pyrtist(object):
       self.dialog_filesave = \
         create_filechooser(self.mainwin,
                            title="Save Box program",
-                           action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                           buttons=("_Cancel", gtk.RESPONSE_CANCEL,
-                                    "_Save", gtk.RESPONSE_OK))
+                           action=Gtk.FileChooserAction.SAVE,
+                           buttons=("_Cancel", Gtk.ResponseType.CANCEL,
+                                    "_Save", Gtk.ResponseType.OK))
 
     fc = self.dialog_filesave
     response = fc.run()
-    do_save_it = (response == gtk.RESPONSE_OK)
+    do_save_it = (response == Gtk.ResponseType.OK)
     filename = fc.get_filename() if do_save_it else None
     fc.hide()
 
@@ -650,8 +646,7 @@ class Pyrtist(object):
 
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
-    ad = gtk.AboutDialog()
-    import info
+    ad = Gtk.AboutDialog()
     ad.set_name(info.name)
     ad.set_version(info.version_string)
     ad.set_comments(info.comment)
@@ -850,7 +845,7 @@ class Pyrtist(object):
     self.button_right = self.config.getint("Behaviour", "button_right")
 
     # Create the main window
-    self.mainwin = mainwin = gtk.Window()
+    self.mainwin = mainwin = Gtk.Window()
     mainwin.connect("destroy", self.destroy)
     mainwin.connect("delete_event", self.delete_event)
     self.update_title()
@@ -865,15 +860,15 @@ class Pyrtist(object):
     # Create the menu and toolbar
     vbox = self._init_menu_and_toolbar()
 
-    self.out_textview = outtv = gtk.TextView()
+    self.out_textview = outtv = Gtk.TextView()
     outtv.set_size_request(10, 300)
     outtv.set_editable(False)
     outtv.set_cursor_visible(False)
     outtv.connect('size-allocate', self._out_textview_size_allocate)
     self.out_textbuffer = outtv.get_buffer()
-    self.out_textview_expander = outexp = gtk.Expander(label="Box output:")
-    self.out_textview_sw = outsw = gtk.ScrolledWindow()
-    outsw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    self.out_textview_expander = outexp = Gtk.Expander(label="Box output:")
+    self.out_textview_sw = outsw = Gtk.ScrolledWindow()
+    outsw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     outsw.add(outtv)
     outexp.add(outsw)
 
@@ -923,31 +918,31 @@ class Pyrtist(object):
     cbs.provide("refpoint_pick", set_next_refpoint)
 
     # Create the scrolled window containing the box-draw editable area
-    scroll_win1 = gtk.ScrolledWindow()
+    scroll_win1 = Gtk.ScrolledWindow()
     scroll_win1.add(self.editable_area)
 
     # Create the text view
     self.part_srcview = part_srcview = \
-        BoxSrcView(use_gtksourceview=True,
-                   quickdoc=self.srcview_tooltip,
-                   undoer=undoer)
+        SrcView(use_gtksourceview=True,
+                quickdoc=self.srcview_tooltip,
+                undoer=undoer)
     self.widget_srcview = srcview = part_srcview.view
     self.widget_srcbuf = srcbuf = part_srcview.buf
 
     # Put the sourceview inside a scrolled window
-    svsw = gtk.ScrolledWindow()
-    svsw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    svsw = Gtk.ScrolledWindow()
+    svsw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     svsw.add(srcview)
 
     # Put source and output view inside a single widget
-    src_and_out_views = gtk.VBox()
-    src_and_out_views.pack_start(svsw, expand=True, fill=True)
+    src_and_out_views = Gtk.VBox()
+    src_and_out_views.pack_start(svsw, True, True, 0)
     src_and_out_views.pack_start(self.out_textview_expander,
-                                 expand=False, fill=True)
+                                 False, True, 0)
 
     # Create the scrolled window containing the text views (source + output)
-    scroll_win2 = gtk.ScrolledWindow()
-    scroll_win2.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scroll_win2 = Gtk.ScrolledWindow()
+    scroll_win2.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     scroll_win2.add_with_viewport(src_and_out_views)
 
     # Put them together in the RotView widget
@@ -956,7 +951,7 @@ class Pyrtist(object):
                                   rotation=view_rot)
 
     # Create the statusbar
-    self.statusbar = sbar = gtk.Statusbar()
+    self.statusbar = sbar = Gtk.Statusbar()
 
     # Create the assistant and the ToolBox
     self.assistant = astn = Assistant(boxmode.main_mode)
@@ -970,13 +965,16 @@ class Pyrtist(object):
 
     # Create the layout in form of HBox-es and VBox-es and pack all widgets
     self.widget_vbox1 = vb1 = vbox
-    self.widget_hbox1 = hb1 = gtk.HBox(spacing=0)
+    self.widget_hbox1 = hb1 = Gtk.HBox(spacing=0)
 
-    vb1.pack_start(hb1, expand=True)
-    vb1.pack_start(sbar, expand=False)
-    hb1.pack_start(tbox, expand=False)
-    hb1.pack_start(gtk.VSeparator(), expand=False)
-    hb1.pack_start(paned.get_container(), expand=True)
+    zero_padding = 0
+    do_expand = do_fill = True
+    dont_expand = False
+    vb1.pack_start(hb1, do_expand, do_fill, zero_padding)
+    vb1.pack_start(sbar, dont_expand, do_fill, zero_padding)
+    hb1.pack_start(tbox, dont_expand, do_fill, zero_padding)
+    hb1.pack_start(Gtk.VSeparator(), dont_expand, do_fill, zero_padding)
+    hb1.pack_start(paned.get_container(), do_expand, do_fill, zero_padding)
 
     # Initialize the documentation browser
     self._init_doxbrowser()
@@ -994,7 +992,7 @@ class Pyrtist(object):
     except:
       pass
 
-    self.clipboard = gtk.Clipboard()
+    self.clipboard = Gtk.Clipboard()
 
     # Find examples and populate the menu File->Examples
     self._fill_example_menu()
@@ -1024,7 +1022,7 @@ class Pyrtist(object):
     i = 0
     for example_file in example_files:
       example_file_basename = os.path.basename(example_file)
-      example_menuitem = gtk.MenuItem(label=example_file_basename,
+      example_menuitem = Gtk.MenuItem(label=example_file_basename,
                                       use_underline=False)
       callback = create_callback(example_file)
       example_menuitem.connect("activate", callback)
@@ -1033,7 +1031,10 @@ class Pyrtist(object):
       i += 1
 
 def run(filename=None, box_exec=None):
-  gtk.gdk.threads_init()
-  with gtk.gdk.lock:
+  Gdk.threads_init()
+  try:
+    Gdk.threads_enter()
     main_window = Pyrtist(filename=filename, box_exec=box_exec)
-    gtk.main()
+    Gtk.main()
+  finally:
+    Gdk.threads_leave()

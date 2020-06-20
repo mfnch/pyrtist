@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Matteo Franchin
+# Copyright (C) 2011, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -15,10 +15,12 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+import logging as L
 
-import config
-from undoer import Undoer
+from gi.repository import Gtk
+
+from . import config
+from .undoer import Undoer
 
 # Functions for the undoer.
 def delete_fn(_, srcview, del_offs, del_len):
@@ -36,10 +38,11 @@ def insert_fn(_, srcview, ins_text, ins_offs):
   buf.place_cursor(cursor_pos)
 
 
-class BoxSrcView(object):
+class SrcView(object):
   def _init_textview(self):
-    view = gtk.TextView()
+    view = Gtk.TextView()
     buf = view.get_buffer()
+    L.warning('Using plain text view for source editing')
     return (0, view, buf)
 
   def _init_gtksourceview1(self):
@@ -55,6 +58,7 @@ class BoxSrcView(object):
       return (1, srcview, srcbuf)
 
     except:
+      L.warning('Cannot load gtksourceview 1')
       return None
 
   def _init_gtksourceview2(self):
@@ -74,6 +78,7 @@ class BoxSrcView(object):
       return (2, srcview, srcbuf)
 
     except:
+      L.warning('Cannot load gtksourceview 2')
       return None
 
   def __init__(self, use_gtksourceview=True, quickdoc=None, undoer=None):
@@ -97,19 +102,21 @@ class BoxSrcView(object):
     self.view = view
     self.buf = buf
 
-    view.set_wrap_mode(gtk.WRAP_WORD)
+    view.set_wrap_mode(Gtk.WrapMode.WORD)
     view.set_property("has-tooltip", True)
     view.connect("query-tooltip", self._sighandler_query_tooltip)
     buf.connect("insert-text", self._sighandler_insert_text)
     buf.connect("delete-range", self._sighandler_delete_range)
 
   def _sighandler_query_tooltip(self, srcview, x, y, keyb_mode, tooltip, *etc):
+    return False
+    # TODO: re-enable this.
     word = self.get_word_at_coords(x, y)
-    if word != None:
+    if word is not None:
       qd = self.quickdoc
-      if qd != None:
+      if qd is not None:
         text = qd(word)
-        if text != None and len(text) > 0:
+        if text is not None and len(text) > 0:
           tooltip.set_text(text)
           return True
     else:
@@ -118,13 +125,20 @@ class BoxSrcView(object):
   def _sighandler_insert_text(self, buf, text_iter, ins_text, ins_len):
     self.undoer.record_action(delete_fn, self, text_iter.get_offset(), ins_len)
 
+  def get_text(self, iter_begin=None, iter_end=None, include_hidden_chars=True):
+    if iter_begin is None:
+      iter_begin = self.buf.get_start_iter()
+    if iter_end is None:
+      iter_end = self.buf.get_end_iter()
+    return self.buf.get_text(iter_begin, iter_end, include_hidden_chars)
+
   def _sighandler_delete_range(self, buf, del_iter_start, del_iter_end):
-    ins_text = buf.get_text(del_iter_start, del_iter_end)
+    ins_text = self.get_text(del_iter_start, del_iter_end)
     self.undoer.record_action(insert_fn, self, ins_text,
                               del_iter_start.get_offset())
 
   def get_iter_at_coords(self, x, y):
-    bx, by = self.view.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
+    bx, by = self.view.window_to_buffer_coords(Gtk.TextWindowType.WIDGET, x, y)
     return self.view.get_iter_at_location(bx, by)
 
   def get_word_at_coords(self, x, y, max_length=20):
@@ -135,5 +149,5 @@ class BoxSrcView(object):
       if iter_begin.backward_find_char(isnotalnum, None, None):
         if iter_begin.forward_char():
           if iter_end.forward_find_char(isnotalnum, (), None):
-            return self.buf.get_text(iter_begin, iter_end)
+            return self.get_text(iter_begin, iter_end)
     return None
