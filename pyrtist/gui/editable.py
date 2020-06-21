@@ -108,7 +108,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
             Gdk.EventMask.BUTTON_PRESS_MASK |
             Gdk.EventMask.BUTTON_RELEASE_MASK)
     self.add_events(mask)
-    self.connect("realize", self._realize)
+    #self.connect("realize", self._realize)
     self.connect("button-press-event", self._on_button_press_event)
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
@@ -124,21 +124,21 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
 
   def _realize(self, myself):
     # Set extra default configuration
-    unsel_gc = self.window.new_gc()
+    unsel_gc = self.new_gc()
     unsel_gc.copy(self.style.white_gc)
 
-    sel_gc = self.window.new_gc()
+    sel_gc = self.new_gc()
     sel_gc.copy(self.style.white_gc)
     colormap = sel_gc.get_colormap()
     sel_gc.foreground = colormap.alloc_color(Gdk.Color(65535, 65535, 0))
 
-    drag_gc = self.window.new_gc()
+    drag_gc = self.new_gc()
     drag_gc.copy(self.style.white_gc)
     colormap = drag_gc.get_colormap()
     drag_gc.foreground = \
       colormap.alloc_color(Gdk.Color(32767, 65535, 32767))
 
-    line_gc = self.window.new_gc()
+    line_gc = self.new_gc()
     line_gc.copy(self.style.white_gc)
     line_gc.set_function(Gdk.XOR)
 
@@ -275,6 +275,9 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     touched_points.update(refpoints.selection)
     self.repaint_rps(*touched_points.values())
 
+  def new_gc(self):
+    return Gdk.GC()
+
   def get_gcontext(self, clip_rect=None):
     args = tuple(self.get_config(val)
                  for val in ("refpoint_size", "refpoint_gc", "refpoint_sel_gc",
@@ -283,7 +286,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       new_args = list(args)
       for i, arg in enumerate(args):
         if isinstance(arg, Gdk.GC):
-          new_arg = self.window.new_gc()
+          new_arg = self.new_gc()
           new_arg.copy(arg)
           new_arg.set_clip_rectangle(clip_rect)
           new_args[i] = new_arg
@@ -355,8 +358,8 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       if region is not None:
         self.repaint_region(region)
 
-  def expose(self, draw_area, event):
-    ret = ZoomableArea.expose(self, draw_area, event)
+  def disabled_draw(self, widget, context):
+    ret = ZoomableArea.draw(self, widget, context)
     if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
       self._draw_refpoints()
     return ret

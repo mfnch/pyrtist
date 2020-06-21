@@ -254,7 +254,7 @@ class ZoomableArea(Gtk.DrawingArea):
                            None,
                            (Gtk.Adjustment, Gtk.Adjustment))
 
-    self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
+    #self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
 
     self.connect("draw", self.draw)
     self.connect("set-scroll-adjustment", ZoomableArea.scroll_adjustment)
@@ -581,6 +581,7 @@ class ZoomableArea(Gtk.DrawingArea):
 
   def _update_scrollbars(self):
     """(internal) Update the ranges and positions of the scrollbars."""
+    return
     ha = self._hadjustment
     va = self._vadjustment
 

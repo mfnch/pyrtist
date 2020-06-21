@@ -167,7 +167,7 @@ class Pyrtist(object):
 
     # Use a Gtk.UIManager instance to create menu and toolbar
     merge = Gtk.UIManager()
-    mainwin.set_data("ui-manager", merge)
+    #mainwin.set_data("ui-manager", merge)
     merge.insert_action_group(self._init_action_group(), 0)
     mainwin.add_accel_group(merge.get_accel_group())
 
@@ -227,7 +227,7 @@ class Pyrtist(object):
     # The reference point combo box and show/hide button
     self.widget_refpoint_box = combo = Gtk.ComboBoxText()
     self.widget_refpoint_entry = entry = combo.get_child()
-    entry.connect("changed", self.refpoint_entry_changed)
+    #entry.connect("changed", self.refpoint_entry_changed)
     combo.set_tooltip_text(
       "The name of the next or selected reference point. You can enter "
       "text here to select reference points. You can use wildcards, such "
@@ -726,6 +726,7 @@ class Pyrtist(object):
       self.update_draw_area(only_if_quick=True)
 
   def refpoint_show_update(self):
+    return
     selection = self.widget_refpoint_entry.get_text()
     d = self.editable_area.document
     ratio = d.refpoints.get_visible_ratio(selection)
@@ -738,6 +739,7 @@ class Pyrtist(object):
     self.widget_refpoint_show.set_label(label)
 
   def refpoint_show_clicked(self, button):
+    return
     do_show = (button.get_label().lower() == "show")
     selection = self.widget_refpoint_entry.get_text()
     self.editable_area.refpoints_set_visibility(selection, do_show)
@@ -907,15 +909,15 @@ class Pyrtist(object):
 
     def get_next_refpoint(doc):
       return self.widget_refpoint_entry.get_text()
-    cbs.provide("get_next_refpoint_name", get_next_refpoint)
+    #cbs.provide("get_next_refpoint_name", get_next_refpoint)
 
     def set_next_refpoint_name(doc, rp_name):
       self.widget_refpoint_entry.set_text(rp_name)
-    cbs.provide("set_next_refpoint_name", set_next_refpoint_name)
+    #cbs.provide("set_next_refpoint_name", set_next_refpoint_name)
 
     def set_next_refpoint(doc, rp):
       self.widget_refpoint_entry.set_text(rp.name)
-    cbs.provide("refpoint_pick", set_next_refpoint)
+    #cbs.provide("refpoint_pick", set_next_refpoint)
 
     # Create the scrolled window containing the box-draw editable area
     scroll_win1 = Gtk.ScrolledWindow()
@@ -982,7 +984,7 @@ class Pyrtist(object):
     #-------------------------------------------------------------------------
 
     # Set the name for the first reference point
-    set_next_refpoint_name(self.editable_area.document, "p1")
+    #set_next_refpoint_name(self.editable_area.document, "p1")
 
     # try to set the default font
     try:
