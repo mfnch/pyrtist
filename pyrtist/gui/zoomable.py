@@ -201,15 +201,13 @@ class View(Rectangle):
             int(max(0.0, min(self.view_size[1], py))))
 
 
-class ZoomableArea(Gtk.DrawingArea):
-  set_scroll_adjustment_signal_id = None
-
+class ZoomableArea(Gtk.DrawingArea, Gtk.Scrollable):
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
                zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.5,
                config=None, callbacks=None):
 
-    super(ZoomableArea, self).__init__()
+    Gtk.DrawingArea.__init__(self)
 
     # Drawer object: the one that actually draws things in the buffer
     self.drawer = drawer
@@ -247,17 +245,7 @@ class ZoomableArea(Gtk.DrawingArea):
     self._hadj_valchanged_handler = None
     self._vadj_valchanged_handler = None
 
-    if not ZoomableArea.set_scroll_adjustment_signal_id:
-      ZoomableArea.set_scroll_adjustment_signal_id = \
-        GObject.signal_new("set-scroll-adjustment", self.__class__,
-                           GObject.SignalFlags.RUN_LAST,
-                           None,
-                           (Gtk.Adjustment, Gtk.Adjustment))
-
-    #self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
-
-    self.connect("draw", self.draw)
-    self.connect("set-scroll-adjustment", ZoomableArea.scroll_adjustment)
+    self.connect("draw", self.on_draw)
     self.connect("configure_event", self.size_change)
 
   def reset(self):
@@ -286,17 +274,48 @@ class ZoomableArea(Gtk.DrawingArea):
   def get_hadjustment(self):
     return self._hadjustment
 
+  def set_hadjustment(self, adjustment):
+    self._hadjustment = ha = adjustment
+    if ha is None:
+      return
+    ha.set_lower(0.0)
+    ha.set_upper(1.0)
+    ha.set_value(0.0)
+    ha.set_page_size(1.0)
+    ha.set_page_increment(0.0)
+    ha.set_step_increment(0.05)
+    ha.connect("value-changed", self._adjustments_changed)
+
+  hadjustment = GObject.Property(type=Gtk.Adjustment,
+                                 default=None,
+                                 getter=get_hadjustment,
+                                 setter=set_hadjustment)
+
   def get_vadjustment(self):
     return self._vadjustment
 
-  def set_hadjustment(self, adjustment):
-    self._hadjustment = adjustment
-
   def set_vadjustment(self, adjustment):
-    self._vadjustment = adjustment
+    self._vadjustment = va = adjustment
+    if va is None:
+      return
+    va.set_lower(0.0)
+    va.set_upper(1.0)
+    va.set_value(0.0)
+    va.set_page_size(1.0)
+    va.set_page_increment(0.0)
+    va.set_step_increment(0.05)
+    va.connect("value-changed", self._adjustments_changed)
 
-  hadjustment = property(get_hadjustment, set_hadjustment)
-  vadjustment = property(get_vadjustment, set_vadjustment)
+  vadjustment = GObject.Property(type=Gtk.Adjustment,
+                                 default=None,
+                                 getter=get_vadjustment,
+                                 setter=set_vadjustment)
+
+  hscroll_policy = GObject.Property(type=Gtk.ScrollablePolicy,
+                                    default=Gtk.ScrollablePolicy.NATURAL)
+
+  vscroll_policy = GObject.Property(type=Gtk.ScrollablePolicy,
+                                    default=Gtk.ScrollablePolicy.NATURAL)
 
   def has_box_coords(self):
     """Returns True only when the window was already built previously
@@ -443,7 +462,7 @@ class ZoomableArea(Gtk.DrawingArea):
       lx, ly = self.get_widget_size()
       buf = self.buf
       if px + lx < buf.get_width() and py + ly < buf.get_height():
-        return buf.subpixbuf(px, py, lx, ly)
+        return buf.new_subpixbuf(px, py, lx, ly)
       else:
         return None
 
@@ -556,7 +575,7 @@ class ZoomableArea(Gtk.DrawingArea):
     Gdk.cairo_set_source_pixbuf(context, buf_area, 0.0, 0.0)
     context.paint()
 
-  def draw(self, widget, context):
+  def on_draw(self, widget, context):
     """Draw callback for the drawing area."""
     self.update_buffer()
 
@@ -576,12 +595,11 @@ class ZoomableArea(Gtk.DrawingArea):
       return None
     if self.magnification is None:
       return last_view.new_scaled(1.0)
-    pix_size = Point(self.window.get_size())
+    pix_size = Point(self.get_widget_size())
     return last_view.new_reshaped(pix_size, 1.0/self.magnification)
 
   def _update_scrollbars(self):
     """(internal) Update the ranges and positions of the scrollbars."""
-    return
     ha = self._hadjustment
     va = self._vadjustment
 
@@ -595,44 +613,23 @@ class ZoomableArea(Gtk.DrawingArea):
 
       if self._hadjustment:
         page_size = abs(visible_coords.get_dx())
-        ha.lower = 0.0
-        ha.upper = abs(pic_view.get_dx())
-        ha.value = abs(visible_coords.corner1.x - bb1.x)
-        ha.page_size = page_size
-        ha.page_increment = page_size*self.scrollbar_page_inc.x
-        ha.step_increment = page_size*self.scrollbar_step_inc.x
+        ha.set_lower(0.0)
+        ha.set_upper(abs(pic_view.get_dx()))
+        ha.set_value(abs(visible_coords.corner1.x - bb1.x))
+        ha.set_page_size(page_size)
+        ha.set_page_increment(page_size*self.scrollbar_page_inc.x)
+        ha.set_step_increment(page_size*self.scrollbar_step_inc.x)
 
       if self._vadjustment:
         page_size = abs(visible_coords.get_dy())
-        va.lower = 0.0
-        va.upper = abs(pic_view.get_dy())
-        va.value = abs(visible_coords.corner1.y - bb1.y)
-        va.page_size = page_size
-        va.page_increment = page_size*self.scrollbar_page_inc.y
-        va.step_increment = page_size*self.scrollbar_step_inc.y
-
-    else:
-      ha.lower = 0.0
-      ha.upper = 1.0
-      ha.value = 0.0
-      ha.page_size = 1.0
-
-      va.lower = 0.0
-      va.upper = 1.0
-      va.value = 0.0
-      va.page_size = 1.0
+        va.set_lower(0.0)
+        va.set_upper(abs(pic_view.get_dy()))
+        va.set_value(abs(visible_coords.corner1.y - bb1.y))
+        va.set_page_size(page_size)
+        va.set_page_increment(page_size * self.scrollbar_page_inc.y)
+        va.set_step_increment(page_size * self.scrollbar_step_inc.y)
 
     self._block_scrollbar_signals(False)
-
-  def scroll_adjustment(self, hadjustment, vadjustment):
-    self._hadjustment = hadjustment
-    self._vadjustment = vadjustment
-    if isinstance(hadjustment, Gtk.Adjustment):
-      self._hadj_valchanged_handler = \
-        hadjustment.connect("value-changed", self._adjustments_changed)
-    if isinstance(vadjustment, Gtk.Adjustment):
-      self._vadj_valchanged_handler = \
-        vadjustment.connect("value-changed", self._adjustments_changed)
 
   def _block_scrollbar_signals(self, value):
     """(internal) When the user resizes the window, the view changes and
@@ -643,7 +640,7 @@ class ZoomableArea(Gtk.DrawingArea):
     scrollbars, which requires updating the view, etc.
     This method allows to lock the value-changed methods of the adjustment
     objects to avoid this circular loop."""
-
+    return
     if value:
       self._hadjustment.handler_block(self._hadj_valchanged_handler)
       self._vadjustment.handler_block(self._vadj_valchanged_handler)

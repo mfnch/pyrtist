@@ -358,10 +358,10 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       if region is not None:
         self.repaint_region(region)
 
-  def disabled_draw(self, widget, context):
-    ret = ZoomableArea.draw(self, widget, context)
-    if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
-      self._draw_refpoints()
+  def on_draw(self, widget, context):
+    ret = ZoomableArea.on_draw(self, widget, context)
+    #if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
+    #  self._draw_refpoints()
     return ret
 
   def _on_button_press_event(self, eventbox, event):

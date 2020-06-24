@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2013, 2017 Matteo Franchin
+# Copyright (C) 2010-2013, 2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -17,6 +17,7 @@
 
 import math
 import fnmatch
+from functools import total_ordering
 
 #from Gtk.gdk import Rectangle
 
@@ -58,6 +59,7 @@ class GContext(object):
  REFPOINT_CHILD) = range(3)
 
 
+@total_ordering
 class RefPoint(object):
   def __init__(self, name, value=None, visible=True,
                kind=REFPOINT_LONELY, selected=REFPOINT_UNSELECTED):
@@ -86,7 +88,16 @@ class RefPoint(object):
       return 1
     lhs_name, lhs_idx = self.split_name()
     rhs_name, rhs_idx = rhs.split_name()
-    return cmp(lhs_name, rhs_name) or cmp(lhs_idx, rhs_idx)
+    ret = (lhs_name > rhs_name) - (lhs_name < rhs_name)
+    if ret == 0:
+      ret = (lhs_idx > rhs_idx) - (lhs_idx < rhs_idx)
+    return ret
+
+  def __lt__(self, rhs):
+    return self.__cmp__(rhs) < 0
+
+  def __eq__(self, rhs):
+    return self.__cmp__(rhs) == 0
 
   def copy(self, state=None, deep=False):
     state = (state if state is not None else self.selected)
