@@ -17,6 +17,7 @@
 
 import logging as L
 
+import gi
 from gi.repository import Gtk
 
 from . import config
@@ -81,6 +82,27 @@ class SrcView(object):
       L.warning('Cannot load gtksourceview 2')
       return None
 
+  def _init_gtksourceview4(self):
+    try:
+      gi.require_version('GtkSource', '4')
+      from gi.repository import GtkSource as gtksourceview
+      srcbuf = gtksourceview.Buffer()
+      langman = gtksourceview.LanguageManager()
+      search_paths = langman.get_search_path()
+      search_paths.append(config.get_hl_path())
+      langman.set_search_path(search_paths)
+      lang = langman.get_language("python")
+      srcbuf.set_language(lang)
+      srcbuf.set_highlight_syntax(True)
+      srcview = gtksourceview.View.new_with_buffer(srcbuf)
+      srcview.set_show_line_numbers(True)
+      srcview.set_auto_indent(True)
+      return (4, srcview, srcbuf)
+
+    except:
+      L.warning('Cannot load gtksourceview 4')
+      return None
+
   def __init__(self, use_gtksourceview=True, quickdoc=None, undoer=None):
     """Create a new sourceview using gtksourceview2 or gtksourceview,
     if they are available, otherwise return a TextView.
@@ -89,7 +111,8 @@ class SrcView(object):
     self.undoer = undoer or Undoer()
 
     first = (0 if use_gtksourceview else 2)
-    init_fns = [self._init_gtksourceview2,
+    init_fns = [self._init_gtksourceview4,
+                self._init_gtksourceview2,
                 self._init_gtksourceview1,
                 self._init_textview]
     for attempted_mode in range(first, 3):
