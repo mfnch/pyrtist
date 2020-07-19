@@ -235,10 +235,12 @@ AddPolygonsFromPy(deepsurface::Mesh* mesh, PyObject* py_polygons) {
       std::array<int, 3> indices;
       bool indices_ok =
         ForEachPyObj(py_indices, [&indices](PyObject* py_index, int i)->bool {
-          if (i >= 0 && static_cast<size_t>(i) < indices.size() &&
-              DS_PyLong_Check(py_index)) {
-            indices[i] = DS_PyLong_AsLong(py_index);
-            return true;
+          if (i >= 0 && static_cast<size_t>(i) < indices.size()) {
+            auto index_as_long = DS_PyLong_AsLong(py_index);
+            if (index_as_long != -1 || !PyErr_Occurred()) {
+              indices[i] = static_cast<int>(index_as_long);
+              return true;
+            }
           }
           return false;
         });

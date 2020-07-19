@@ -232,8 +232,10 @@ class ColladaMesh(Mesh):
             self.polygons = self._build_polygons()
 
         raw_mesh = deepsurface.Mesh()
-        raw_mesh.add_vertices(vertices)
-        raw_mesh.add_tex_coords(tex_coords)
+        if not raw_mesh.add_vertices(vertices):
+            logging.warn('ColladaMesh: failed adding vertices')
+        if not raw_mesh.add_tex_coords(tex_coords):
+            logging.warn('ColladaMesh: failed adding texture coordinates')
 
         for polys, material in self.polygons:
             # Just look at the diffuse part.
@@ -252,5 +254,6 @@ class ColladaMesh(Mesh):
                 loging.warn('Unknown diffuse material')
                 diffuse_mat = default_color
 
-            raw_mesh.add_polygons(polys, diffuse_mat)
+            if not raw_mesh.add_polygons(polys, diffuse_mat):
+                logging.warn('ColladaMesh: failed adding polygons')
         return raw_mesh
