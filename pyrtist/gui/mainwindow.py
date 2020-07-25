@@ -167,7 +167,6 @@ class Pyrtist(object):
 
     # Use a Gtk.UIManager instance to create menu and toolbar
     merge = Gtk.UIManager()
-    #mainwin.set_data("ui-manager", merge)
     merge.insert_action_group(self._init_action_group(), 0)
     mainwin.add_accel_group(merge.get_accel_group())
 
@@ -868,7 +867,7 @@ class Pyrtist(object):
     outtv.set_cursor_visible(False)
     outtv.connect('size-allocate', self._out_textview_size_allocate)
     self.out_textbuffer = outtv.get_buffer()
-    self.out_textview_expander = outexp = Gtk.Expander(label="Box output:")
+    self.out_textview_expander = outexp = Gtk.Expander(label="Script output:")
     self.out_textview_sw = outsw = Gtk.ScrolledWindow()
     outsw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     outsw.add(outtv)
@@ -994,7 +993,9 @@ class Pyrtist(object):
     except:
       pass
 
-    self.clipboard = Gtk.Clipboard()
+    screen = mainwin.get_screen()
+    display = screen.get_display()
+    self.clipboard = Gtk.Clipboard.get_default(display)
 
     # Find examples and populate the menu File->Examples
     self._fill_example_menu()

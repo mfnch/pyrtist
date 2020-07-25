@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017 Matteo Franchin
+# Copyright (C) 2008-2017, 2020 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -64,8 +64,8 @@ source_of_new_script = '''#!PYRTIST:VERSION:0:0:1
 from pyrtist.lib2d import Point, Tri
 
 #!PYRTIST:REFPOINTS:BEGIN
-bbox1 = Point(0, 50)
-bbox2 = Point(100, 0)
+bbox1 = Point(-50, 25)
+bbox2 = Point(50, -25)
 #!PYRTIST:REFPOINTS:END
 from pyrtist.lib2d import *
 
