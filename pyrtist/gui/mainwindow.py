@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017, 2020 Matteo Franchin
+# Copyright (C) 2008-2017, 2020-2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -861,14 +861,14 @@ class Pyrtist(object):
     # Create the menu and toolbar
     vbox = self._init_menu_and_toolbar()
 
-    self.out_textview = outtv = Gtk.TextView()
-    outtv.set_size_request(10, 300)
+    self.out_textview = outtv = Gtk.TextView.new()
     outtv.set_editable(False)
     outtv.set_cursor_visible(False)
     outtv.connect('size-allocate', self._out_textview_size_allocate)
     self.out_textbuffer = outtv.get_buffer()
     self.out_textview_expander = outexp = Gtk.Expander(label="Script output:")
     self.out_textview_sw = outsw = Gtk.ScrolledWindow()
+    outsw.set_size_request(300, 300)
     outsw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     outsw.add(outtv)
     outexp.add(outsw)
@@ -936,9 +936,14 @@ class Pyrtist(object):
     svsw.add(srcview)
 
     # Put source and output view inside a single widget
-    src_and_out_views = Gtk.VBox()
-    src_and_out_views.pack_start(svsw, True, True, 0)
-    src_and_out_views.pack_start(self.out_textview_expander,
+    if 0:
+      src_and_out_views = Gtk.Paned.new(Gtk.Orientation.VERTICAL)
+      src_and_out_views.pack1(svsw, True, False)
+      src_and_out_views.pack2(self.out_textview_expander, False, False)
+    else:
+      src_and_out_views = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+      src_and_out_views.pack_start(svsw, True, True, 0)
+      src_and_out_views.pack_end(self.out_textview_expander,
                                  False, True, 0)
 
     # Create the scrolled window containing the text views (source + output)

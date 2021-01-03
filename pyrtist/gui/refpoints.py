@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2013, 2017, 2020 Matteo Franchin
+# Copyright (C) 2010-2013, 2017, 2020-2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -19,35 +19,10 @@ import math
 import fnmatch
 from functools import total_ordering
 
-#from Gtk.gdk import Rectangle
-
 from .geom2 import square_metric, Point, rectangles_overlap
-from .renderer import draw_square, draw_circle, cut_square
+from .renderer import draw_square, draw_circle, draw_line, cut_square
 from . import namegen
 from .callbacks import Callbacks
-
-
-class GContext(object):
-  layers = (0, 1)
-
-  def __init__(self, drawable, rp_size,
-               gc_unsel, gc_sel, gc_drag, gc_line):
-    self.drawable = drawable
-    self.rp_size = rp_size
-    self.gc_unsel = gc_unsel
-    self.gc_sel = gc_sel
-    self.gc_drag = gc_drag
-    self.gc_line = gc_line
-    self.layer = 0
-
-  def draw(self, objs, *args, **kwargs):
-    """Draw the given objects."""
-    layers = kwargs.pop('layers', GContext.layers)
-    all_args = (self,) + args
-    for layer in layers:
-      self.layer = layer
-      for obj in objs:
-        obj.draw(*all_args)
 
 
 (REFPOINT_UNSELECTED,
@@ -57,6 +32,30 @@ class GContext(object):
 (REFPOINT_LONELY,
  REFPOINT_PARENT,
  REFPOINT_CHILD) = range(3)
+
+
+class GContext(object):
+  layers = (0, 1)
+
+  def __init__(self, drawable, rp_size,
+               color_unsel, color_sel, color_drag, color_line):
+    self.drawable = drawable
+    self.rp_size = rp_size
+    self.colors = {REFPOINT_UNSELECTED: color_unsel,
+                   REFPOINT_SELECTED: color_sel,
+                   REFPOINT_DRAGGED: color_drag}
+    self.color_line = color_line
+    self.layer = 0
+
+  def draw(self, context, objs, dragged_objs, view, layers=layers):
+    """Draw the given objects."""
+    for layer in layers:
+      self.layer = layer
+      for obj in objs:
+        obj.draw(self, context, view)
+      if dragged_objs is not None:
+        for obj in dragged_objs:
+          obj.draw(self, context, view)
 
 
 @total_ordering
@@ -290,34 +289,31 @@ class RefPoint(object):
 
     return retval
 
-  def draw(self, context, view):
+  def draw(self, gcontext, context, view):
     """Draw the reference point."""
 
     if not self.visible or self.value is None:
       return
 
     kind = self.kind
-    layer = context.layer
+    layer = gcontext.layer
     state = self.get_state()
-    drawable = context.drawable.window
 
-    size = context.rp_size
-    gc = (context.gc_sel if state == REFPOINT_SELECTED else
-          context.gc_unsel if state == REFPOINT_UNSELECTED else
-          context.gc_drag)
+    size = gcontext.rp_size
+    color = gcontext.colors.get(state)
 
     x, y = view.coord_to_pix(self.value)
     if layer == 0 and kind == REFPOINT_CHILD:
       parent = self.related
       if parent is not None:
         x0, y0 = view.coord_to_pix(parent.value)
-        drawable.draw_line(context.gc_line,
-                           int(x0), int(y0), int(x), int(y))
+        draw_line(context, int(x0), int(y0), int(x), int(y),
+                  gcontext.color_line)
     elif layer == 1:
       if kind == REFPOINT_CHILD:
-        draw_circle(drawable, x, y, size, gc)
+        draw_circle(context, x, y, size, color)
       else:
-        draw_square(drawable, x, y, size, gc)
+        draw_square(context, x, y, size, color)
 
 
 class RefPoints(object):

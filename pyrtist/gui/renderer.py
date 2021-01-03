@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Matteo Franchin
+# Copyright (C) 2013, 2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -19,6 +19,9 @@
 Renderer routines to draw the refpoints.
 """
 
+import math
+import cairo
+
 from .geom2 import Point
 
 
@@ -37,24 +40,37 @@ def cut_square(size, x, y, dx, dy):
     if sx < 1 or sy < 1: return (x0, y0, -1, -1)
     return (x0, y0, sx+1, sy+1)
 
-def draw_square(drawable, x, y, size, gc, kind=0):
+def draw_square(cc, x, y, size, color, kind=0):
   l0 = size
-  dl0 = l0*2
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-  drawable.draw_rectangle(gc, True, int(x - l0), int(y - l0), dl0, dl0)
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-
+  dl0 = l0 * 2
   l1 = l0 - 1
-  dl1 = 2*l1
-  drawable.draw_rectangle(gc, True, int(x - l1), int(y - l1), dl1, dl1)
+  dl1 = l1 * 2
 
-def draw_circle(drawable, x, y, size, gc, kind=0):
+  cc.set_source_rgba(*color)
+  cc.set_fill_rule(cairo.FillRule.EVEN_ODD)
+  cc.rectangle(int(x - l1), int(y - l1), dl1, dl1)
+  cc.fill_preserve()
+
+  cc.set_source_rgba(0, 0, 0, color[3])
+  cc.rectangle(int(x - l0), int(y - l0), dl0, dl0)
+  cc.fill()
+
+def draw_circle(cc, x, y, size, color, kind=0):
   l0 = size
-  dl0 = l0*2 + 1
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-  drawable.draw_arc(gc, True, int(x - l0), int(y - l0), dl0, dl0, 64*0, 64*360)
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-
   l1 = l0 - 1
-  dl1 = 2*l1 + 1
-  drawable.draw_arc(gc, True, int(x - l1), int(y - l1), dl1, dl1, 64*0, 64*360)
+
+  cc.set_source_rgba(*color)
+  cc.set_fill_rule(cairo.FillRule.EVEN_ODD)
+  cc.arc(int(x), int(y), l1, 0, 2.0 * math.pi)
+  cc.fill_preserve()
+
+  cc.set_source_rgba(0, 0, 0, color[3])
+  cc.arc(int(x), int(y), l0, 0, 2.0 * math.pi)
+  cc.fill()
+
+def draw_line(cc, x0, y0, x1, y1, color):
+  cc.set_source_rgba(*color)
+  cc.move_to(x0, y0)
+  cc.line_to(x1, y1)
+  cc.set_line_width(1.0)
+  cc.stroke()

@@ -1,4 +1,4 @@
-# Copyright (C) 2010-2017, 2020 Matteo Franchin
+# Copyright (C) 2010-2017, 2020-2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -100,15 +100,23 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     cbs.default("script_move_point")
 
     # Set default configuration
-    self.set_config_default(button_left=1, button_center=2, button_right=3,
-                            refpoint_size=4, redraw_on_move=True)
+    self.set_config_default(
+      button_left=1,
+      button_center=2,
+      button_right=3,
+      refpoint_size=4,
+      redraw_on_move=True,
+      refpoint_color=(1.0, 1.0, 1.0, 1.0),
+      refpoint_sel_color=(1.0, 1.0, 0.0, 1.0),
+      refpoint_drag_color=(0.5, 1.0, 0.5, 0.5),
+      refpoint_line_color=(0.0, 0.0, 0.0, 1.0)
+    )
 
     # Enable events and connect signals
     mask = (Gdk.EventMask.POINTER_MOTION_MASK |
             Gdk.EventMask.BUTTON_PRESS_MASK |
             Gdk.EventMask.BUTTON_RELEASE_MASK)
     self.add_events(mask)
-    #self.connect("realize", self._realize)
     self.connect("button-press-event", self._on_button_press_event)
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
@@ -121,31 +129,6 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     if include_dragged and self._dragged_refpoints is not None:
       for rp in self._dragged_refpoints.initial_points.values():
         yield rp
-
-  def _realize(self, myself):
-    # Set extra default configuration
-    unsel_gc = self.new_gc()
-    unsel_gc.copy(self.style.white_gc)
-
-    sel_gc = self.new_gc()
-    sel_gc.copy(self.style.white_gc)
-    colormap = sel_gc.get_colormap()
-    sel_gc.foreground = colormap.alloc_color(Gdk.Color(65535, 65535, 0))
-
-    drag_gc = self.new_gc()
-    drag_gc.copy(self.style.white_gc)
-    colormap = drag_gc.get_colormap()
-    drag_gc.foreground = \
-      colormap.alloc_color(Gdk.Color(32767, 65535, 32767))
-
-    line_gc = self.new_gc()
-    line_gc.copy(self.style.white_gc)
-    line_gc.set_function(Gdk.XOR)
-
-    self.set_config_default(refpoint_gc=unsel_gc,
-                            refpoint_sel_gc=sel_gc,
-                            refpoint_drag_gc=drag_gc,
-                            refpoint_line_gc=line_gc)
 
   def refpoint_new(self, coords, name=None, use_py_coords=True, with_cb=True):
     """Add a new reference point whose coordinates are 'point' (a couple
@@ -275,18 +258,16 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     touched_points.update(refpoints.selection)
     self.repaint_rps(*touched_points.values())
 
-  def new_gc(self):
-    return Gdk.GC()
-
   def get_gcontext(self, clip_rect=None):
     args = tuple(self.get_config(val)
-                 for val in ("refpoint_size", "refpoint_gc", "refpoint_sel_gc",
-                             "refpoint_drag_gc", "refpoint_line_gc"))
+                 for val in ("refpoint_size", "refpoint_color",
+                             "refpoint_sel_color",
+                             "refpoint_drag_color", "refpoint_line_color"))
     if clip_rect is not None:
       new_args = list(args)
       for i, arg in enumerate(args):
         if isinstance(arg, Gdk.GC):
-          new_arg = self.new_gc()
+          new_arg = None  # TODO
           new_arg.copy(arg)
           new_arg.set_clip_rectangle(clip_rect)
           new_args[i] = new_arg
@@ -294,13 +275,14 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
 
     return GContext(self, *args)
 
-  def _draw_refpoints(self, *rps):
-    if len(rps) == 0:
-      rps = self.document.refpoints
+  def _draw_refpoints(self, context):
     view = self.get_visible_coords()
     if view is not None:
-      context = self.get_gcontext()
-      context.draw(rps, view)
+      gc = self.get_gcontext()
+      dragged_refpoints = []
+      if self._dragged_refpoints:
+        dragged_refpoints = self._dragged_refpoints.initial_points.values()
+      gc.draw(context, self.document.refpoints, dragged_refpoints, view)
 
   def refpoint_set_visibility(self, rp, show, force=False):
     """Set the state of visibility of the given RefPoint."""
@@ -342,7 +324,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
         continue
 
       # Redraw all the refpoints, using the region as a clipping rectangle.
-      gc.draw(rps_inside_region, view, layers=layers)
+      gc.draw(None, rps_inside_region, view, layers=layers)
 
   def repaint_rps(self, *rps):
     """Repaint the area occupied by the specified refpoints."""
@@ -350,6 +332,12 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     view = self.get_visible_coords()
     if view is None:
       return
+
+    # Explicit drawing seems not to be a thing in Gtk3.
+    # TODO: specify the region to draw.
+    self.queue_draw()
+
+    return
 
     gc = self.get_gcontext()
 
@@ -360,8 +348,8 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
 
   def on_draw(self, widget, context):
     ret = ZoomableArea.on_draw(self, widget, context)
-    #if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
-    #  self._draw_refpoints()
+    if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
+      self._draw_refpoints(context)
     return ret
 
   def _on_button_press_event(self, eventbox, event):
@@ -436,6 +424,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     if self._dragged_refpoints is not None:
       py_coords = event.get_coords()
       self._drag_refpoints(py_coords)
+      self.queue_draw()  # TODO
 
   def _on_button_release_event(self, eventbox, event):
     if self._dragged_refpoints is not None:
@@ -463,9 +452,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
                Point(transform(Point(drps.py_initial_pos))))
     for rp_name, rp in drps.initial_points.items():
       if rp.visible:
-        self.refpoint_set_visibility(rp, False)
         rp.translate_to(Point(rps[rp_name].value) + box_vec)
-        self.refpoint_set_visibility(rp, True)
 
   def _drag_confirm(self, py_coords):
     """Confirm a drag operation initiated by _on_button_press_event.
