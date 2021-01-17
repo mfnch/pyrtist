@@ -1,4 +1,4 @@
-# Copyright (C) 2011, 2020 Matteo Franchin
+# Copyright (C) 2011, 2020-2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -126,14 +126,13 @@ class SrcView(object):
     self.buf = buf
 
     view.set_wrap_mode(Gtk.WrapMode.WORD)
-    view.set_property("has-tooltip", True)
-    view.connect("query-tooltip", self._sighandler_query_tooltip)
+    # TODO: re-enable this.
+    #view.set_property("has-tooltip", True)
+    #view.connect("query-tooltip", self._sighandler_query_tooltip)
     buf.connect("insert-text", self._sighandler_insert_text)
     buf.connect("delete-range", self._sighandler_delete_range)
 
   def _sighandler_query_tooltip(self, srcview, x, y, keyb_mode, tooltip, *etc):
-    return False
-    # TODO: re-enable this.
     word = self.get_word_at_coords(x, y)
     if word is not None:
       qd = self.quickdoc

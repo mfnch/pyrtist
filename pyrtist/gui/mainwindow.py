@@ -28,6 +28,7 @@
 import sys
 import time
 import os
+import logging
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -986,15 +987,15 @@ class Pyrtist(object):
     #-------------------------------------------------------------------------
 
     # Set the name for the first reference point
-    #set_next_refpoint_name(self.editable_area.document, "p1")
+    set_next_refpoint_name(self.editable_area.document, "p1")
 
     # try to set the default font
     try:
-      from pango import FontDescription
-      font = FontDescription(self.config.get("GUI", "font"))
+      from gi.repository import Pango
+      font = Pango.FontDescription.from_string(self.config.get("GUI", "font"))
       self.widget_srcview.modify_font(font)
-    except:
-      pass
+    except Exception as exc:
+      logging.error('Cannot set font: {}'.format(exc))
 
     screen = mainwin.get_screen()
     display = screen.get_display()
