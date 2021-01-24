@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2017, 2020 Matteo Franchin
+# Copyright (C) 2012-2017, 2020-2021 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -48,7 +48,8 @@ cfg = dict(name='pyrtist',
            packages=['pyrtist', 'pyrtist.gui', 'pyrtist.gui.dox',
                      'pyrtist.gui.comparse', 'pyrtist.lib2d',
                      'pyrtist.lib2d.prefabs',
-                     'pyrtist.lib2deep', 'pyrtist.lib3d'],
+                     'pyrtist.lib2deep', 'pyrtist.lib3d',
+                     'pyrtist.opengl'],
            package_data={'pyrtist': ['examples/*.py',
                                      'examples/*.png',
                                       'icons/24x24/*.png',

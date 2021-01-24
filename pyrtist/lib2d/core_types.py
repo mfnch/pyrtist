@@ -164,6 +164,23 @@ class Point(object):
     def __repr__(self):
         return '{}({}, {})'.format(self.__class__.__name__, self.x, self.y)
 
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, index):
+        if index == 0 or index == -2:
+            return self.x
+        if index == 1 or index == -1:
+            return self.y
+        raise IndexError('Point index out of range')
+
+    def __setitem__(self, index, value):
+        if index == 0 or index == -2:
+            self.x = value
+        if index == 1 or index == -1:
+            self.y = value
+        raise IndexError('Point index out of range')
+
     def __iter__(self):
         return iter((self.x, self.y))
 
@@ -535,7 +552,7 @@ class View(object):
     def __repr__(self):
         b1 = self.bbox.min_point
         b2 = self.bbox.max_point
-        bbox_args = ', '.join(map(str, (b1.x, b1.y, b2.x, b2.y)))
-        other_args = ', '.join(map(str, (self.origin.x, self.origin.y,
-                                         self.size.x, self.size.y)))
+        bbox_args = ', '.join(map(str, (b1[0], b1[1], b2[0], b2[1])))
+        other_args = ', '.join(map(str, (self.origin[0], self.origin[1],
+                                         self.size[0], self.size[1])))
         return '{}\n{}\n'.format(bbox_args, other_args)
