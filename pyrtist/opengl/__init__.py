@@ -41,5 +41,5 @@ p1 and p2 are the points in the bounding box. frag_pos will be the position
 coordinates relative to these points.
 '''
 
-from .fragment_window import FragmentWindow
+from .fragment_window import *
 from ..lib2d import gui

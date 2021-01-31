@@ -16,6 +16,7 @@
 
 import os
 import ctypes
+import inspect
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import OpenGL
@@ -24,8 +25,23 @@ import OpenGL.GL as GL
 
 from pyrtist.lib2d import BBox, View
 
-__all__ = ('FragmentWindow',)
+__all__ = ('FragmentWindow', 'get_line')
 
+
+def get_line():
+    '''Return the line number of the caller in the source.
+
+    This is similar to what __LINE__ does in C.
+    '''
+    frame = inspect.currentframe()
+    if frame is not None:
+        prev_filename = inspect.getframeinfo(frame).filename
+        frame = frame.f_back
+        while (frame is not None and
+               inspect.getframeinfo(frame).filename == prev_filename):
+            frame = frame.f_back
+    return (inspect.getframeinfo(frame).lineno
+            if frame is not None else None)
 
 def init_egl(width, height):
     prev_display = os.environ.pop('DISPLAY', None)
@@ -99,8 +115,8 @@ class ProgramHandler:
             GL.glCompileShader(shader)
             compile_status = GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS)
             if compile_status != GL.GL_TRUE:
-                info = GL.glGetShaderInfoLog(shader)
-                raise RuntimeError('GL shader compilation failure: {}'.format(info))
+                info = GL.glGetShaderInfoLog(shader).decode('utf-8')
+                raise RuntimeError('GL shader compilation failure:\n{}'.format(info))
             GL.glAttachShader(program, shader)
 
         GL.glLinkProgram(program)
@@ -108,13 +124,13 @@ class ProgramHandler:
         GL.glValidateProgram(program)
         validate_status = GL.glGetProgramiv(program, GL.GL_VALIDATE_STATUS)
         if validate_status != GL.GL_TRUE:
-            info = GL.glGetProgramInfoLog(program)
-            raise RuntimeError('GL program validation failure: {}'.format(info))
+            info = GL.glGetProgramInfoLog(program).decode('utf-8')
+            raise RuntimeError('GL program validation failure:\n{}'.format(info))
 
         link_status = GL.glGetProgramiv(program, GL.GL_LINK_STATUS)
         if link_status != GL.GL_TRUE:
-            info = GL.glGetProgramInfoLog(program)
-            raise RuntimeError('GL program link failure: {}'.format(info))
+            info = GL.glGetProgramInfoLog(program).decode('utf-8')
+            raise RuntimeError('GL program link failure:\n{}'.format(info))
 
         while len(shaders) > 0:
             GL.glDeleteShader(shaders.pop())
@@ -153,10 +169,49 @@ void main() {
         self.frag_defines = {}
         self.vert_defines = {'FRAG_POSITION': position_name}
         self.frag_source = None
+        self.frag_source_line = None
         self.vert_source = self.default_vertex_shader
         self.program_handler = None
 
-    def set_source(self, source):
+    def set_source(self, source, line=True):
+        '''Set the source of the fragment shader.
+
+        If this function is called more than once, the last call
+        overrides previous calls.
+
+        Args:
+          source:
+            Source of the shader.
+          line:
+            An integer indicating the position of the source in the file.
+            This is used to generate a #line directive in GLSL so that messages
+            from the GLSL compiler are reported with useful line numbers.
+            This can also be set to None to disable generation of the #line
+            directive. Alternatively, if this is set to True, the directive
+            uses the line number where this method is called in Python.
+            For example:
+
+              # The following usage works well, as the string containing the
+              # GLSL source lies inside the same line where the set_source
+              # method is called.
+              w.set_source(""" ... """)
+
+              # The usage below does not work.
+              source = """ ... """
+              w.set_source(source)
+
+              # Do this instead.
+              line, source = get_line(), """ ... """
+              w.set_source(source, line=line)
+        '''
+        if line is True:
+            line = get_line()
+        if line not in (None, False):
+            assert isinstance(line, int), \
+                'line argument must be one of: None, boolean or int'
+        else:
+            line = None
+        self.frag_source_line = line
         self.frag_source = source
 
     def __lshift__(self, op):
@@ -169,9 +224,16 @@ void main() {
         return vertex_shader(defs_source, self.vert_source)
 
     def get_frag_sources(self):
-        definitions = ['#define {} {}'.format(k, v)
-                       for k, v in self.frag_defines.items()]
-        defs_source = ('#version 150 core\n' + '\n'.join(definitions) + '\n')
+        extra_lines = ['#version 150 core']
+
+        extra_lines.extend('#define {} {}'.format(k, v)
+                           for k, v in self.frag_defines.items())
+
+        line = self.frag_source_line
+        if line is not None:
+            extra_lines.append('#line {}'.format(line - 1))
+
+        defs_source = ('\n'.join(extra_lines) + '\n')
         return fragment_shader(defs_source, self.frag_source)
 
     def draw_with_transform(self, transform):
