@@ -32,6 +32,7 @@ def get_line():
     '''Return the line number of the caller in the source.
 
     This is similar to what __LINE__ does in C.
+    Note: the implementation assumes the caller is outside this file.
     '''
     frame = inspect.currentframe()
     if frame is not None:
@@ -90,14 +91,17 @@ def init_egl(width, height):
 def finish_egl(dpy):
     EGL.eglMakeCurrent(dpy, EGL.EGL_NO_SURFACE, EGL.EGL_NO_SURFACE, EGL.EGL_NO_CONTEXT)
 
-def vertex_shader(*source):
-    return (GL.GL_VERTEX_SHADER, source)
-
-def fragment_shader(*source):
-    return (GL.GL_FRAGMENT_SHADER, source)
+def info_to_str(info):
+    '''Transform the output of glGetShaderInfoLog and friends to a string.'''
+    if isinstance(info, bytes):
+        return info.decode('utf-8')
+    return info
 
 
 class ProgramHandler:
+    shader_type_from_string = {'fragment': GL.GL_FRAGMENT_SHADER,
+                               'vertex': GL.GL_VERTEX_SHADER}
+
     def __init__(self, *shader_infos):
         self._shader_infos = shader_infos
         self._program = None
@@ -108,15 +112,22 @@ class ProgramHandler:
 
         shaders = self._shaders
         assert len(shaders) == 0
-        for shader_type, shader_source in self._shader_infos:
+        for shader_source_list in self._shader_infos:
+            shader_type_str = shader_source_list.shader_type
+            shader_type = self.shader_type_from_string[shader_type_str]
+            shader_source = shader_source_list.get_sources()
+
             shader = GL.glCreateShader(shader_type)
             shaders.append(shader)
             GL.glShaderSource(shader, shader_source)
             GL.glCompileShader(shader)
             compile_status = GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS)
             if compile_status != GL.GL_TRUE:
-                info = GL.glGetShaderInfoLog(shader).decode('utf-8')
-                raise RuntimeError('GL shader compilation failure:\n{}'.format(info))
+                idx_map = shader_source_list.get_file_index_map()
+                info = info_to_str(GL.glGetShaderInfoLog(shader))
+                msg = ('GL {} shader compilation failure:\n{}\n{}'
+                       .format(shader_type_str, info, idx_map))
+                raise RuntimeError(msg)
             GL.glAttachShader(program, shader)
 
         GL.glLinkProgram(program)
@@ -124,12 +135,12 @@ class ProgramHandler:
         GL.glValidateProgram(program)
         validate_status = GL.glGetProgramiv(program, GL.GL_VALIDATE_STATUS)
         if validate_status != GL.GL_TRUE:
-            info = GL.glGetProgramInfoLog(program).decode('utf-8')
+            info = info_to_str(GL.glGetProgramInfoLog(program))
             raise RuntimeError('GL program validation failure:\n{}'.format(info))
 
         link_status = GL.glGetProgramiv(program, GL.GL_LINK_STATUS)
         if link_status != GL.GL_TRUE:
-            info = GL.glGetProgramInfoLog(program).decode('utf-8')
+            info = info_to_str(GL.glGetProgramInfoLog(program))
             raise RuntimeError('GL program link failure:\n{}'.format(info))
 
         while len(shaders) > 0:
@@ -148,15 +159,39 @@ class ProgramHandler:
             self._program = None
 
 
+class ShaderSourceList:
+    def __init__(self, shader_type=None, version=None):
+        self.shader_type = shader_type
+        self.version = version
+        self.sources = []
+
+    def add_source(self, source):
+        self.sources.append(source)
+
+    def get_sources(self):
+        ret = [s.get_content(file_index=i)
+               for i, s in enumerate(self.sources)]
+        if self.version is not None:
+            ret[0] = '#version {}\n'.format(self.version) + ret[0]
+        return ret
+
+    def get_file_index_map(self):
+        ret = 'Files correpsonding to indices:'
+        for i, source in enumerate(self.sources):
+            ret += '\n  {} --> {}'.format(i, source.get_desc())
+        return ret
+
+
 class ShaderSource:
     def __init__(self, content=None, line=None,
-                 file_name=None, file_index=None):
+                 file_name=None, file_index=None, desc=None):
         self.content = content
         self.line = line
         self.file_name = file_name
         self.file_index = None
+        self.desc = desc
 
-    def get_content(self, add_line=True, file_index=None):
+    def get_content(self, file_index=None):
         content = self.content
         if content is None:
             return None
@@ -165,8 +200,17 @@ class ShaderSource:
                 prepend = '#line {}\n'.format(self.line - 1)
             else:
                 prepend = '#line {} {}\n'.format(self.line - 1, file_index)
+                self.file_index = file_index
             content = prepend + content
         return content
+
+    def get_desc(self):
+        desc = self.desc
+        if desc is None:
+            return self.file_name or '?'
+        if self.file_name is None:
+            return desc
+        return '{} ({})'.format(desc, file_name)
 
 
 class FragmentWindow:
@@ -192,7 +236,9 @@ void main() {
         self._vert_defines = {'FRAG_POSITION': position_name}
         self._frag_includes = []
         self._frag_source = None
-        self._vert_source = self.default_vertex_shader
+        self._vert_source = \
+            ShaderSource(content=self.default_vertex_shader, line=1,
+                         desc='Pyrtist default vertex shader')
 
     def include(self, source_file_name):
         '''Include GLSL files from source.
@@ -243,37 +289,40 @@ void main() {
                 'line argument must be one of: None, boolean or int'
         else:
             line = None
-        self._frag_source = ShaderSource(content=source, line=line)
+        self._frag_source = ShaderSource(content=source, line=line,
+                                         desc='Main fragment shader source')
 
     def __lshift__(self, op):
         self.set_source(op)
 
     def get_vert_sources(self):
+        sources = ShaderSourceList(shader_type='vertex', version='150 core')
         definitions = ['#define {} {}'.format(k, v)
                        for k, v in self._vert_defines.items()]
-        defs_source = ('#version 150 core\n' + '\n'.join(definitions) + '\n')
-        return vertex_shader(defs_source, self._vert_source)
+        defs_source = ('\n'.join(definitions) + '\n')
+        src = ShaderSource(content=defs_source,
+                           desc='Vertex shader preprocessor definitions')
+        sources.add_source(src)
+        sources.add_source(self._vert_source)
+        return sources
 
     def get_frag_sources(self):
-        file_index = 0
-        sources = []
+        sources = ShaderSourceList(shader_type='fragment', version='150 core')
 
-        # First: append one string containing #define directives for refpoints.
-        defs_lines = ['#version 150 core']
-        defs_lines.extend('#define {} {}'.format(k, v)
-                          for k, v in self._frag_defines.items())
-        sources.append('\n'.join(defs_lines) + '\n')
-        file_index += 1
+        # First: add one source containing #define directives for refpoints.
+        defs_lines = ['#define {} {}'.format(k, v)
+                      for k, v in self._frag_defines.items()]
+        src = ShaderSource(content='\n'.join(defs_lines) + '\n',
+                           desc='Pyrtist internal preprocessor definitions')
+        sources.add_source(src)
 
-        # Next: append strings for each of the included sources.
+        # Next: add all the included sources.
         for src in self._frag_includes:
-            sources.append(src.get_content(file_index=file_index))
-            file_index += 1
+            sources.add_source(src)
 
-        # Finally: append the main source.
-        sources.append(self._frag_source.get_content(file_index=file_index))
-
-        return fragment_shader(*sources)
+        # Finally: add the main source.
+        sources.add_source(self._frag_source)
+        return sources
 
     def draw_with_transform(self, transform):
         program_handler = ProgramHandler(self.get_vert_sources(),
