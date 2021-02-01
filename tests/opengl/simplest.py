@@ -33,3 +33,5 @@ void main() {
 '''
 
 w.draw(gui)
+
+#w.save(gui, 'simplest.png')

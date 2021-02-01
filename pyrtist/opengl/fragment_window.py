@@ -423,3 +423,38 @@ void main() {
         gui._tx_cmd_image_info(view)
         args = (pix_width * 3, pix_width, pix_height, data)
         gui._gui_tx_pipe.send(('image_data', args))
+
+    def save(self, gui, file_name, width=None, height=None, format='RGBA'):
+        '''Temporary function to save the output image to file.
+
+        This is temporary as the `gui' argument (used to get the reference
+        points) is only available in the GUI.
+
+        save() should work also when running from the command line, but this
+        will probably require revisiting how Pyrtist handles reference points.
+        '''
+        ref_points = {}
+        gui.update_vars(ref_points)
+        ref_points.pop('gui')
+
+        mn, mx = self._min_point, self._max_point
+        size = (mx[0] - mn[0], mx[1] - mn[1])
+
+        no_width = width is None
+        no_height = height is None
+        if no_width and no_height:
+            width = 800
+            no_width = False
+
+        if no_width:
+            width = size[0] * height / size[1]
+        elif no_height:
+            height = size[1] * width / size[0]
+
+        size_in_pixels = (int(width), int(height))
+        _, data = self._draw_view(ref_points, size_in_pixels, format=format,
+                                  origin=mn, size=size)
+        from PIL import Image
+        image = Image.frombytes(format, size_in_pixels, data,
+                                decoder_name='raw')
+        image.save(file_name)
