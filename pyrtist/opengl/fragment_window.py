@@ -99,16 +99,16 @@ def fragment_shader(*source):
 
 class ProgramHandler:
     def __init__(self, *shader_infos):
-        self.shader_infos = shader_infos
-        self.program = None
-        self.shaders = []
+        self._shader_infos = shader_infos
+        self._program = None
+        self._shaders = []
 
     def compile(self):
-        self.program = program = GL.glCreateProgram()
+        self._program = program = GL.glCreateProgram()
 
-        shaders = self.shaders
+        shaders = self._shaders
         assert len(shaders) == 0
-        for shader_type, shader_source in self.shader_infos:
+        for shader_type, shader_source in self._shader_infos:
             shader = GL.glCreateShader(shader_type)
             shaders.append(shader)
             GL.glShaderSource(shader, shader_source)
@@ -141,10 +141,32 @@ class ProgramHandler:
         self.clear()
 
     def clear(self):
-        while len(self.shaders) > 0:
-            GL.glDeleteShader(self.shaders.pop())
-        if self.program is not None:
-            GL.glDeleteProgram(self.program)
+        while len(self._shaders) > 0:
+            GL.glDeleteShader(self._shaders.pop())
+        if self._program is not None:
+            GL.glDeleteProgram(self._program)
+            self._program = None
+
+
+class ShaderSource:
+    def __init__(self, content=None, line=None,
+                 file_name=None, file_index=None):
+        self.content = content
+        self.line = line
+        self.file_name = file_name
+        self.file_index = None
+
+    def get_content(self, add_line=True, file_index=None):
+        content = self.content
+        if content is None:
+            return None
+        if self.line is not None:
+            if file_index is None:
+                prepend = '#line {}\n'.format(self.line - 1)
+            else:
+                prepend = '#line {} {}\n'.format(self.line - 1, file_index)
+            content = prepend + content
+        return content
 
 
 class FragmentWindow:
@@ -164,14 +186,24 @@ void main() {
     def __init__(self, p1, p2, position_name='position'):
         assert(len(p1) >= 2)
         assert(len(p2) >= 2)
-        self.min_point = tuple(min(p1[i], p2[i]) for i in range(2))
-        self.max_point = tuple(max(p1[i], p2[i]) for i in range(2))
-        self.frag_defines = {}
-        self.vert_defines = {'FRAG_POSITION': position_name}
-        self.frag_source = None
-        self.frag_source_line = None
-        self.vert_source = self.default_vertex_shader
-        self.program_handler = None
+        self._min_point = tuple(min(p1[i], p2[i]) for i in range(2))
+        self._max_point = tuple(max(p1[i], p2[i]) for i in range(2))
+        self._frag_defines = {}
+        self._vert_defines = {'FRAG_POSITION': position_name}
+        self._frag_includes = []
+        self._frag_source = None
+        self._vert_source = self.default_vertex_shader
+
+    def include(self, source_file_name):
+        '''Include GLSL files from source.
+
+        Args:
+          source_file_name: full path to the source file.
+        '''
+        with open(source_file_name, 'r') as f:
+            content = f.read()
+        src = ShaderSource(content=content, file_name=source_file_name, line=1)
+        self._frag_includes.append(src)
 
     def set_source(self, source, line=True):
         '''Set the source of the fragment shader.
@@ -211,35 +243,42 @@ void main() {
                 'line argument must be one of: None, boolean or int'
         else:
             line = None
-        self.frag_source_line = line
-        self.frag_source = source
+        self._frag_source = ShaderSource(content=source, line=line)
 
     def __lshift__(self, op):
         self.set_source(op)
 
     def get_vert_sources(self):
         definitions = ['#define {} {}'.format(k, v)
-                       for k, v in self.vert_defines.items()]
+                       for k, v in self._vert_defines.items()]
         defs_source = ('#version 150 core\n' + '\n'.join(definitions) + '\n')
-        return vertex_shader(defs_source, self.vert_source)
+        return vertex_shader(defs_source, self._vert_source)
 
     def get_frag_sources(self):
-        extra_lines = ['#version 150 core']
+        file_index = 0
+        sources = []
 
-        extra_lines.extend('#define {} {}'.format(k, v)
-                           for k, v in self.frag_defines.items())
+        # First: append one string containing #define directives for refpoints.
+        defs_lines = ['#version 150 core']
+        defs_lines.extend('#define {} {}'.format(k, v)
+                          for k, v in self._frag_defines.items())
+        sources.append('\n'.join(defs_lines) + '\n')
+        file_index += 1
 
-        line = self.frag_source_line
-        if line is not None:
-            extra_lines.append('#line {}'.format(line - 1))
+        # Next: append strings for each of the included sources.
+        for src in self._frag_includes:
+            sources.append(src.get_content(file_index=file_index))
+            file_index += 1
 
-        defs_source = ('\n'.join(extra_lines) + '\n')
-        return fragment_shader(defs_source, self.frag_source)
+        # Finally: append the main source.
+        sources.append(self._frag_source.get_content(file_index=file_index))
+
+        return fragment_shader(*sources)
 
     def draw_with_transform(self, transform):
-        self.program_handler = ProgramHandler(self.get_vert_sources(),
-                                              self.get_frag_sources())
-        program = self.program_handler.compile()
+        program_handler = ProgramHandler(self.get_vert_sources(),
+                                         self.get_frag_sources())
+        program = program_handler.compile()
 
         GL.glClearColor(0.0, 0.0, 0.0, 0.0)
         GL.glClearDepth(1.0)
@@ -262,20 +301,24 @@ void main() {
         GL.glVertex2f(-1.0, -1.0)
         GL.glEnd()
 
-    def draw(self, gui):
-        if gui._size is None:
-            return
-
-        pix_width, pix_height = gui._size
+    def _draw_view(self, ref_points, size_in_pixels,
+                   origin=None, size=None, format='RGB'):
+        pix_width, pix_height = size_in_pixels
+        gl_format_from_string = {'RGB': GL.GL_RGB,
+                                 'RGBA': GL.GL_RGBA}
+        gl_format = gl_format_from_string.get(format)
+        if gl_format is None:
+            raise RuntimeError('Invalid image format {}'.format(repr(format)))
 
         transform = [1.0, 0.0, 0.0, 0.0,
                      0.0,-1.0, 0.0, 0.0,
                      0.0, 0.0, 1.0, 0.0,
                      0.0, 0.0, 0.0, 1.0]
 
-        if gui._full_view:
+        if origin is None:
+            assert size is None, 'origin argument is missing'
             win_aspect = pix_width / pix_height
-            mn, mx = self.min_point, self.max_point
+            mn, mx = self._min_point, self._max_point
             bb_size = (mx[0] - mn[0], mx[1] - mn[1])
             bb_aspect = bb_size[0] / bb_size[1]
             bb_center = (0.5 * (mn[0] + mx[0]), 0.5 * (mn[1] + mx[1]))
@@ -290,11 +333,8 @@ void main() {
 
             view = View(BBox(mn, mx), origin, size)
         else:
-            ox, oy, sx, sy = gui._zoom_window
-            origin = (ox, oy)
-            size = (sx, sy)
-
-            view = View(BBox(self.min_point, self.max_point), origin, size)
+            assert size is not None, 'size argument is missing'
+            view = View(BBox(self._min_point, self._max_point), origin, size)
 
         transform[0] = 0.5 * size[0]
         transform[3] = origin[0] + transform[0]
@@ -302,16 +342,33 @@ void main() {
         transform[7] = origin[1] - transform[5]
 
         # Add defines for reference points.
-        ref_points = {}
-        gui.update_vars(ref_points)
-        ref_points.pop('gui')
         for name, rp in ref_points.items():
-            self.frag_defines[name] = 'vec2({}, {})'.format(rp[0], rp[1])
+            self._frag_defines[name] = 'vec2({}, {})'.format(rp[0], rp[1])
 
         dpy = init_egl(pix_width, pix_height)
         self.draw_with_transform(transform)
-        data = GL.glReadPixels(0, 0, pix_width, pix_height, GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+        data = GL.glReadPixels(0, 0, pix_width, pix_height, gl_format,
+                               GL.GL_UNSIGNED_BYTE)
         finish_egl(dpy)
+
+        return (view, data)
+
+    def draw(self, gui):
+        if gui._size is None:
+            return
+        pix_width, pix_height = gui._size
+
+        ref_points = {}
+        gui.update_vars(ref_points)
+        ref_points.pop('gui')
+
+        if gui._full_view:
+            view, data = self._draw_view(ref_points, gui._size)
+        else:
+            ox, oy, sx, sy = gui._zoom_window
+            origin = (ox, oy)
+            size = (sx, sy)
+            view, data = self._draw_view(ref_points, gui._size, origin, size)
 
         # This is a bit of a hack for now.
         gui._tx_cmd_image_info(view)
