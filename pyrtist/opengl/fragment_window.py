@@ -17,6 +17,7 @@
 import os
 import ctypes
 import inspect
+import re
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import OpenGL
@@ -227,6 +228,9 @@ void main() {
 }
 '''
 
+    vec_re = re.compile('[biud]?vec([2-4])')
+    mat_re = re.compile('[d]?mat([2-4])(x[2-4])?')
+
     def __init__(self, p1, p2, position_name='position'):
         assert(len(p1) >= 2)
         assert(len(p2) >= 2)
@@ -250,6 +254,48 @@ void main() {
             content = f.read()
         src = ShaderSource(content=content, file_name=source_file_name, line=1)
         self._frag_includes.append(src)
+
+    @classmethod
+    def _stringify(cls, v, t):
+        if t is None:
+            return str(v)
+
+        match = cls.vec_re.fullmatch(t)
+        if match is not None:
+            n = int(match.group(1))
+            return '{}({})'.format(t, ', '.join(str(v[i]) for i in range(n)))
+
+        match = cls.mat_re.fullmatch(t)
+        if match is not None:
+            n = int(match.group(1))
+            g2 = match.group(2)
+            m = (n if g2 is None else int(g2[1:]))
+            cols = tuple('vec{}({})'.format(m, ', '.join(str(v[j][i])
+                                                         for j in range(m)))
+                         for i in range(n))
+            return '{}({})'.format(t, ', '.join(cols))
+
+        raise ValueError('Invalid GLSL type {} for define'.format(t))
+
+    def define(self, name, value, type=None):
+        '''Define a macro to use in the GLSL source.
+
+        Args:
+          name:
+            Name of the macro being defined.
+          value:
+            Value of the macro.
+          type:
+            GLSL type of the value. This can be any vector or matrix type.
+            If this argument is provided, value can be a Python type (e.g.
+            a tuple) and it is converted automatically to the desired type.
+
+        Return:
+          The final string value assigned to the macro.
+        '''
+        value_as_str = self._stringify(value, type)
+        self._frag_defines[name] = value_as_str
+        return value_as_str
 
     def set_source(self, source, line=True):
         '''Set the source of the fragment shader.
