@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Matteo Franchin
+# Copyright (C) 2021-2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -18,13 +18,14 @@ import os
 import ctypes
 import inspect
 import re
+import itertools
 
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import OpenGL
 import OpenGL.EGL as EGL
 import OpenGL.GL as GL
 
-from pyrtist.lib2d import BBox, View
+from pyrtist.lib2d import BBox, View, Point
 
 __all__ = ('FragmentWindow', 'get_line')
 
@@ -297,6 +298,26 @@ void main() {
         self._frag_defines[name] = value_as_str
         return value_as_str
 
+    def set_vars(self, variables, **kwargs):
+        '''Set variables from the given dictionary.
+
+        Note that variables of unhandled type are simply ignored.
+
+        Args:
+          variables:
+            Dictionary of variables to set. Only variables of type
+            pyrtist.lib2d.Point are currently handled. All other values
+            in the dictionary are ignored.
+          kwargs:
+            Other variables to set from keyword arguments.
+        '''
+
+        # Add defines for reference points.
+        for name, value in itertools.chain(variables.items(), kwargs):
+            if isinstance(value, Point):
+                self._frag_defines[name] = \
+                    'vec2({}, {})'.format(value[0], value[1])
+
     def set_source(self, source, line=True):
         '''Set the source of the fragment shader.
 
@@ -397,13 +418,14 @@ void main() {
         GL.glEnd()
 
     def _draw_view(self, ref_points, size_in_pixels,
-                   origin=None, size=None, format='RGB'):
+                   origin=None, size=None, pixel_format='RGB'):
         pix_width, pix_height = size_in_pixels
         gl_format_from_string = {'RGB': GL.GL_RGB,
                                  'RGBA': GL.GL_RGBA}
-        gl_format = gl_format_from_string.get(format)
+        gl_format = gl_format_from_string.get(pixel_format)
         if gl_format is None:
-            raise RuntimeError('Invalid image format {}'.format(repr(format)))
+            raise RuntimeError('Invalid image format {!r}'
+                               .format(pixel_format))
 
         transform = [1.0, 0.0, 0.0, 0.0,
                      0.0,-1.0, 0.0, 0.0,
@@ -470,18 +492,25 @@ void main() {
         args = (pix_width * 3, pix_width, pix_height, data)
         gui._gui_tx_pipe.send(('image_data', args))
 
-    def save(self, gui, file_name, width=None, height=None, format='RGBA'):
-        '''Temporary function to save the output image to file.
+    def save(self, file_name, image_format=None, width=None, height=None,
+             pixel_format='RGBA', **image_format_params):
+        '''Save the shader output to an image file.
 
-        This is temporary as the `gui' argument (used to get the reference
-        points) is only available in the GUI.
-
-        save() should work also when running from the command line, but this
-        will probably require revisiting how Pyrtist handles reference points.
+        Args:
+          file_name:
+            Name of the image file to save to.
+          image_format:
+            Image format to use (e.g. '.png'.) If None, the image format is
+            deduced from the extension of the file name.
+          width:
+            Width of the rendered output
+          height:
+            Height of the rendered output
+          pixel_format:
+            Format of the rendered output
+          image_format_params:
+            Parameters passed to the image writer. See PIL.Image.Image.save
         '''
-        ref_points = {}
-        gui.update_vars(ref_points)
-        ref_points.pop('gui')
 
         mn, mx = self._min_point, self._max_point
         size = (mx[0] - mn[0], mx[1] - mn[1])
@@ -498,9 +527,10 @@ void main() {
             height = size[1] * width / size[0]
 
         size_in_pixels = (int(width), int(height))
-        _, data = self._draw_view(ref_points, size_in_pixels, format=format,
+        _, data = self._draw_view({}, size_in_pixels,
+                                  pixel_format=pixel_format,
                                   origin=mn, size=size)
         from PIL import Image
-        image = Image.frombytes(format, size_in_pixels, data,
+        image = Image.frombytes(pixel_format, size_in_pixels, data,
                                 decoder_name='raw')
-        image.save(file_name)
+        image.save(file_name, image_format, **image_format_params)
