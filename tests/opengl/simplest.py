@@ -32,6 +32,7 @@ void main() {
 }
 '''
 
+w.set_vars(locals())
 w.draw(gui)
 
-#w.save(gui, 'simplest.png')
+#w.save('simplest.png')
