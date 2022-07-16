@@ -61,6 +61,7 @@ def init_egl(width, height):
         EGL.EGL_BLUE_SIZE, 8,
         EGL.EGL_RED_SIZE, 8,
         EGL.EGL_GREEN_SIZE, 8,
+        EGL.EGL_ALPHA_SIZE, 8,
         EGL.EGL_DEPTH_SIZE, 24,
         EGL.EGL_COLOR_BUFFER_TYPE, EGL.EGL_RGB_BUFFER,
         EGL.EGL_RENDERABLE_TYPE, EGL.EGL_OPENGL_BIT,
