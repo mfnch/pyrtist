@@ -461,7 +461,8 @@ void main() {
 
         # Add defines for reference points.
         for name, rp in ref_points.items():
-            self._frag_defines[name] = 'vec2({}, {})'.format(rp[0], rp[1])
+            if isinstance(rp, Point):
+                self._frag_defines[name] = 'vec2({}, {})'.format(rp[0], rp[1])
 
         dpy = init_egl(pix_width, pix_height)
         self.draw_with_transform(transform)
