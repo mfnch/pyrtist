@@ -52,6 +52,14 @@ class GUIGate(object):
         self._gui_tx_pipe = gui_tx_pipe
         self._parse_cmds(startup_cmds)
 
+    def is_connected(self):
+        '''Return a boolean indicating whether the Pyrtist UI is connected.
+
+        This is true when running the script in the Pyrtist UI and is false when
+        running the script from the command line.
+        '''
+        return self._gui_tx_pipe is not None
+
     def _parse_cmds(self, cmds):
         if cmds is None:
             return
