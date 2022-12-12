@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -63,6 +63,14 @@ class BBox(Taker):
         '''Reset the bounding box so that it is the same as BBox().'''
         self.min_point = None
         self.max_point = None
+
+    @property
+    def size(self):
+        return self.max_point - self.min_point
+
+    @property
+    def center(self):
+        return 0.5 * (self.min_point + self.max_point)
 
 @combination(tuple, BBox)
 @combination(Point, BBox)

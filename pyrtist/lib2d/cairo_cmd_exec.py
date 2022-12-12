@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ class CairoCmdExecutor(object):
 
     @staticmethod
     def for_surface(cairo_surface, top_left=None, bot_right=None,
-                    top_right=None, bot_left=None, bg_color=None):
+                    top_right=None, bot_left=None, bg_color=None,
+                    size=None):
         '''Create a CairoCmdExecutor from a given cairo surface and the
         coordinates of two opposite corners.
 
@@ -155,11 +156,14 @@ class CairoCmdExecutor(object):
             (top_right is None) != (bot_left is None)):
             raise TypeError('Only opposing corners should be set')
 
+        if size is None:
+            size = Point(cairo_surface.get_width(),
+                         cairo_surface.get_height())
+
         if bot_left is None:
             if top_left is None:
                 bot_left = Point(0, 0)
-                top_right = Point(cairo_surface.get_width(),
-                                  cairo_surface.get_height())
+                top_right = size
             else:
                 top_left, bot_right = Point(top_left), Point(bot_right)
         else:
@@ -172,8 +176,7 @@ class CairoCmdExecutor(object):
             bot_right = Point(top_right.x, bot_left.y)
 
         diag = bot_right - top_left
-        scale = Point(cairo_surface.get_width()/diag.x,
-                      cairo_surface.get_height()/diag.y)
+        scale = Point(size.x / diag.x, size.y / diag.y)
         return CairoCmdExecutor(cairo_surface, top_left, scale,
                                 bg_color=bg_color)
 
@@ -185,11 +188,11 @@ class CairoCmdExecutor(object):
         self.vector_transform = resolution
         self.scalar_transform = 0.5*(abs(resolution.x) + abs(resolution.y))
         self.origin = origin
-        self.size = (surface.get_width(), surface.get_height())
 
         if bg_color is not None:
+            size = (surface.get_width(), surface.get_height())
             context.save()
-            context.rectangle(0, 0, *self.size)
+            context.rectangle(0, 0, *size)
             context.set_source_rgba(*bg_color)
             context.fill()
             context.restore()

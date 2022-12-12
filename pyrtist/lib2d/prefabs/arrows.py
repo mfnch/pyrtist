@@ -1,4 +1,4 @@
-# Copyright (C) 2017 Matteo Franchin
+# Copyright (C) 2017, 2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ normal.take(
 triangle = Window()
 triangle.take(
   Poly(Point(0, -1), Point(0, 1), Point(2, 0)),
-  Hot('head', Point(2, 0)), Hot('tail', Point(1.8, 0)), Hot('join', Point(0, 0))
+  Hot('head', Point(2, 0)), Hot('tail', Point(1.8, 0)), Hot('join', Point(0.1, 0))
 )
 
 line = Window()
