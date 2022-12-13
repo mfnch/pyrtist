@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017, 2020-2021 Matteo Franchin
+# Copyright (C) 2008-2017, 2020-2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -271,12 +271,12 @@ class Pyrtist(object):
     entries = (
       ("FileMenu", None, "_File"),
       ("New", Gtk.STOCK_NEW, "_New", "<control>N",
-       "Create a new Box program", self.menu_file_new),
+       "Create a new Pyrtist program", self.menu_file_new),
       ("Open", Gtk.STOCK_OPEN, "_Open", "<control>O",
-       "Open an existing Box program", self.menu_file_open),
+       "Open an existing Pyrtist program", self.menu_file_open),
       ("ExamplesMenu", None, "_Examples"),
       ("Save", Gtk.STOCK_SAVE, "_Save", "<control>S",
-       "Save the current Box program", self.menu_file_save),
+       "Save the current Pyrtist program", self.menu_file_save),
       ("SaveAs", Gtk.STOCK_SAVE, "Save _As...", None,
        "Save to a file", self.menu_file_save_as),
       ("Quit", Gtk.STOCK_QUIT, "_Quit", "<control>Q",
@@ -284,17 +284,17 @@ class Pyrtist(object):
 
       ("EditMenu", None, "_Edit"),
       ("Undo", Gtk.STOCK_UNDO, "_Undo", "<control>Z",
-       "Create a new Box program", self.menu_edit_undo),
+       "Create a new Pyrtist program", self.menu_edit_undo),
       ("Redo", Gtk.STOCK_REDO, "_Redo", "<control><shift>Z",
-       "Create a new Box program", self.menu_edit_redo),
+       "Create a new Pyrtist program", self.menu_edit_redo),
       ("Cut", Gtk.STOCK_CUT, "Cu_t", "<control>X",
-       "Create a new Box program", self.menu_edit_cut),
+       "Create a new Pyrtist program", self.menu_edit_cut),
       ("Copy", Gtk.STOCK_COPY, "_Copy", "<control>C",
-       "Create a new Box program", self.menu_edit_copy),
+       "Create a new Pyrtist program", self.menu_edit_copy),
       ("Paste", Gtk.STOCK_PASTE, "_Paste", "<control>V",
-       "Create a new Box program", self.menu_edit_paste),
+       "Create a new Pyrtist program", self.menu_edit_paste),
       ("Delete", Gtk.STOCK_DELETE, "_Delete", None,
-       "Create a new Box program", self.menu_edit_delete),
+       "Create a new Pyrtist program", self.menu_edit_delete),
 
       ("LibraryMenu", None, "_Library"),
       ("ConfigureLibrary", Gtk.STOCK_PREFERENCES, "_Configure library", None,
@@ -302,9 +302,9 @@ class Pyrtist(object):
 
       ("RunMenu", None, "_Run"),
       ("Execute", Gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
-       "Execute the Box program", self.menu_run_execute),
+       "Execute the Pyrtist program", self.menu_run_execute),
       ("Stop", Gtk.STOCK_STOP, "_Stop", "<control>BackSpace",
-       "Stop a running Box program", self.menu_run_stop),
+       "Stop a running Pyrtist program", self.menu_run_stop),
 
       ("ViewMenu", None, "_View"),
       ("RotateView", None, "_Rotate view", "<control>L",
@@ -490,7 +490,7 @@ class Pyrtist(object):
     if self.dialog_fileopen is None:
       self.dialog_fileopen = \
         create_filechooser(self.mainwin,
-                           title="Open Box program",
+                           title="Open Pyrtist program",
                            action=Gtk.FileChooserAction.OPEN,
                            buttons=("_Cancel", Gtk.ResponseType.CANCEL,
                                     "_Open", Gtk.ResponseType.OK))
@@ -516,7 +516,7 @@ class Pyrtist(object):
     if self.dialog_filesave is None:
       self.dialog_filesave = \
         create_filechooser(self.mainwin,
-                           title="Save Box program",
+                           title="Save Pyrtist program",
                            action=Gtk.FileChooserAction.SAVE,
                            buttons=("_Cancel", Gtk.ResponseType.CANCEL,
                                     "_Save", Gtk.ResponseType.OK))
@@ -572,7 +572,7 @@ class Pyrtist(object):
     pass
 
   def update_draw_area(self, only_if_quick=False):
-    """Update the draw area (executing the Box program)."""
+    """Update the draw area (executing the Pyrtist program)."""
     self.editable_area.refresh()
 
   def menu_run_stop(self, image_menu_item):

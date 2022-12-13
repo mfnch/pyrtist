@@ -1,4 +1,4 @@
-# Copyright (C) 2011
+# Copyright (C) 2011, 2022
 #  by Matteo Franchin (fnch@users.sourceforge.net)
 #
 # This file is part of Pyrtist.
@@ -18,7 +18,7 @@
 
 from .assistant import Action, Paste, Button
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 known_box_colors = {
   0x000000: "Color.black",
@@ -81,9 +81,9 @@ class MyColor(object):
     yield self.alpha
 
   def __int__(self):
-    rgba = tuple(self)
-    rgba_int = map(lambda x: int(max(0.0, min(255.0, round(x*255.0)))), rgba)
-    return reduce(lambda sofar, x: (sofar << 8) | x, rgba_int)
+    components = tuple(int(max(0.0, min(255.0, round(x * 255.0))))
+                       for x in self)
+    return sum(c << (8 * i) for i, c in enumerate(reversed(components)))
 
   def adjust(self):
     rgba = map(lambda x: max(0.0, min(1.0, x)), tuple(self))
@@ -119,7 +119,7 @@ class ColorSelect(Action):
         Gtk.ColorSelectionDialog("Select color")
 
     cd = self.colordlg
-    colorsel = cd.colorsel
+    colorsel = cd.get_color_selection()
     colorsel.set_has_opacity_control(True)
     colorsel.set_has_palette(True)
     colorsel.set_previous_color(colorsel.get_current_color())
@@ -168,7 +168,7 @@ class ColorHistoryButton(Button):
     b = Gtk.Button()
     my_color = self.history.get_color(self.index)
     if my_color is not None:
-      pb = GdkPixbuf.Pixbuf(GdkPixbuf.Colorspace.RGB, False, 8, width, height)
+      pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, width, height)
       pb.fill(int(my_color))
       img = Gtk.Image()
       img.set_from_pixbuf(pb)
