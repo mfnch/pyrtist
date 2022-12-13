@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2017, 2020-2021 Matteo Franchin
+# Copyright (C) 2012-2017, 2020-2022 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -22,16 +22,13 @@ sudo python setup.py install
 
 import sys
 import os
-from setuptools import setup, Extension, Feature
+from setuptools import setup, Extension
 
 # Get app information from info file.
 info = {}
 root_dir = os.path.dirname(os.path.realpath(__file__))
 info_file = os.path.join(root_dir, 'pyrtist', 'gui', 'info.py')
-if sys.version_info.major >= 3:
-    exec(open(info_file).read(), info)
-else:
-    execfile(info_file, info)
+exec(open(info_file).read(), info)
 
 # Take the long description from the README.rst file.
 readme_path = os.path.join(root_dir, 'README.rst')
@@ -64,45 +61,33 @@ cfg = dict(name='pyrtist',
                'License v2 or later (LGPLv2+)')],
            long_description=long_description)
 
+cfg.update(entry_points={'console_scripts': ['pyrtist=pyrtist.gui:main']})
+
 # C++ extensions.
+ext_modules = []
+cfg.update(ext_modules=ext_modules)
+
+# Deepsurface: software renderer, deprecated in favour of the OpenGL renderer.
+# Setting optional=True so that failures to build this extension are tolerated.
 srcs = ['image_buffer.cc', 'depth_buffer.cc', 'deep_surface.cc',
         'py_image_buffer.cc', 'py_depth_buffer.cc', 'texture.cc',
         'mesh.cc', 'py_mesh.cc', 'obj_parser.cc', 'py_init.cc']
 srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
                    for file_name in srcs]
-deepsurface_module = [Extension('pyrtist.deepsurface',
-                                extra_compile_args=['-std=c++11'],
-                                sources=srcs_full_paths,
-                                libraries=['cairo'])]
+ext_modules.append(Extension('pyrtist.deepsurface',
+                             extra_compile_args=['-std=c++11'],
+                             sources=srcs_full_paths,
+                             libraries=['cairo'],
+                             optional=True))
 
-# Cython extensions.
-try:
-    from Cython.Build import cythonize
-except:
-    cython_modules = []
-else:
-    cython_modules = \
-      cythonize(os.path.join('pyrtist', 'lib3d', 'perf_critical.pyx'))
-
-srcs = ['image_buffer.cc', 'depth_buffer.cc', 'deep_surface.cc',
-        'py_image_buffer.cc', 'py_depth_buffer.cc', 'texture.cc',
-        'mesh.cc', 'py_mesh.cc', 'obj_parser.cc', 'py_init.cc']
-srcs_full_paths = [os.path.join('pyrtist', 'deepsurface', file_name)
+# Critical computations speedups via Cython.
+# Setting optional=True so that failures to build this extension are tolerated.
+# Not strictly necessary.
+srcs = ['perf_critical.pyx']
+srcs_full_paths = [os.path.join('pyrtist', 'lib3d', file_name)
                    for file_name in srcs]
-deepsurface_module = [Extension('pyrtist.deepsurface',
-                                extra_compile_args=['-std=c++11'],
-                                sources=srcs_full_paths,
-                                libraries=['cairo'])]
-
-features = \
-  {'deepsurface': Feature('the deepsurface module.',
-                          standard=False,
-                          ext_modules=deepsurface_module),
-   'cython-accel': Feature('critical computations speedups via Cython',
-                           standard=False,
-                           available=bool(cython_modules),
-                           ext_modules=cython_modules)}
-cfg.update(features=features,
-           entry_points={'console_scripts': ['pyrtist=pyrtist.gui:main']})
+ext_modules.append(Extension('pyrtist.lib3d.perf_critical',
+                             sources=srcs_full_paths,
+                             optional=True))
 
 setup(**cfg)
