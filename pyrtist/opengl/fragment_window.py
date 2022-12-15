@@ -217,6 +217,13 @@ class ShaderSource:
 
 
 class FragmentWindow:
+    '''
+    Window that uses a fragment shader (in OpenGL's GLSL language) for drawing.
+
+    This window aims to provide functionality similar to what provided by
+    shadertoy.com
+    '''
+
     default_vertex_shader = '''
 in vec2 vert_pos;
 
@@ -233,7 +240,49 @@ void main() {
     vec_re = re.compile('[biud]?vec([2-4])')
     mat_re = re.compile('[d]?mat([2-4])(x[2-4])?')
 
-    def __init__(self, p1, p2, position_name='position'):
+    # Ids for special macros.
+    (MIN_POINT,
+     MAX_POINT,
+     CENTER_POINT,
+     BB_SIZE,
+     RESOLUTION,
+     PIXEL_SIZE)  = range(6)
+
+    def __init__(self, p1, p2, position_name='position',
+                 pixel_size='pixel_size', resolution='resolution',
+                 min_point=None, max_point=None, center_point=None,
+                 bb_size=None):
+        '''
+        Create a new FragmentWindow.
+
+        Args:
+          p1 : tuple[float, float]
+            One corner of the window's bounding box
+          p2 : tuple[float, float]
+            Another corner of the window's bounding box
+          position_name : str, default='position'
+            Name of the fragment position in the GLSL source
+          pixel_size : str, default='pixel_size'
+            Macro defining a vec2 with the size of a pixel in Pyrtist
+            coordinates, i.e. the same used for `p1` and `p2`. See Note
+          resolution : str, default='resolution'
+            Macro defining a vec2 with the width and height of the window in
+            pixels. See Note
+          min_point : tuple[float, float], default=None
+            The corner of the bounding box having minimum coordinates. See Note
+          max_point : tuple[float, float], default=None
+            The corner of the bounding box having maximum coordinates. See Note
+          center_point : tuple[float, float], default=None
+            Mid-point between `min_point` and `max_point`. See Note
+          bb_size : tuple[float, float], default=None
+            Size computed as `max_point` - `min_point`. See Note
+
+        Note:
+          `pixel_size`, `resolution`, `min_point`, `max_point`, `center_point`,
+          `bb_size` are names of special macros that should be defined in the
+          shader. They can be set to None to indicate that they are not used in
+          the shader and therefore should not be defined.
+        '''
         assert(len(p1) >= 2)
         assert(len(p2) >= 2)
         self._min_point = tuple(min(p1[i], p2[i]) for i in range(2))
@@ -241,6 +290,14 @@ void main() {
         self._frag_defines = {}
         self._vert_defines = {'FRAG_POSITION': position_name}
         self._frag_includes = []
+        self._frag_specials = {
+            self.MIN_POINT: min_point,
+            self.MAX_POINT: max_point,
+            self.CENTER_POINT: center_point,
+            self.BB_SIZE: bb_size,
+            self.RESOLUTION: resolution,
+            self.PIXEL_SIZE: pixel_size,
+        }
         self._frag_source = None
         self._vert_source = \
             ShaderSource(content=self.default_vertex_shader, line=1,
@@ -418,6 +475,26 @@ void main() {
         GL.glVertex2f(-1.0, -1.0)
         GL.glEnd()
 
+    def _set_specials(self, size_in_pixels, view_size):
+        max_p = self._max_point
+        min_p = self._min_point
+        center = tuple((max_p[i] + min_p[i]) * 0.5 for i in range(2))
+        bb_size = tuple(max_p[i] - min_p[i] for i in range(2))
+        pix_size = tuple(view_size[i] / size_in_pixels[i] for i in range(2))
+        special_values = {
+            self.RESOLUTION: 'vec3({}, {}, 1.0)'.format(*size_in_pixels),
+            self.MIN_POINT: 'vec2({}, {})'.format(*min_p),
+            self.MAX_POINT: 'vec2({}, {})'.format(*max_p),
+            self.CENTER_POINT: 'vec2({}, {})'.format(*center),
+            self.BB_SIZE: 'vec2({}, {})'.format(*bb_size),
+            self.PIXEL_SIZE: 'vec2({}, {})'.format(*pix_size),
+        }
+        for internal_name, name in self._frag_specials.items():
+            if name is not None:
+                value = special_values.get(internal_name)
+                if value is not None:
+                    self._frag_defines[name] = value
+
     def _draw_view(self, ref_points, size_in_pixels,
                    origin=None, size=None, pixel_format='RGB'):
         pix_width, pix_height = size_in_pixels
@@ -463,6 +540,7 @@ void main() {
         for name, rp in ref_points.items():
             if isinstance(rp, Point):
                 self._frag_defines[name] = 'vec2({}, {})'.format(rp[0], rp[1])
+        self._set_specials(size_in_pixels, size)
 
         dpy = init_egl(pix_width, pix_height)
         self.draw_with_transform(transform)
