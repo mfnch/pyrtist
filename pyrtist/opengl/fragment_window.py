@@ -251,7 +251,7 @@ void main() {
     def __init__(self, p1, p2, position_name='position',
                  pixel_size='pixel_size', resolution='resolution',
                  min_point=None, max_point=None, center_point=None,
-                 bb_size=None):
+                 bb_size=None, version='150 core'):
         '''
         Create a new FragmentWindow.
 
@@ -276,6 +276,8 @@ void main() {
             Mid-point between `min_point` and `max_point`. See Note
           bb_size : tuple[float, float], default=None
             Size computed as `max_point` - `min_point`. See Note
+          version : str, default '150 core'
+            GLSL version to use in the top #version line in the fragment shader
 
         Note:
           `pixel_size`, `resolution`, `min_point`, `max_point`, `center_point`,
@@ -298,6 +300,7 @@ void main() {
             self.RESOLUTION: resolution,
             self.PIXEL_SIZE: pixel_size,
         }
+        self._frag_version = version
         self._frag_source = None
         self._vert_source = \
             ShaderSource(content=self.default_vertex_shader, line=1,
@@ -432,7 +435,8 @@ void main() {
         return sources
 
     def get_frag_sources(self):
-        sources = ShaderSourceList(shader_type='fragment', version='150 core')
+        sources = ShaderSourceList(shader_type='fragment',
+                                   version=self._frag_version)
 
         # First: add one source containing #define directives for refpoints.
         defs_lines = ['#define {} {}'.format(k, v)
