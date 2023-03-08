@@ -30,6 +30,7 @@ def delete_fn(_, srcview, del_offs, del_len):
   del_end = buf.get_iter_at_offset(del_offs + del_len)
   buf.delete(del_start, del_end)
   buf.place_cursor(del_start)
+  srcview.view.scroll_to_iter(del_start, 0, False, 0.5, 0.5)
 
 def insert_fn(_, srcview, ins_text, ins_offs):
   buf = srcview.buf
@@ -37,6 +38,7 @@ def insert_fn(_, srcview, ins_text, ins_offs):
   buf.insert(ins_start, ins_text)
   cursor_pos = buf.get_iter_at_offset(ins_offs + len(ins_text))
   buf.place_cursor(cursor_pos)
+  srcview.view.scroll_to_iter(cursor_pos, 0, False, 0.5, 0.5)
 
 
 class SrcView(object):
