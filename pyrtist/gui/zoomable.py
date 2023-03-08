@@ -558,13 +558,11 @@ class ZoomableArea(Gtk.DrawingArea, Gtk.Scrollable):
     if not isinstance(self.drawer_state, DrawSucceded):
       # In case we could not redraw the image we comunicate it by making
       # the picture darker than what it should be
-      new_buf = visible_of_buf.copy()
       dx = visible_of_buf.get_width()
       dy = visible_of_buf.get_height()
-      new_buf = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, dx, dy)
-      visible_of_buf.copy_area(0, 0, dx, dy, new_buf, 0, 0)
-      new_buf.saturate_and_pixelate(new_buf, 0.5, True)
-      visible_of_buf = new_buf
+      visible_of_buf = \
+        visible_of_buf.composite_color_simple(dx, dy, GdkPixbuf.InterpType.NEAREST,
+                                              191, 1, 0x0, 0x0)
 
     if width <= 0 or height <= 0:
       return
