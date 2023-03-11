@@ -1,4 +1,4 @@
-# Copyright (C) 2011, 2020-2021 Matteo Franchin
+# Copyright (C) 2011, 2020-2021, 2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -28,17 +28,20 @@ def delete_fn(_, srcview, del_offs, del_len):
   buf = srcview.buf
   del_start = buf.get_iter_at_offset(del_offs)
   del_end = buf.get_iter_at_offset(del_offs + del_len)
-  buf.delete(del_start, del_end)
   buf.place_cursor(del_start)
-  srcview.view.scroll_to_iter(del_start, 0, False, 0.5, 0.5)
+  mark = buf.create_mark(None, del_start, False)
+  buf.delete(del_start, del_end)
+  srcview.view.scroll_to_mark(mark, 0.0, False, 0.5, 0.5)
+  buf.delete_mark(mark)
 
 def insert_fn(_, srcview, ins_text, ins_offs):
   buf = srcview.buf
   ins_start = buf.get_iter_at_offset(ins_offs)
+  buf.place_cursor(ins_start)
+  mark = buf.create_mark(None, ins_start, False)
   buf.insert(ins_start, ins_text)
-  cursor_pos = buf.get_iter_at_offset(ins_offs + len(ins_text))
-  buf.place_cursor(cursor_pos)
-  srcview.view.scroll_to_iter(cursor_pos, 0, False, 0.5, 0.5)
+  srcview.view.scroll_to_mark(mark, 0.0, False, 0.5, 0.5)
+  buf.delete_mark(mark)
 
 
 class SrcView(object):
