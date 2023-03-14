@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Matteo Franchin
+# Copyright (C) 2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -14,33 +14,21 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-Module that allows using OpenGL to draw in Pyrtist (experimental)
+import OpenGL
+import OpenGL.GL as GL
 
-This module exposes the FragmentWindow window that allows using a fragment
-shader to draw graphics. Use as follows:
+__all__ = ('GLError', 'check_error', 'set_optional')
 
-  from pyrtist.opengl import *
+class GLError(Exception):
+    pass
 
-  p1 = (0, 0)
-  p2 = (1, 1)
-  w = FragmentWindow(p1, p2)
 
-  w << """
-  #version 150 core
-  in vec3 frag_pos;
-  out vec4 out_color;
-  void main() {
-    out_color = vec4(frag_pos.x, frag_pos.y, 0.0, 1.0);
-  }
-  """
+def check_error():
+    gl_err = GL.glGetError()
+    if gl_err != GL.GL_NO_ERROR:
+        raise GLError(f'GL error {gl_err}')
 
-  w.draw(gui)
-
-p1 and p2 are the points in the bounding box. frag_pos will be the position
-coordinates relative to these points.
-'''
-
-from .fragment_window import *
-from .texture import Texture
-from ..lib2d import gui
+def set_optional(obj, **kwargs):
+    for name, value in kwargs.items():
+        if not hasattr(obj, name) or value is not None:
+            setattr(obj, name, value)

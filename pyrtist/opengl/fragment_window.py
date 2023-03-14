@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Matteo Franchin
+# Copyright (C) 2021-2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #   Pyrtist is free software: you can redistribute it and/or modify it
@@ -24,14 +24,17 @@ os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import OpenGL
 import OpenGL.EGL as EGL
 import OpenGL.GL as GL
+import PIL.Image
 
 from pyrtist.lib2d import BBox, View, Point
+from .texture import Texture, GLTexture
+from .common import GLError
 
 __all__ = ('FragmentWindow', 'get_line')
 
 
 def get_line():
-    '''Return the line number of the caller in the source.
+    '''Return the line number of the caller of this function.
 
     This is similar to what __LINE__ does in C.
     Note: the implementation assumes the caller is outside this file.
@@ -216,6 +219,76 @@ class ShaderSource:
         return '{} ({})'.format(desc, file_name)
 
 
+class UniformState:
+    def __init__(self, reserved_names={}):
+        self._next_texture_unit = 0
+        self._reserved_names = reserved_names
+        self._handlers = {
+            int: self._set_uniform_int,
+            float: self._set_uniform_float,
+            tuple: self._set_uniform_tuple,
+            list: self._set_uniform_tuple,
+            Texture: self._set_uniform_texture
+        }
+
+    def reserve_texture_unit(self):
+        ret = self._next_texture_unit
+        self._next_texture_unit += 1
+        return ret
+
+    def set_uniforms(self, program, uniforms):
+        not_found = set()
+        for name, value in uniforms.items():
+            if name in self._reserved_names:
+                raise GLError(f'Uniform name "{name}" is reserved. '
+                              'Please choose a different name for this uniform')
+            location = GL.glGetUniformLocation(program, name)
+            if location == -1:
+                not_found.add(name)
+                continue
+            setter = self._handlers.get(type(value), None)
+            if setter is None:
+                # Try matching each type, in case value's type is a derived type.
+                for handler_type, handler in self._handlers.items():
+                    if isinstance(value, handler_type):
+                        setter = handler
+                        break
+                if setter is None:
+                    raise GLError(f'Invalid value for set_uniform: {value}')
+            setter(location, value)
+        return not_found
+
+    def _set_uniform_int(self, location, value):
+        GL.glUniform1i(location, value)
+
+    def _set_uniform_float(self, location, value):
+        GL.glUniform1f(location, value)
+
+    def _set_uniform_tuple(self, location, value):
+        n = len(value)
+        if n < 1:
+            raise GLError('Empty tuple/list to set_uniform')
+        types = set(type(v) for vi in value)
+        if float in types:
+            setters = (GL.glUniform1f, GL.glUniform2f, GL.glUniform3f, GL.glUniform4f)
+        elif int in types:
+            setters = (GL.glUniform1i, GL.glUniform2i, GL.glUniform3i, GL.glUniform4i)
+        else:
+            raise GLError(f'Invalid value for set_uniform: {value}')
+        if n > len(setters):
+            raise GLError(f'Too many componets in tuple/list for set_uniform: {value}')
+        setters[n - 1](location, *value)
+
+    def _set_uniform_texture(self, location, value):
+        if value._impl is None:
+            value._impl = GLTexture(value)
+        target, gl_name = value._impl.gen()
+        texture_unit = self.reserve_texture_unit()
+        GL.glUniform1i(location, texture_unit)
+        GL.glActiveTexture(GL.GL_TEXTURE0 + texture_unit)
+        GL.glBindTexture(target, gl_name)
+
+
 class FragmentWindow:
     '''
     Window that uses a fragment shader (in OpenGL's GLSL language) for drawing.
@@ -251,7 +324,8 @@ void main() {
     def __init__(self, p1, p2, position_name='position',
                  pixel_size='pixel_size', resolution='resolution',
                  min_point=None, max_point=None, center_point=None,
-                 bb_size=None, version='150 core'):
+                 bb_size=None, allow_unset_uniforms=True,
+                 version='150 core'):
         '''
         Create a new FragmentWindow.
 
@@ -276,6 +350,11 @@ void main() {
             Mid-point between `min_point` and `max_point`. See Note
           bb_size : tuple[float, float], default=None
             Size computed as `max_point` - `min_point`. See Note
+          allow_unset_uniforms : bool, default=True
+            Whether to tolerate failures setting uniforms specified via the
+            set_uniforms method. Note that the shader compiler may optimize
+            away variables unused in the shader, leading to unexpected errors.
+            For this reason, `allow_unset_uniform` is set to True by default.
           version : str, default '150 core'
             GLSL version to use in the top #version line in the fragment shader
 
@@ -291,6 +370,8 @@ void main() {
         self._max_point = tuple(max(p1[i], p2[i]) for i in range(2))
         self._frag_defines = {}
         self._vert_defines = {'FRAG_POSITION': position_name}
+        self._uniforms = {}
+        self._allow_unset_uniforms = allow_unset_uniforms
         self._frag_includes = []
         self._frag_specials = {
             self.MIN_POINT: min_point,
@@ -378,6 +459,43 @@ void main() {
             if isinstance(value, Point):
                 self._frag_defines[name] = \
                     'vec2({}, {})'.format(value[0], value[1])
+
+    def set_uniforms(self, **kwargs):
+        '''Set the value of a uniform in the shader.
+
+        Attributes given as None are not set. Default values above are those
+        created at construction of this object.
+
+        Args:
+          kwargs : dict[str, object]
+            Dictionary of {name: value} pairs where `name` is the name of the
+            uniform variable in the shader and `value` is the Python value to
+            set. At the moment, the Python object is used to deduce the type
+            of the uniform. For example:
+
+              w.set_uniform(count=1)   # ends up calling glUniform1i
+              w.set_uniform(x=1.234)   # calls glUniform1f
+              w.set_uniform(xy=(1,1)   # calls glUniform2i
+              w.set_uniform(xy=(1,2.0) # calls glUniform2f
+
+            This method can also be used to set textures. For example:
+
+              tex = Texture()
+              tex.set_content_from_file('texture.png')
+              tex.set(wrap_x=Texture.Wrap.CLAMP_TO_EDGE,
+                      wrap_y=Texture.Wrap.CLAMP_TO_EDGE,
+                      mag_filter=Texture.Filter.LINEAR,
+                      min_filter=Texture.Filter.NEAREST)
+              w.set_uniforms(image=tex)
+
+            The shader could declare `image` as follows:
+
+              uniform sampler2D image;
+
+            Note that the image is always converted to a RGBA texture and uses
+            RGBA as the internal format.
+        '''
+        self._uniforms.update(kwargs)
 
     def set_source(self, source, line=True):
         '''Set the source of the fragment shader.
@@ -468,10 +586,17 @@ void main() {
 
         GL.glUseProgram(program)
 
+        reserved_names = {'transform'}
+        uniform_state = UniformState(reserved_names)
+        unset_uniforms = uniform_state.set_uniforms(program, self._uniforms)
+        if len(unset_uniforms) > 0 and not self._allow_unset_uniforms:
+            raise GLError(f'Uniforms not found: {", ".join(unset_uniforms)}')
+
         do_transpose = OpenGL.GL.GL_TRUE
         uniform_loc = GL.glGetUniformLocation(program, 'transform')
         GL.glUniformMatrix4fv(uniform_loc, 1, do_transpose, transform)
 
+        # TODO: avoid immediate mode.
         GL.glBegin(GL.GL_QUADS)
         GL.glVertex2f(-1.0,  1.0)
         GL.glVertex2f( 1.0,  1.0)
@@ -614,7 +739,6 @@ void main() {
         _, data = self._draw_view({}, size_in_pixels,
                                   pixel_format=pixel_format,
                                   origin=mn, size=size)
-        from PIL import Image
-        image = Image.frombytes(pixel_format, size_in_pixels, data,
-                                decoder_name='raw')
+        image = PIL.Image.frombytes(pixel_format, size_in_pixels, data,
+                                    decoder_name='raw')
         image.save(file_name, image_format, **image_format_params)

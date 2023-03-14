@@ -4,6 +4,11 @@ from pyrtist.lib2d import Point, Tri
 bbox1 = Point(-1.0, 1.0); bbox2 = Point(1.0, -1.0); center1 = Point(0.0, 0.0)
 p1 = Point(0.1381917585406386, 0.329695651405736)
 #!PYRTIST:REFPOINTS:END
+# This is a minimal example showing how pyrtist.opengl can be used to create
+# a png from a GLSL (OpenGL) shader. It is typically possible (and pretty
+# simple) to use pyrtist.opengl to reproduce a shader from ShaderToy and work
+# on it from Pyrtist, although not all ShaderToy features are currently
+# supported.
 from pyrtist.opengl import *
 
 w = FragmentWindow(bbox1, bbox2, position_name='frag_pos')
