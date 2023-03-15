@@ -1,4 +1,4 @@
-# Copyright (C) 2017, 2020 Matteo Franchin
+# Copyright (C) 2017, 2020, 2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -18,7 +18,7 @@
 import sys
 import optparse
 
-from .mainwindow import *
+from .mainwindow import run
 from .info import full_name
 
 

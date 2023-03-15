@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017, 2020-2022 Matteo Franchin
+# Copyright (C) 2008-2017, 2020-2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -32,7 +32,7 @@ import logging
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GLib, GObject
 
 from . import config
 from . import info
@@ -576,8 +576,8 @@ class Pyrtist(object):
     self.editable_area.refresh()
 
   def menu_run_stop(self, image_menu_item):
-    if self.box_killer is not None:
-      self.box_killer()
+    if self.script_killer is not None:
+      self.script_killer()
 
   def menu_view_rotate(self, _):
     self.paned.rotate()
@@ -622,23 +622,7 @@ class Pyrtist(object):
     self.menubutton_run_stop.set_sensitive(killer_given)
     self.toolbutton_run.set_sensitive(not killer_given)
     self.menubutton_run_execute.set_sensitive(not killer_given)
-    self.box_killer = killer
-
-  def _out_textview_refresh(self, text, force=False):
-    t = time.time()
-    if force == False:
-      if self.out_textbuffer_last_update_time is not None:
-        t0 = self.out_textbuffer_last_update_time
-        if t - t0 < self.out_textbuffer_update_time:
-          return text
-
-    has_some_text = (len(text.strip()) > 0)
-    if len(text) > self.out_textbuffer_capacity:
-      text = text[-self.out_textbuffer_capacity:]
-    self.out_textview_expander.set_expanded(has_some_text)
-    self.out_textbuffer.set_text(text)
-    self.out_textbuffer_last_update_time = t
-    return text
+    self.script_killer = killer
 
   def _out_textview_size_allocate(self, *args):
     adj = self.out_textview_sw.get_vadjustment()
@@ -671,22 +655,26 @@ class Pyrtist(object):
   def _on_script_execution_begin(self, document):
     # Called by EditableArea before the script is executed.
     document.set_user_code(self.get_main_source())
-    self._script_output = ''
+    self._output_view_text = ''
+    self._output_view_needs_refresh = True
     self._new_positions = {}
 
-  def _on_script_write_out(self, s, force=False):
+  def _on_script_write_out(self, incremental_output):
     # Called by EditableArea when the script emits output to stdout and stderr.
-    assert self._script_output is not None
-    script_output = self._script_output + s
-    self._script_output = \
-      self._out_textview_refresh(script_output, force=force)
+    assert self._output_view_text is not None
+
+    if len(incremental_output) > 0:
+      text = self._output_view_text + incremental_output
+
+      # Trim the output if needed
+      m = self._output_view_capacity
+      if len(text) > m:
+        text = text[-m:]
+      self._output_view_text = text
+      self._output_view_needs_refresh = True
 
   def _on_script_execution_finish(self, document):
     # Called by EditableArea after the script has finished executing.
-    # Ensure the text view is always refreshed (old output is removed, the view
-    # is collapsed in case no output is present).
-    self._on_script_write_out('', force=True)
-
     # Move all the points in a single undoable action.
     editable_area = self.editable_area
     with editable_area.undoer.group():
@@ -838,12 +826,22 @@ class Pyrtist(object):
     self.dialog_filesave = None
     self.dialog_dox_browser = None
 
-    self.box_killer = None
+    self.script_killer = None
 
     self.button_left = self.config.getint("Behaviour", "button_left")
     self.button_center = self.config.getint("Behaviour", "button_center")
     self.button_right = self.config.getint("Behaviour", "button_right")
 
+    self._init_window()
+    self._init_output_viewer()
+
+    # Set a template program to start with...
+    if filename is None or not os.path.exists(filename):
+      self.raw_file_new(filename)
+    else:
+      self.raw_file_open(filename)
+
+  def _init_window(self):
     # Create the main window
     self.mainwin = mainwin = Gtk.Window()
     mainwin.connect("destroy", self.destroy)
@@ -872,12 +870,6 @@ class Pyrtist(object):
     outsw.add(outtv)
     outexp.add(outsw)
 
-    self.out_textbuffer_last_update_time = None
-    self.out_textbuffer_update_time = \
-      self.config.getfloat('Box', 'stdout_update_delay')
-    self.out_textbuffer_capacity = \
-      int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
-
     #-------------------------------------------------------------------------
     # Below we setup the main window
 
@@ -885,11 +877,9 @@ class Pyrtist(object):
     cfg = {"refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     cbs = Callbacks()
     self.editable_area = \
-      ScriptEditableArea(config=cfg, undoer=undoer, callbacks=cbs)
+      ScriptEditableArea(config=cfg, undoer=self.undoer, callbacks=cbs)
 
     # Variables and callbacks used to handle script execution.
-    self._script_output = None  # String variable used for buffering the script
-                                # output before flushing it to the textview.
     self._move_points = None    # Dictionary used to store moved points.
     cbs.provide("box_document_execute", self._on_script_execution_begin)
     cbs.provide("script_write_out", self._on_script_write_out)
@@ -925,7 +915,7 @@ class Pyrtist(object):
     self.part_srcview = part_srcview = \
         SrcView(use_gtksourceview=True,
                 quickdoc=self.srcview_tooltip,
-                undoer=undoer)
+                undoer=self.undoer)
     self.widget_srcview = srcview = part_srcview.view
     self.widget_srcbuf = srcbuf = part_srcview.buf
 
@@ -1007,12 +997,6 @@ class Pyrtist(object):
     # Show the window
     mainwin.show_all()
 
-    # Set a template program to start with...
-    if filename is None or not os.path.exists(filename):
-      self.raw_file_new(filename)
-    else:
-      self.raw_file_open(filename)
-
     # Now set the focus on the text view.
     self.widget_srcview.grab_focus()
 
@@ -1036,6 +1020,34 @@ class Pyrtist(object):
       self.examplesmenu.attach(example_menuitem, 0, 1, i, i+1)
       example_menuitem.show()
       i += 1
+
+  def _init_output_viewer(self):
+    # Variable written by self._on_script_write_out with output produced while running
+    # the Pyrtist script. The self._update_output_viewer method periodically takes this text
+    # and updates the output view.
+    self._output_view_text = None
+
+    # Whether self._output_view_text has been updated.
+    self._output_view_needs_refresh = False
+
+    # Maximum capacity of the output view. Output is trimmed if it exceeds this limit.
+    self._output_view_capacity = \
+      int(1024 * self.config.getfloat('Pyrtist', 'stdout_buffer_size'))
+
+    update_time_s = self.config.getfloat('Pyrtist', 'stdout_update_delay')
+    update_time_ms = min(100, int(update_time_s * 1000))
+    GLib.timeout_add(update_time_ms, self._update_output_viewer)
+
+  def _update_output_viewer(self, *args):
+    # Ensure the text view is refreshed (old output is removed, the view
+    # is collapsed in case no output is present).
+    if self._output_view_needs_refresh:
+      self.out_textbuffer.set_text(self._output_view_text)
+      has_some_text = (len(self._output_view_text) > 0)
+      self.out_textview_expander.set_expanded(has_some_text)
+      self._output_view_needs_refresh = False
+    return True
+
 
 def run(filename=None, box_exec=None):
   Gdk.threads_init()

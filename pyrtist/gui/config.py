@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2017, 2020 Matteo Franchin
+# Copyright (C) 2008-2017, 2020, 2023 Matteo Franchin
 #
 # This file is part of Pyrtist.
 #
@@ -374,16 +374,13 @@ def get_configuration():
               if platform_is_win else "box")
 
   default_config = \
-   [('Box', 'exec',
-     FileOption(box_exec, must_exist=True,
-                desc='The path to the Box executable')),
-    ('Box', 'stdout_buffer_size',
+   [('Pyrtist', 'stdout_buffer_size',
      IntOption(32, -1, 1024, desc=('Maximum size in KB of Box scripts stdout '
                                   '(negative for unlimited)'))),
-    ('Box', 'stdout_update_delay',
+    ('Pyrtist', 'stdout_update_delay',
      FloatOption(0.2, 0.1, 10.0,
                  desc=('Delay between updates of the textview showing the '
-                       'output of Box programs'))),
+                       'output of Pyrtist programs'))),
     ('GUI', 'font',
      StringOption('Monospace 10', desc='The font used in the GUI')),
     ('GUI', 'rotation',
