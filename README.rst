@@ -12,10 +12,9 @@ Pyrtist's own drawing APIs.
 .. figure:: doc/seascape.png
    :align: center
 
-   **Figure 1**: Fragment shader from
-   `Shadertoy <https://www.shadertoy.com/view/Ms2SD1>`_ running in the Pyrtist GUI.
-   See `here <pyrtist/examples/draw_with_glsl.py>`_ for a minimal GLSL (OpenGL)
-   example.
+   **Figure 1**: Shader from  `Shadertoy <https://www.shadertoy.com/view/Ms2SD1>`_
+   running in the Pyrtist GUI. See `here <pyrtist/examples/draw_with_glsl.py>`_
+   for a minimal GLSL (OpenGL) example.
 
 The Pyrtist window is subdivided in two halves:
 
