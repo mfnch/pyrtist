@@ -85,6 +85,9 @@ def _run_code(send_to_parent, cwd, src_name, src, startup_cmds):
   code_globals.update(__name__='__main__')
   code_globals.update(src_env)
 
+  # Adjust argv as if the script was called with no command line arguments.
+  sys.argv = ['']
+
   with Redirected('stdout', PyrtistOutStream('stdout', send_to_parent)):
     with Redirected('stderr', PyrtistOutStream('stderr', send_to_parent)):
       try:
