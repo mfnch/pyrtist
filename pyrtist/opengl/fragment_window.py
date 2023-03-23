@@ -280,12 +280,12 @@ class UniformState:
         setters[n - 1](location, *value)
 
     def _set_uniform_texture(self, location, value):
-        if value._impl is None:
-            value._impl = GLTexture(value)
-        target, gl_name = value._impl.gen()
         texture_unit = self.reserve_texture_unit()
         GL.glUniform1i(location, texture_unit)
         GL.glActiveTexture(GL.GL_TEXTURE0 + texture_unit)
+        if value._impl is None:
+            value._impl = GLTexture(value)
+        target, gl_name = value._impl.gen()
         GL.glBindTexture(target, gl_name)
 
 

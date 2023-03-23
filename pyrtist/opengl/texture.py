@@ -100,8 +100,9 @@ class GLTexture:
             GL.glDeleteTextures(self._gl_name)
 
     def gen(self):
+        target = GL.GL_TEXTURE_2D
         if self._gl_name is not None:
-            return self._gl_name
+            return (target, self._gl_name)
 
         t = self._texture
         if t._size is None:
@@ -112,7 +113,6 @@ class GLTexture:
         gl_name = GL.glGenTextures(1)
         self._gl_name = gl_name
 
-        target = GL.GL_TEXTURE_2D
         use_mipmaps = t._min_filter.value[1]
 
         GL.glBindTexture(target, gl_name)
