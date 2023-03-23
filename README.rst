@@ -9,11 +9,13 @@ Multiple Python APIs can be used for drawing, such as
 (using fragment shaders like in `Shadertoy <https://www.shadertoy.com/>`_) and
 Pyrtist's own drawing APIs.
 
-.. figure:: doc/draw_with_cairo.png
+.. figure:: doc/seascape.png
    :align: center
 
-   Example showing how to use the PyCairo API from Pyrtist.
-   Source is `here <pyrtist/examples/draw_with_cairo.py>`_.
+   **Figure 1**: Fragment shader from
+   `Shadertoy <https://www.shadertoy.com/view/Ms2SD1>`_ running in the Pyrtist GUI.
+   See `here <pyrtist/examples/draw_with_glsl.py>`_ for a minimal GLSL (OpenGL)
+   example.
 
 The Pyrtist window is subdivided in two halves:
 
@@ -28,7 +30,7 @@ The Pyrtist window is subdivided in two halves:
 .. figure:: doc/pyrtist_house.png
    :align: center
 
-   The cartoon house example opened in the Pyrtist GUI.
+   **Figure 2**: The cartoon house example opened in the Pyrtist GUI.
 
 The two views allow you to create pictures that can exploit the scripting
 capabilities of Python while still allowing you to naturally interact with the
@@ -47,6 +49,12 @@ generated automatically for you. Importantly, you can easily reuse old
 drawings. They are text and as such you can easily copy and paste them. You can
 create modules containing them and you can couple them with the thousands
 Python libraries out there.
+
+.. figure:: doc/draw_with_cairo.png
+   :align: center
+
+   **Figure 3**: Example showing how to use the PyCairo API from Pyrtist.
+   `See source <pyrtist/examples/draw_with_cairo.py>`_.
 
 ======
 Status
