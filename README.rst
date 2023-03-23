@@ -3,10 +3,17 @@ Pyrtist
 =======
 
 Pyrtist is a library and IDE which enables **drawing using Python scripts**.
+Multiple Python APIs can be used for drawing, such as
+`PyCairo <https://pycairo.readthedocs.io/>`_,
+`PIL <https://pillow.readthedocs.io/>`_, OpenGL
+(using fragment shaders like in `Shadertoy <https://www.shadertoy.com/>`_) and
+Pyrtist's own drawing APIs.
 
-Pyrtist is a vector graphics editor. The main difference with respect to
-traditional vector graphics editors like `Inkscape <https://inkscape.org/>`_ is
-that the input for drawing comes from a Python script.
+.. figure:: doc/draw_with_cairo.png
+   :align: center
+
+   Example showing how to use the PyCairo API from Pyrtist.
+   Source is `here <pyrtist/examples/draw_with_cairo.py>`_.
 
 The Pyrtist window is subdivided in two halves:
 
@@ -45,6 +52,9 @@ Python libraries out there.
 Status
 ======
 
-This software is under development. It can be used already, despite not being
-feature complete. The drawing API is not fully stable, yet. Any feedback and
-contributions are welcome.
+This software is under development. Pyrtist's own drawing API is not fully
+stable and not well documented. The `examples <pyrtist/examples>`_
+may give some guidance. Alternatively, other APIs can be used for drawing
+such as PyCairo, PIL and GLSL.
+
+Any feedback and contributions are welcome.
