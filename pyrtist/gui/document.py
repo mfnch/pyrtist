@@ -141,8 +141,10 @@ class Document(Configurable):
     self.filename = filename
 
   def save_to_file(self, filename, version=version, remember_filename=True):
+    content = self.save_to_str(version=version)
+
     with open(filename, "w") as f:
-      f.write(self.save_to_str(version=version))
+      f.write(content)
 
     if remember_filename:
       self.filename = filename

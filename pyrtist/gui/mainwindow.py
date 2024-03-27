@@ -705,6 +705,7 @@ class Pyrtist(object):
   def _on_refpoint_press_middle(self, _, rp):
     # Called by EditableArea when a refpoint is selected with the central
     # mouse button.
+    self.widget_refpoint_entry.set_text(rp.name)
     tb = self.widget_srcbuf
     with self.undoer.group():
       insert_char(tb)
@@ -899,11 +900,7 @@ class Pyrtist(object):
       return self.widget_refpoint_entry.get_text()
     cbs.provide("get_next_refpoint_name", get_next_refpoint)
 
-    def set_next_refpoint_name(doc, rp_name):
-      self.widget_refpoint_entry.set_text(rp_name)
-    cbs.provide("set_next_refpoint_name", set_next_refpoint_name)
-
-    def set_next_refpoint(doc, rp):
+    def set_next_refpoint(rp):
       self.widget_refpoint_entry.set_text(rp.name)
     cbs.provide("refpoint_pick", set_next_refpoint)
 
@@ -977,7 +974,7 @@ class Pyrtist(object):
     #-------------------------------------------------------------------------
 
     # Set the name for the first reference point
-    set_next_refpoint_name(self.editable_area.document, "p1")
+    self.widget_refpoint_entry.set_text("p1")
 
     # try to set the default font
     try:

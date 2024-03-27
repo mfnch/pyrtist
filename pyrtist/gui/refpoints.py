@@ -17,6 +17,7 @@
 
 import math
 import fnmatch
+import re
 from functools import total_ordering
 
 from .geom2 import square_metric, Point, rectangles_overlap
@@ -24,6 +25,8 @@ from .renderer import draw_square, draw_circle, draw_line, cut_square
 from . import namegen
 from .callbacks import Callbacks
 
+
+refpoint_name_re = re.compile('^([a-zA-Z]+)([0-9]+)?$')
 
 (REFPOINT_UNSELECTED,
  REFPOINT_SELECTED,
@@ -71,16 +74,10 @@ class RefPoint(object):
 
   def split_name(self):
     """Split the reference name into a literal prefix and a numerical index."""
-    name = self.name
-    n = -1
-    try:
-      while name[n].isdigit():
-        n -= 1
-    except IndexError:
-      return (name, 1)
-    else:
-      n += 1
-      return (name[:n], int(name[n:]))
+    match = refpoint_name_re.match(self.name)
+    if match is None:
+      return (self.name, None)
+    return match.groups()
 
   def __cmp__(self, rhs):
     if rhs is None:
@@ -325,7 +322,6 @@ class RefPoints(object):
     self.selection = {}
     self.callbacks = cbs = Callbacks.share(callbacks)
     cbs.default("get_next_refpoint_name")
-    cbs.default("set_next_refpoint_name")
     cbs.default("refpoint_append")
     cbs.default("refpoint_remove")
 
@@ -520,10 +516,8 @@ class RefPoints(object):
     if name is not None:
       return name
 
-    name = self.callbacks.call("get_next_refpoint_name", self) or 'gui'
-    next_name = namegen.generate_next_name(name, increment=0)
-    while len(next_name.strip()) < 1 or next_name in self.by_name:
+    next_name = self.callbacks.call("get_next_refpoint_name", self) or 'gui1'
+    next_name = namegen.adjust_name(next_name)
+    while next_name.isspace() or next_name in self.by_name:
       next_name = namegen.generate_next_name(next_name)
-    self.callbacks.call("set_next_refpoint_name",
-                        self, namegen.generate_next_name(next_name))
     return next_name

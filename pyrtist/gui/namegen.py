@@ -59,11 +59,11 @@ def get_last_num(name):
         start = i
         end = len(name) + 1
       else:
-        end = i 
+        end = i
     was_in_num = is_in_num
     i += 1
   return (start, end)
-  
+
 def generate_next_num(old_num, increment=1):
     l = len(old_num)
     nn = str(int(old_num) + increment)

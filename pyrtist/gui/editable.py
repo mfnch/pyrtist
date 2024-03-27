@@ -256,6 +256,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
       refpoints.clear_selection()
       refpoints.select(rp)
     touched_points.update(refpoints.selection)
+    self.callbacks.call("refpoint_pick", rp)
     self.repaint_rps(*touched_points.values())
 
   def get_gcontext(self, clip_rect=None):
@@ -366,7 +367,6 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
     rp = None
     if picked is not None:
       rp = picked[0]
-      self.callbacks.call("refpoint_pick", self, rp)
 
     shift_pressed = (state & Gdk.ModifierType.SHIFT_MASK)
     ctrl_pressed = (state & Gdk.ModifierType.CONTROL_MASK)
@@ -407,7 +407,6 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
         if box_coords is not None:
           rp = self.refpoint_new(py_coords)
           self.refpoint_select(rp)
-          self.callbacks.call("refpoint_press", rp)
 
     elif self._dragged_refpoints is not None:
       return
@@ -418,6 +417,7 @@ class ScriptEditableArea(ScriptViewArea, Configurable):
 
     elif event.button == self.get_config("button_right"):
       if rp is not None:
+        self.callbacks.call("refpoint_pick", rp)
         self.refpoint_delete(rp)
 
   def _on_motion_notify_event(self, eventbox, event):
