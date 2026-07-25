@@ -22,7 +22,7 @@ stdout, stderr or graphical output.
 
 import sys
 import os
-import imp
+import types
 import io
 import traceback
 from threading import Thread
@@ -80,7 +80,8 @@ def _run_code(send_to_parent, cwd, src_name, src, startup_cmds):
   gui.update_vars(src_env)
 
   # Create a new namespace for the script execution.
-  module = imp.new_module('__main__')
+  module = types.ModuleType('__main__')
+  sys.modules['__main__'] = module
   code_globals = module.__dict__
   code_globals.update(__name__='__main__')
   code_globals.update(src_env)

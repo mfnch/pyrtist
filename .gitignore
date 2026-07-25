@@ -1,0 +1,7 @@
+/build
+/dist
+/pyrtist/lib3d/perf_critical.c
+*.d
+*.o
+*.pyc
+*~

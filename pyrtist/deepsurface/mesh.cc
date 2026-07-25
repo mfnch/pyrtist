@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <memory>
 #include <istream>
+#include <cstdint>
 #include <limits>
 #include <fstream>
 #include <iostream>

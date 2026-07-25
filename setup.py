@@ -22,6 +22,7 @@ sudo python setup.py install
 
 import sys
 import os
+import numpy
 from setuptools import setup, Extension
 
 # Get app information from info file.
@@ -53,12 +54,11 @@ cfg = dict(name='pyrtist',
                                       'icons/32x32/*.png',
                                       'icons/fonts/*.png']},
            classifiers=
-             ['Programming Language :: Python :: 2',
-              'Programming Language :: Python :: 2.7',
+             ['Programming Language :: Python :: 3',
+              'Programming Language :: Python :: 3.14',
               'Development Status :: 3 - Alpha',
               'Topic :: Multimedia :: Graphics :: Editors :: Vector-Based',
-              ('License :: OSI Approved :: GNU Lesser General Public '
-               'License v2 or later (LGPLv2+)')],
+              'LGPL-2.0-or-later'],
            long_description=long_description)
 
 cfg.update(entry_points={'console_scripts': ['pyrtist=pyrtist.gui:main']})
@@ -86,8 +86,11 @@ ext_modules.append(Extension('pyrtist.deepsurface',
 srcs = ['perf_critical.pyx']
 srcs_full_paths = [os.path.join('pyrtist', 'lib3d', file_name)
                    for file_name in srcs]
-ext_modules.append(Extension('pyrtist.lib3d.perf_critical',
-                             sources=srcs_full_paths,
-                             optional=True))
+ext_modules.append(
+    Extension('pyrtist.lib3d.perf_critical',
+              sources=srcs_full_paths,
+              include_dirs=[numpy.get_include()],
+              optional=True)
+)
 
 setup(**cfg)

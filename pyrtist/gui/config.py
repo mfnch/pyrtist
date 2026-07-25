@@ -15,7 +15,6 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with Pyrtist.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp
 import sys
 import os
 import tempfile
@@ -33,25 +32,16 @@ def debug():
 def debug_msg(msg, nl="\n"):
   pass #sys.stdout.write(msg + nl)
 
-# Trick to determine whether we are running under Py2exe or not
-def main_is_frozen():
-  """Return True when running as a Py2exe executable."""
-  return (hasattr(sys, "frozen") or # new py2exe
-          hasattr(sys, "importers") # old py2exe
-          or imp.is_frozen("__main__")) # tools/freeze
-
 def get_main_dir():
   """Return the path to the main Python source from which the execution
   started."""
-  if main_is_frozen():
-    return os.path.dirname(sys.executable)
   return os.path.dirname(sys.argv[0])
 
 # Platform information...
 import platform as p
 platform = p.system()
 platform_is_win = (platform == "Windows")
-platform_is_win_py2exe = main_is_frozen()
+platform_is_win_py2exe = False
 
 try:
   import configparser as cfgp
@@ -270,7 +260,7 @@ class EnumOption(ConfigOption):
     return "one of: " + ", ".join(self.key_to_val.keys())
 
 
-class BoxerConfigParser(cfgp.SafeConfigParser):
+class BoxerConfigParser(cfgp.ConfigParser):
   def __init__(self, defaults=None, default_config=[],
                user_cfg_file=None):
     super(BoxerConfigParser, self).__init__(defaults)
@@ -324,13 +314,13 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
   def remove_option(self, section, option):
     if self.has_option(section, option):
       self.is_modified = True
-      cfgp.SafeConfigParser.remove_option(self, section, option)
+      cfgp.ConfigParser.remove_option(self, section, option)
 
   def set(self, section, option, value, auto_add_section=True):
     self.is_modified = True
     if not self.has_section(section):
       self.add_section(section)
-    return cfgp.SafeConfigParser.set(self, section, option, value)
+    return cfgp.ConfigParser.set(self, section, option, value)
 
   def save_configuration(self, force=False, create_dir=True):
     if not self.is_modified:
