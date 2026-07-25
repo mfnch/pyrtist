@@ -1,8 +1,0 @@
-rst_out = "multivibrator.rst"
-rst_skeleton = "skeleton"
-crumb = "multivibrator.box"
-description = "A simple electric circuit"
-figure_caption = "the output produced by Box"
-box_source = "./multivibrator.box"
-out_png = "multivibrator.png"
-convert_opts = "-density 100 -antialias -size 300"

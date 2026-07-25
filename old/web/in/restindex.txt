@@ -1,4 +1,0 @@
-restindex
-    target: download.html
-    crumb: Download
-/restindex
